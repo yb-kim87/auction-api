@@ -1,0 +1,791 @@
+import { Injectable, BadRequestException, ForbiddenException, OnModuleInit } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { IsNull, Repository } from "typeorm";
+import * as XLSX from "xlsx";
+import { Auction } from "./auction.entity";
+import { AuctionChangeLog } from "./auction-change.entity";
+import {
+  EXCEL_HEADERS,
+  isValidAuctionRow,
+  rowToAuction,
+  type AuctionRow,
+} from "./excel-columns";
+import { parseAddressMeta } from "./address-parser";
+import { normalizeTankLink } from "../crawler/crawler-url.util";
+import type { UpdateAuctionDto } from "./update-auction.dto";
+import { buildAuctionEntity, mergeAuctionFromSource, resolvePriceDiffs } from "./auction-builder";
+import { AuctionStatus } from "../common/constants";
+import { normalizeAuctionNo } from "./auction-no.util";
+import {
+  applyFieldChanges,
+  buildFieldChanges,
+  resolveCrawlerUpdateChanges,
+  snapshotAuction,
+  type ChangeSource,
+} from "./auction-change.util";
+import { parseTradingCountFromDetail } from "./trading-count.util";
+import type { AuctionFieldChange } from "./auction-change.entity";
+
+interface WriteMeta {
+  status: AuctionStatus;
+  submittedBy: string;
+  changeSource?: ChangeSource;
+  skipIfUnchanged?: boolean;
+}
+
+@Injectable()
+export class AuctionsService implements OnModuleInit {
+  constructor(
+    @InjectRepository(Auction)
+    private readonly auctionRepo: Repository<Auction>,
+    @InjectRepository(AuctionChangeLog)
+    private readonly changeLogRepo: Repository<AuctionChangeLog>,
+  ) {}
+
+  async onModuleInit() {
+    await this.backfillAuctionNoNorm();
+  }
+
+  private async backfillAuctionNoNorm() {
+    const missing = await this.auctionRepo.find({
+      where: { auctionNoNorm: IsNull() },
+    });
+    if (missing.length === 0) return;
+
+    const claimed = new Set(
+      (await this.auctionRepo.find({ where: {} }))
+        .map((item) => item.auctionNoNorm)
+        .filter((norm): norm is string => Boolean(norm)),
+    );
+
+    const toSave: Auction[] = [];
+    for (const item of missing) {
+      const norm = normalizeAuctionNo(item.auctionNo);
+      if (!norm || claimed.has(norm)) continue;
+      item.auctionNoNorm = norm;
+      claimed.add(norm);
+      toSave.push(item);
+    }
+
+    if (toSave.length > 0) {
+      await this.auctionRepo.save(toSave);
+    }
+  }
+
+  findApproved() {
+    return this.auctionRepo.find({
+      where: { status: AuctionStatus.APPROVED },
+      order: { updatedAt: "DESC", createdAt: "DESC" },
+    });
+  }
+
+  findAllAdmin() {
+    return this.auctionRepo
+      .createQueryBuilder("auction")
+      .orderBy("COALESCE(auction.updatedAt, auction.createdAt)", "DESC")
+      .getMany();
+  }
+
+  findPending() {
+    return this.auctionRepo.find({
+      where: { status: AuctionStatus.PENDING },
+      order: { createdAt: "DESC" },
+    });
+  }
+
+  findBySubmitter(username: string) {
+    return this.auctionRepo.find({
+      where: { submittedBy: username },
+      order: { createdAt: "DESC" },
+    });
+  }
+
+  findChangeHistory(auctionId: string) {
+    return this.changeLogRepo.find({
+      where: { auctionId },
+      order: { changedAt: "DESC" },
+    });
+  }
+
+  private async recordChanges(
+    auctionId: string,
+    before: Auction,
+    after: Auction,
+    changedBy: string,
+    source: ChangeSource,
+    precomputed?: AuctionFieldChange[],
+  ) {
+    const changes =
+      precomputed ??
+      buildFieldChanges(snapshotAuction(before), snapshotAuction(after));
+    if (changes.length === 0) return;
+
+    const log = this.changeLogRepo.create({
+      auctionId,
+      changedBy,
+      source,
+      changes,
+    });
+    await this.changeLogRepo.save(log);
+  }
+
+  private applyDetectedChanges(
+    item: Auction,
+    next: Auction,
+    changes: AuctionFieldChange[],
+    meta: {
+      auctionNoNorm: string | null;
+      status: AuctionStatus;
+      updatedBy: string;
+      city: string;
+      district: string;
+      propType: string;
+    },
+  ) {
+    applyFieldChanges(item, next, changes);
+
+    if (changes.some((change) => change.field === "address")) {
+      item.city = meta.city;
+      item.district = meta.district;
+      item.propType = meta.propType;
+    }
+
+    if (meta.auctionNoNorm) {
+      item.auctionNoNorm = meta.auctionNoNorm;
+    }
+    item.status = meta.status;
+    item.isUpdated = true;
+    item.updatedAt = new Date();
+    item.updatedBy = meta.updatedBy;
+  }
+
+  private cloneAuctionState(item: Auction): Auction {
+    return Object.assign(new Auction(), item);
+  }
+
+  countApproved() {
+    return this.auctionRepo.count({ where: { status: AuctionStatus.APPROVED } });
+  }
+
+  countAll() {
+    return this.auctionRepo.count();
+  }
+
+  countPending() {
+    return this.auctionRepo.count({ where: { status: AuctionStatus.PENDING } });
+  }
+
+  async removeOne(id: string) {
+    const result = await this.auctionRepo.delete({ id });
+    if (!result.affected) {
+      throw new BadRequestException("삭제할 물건을 찾을 수 없습니다.");
+    }
+    return { deleted: 1, total: await this.countAll() };
+  }
+
+  async removeMany(ids: string[]) {
+    if (ids.length === 0) {
+      throw new BadRequestException("삭제할 항목을 선택해 주세요.");
+    }
+    const result = await this.auctionRepo.delete(ids);
+    return { deleted: result.affected ?? 0, total: await this.countAll() };
+  }
+
+  async removeAll() {
+    const result = await this.auctionRepo.delete({});
+    return { deleted: result.affected ?? 0, total: 0 };
+  }
+
+  async updateOne(id: string, dto: UpdateAuctionDto, updatedBy = "") {
+    const item = await this.auctionRepo.findOne({ where: { id } });
+    if (!item) {
+      throw new BadRequestException("수정할 물건을 찾을 수 없습니다.");
+    }
+
+    return this.applyUpdate(item, dto, updatedBy);
+  }
+
+  async updateOwnPending(id: string, username: string, dto: UpdateAuctionDto) {
+    const item = await this.findOwnPending(id, username);
+    return this.applyUpdate(item, dto, username, "consultant_edit");
+  }
+
+  async removeOwnPending(id: string, username: string) {
+    const item = await this.findOwnPending(id, username);
+    await this.auctionRepo.delete({ id: item.id });
+    const items = await this.findBySubmitter(username);
+    return {
+      deleted: 1,
+      total: items.length,
+    };
+  }
+
+  private async findOwnPending(id: string, username: string) {
+    const item = await this.auctionRepo.findOne({ where: { id } });
+    if (!item) {
+      throw new BadRequestException("물건을 찾을 수 없습니다.");
+    }
+    if (item.submittedBy !== username) {
+      throw new ForbiddenException("본인이 등록한 물건만 수정할 수 있습니다.");
+    }
+    if (item.status !== AuctionStatus.PENDING) {
+      throw new BadRequestException("승인 대기 중인 물건만 수정·삭제할 수 있습니다.");
+    }
+    return item;
+  }
+
+  private async findByNormalizedAuctionNo(norm: string) {
+    const byNorm = await this.auctionRepo.findOne({
+      where: { auctionNoNorm: norm },
+    });
+    if (byNorm) return byNorm;
+
+    const legacyRows = await this.auctionRepo.find({
+      where: { auctionNoNorm: IsNull() },
+    });
+    return (
+      legacyRows.find((row) => normalizeAuctionNo(row.auctionNo) === norm) ??
+      null
+    );
+  }
+
+  private async applyUpdate(
+    item: Auction,
+    dto: UpdateAuctionDto,
+    updatedBy = "",
+    changeSource: ChangeSource = "admin_edit",
+  ) {
+    if (!dto.auctionNo?.trim() && !dto.address?.trim()) {
+      throw new BadRequestException("경매번호 또는 물건주소는 필수입니다.");
+    }
+
+    const before = this.cloneAuctionState(item);
+    const merged = mergeAuctionFromSource(item, dto);
+    const nextNorm = normalizeAuctionNo(merged.auctionNo);
+    if (nextNorm && nextNorm !== item.auctionNoNorm) {
+      const duplicate = await this.auctionRepo.findOne({
+        where: { auctionNoNorm: nextNorm },
+      });
+      if (duplicate && duplicate.id !== item.id) {
+        throw new BadRequestException("이미 등록된 경매번호입니다.");
+      }
+    }
+
+    const { city, district, propType } = parseAddressMeta(merged.address);
+    const diffs = resolvePriceDiffs(merged);
+
+    const next = this.cloneAuctionState(item);
+    Object.assign(next, {
+      ...merged,
+      ...diffs,
+      city,
+      district,
+      propType,
+      auctionNoNorm: nextNorm,
+    });
+
+    const changes = buildFieldChanges(
+      snapshotAuction(before),
+      snapshotAuction(next),
+    );
+    if (changes.length === 0) {
+      return item;
+    }
+
+    this.applyDetectedChanges(item, next, changes, {
+      auctionNoNorm: nextNorm,
+      status: item.status,
+      updatedBy: updatedBy || item.updatedBy,
+      city,
+      district,
+      propType,
+    });
+
+    const saved = await this.auctionRepo.save(item);
+    await this.recordChanges(
+      item.id,
+      before,
+      saved,
+      updatedBy || item.updatedBy,
+      changeSource,
+      changes,
+    );
+    return saved;
+  }
+
+  private async upsertOne(
+    dto: UpdateAuctionDto | Partial<AuctionRow>,
+    meta: WriteMeta,
+  ): Promise<{ item: Auction; created: boolean; unchanged?: boolean }> {
+    const norm = normalizeAuctionNo(dto.auctionNo ?? "");
+    const existing = norm ? await this.findByNormalizedAuctionNo(norm) : null;
+
+    if (existing) {
+      const before = this.cloneAuctionState(existing);
+      const mergedStatus =
+        existing.status === AuctionStatus.APPROVED
+          ? AuctionStatus.APPROVED
+          : meta.status;
+
+      const preserveMemoIfEmpty =
+        meta.changeSource === "crawler" || meta.changeSource === "excel";
+
+      const merged = mergeAuctionFromSource(existing, dto, {
+        preserveMemoIfEmpty,
+      });
+      const { city, district, propType } = parseAddressMeta(merged.address);
+      const diffs = resolvePriceDiffs(merged);
+
+      const next = this.cloneAuctionState(existing);
+      Object.assign(next, {
+        ...merged,
+        ...diffs,
+        city,
+        district,
+        propType,
+        auctionNoNorm: norm,
+        status: mergedStatus,
+      });
+
+      let changes = buildFieldChanges(
+        snapshotAuction(before),
+        snapshotAuction(next),
+      );
+
+      if (meta.changeSource === "crawler") {
+        changes = resolveCrawlerUpdateChanges(changes);
+      }
+
+      if (meta.skipIfUnchanged && changes.length === 0) {
+        return { item: existing, created: false, unchanged: true };
+      }
+
+      if (changes.length === 0) {
+        return { item: existing, created: false };
+      }
+
+      this.applyDetectedChanges(existing, next, changes, {
+        auctionNoNorm: norm,
+        status: mergedStatus,
+        updatedBy: meta.submittedBy,
+        city,
+        district,
+        propType,
+      });
+
+      const item = await this.auctionRepo.save(existing);
+      await this.recordChanges(
+        item.id,
+        before,
+        item,
+        meta.submittedBy,
+        meta.changeSource ?? "excel",
+        changes,
+      );
+      return { item, created: false };
+    }
+
+    const entity = buildAuctionEntity(dto, meta);
+    const item = await this.auctionRepo.save(entity);
+    return { item, created: true };
+  }
+
+  async importCrawledItem(
+    dto: Partial<UpdateAuctionDto>,
+    submittedBy: string,
+  ) {
+    if (!dto.auctionNo?.trim() && !dto.address?.trim()) {
+      return {
+        skipped: true as const,
+        unchanged: false as const,
+        created: false,
+        item: null,
+      };
+    }
+
+    const { item, created, unchanged } = await this.upsertOne(dto, {
+      status: AuctionStatus.APPROVED,
+      submittedBy,
+      changeSource: "crawler",
+      skipIfUnchanged: true,
+    });
+
+    if (unchanged) {
+      return {
+        skipped: true as const,
+        unchanged: true as const,
+        created: false,
+        item,
+      };
+    }
+
+    return { skipped: false as const, unchanged: false as const, created, item };
+  }
+
+  async listMissingNaverId(): Promise<{ auctionNo: string; link: string }[]> {
+    const rows = await this.auctionRepo
+      .createQueryBuilder("a")
+      .select("a.auctionNo", "auctionNo")
+      .addSelect("a.link", "link")
+      .where("(a.naverId IS NULL OR a.naverId = :emptyId)", { emptyId: "" })
+      .andWhere("a.link != :emptyLink", { emptyLink: "" })
+      .getRawMany<{ auctionNo: string; link: string }>();
+
+    return rows
+      .filter((row) => row.auctionNo?.trim() && row.link?.trim())
+      .map((row) => ({
+        auctionNo: row.auctionNo.trim(),
+        link: row.link.trim(),
+      }));
+  }
+
+  async patchNaverIdOnly(
+    auctionNo: string,
+    naverId: string,
+    updatedBy: string,
+  ) {
+    const norm = normalizeAuctionNo(auctionNo);
+    const item = norm ? await this.findByNormalizedAuctionNo(norm) : null;
+    if (!item) {
+      return { updated: false as const, skipped: true as const, reason: "not_found" };
+    }
+
+    const nextId = naverId.trim();
+    if (!nextId || !/^\d+$/.test(nextId)) {
+      return { updated: false as const, skipped: true as const, reason: "invalid_id" };
+    }
+    if (item.naverId === nextId) {
+      return {
+        updated: false as const,
+        skipped: true as const,
+        reason: "unchanged",
+        item,
+      };
+    }
+
+    const before = this.cloneAuctionState(item);
+    item.naverId = nextId;
+    item.isUpdated = true;
+    item.updatedAt = new Date();
+    item.updatedBy = updatedBy;
+
+    const changes = buildFieldChanges(
+      snapshotAuction(before),
+      snapshotAuction(item),
+    );
+    if (changes.length === 0) {
+      return { updated: false as const, skipped: true as const, item };
+    }
+
+    const saved = await this.auctionRepo.save(item);
+    await this.recordChanges(
+      item.id,
+      before,
+      saved,
+      updatedBy,
+      "crawler",
+      changes,
+    );
+    return { updated: true as const, skipped: false as const, item: saved };
+  }
+
+  async backfillTradingCountFromDetail(updatedBy: string) {
+    const rows = await this.auctionRepo
+      .createQueryBuilder("a")
+      .select("a.id", "id")
+      .addSelect("a.tradingCount", "tradingCount")
+      .addSelect("a.tradingDetail", "tradingDetail")
+      .where("trim(a.tradingDetail) != :empty", { empty: "" })
+      .getRawMany<{ id: string; tradingCount: string; tradingDetail: string }>();
+
+    let updated = 0;
+    let unchanged = 0;
+
+    for (const row of rows) {
+      const next = parseTradingCountFromDetail(row.tradingDetail ?? "");
+      const prev = (row.tradingCount ?? "").trim();
+      if (next === prev) {
+        unchanged += 1;
+        continue;
+      }
+
+      const item = await this.auctionRepo.findOne({ where: { id: row.id } });
+      if (!item) continue;
+
+      const before = this.cloneAuctionState(item);
+      item.tradingCount = next;
+      const changes = buildFieldChanges(
+        snapshotAuction(before),
+        snapshotAuction(item),
+      );
+      if (changes.length === 0) {
+        unchanged += 1;
+        continue;
+      }
+
+      await this.auctionRepo.save(item);
+      await this.recordChanges(
+        item.id,
+        before,
+        item,
+        updatedBy,
+        "admin_edit",
+        changes,
+      );
+      updated += 1;
+    }
+
+    return { total: rows.length, updated, unchanged };
+  }
+
+  async createOne(dto: UpdateAuctionDto, meta: WriteMeta) {
+    if (!dto.auctionNo?.trim() && !dto.address?.trim()) {
+      throw new BadRequestException("경매번호 또는 물건주소는 필수입니다.");
+    }
+
+    const { item } = await this.upsertOne(dto, {
+      ...meta,
+      changeSource: meta.changeSource ?? "manual_create",
+    });
+    return item;
+  }
+
+  async importFromExcel(
+    buffer: Buffer,
+    meta: WriteMeta,
+  ) {
+    const workbook = XLSX.read(buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+
+    if (!sheetName) {
+      throw new BadRequestException("엑셀 시트를 찾을 수 없습니다.");
+    }
+
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+      defval: "",
+      raw: false,
+    });
+
+    if (rows.length === 0) {
+      throw new BadRequestException("업로드할 데이터가 없습니다.");
+    }
+
+    const parsedRows: Partial<AuctionRow>[] = [];
+
+    for (const row of rows) {
+      const parsed = rowToAuction(row);
+      if (!isValidAuctionRow(parsed)) continue;
+      parsedRows.push(parsed);
+    }
+
+    if (parsedRows.length === 0) {
+      throw new BadRequestException(
+        "유효한 물건 데이터가 없습니다. 엑셀 헤더와 내용을 확인해 주세요.",
+      );
+    }
+
+    const byAuctionNo = new Map<string, Partial<AuctionRow>>();
+    const withoutAuctionNo: Partial<AuctionRow>[] = [];
+
+    for (const parsed of parsedRows) {
+      const norm = normalizeAuctionNo(parsed.auctionNo ?? "");
+      if (norm) {
+        byAuctionNo.set(norm, parsed);
+      } else {
+        withoutAuctionNo.push(parsed);
+      }
+    }
+
+    let created = 0;
+    let updated = 0;
+
+    for (const parsed of [...byAuctionNo.values(), ...withoutAuctionNo]) {
+      const result = await this.upsertOne(parsed, {
+        ...meta,
+        changeSource: "excel",
+      });
+      if (result.created) created += 1;
+      else updated += 1;
+    }
+
+    return {
+      imported: created + updated,
+      created,
+      updated,
+      total: meta.status === AuctionStatus.APPROVED
+        ? await this.countApproved()
+        : await this.countAll(),
+      status: meta.status,
+    };
+  }
+
+  async approveOne(id: string) {
+    const item = await this.auctionRepo.findOne({ where: { id } });
+    if (!item) {
+      throw new BadRequestException("승인할 물건을 찾을 수 없습니다.");
+    }
+    item.status = AuctionStatus.APPROVED;
+    return this.auctionRepo.save(item);
+  }
+
+  async rejectOne(id: string) {
+    const item = await this.auctionRepo.findOne({ where: { id } });
+    if (!item) {
+      throw new BadRequestException("반려할 물건을 찾을 수 없습니다.");
+    }
+    item.status = AuctionStatus.REJECTED;
+    return this.auctionRepo.save(item);
+  }
+
+  async approveMany(ids: string[]) {
+    if (ids.length === 0) {
+      throw new BadRequestException("승인할 항목을 선택해 주세요.");
+    }
+    await this.auctionRepo.update(ids, { status: AuctionStatus.APPROVED });
+    return { approved: ids.length, pending: await this.countPending() };
+  }
+
+  async rejectMany(ids: string[]) {
+    if (ids.length === 0) {
+      throw new BadRequestException("반려할 항목을 선택해 주세요.");
+    }
+    await this.auctionRepo.update(ids, { status: AuctionStatus.REJECTED });
+    return { rejected: ids.length, pending: await this.countPending() };
+  }
+
+  createTemplateBuffer(): Buffer {
+    const sample = [
+      {
+        메모: "입지 좋음",
+        링크: "https://www.courtauction.go.kr",
+        조회수: 342,
+        경매번호: "2024타경12345",
+        물건주소: "서울특별시 강남구 대치동 은마아파트 101동 502호",
+        "총 세대수": 4424,
+        용도: "주거용",
+        평형: "34평",
+        연식: 1979,
+        입찰기일: "2025-02-18",
+        감정가: 1450000000,
+        최저가: 1160000000,
+        낙찰가: 1280000000,
+        "네이버 호가": 1550000000,
+        "호가 - 낙찰가": 270000000,
+        "호가 - 최저가": 390000000,
+        "호가 - 감정가": 100000000,
+        실거래건수: "2025 3건, 2024 2건",
+        낙찰정보: "3명",
+        소유자: "김○○",
+        감정원: "한국감정원",
+        공시지가: 890000000,
+        임차정보: "전입 없음",
+        특이사항: "유치권 없음",
+        승강기: "비상/승용",
+        주차장: "자주식 500대",
+        토지지분: "35.7㎡",
+        건물등기: "이상없음",
+        교육환경: "대치초, 대치중",
+        임차상세: "-",
+        "호가 상세": "22년 3월 1.55억 거래",
+        "실거래 상세": "최근 3건",
+        기록시간: "2025-01-15 09:22",
+      },
+    ];
+
+    const sheet = XLSX.utils.json_to_sheet(sample, { header: EXCEL_HEADERS });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, "경매물건");
+    return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer;
+  }
+
+  async getLinkCollectFilterMap(): Promise<
+    Map<
+      string,
+      {
+        bidDate: string;
+        usage: string;
+        area: string;
+        naverPrice: number;
+        priceDetail: string;
+        tradingDetail: string;
+      }
+    >
+  > {
+    const rows = await this.auctionRepo
+      .createQueryBuilder("a")
+      .select("a.link", "link")
+      .addSelect("a.bidDate", "bidDate")
+      .addSelect("a.usage", "usage")
+      .addSelect("a.area", "area")
+      .addSelect("a.naverPrice", "naverPrice")
+      .addSelect("a.priceDetail", "priceDetail")
+      .addSelect("a.tradingDetail", "tradingDetail")
+      .where("a.status = :status", { status: AuctionStatus.APPROVED })
+      .getRawMany<{
+        link: string;
+        bidDate: string;
+        usage: string;
+        area: string;
+        naverPrice: number;
+        priceDetail: string;
+        tradingDetail: string;
+      }>();
+    const map = new Map<
+      string,
+      {
+        bidDate: string;
+        usage: string;
+        area: string;
+        naverPrice: number;
+        priceDetail: string;
+        tradingDetail: string;
+      }
+    >();
+    for (const row of rows) {
+      if (!row.link?.trim()) continue;
+      const record = {
+        bidDate: row.bidDate ?? "",
+        usage: row.usage ?? "",
+        area: row.area ?? "",
+        naverPrice: row.naverPrice ?? 0,
+        priceDetail: row.priceDetail ?? "",
+        tradingDetail: row.tradingDetail ?? "",
+      };
+      const keys = new Set<string>();
+      keys.add(row.link.split("&")[0].trim());
+      const normalized = normalizeTankLink(row.link);
+      if (normalized) keys.add(normalized);
+      for (const key of keys) {
+        map.set(key, record);
+      }
+    }
+    return map;
+  }
+
+  extractLinksFromExcel(buffer: Buffer): string[] {
+    const workbook = XLSX.read(buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new BadRequestException("엑셀 시트를 찾을 수 없습니다.");
+    }
+
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+      defval: "",
+      raw: false,
+    });
+
+    const links: string[] = [];
+    for (const row of rows) {
+      const link = String(row["링크"] ?? row["link"] ?? "").trim();
+      if (link) links.push(link);
+    }
+
+    if (links.length === 0) {
+      throw new BadRequestException("'링크' 열을 찾을 수 없습니다.");
+    }
+
+    return links;
+  }
+}

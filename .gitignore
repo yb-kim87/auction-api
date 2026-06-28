@@ -1,0 +1,11 @@
+dist/
+node_modules/
+data/
+.env
+.env.local
+*.log
+crawler/__pycache__/
+**/__pycache__/
+*.pyc
+.venv/
+venv/

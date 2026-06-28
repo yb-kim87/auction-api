@@ -1,0 +1,68 @@
+[
+  {
+    "mode": "new_tab",
+    "target_m2": 149.59,
+    "ok": true,
+    "error": "",
+    "elapsed_sec": 18.6,
+    "article_count": 13,
+    "lowest_eok": 9.5,
+    "tx_block_count": 1,
+    "tx_areas": [
+      "180.46T㎡ (149.59T)87세대"
+    ],
+    "matched_areas": "180.46T㎡ (149.59T)87세대",
+    "article_error": "",
+    "tx_error": ""
+  },
+  {
+    "mode": "same_window",
+    "target_m2": 149.59,
+    "ok": true,
+    "error": "",
+    "elapsed_sec": 18.2,
+    "article_count": 13,
+    "lowest_eok": 9.5,
+    "tx_block_count": 1,
+    "tx_areas": [
+      "180.46T㎡ (149.59T)87세대"
+    ],
+    "matched_areas": "180.46T㎡ (149.59T)87세대",
+    "article_error": "",
+    "tx_error": ""
+  },
+  {
+    "mode": "new_tab",
+    "target_m2": 134.0,
+    "ok": true,
+    "error": "",
+    "elapsed_sec": 23.1,
+    "article_count": 29,
+    "lowest_eok": 8.6,
+    "tx_block_count": 2,
+    "tx_areas": [
+      "162.75A㎡ (134.99A)96세대",
+      "164.77T㎡ (134.99T)58세대"
+    ],
+    "matched_areas": "162.75A㎡ (134.99A)96세대, 164.77T㎡ (134.99T)58세대",
+    "article_error": "",
+    "tx_error": ""
+  },
+  {
+    "mode": "same_window",
+    "target_m2": 134.0,
+    "ok": true,
+    "error": "",
+    "elapsed_sec": 23.6,
+    "article_count": 29,
+    "lowest_eok": 8.6,
+    "tx_block_count": 2,
+    "tx_areas": [
+      "162.75A㎡ (134.99A)96세대",
+      "164.77T㎡ (134.99T)58세대"
+    ],
+    "matched_areas": "162.75A㎡ (134.99A)96세대, 164.77T㎡ (134.99T)58세대",
+    "article_error": "",
+    "tx_error": ""
+  }
+]

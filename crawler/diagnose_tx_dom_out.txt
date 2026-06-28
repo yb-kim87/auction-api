@@ -1,0 +1,24 @@
+﻿python : Traceback (most recent call last):
+위치 C:\Users\young\AppData\Local\Temp\ps-script-381cfea8-8837-431a-9de6-4eacbf0d43cc.ps1:102 문자:56
++ ... ev\young\auction-api\crawler"; python diagnose_tx_dom.py 2>&1 | Out-F ...
++                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "E:\OneDrive\auctiondev\young\auction-api\crawler\diagnose_tx_dom.py", line 73, in <module>
+    main()
+  File "E:\OneDrive\auctiondev\young\auction-api\crawler\diagnose_tx_dom.py", line 27, in main
+    cid, _ = resolve_complex_id(driver)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\OneDrive\auctiondev\young\auction-api\crawler\naver_crawl.py", line 206, in resolve_complex_id
+    elements = WebDriverWait(driver, 2).until(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\selenium\webdriver\support\wait.py", line 105, in until
+    raise TimeoutException(message, screen, stacktrace)
+selenium.common.exceptions.TimeoutException: Message: 
+
+Exception ignored in: <function Chrome.__del__ at 0x00000197F6F389A0>
+Traceback (most recent call last):
+  File "C:\Python311\Lib\site-packages\undetected_chromedriver\__init__.py", line 843, in __del__
+  File "C:\Python311\Lib\site-packages\undetected_chromedriver\__init__.py", line 798, in quit
+OSError: [WinError 6] 핸들이 잘못되었습니다
