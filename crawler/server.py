@@ -41,9 +41,16 @@ class CrawlerState:
         self.last_message = None
         self.stop_requested = False
         self.crawl_thread: threading.Thread | None = None
+        self.events: list[str] = []
+
+    def push_event(self, message: str):
+        with self.lock:
+            self.events.append(message)
 
     def snapshot(self) -> dict:
         with self.lock:
+            events = list(self.events)
+            self.events.clear()
             return {
                 "phase": self.phase,
                 "browserReady": browser_is_ready(),
@@ -55,6 +62,7 @@ class CrawlerState:
                 "preset": self.preset,
                 "error": self.error,
                 "lastMessage": self.last_message,
+                "events": events,
             }
 
     def set_message(self, message: str):
@@ -92,52 +100,190 @@ def _with_live_driver(action, force_retry: bool = True):
         raise
 
 
-def post_item_to_api(item: dict):
-    callback = os.environ.get(
-        "CRAWLER_CALLBACK_URL",
-        "http://127.0.0.1:3001/crawler/import-item",
-    )
-    secret = os.environ.get("CRAWLER_SECRET", "local-crawler-secret")
+def _resolve_callback(callback_url: str | None = None, callback_secret: str | None = None):
+    return {
+        "url": (
+            callback_url
+            or os.environ.get(
+                "CRAWLER_CALLBACK_URL",
+                "http://127.0.0.1:3001/crawler/import-item",
+            )
+        ).strip(),
+        "secret": (callback_secret or os.environ.get("CRAWLER_SECRET", "local-crawler-secret")).strip(),
+    }
+
+
+def post_item_to_api(
+    item: dict,
+    callback_url: str | None = None,
+    callback_secret: str | None = None,
+    mirror_callback_url: str | None = None,
+    mirror_callback_secret: str | None = None,
+):
+    cfg = _resolve_callback(callback_url, callback_secret)
     payload = {**item, "submittedBy": "crawler"}
-    res = requests.post(
-        callback,
-        json=payload,
-        headers={"X-Crawler-Secret": secret, "Content-Type": "application/json"},
-        timeout=30,
-    )
+    headers = {
+        "X-Crawler-Secret": cfg["secret"],
+        "Content-Type": "application/json",
+    }
+    res = requests.post(cfg["url"], json=payload, headers=headers, timeout=30)
     res.raise_for_status()
-    return res.json()
+    result = res.json()
+
+    mirror_url = (
+        mirror_callback_url
+        or os.environ.get("CRAWLER_MIRROR_URL", "")
+    ).strip()
+    if mirror_url and mirror_url.rstrip("/") != cfg["url"].rstrip("/"):
+        mirror_secret = (
+            mirror_callback_secret
+            or os.environ.get("CRAWLER_SECRET", cfg["secret"])
+        ).strip()
+        try:
+            mirror_res = requests.post(
+                mirror_url,
+                json=payload,
+                headers={
+                    "X-Crawler-Secret": mirror_secret,
+                    "Content-Type": "application/json",
+                    "X-Crawler-Mirror": "1",
+                },
+                timeout=30,
+            )
+            mirror_res.raise_for_status()
+        except Exception as exc:
+            label = _auction_label(item)
+            err = f"운영 DB 동기화 실패 ({label}): {exc}"
+            print(f"[crawler] {err}", flush=True)
+            STATE.push_event(err)
+
+    return result
 
 
-def post_naver_id_to_api(auction_no: str, naver_id: str) -> dict:
-    callback = os.environ.get(
-        "CRAWLER_CALLBACK_URL",
-        "http://127.0.0.1:3001/crawler/import-item",
-    )
-    base = callback.rsplit("/", 1)[0]
-    secret = os.environ.get("CRAWLER_SECRET", "local-crawler-secret")
+def post_naver_id_to_api(
+    auction_no: str,
+    naver_id: str,
+    callback_url: str | None = None,
+    callback_secret: str | None = None,
+    mirror_callback_url: str | None = None,
+    mirror_callback_secret: str | None = None,
+) -> dict:
+    cfg = _resolve_callback(callback_url, callback_secret)
+    base = cfg["url"].rsplit("/", 1)[0]
+    secret = cfg["secret"]
+    payload = {
+        "auctionNo": auction_no,
+        "naverId": naver_id,
+        "submittedBy": "crawler-naver-backfill",
+    }
+    headers = {
+        "X-Crawler-Secret": secret,
+        "Content-Type": "application/json",
+    }
     res = requests.post(
         f"{base}/import-naver-id",
-        json={
-            "auctionNo": auction_no,
-            "naverId": naver_id,
-            "submittedBy": "crawler-naver-backfill",
-        },
-        headers={"X-Crawler-Secret": secret, "Content-Type": "application/json"},
+        json=payload,
+        headers=headers,
         timeout=30,
     )
     res.raise_for_status()
-    return res.json()
+    result = res.json()
+
+    mirror_url = (
+        mirror_callback_url
+        or os.environ.get("CRAWLER_MIRROR_URL", "")
+    ).strip()
+    if mirror_url:
+        mirror_base = mirror_url.rsplit("/", 1)[0]
+        if mirror_base.rstrip("/") != base.rstrip("/"):
+            mirror_secret = (
+                mirror_callback_secret
+                or os.environ.get("CRAWLER_SECRET", secret)
+            ).strip()
+            try:
+                mirror_res = requests.post(
+                    f"{mirror_base}/import-naver-id",
+                    json=payload,
+                    headers={
+                        "X-Crawler-Secret": mirror_secret,
+                        "Content-Type": "application/json",
+                        "X-Crawler-Mirror": "1",
+                    },
+                    timeout=30,
+                )
+                mirror_res.raise_for_status()
+            except Exception as exc:
+                err = f"운영 DB 네이버ID 동기화 실패 ({auction_no}): {exc}"
+                print(f"[crawler] {err}", flush=True)
+                STATE.push_event(err)
+
+    return result
 
 
-def crawl_worker(urls: list[str]):
+def _auction_label(item: dict) -> str:
+    return str(item.get("auctionNo") or item.get("address") or "물건").strip()
+
+
+def _record_import_result(
+    item: dict,
+    result: dict,
+    index: int,
+    total: int,
+) -> None:
+    label = _auction_label(item)
+    naver_note = ""
+    if not item.get("naver_lowest_price"):
+        detail = str(item.get("naver_price_detail") or "").strip()
+        area = str(item.get("area") or "")
+        if detail:
+            naver_note = f" (네이버: {detail[:60]})"
+        elif area in ("0", "없음", ""):
+            naver_note = " (면적 미수집)"
+
+    with STATE.lock:
+        if result.get("skipped"):
+            status_label = None
+        elif result.get("created"):
+            STATE.created += 1
+            status_label = f"{label} 등록완료"
+        else:
+            STATE.updated += 1
+            status_label = f"{label} 갱신완료"
+
+        if status_label:
+            STATE.events.append(status_label)
+            STATE.last_message = f"[{index + 1}/{total}] {status_label}{naver_note}"
+        else:
+            STATE.last_message = f"[{index + 1}/{total}] {label} (변경 없음){naver_note}"
+
+
+def crawl_worker(
+    urls: list[str],
+    callback_url: str | None = None,
+    callback_secret: str | None = None,
+    mirror_callback_url: str | None = None,
+    mirror_callback_secret: str | None = None,
+):
+    cfg = _resolve_callback(callback_url, callback_secret)
+    mirror_url = (
+        mirror_callback_url
+        or os.environ.get("CRAWLER_MIRROR_URL", "")
+    ).strip()
+    target = cfg["url"]
+    if mirror_url and mirror_url.rstrip("/") != target.rstrip("/"):
+        print(f"[crawler] import callback → local {target} + mirror {mirror_url}", flush=True)
+    else:
+        print(f"[crawler] import callback → {target}", flush=True)
     try:
         with STATE.lock:
             STATE.phase = "crawling"
             STATE.completed = 0
             STATE.total = len(urls)
+            STATE.created = 0
+            STATE.updated = 0
             STATE.stop_requested = False
             STATE.error = None
+            STATE.events.clear()
 
         crawl_item = _reload_crawler_modules()
         driver = ensure_driver()
@@ -148,6 +294,7 @@ def crawl_worker(urls: list[str]):
                 if STATE.stop_requested:
                     STATE.phase = "stopped"
                     STATE.last_message = "사용자 요청으로 조회가 중단되었습니다."
+                    STATE.events.append("조회작업 중단")
                     return
 
             try:
@@ -156,58 +303,61 @@ def crawl_worker(urls: list[str]):
                     driver.implicitly_wait(1)
                 crawl_item = _reload_crawler_modules()
                 item = crawl_item(driver, entry)
-                result = post_item_to_api(item)
+                result = post_item_to_api(
+                    item,
+                    callback_url=cfg["url"],
+                    callback_secret=cfg["secret"],
+                    mirror_callback_url=mirror_url or None,
+                    mirror_callback_secret=mirror_callback_secret,
+                )
                 with STATE.lock:
                     STATE.completed = index + 1
-                    if result.get("created"):
-                        STATE.created += 1
-                    elif not result.get("skipped"):
-                        STATE.updated += 1
-                    naver_note = ""
-                    if not item.get("naver_lowest_price"):
-                        detail = str(item.get("naver_price_detail") or "").strip()
-                        area = str(item.get("area") or "")
-                        if detail:
-                            naver_note = f" (네이버: {detail[:60]})"
-                        elif area in ("0", "없음", ""):
-                            naver_note = " (면적 미수집)"
-                    STATE.last_message = (
-                        f"[{index + 1}/{len(urls)}] "
-                        f"{item.get('auctionNo') or item.get('address')}"
-                        f"{naver_note}"
-                    )
+                _record_import_result(item, result, index + 1, len(urls))
             except Exception as exc:
-                with STATE.lock:
-                    if _is_invalid_session(exc):
+                if _is_invalid_session(exc):
+                    with STATE.lock:
                         STATE.last_message = (
                             f"브라우저 세션 만료 — 재연결 후 재시도 ({index + 1}/{len(urls)})"
                         )
-                        try:
-                            driver = ensure_driver(force_new=True)
-                            driver.implicitly_wait(1)
-                            item = crawl_item(driver, entry)
-                            result = post_item_to_api(item)
+                    try:
+                        driver = ensure_driver(force_new=True)
+                        driver.implicitly_wait(1)
+                        item = crawl_item(driver, entry)
+                        result = post_item_to_api(
+                            item,
+                            callback_url=cfg["url"],
+                            callback_secret=cfg["secret"],
+                            mirror_callback_url=mirror_url or None,
+                            mirror_callback_secret=mirror_callback_secret,
+                        )
+                        with STATE.lock:
                             STATE.completed = index + 1
-                            if result.get("created"):
-                                STATE.created += 1
-                            elif not result.get("skipped"):
-                                STATE.updated += 1
-                            continue
-                        except Exception as retry_exc:
-                            STATE.last_message = f"오류 ({index + 1}/{len(urls)}): {retry_exc}"
-                    else:
-                        STATE.last_message = f"오류 ({index + 1}/{len(urls)}): {exc}"
+                        _record_import_result(item, result, index + 1, len(urls))
+                        continue
+                    except Exception as retry_exc:
+                        err_msg = f"오류 ({index + 1}/{len(urls)}): {retry_exc}"
+                        with STATE.lock:
+                            STATE.last_message = err_msg
+                            STATE.events.append(err_msg)
+                else:
+                    err_msg = f"오류 ({index + 1}/{len(urls)}): {exc}"
+                    with STATE.lock:
+                        STATE.last_message = err_msg
+                        STATE.events.append(err_msg)
 
             time.sleep(0.4)
 
         with STATE.lock:
             STATE.phase = "idle"
-            STATE.last_message = f"조회 완료 ({len(urls)}건)"
+            done_msg = f"조회작업 완료 ({len(urls)}건)"
+            STATE.last_message = done_msg
+            STATE.events.append(done_msg)
     except Exception as exc:
         with STATE.lock:
             STATE.phase = "error"
             STATE.error = str(exc)
             STATE.last_message = str(exc)
+            STATE.events.append(f"조회작업 오류: {exc}")
     finally:
         try:
             from browser import _driver, is_session_alive
@@ -218,7 +368,19 @@ def crawl_worker(urls: list[str]):
             pass
 
 
-def naver_id_backfill_worker(items: list[dict]):
+def naver_id_backfill_worker(
+    items: list[dict],
+    callback_url: str | None = None,
+    callback_secret: str | None = None,
+    mirror_callback_url: str | None = None,
+    mirror_callback_secret: str | None = None,
+):
+    cfg = _resolve_callback(callback_url, callback_secret)
+    mirror_url = (
+        mirror_callback_url
+        or os.environ.get("CRAWLER_MIRROR_URL", "")
+    ).strip()
+    print(f"[crawler] naver-id callback → {cfg['url']}", flush=True)
     try:
         with STATE.lock:
             STATE.phase = "crawling"
@@ -257,7 +419,14 @@ def naver_id_backfill_worker(items: list[dict]):
                 naver_id = str(result.get("naver_id") or "").strip()
                 note = ""
                 if naver_id and auction_no:
-                    api_result = post_naver_id_to_api(auction_no, naver_id)
+                    api_result = post_naver_id_to_api(
+                        auction_no,
+                        naver_id,
+                        callback_url=cfg["url"],
+                        callback_secret=cfg["secret"],
+                        mirror_callback_url=mirror_url or None,
+                        mirror_callback_secret=mirror_callback_secret,
+                    )
                     with STATE.lock:
                         STATE.completed = index + 1
                         if api_result.get("updated"):
@@ -289,7 +458,14 @@ def naver_id_backfill_worker(items: list[dict]):
                             result = fetch_naver_id_only(driver, url)
                             naver_id = str(result.get("naver_id") or "").strip()
                             if naver_id and auction_no:
-                                api_result = post_naver_id_to_api(auction_no, naver_id)
+                                api_result = post_naver_id_to_api(
+                                    auction_no,
+                                    naver_id,
+                                    callback_url=cfg["url"],
+                                    callback_secret=cfg["secret"],
+                                    mirror_callback_url=mirror_url or None,
+                                    mirror_callback_secret=mirror_callback_secret,
+                                )
                                 STATE.completed = index + 1
                                 if api_result.get("updated"):
                                     STATE.updated += 1
@@ -326,6 +502,18 @@ def naver_id_backfill_worker(items: list[dict]):
             pass
 
 
+def _worker_secret() -> str:
+    return os.environ.get("CRAWLER_WORKER_SECRET", "").strip()
+
+
+def _worker_auth_ok(headers) -> bool:
+    expected = _worker_secret()
+    if not expected:
+        return True
+    got = (headers.get("X-Crawler-Worker-Secret") or "").strip()
+    return got == expected
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "TankCrawler/1.0"
 
@@ -347,7 +535,15 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return
 
+    def _require_auth(self) -> bool:
+        if _worker_auth_ok(self.headers):
+            return True
+        self._send_json(401, {"error": "워커 인증 실패"})
+        return False
+
     def do_GET(self):
+        if not self._require_auth():
+            return
         path = urlparse(self.path).path
         if path == "/health":
             try:
@@ -384,6 +580,8 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": "not found"})
 
     def do_POST(self):
+        if not self._require_auth():
+            return
         path = urlparse(self.path).path
         body = self._read_json()
 
@@ -473,8 +671,20 @@ class Handler(BaseHTTPRequestHandler):
                     self._send_json(409, {"error": "이미 조회가 진행 중입니다."})
                     return
 
+                callback_url = body.get("callbackUrl") or body.get("callback_url")
+                callback_secret = body.get("callbackSecret") or body.get("callback_secret")
+                mirror_callback_url = body.get("mirrorCallbackUrl") or body.get("mirror_callback_url")
+                mirror_callback_secret = body.get("mirrorCallbackSecret") or body.get("mirror_callback_secret")
                 STATE.crawl_thread = threading.Thread(
-                    target=crawl_worker, args=(urls,), daemon=True
+                    target=crawl_worker,
+                    args=(
+                        urls,
+                        callback_url,
+                        callback_secret,
+                        mirror_callback_url,
+                        mirror_callback_secret,
+                    ),
+                    daemon=True,
                 )
                 STATE.crawl_thread.start()
                 self._send_json(
@@ -500,8 +710,20 @@ class Handler(BaseHTTPRequestHandler):
                     self._send_json(409, {"error": "이미 조회가 진행 중입니다."})
                     return
 
+                callback_url = body.get("callbackUrl") or body.get("callback_url")
+                callback_secret = body.get("callbackSecret") or body.get("callback_secret")
+                mirror_callback_url = body.get("mirrorCallbackUrl") or body.get("mirror_callback_url")
+                mirror_callback_secret = body.get("mirrorCallbackSecret") or body.get("mirror_callback_secret")
                 STATE.crawl_thread = threading.Thread(
-                    target=naver_id_backfill_worker, args=(items,), daemon=True
+                    target=naver_id_backfill_worker,
+                    args=(
+                        items,
+                        callback_url,
+                        callback_secret,
+                        mirror_callback_url,
+                        mirror_callback_secret,
+                    ),
+                    daemon=True,
                 )
                 STATE.crawl_thread.start()
                 self._send_json(

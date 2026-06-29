@@ -144,10 +144,11 @@ export class CrawlerController {
     @Body() body: Record<string, unknown>,
   ) {
     const secret = headers["x-crawler-secret"] ?? "";
+    const mirror = headers["x-crawler-mirror"] === "1";
     const submittedBy =
       typeof body.submittedBy === "string" ? body.submittedBy : "crawler";
     const { submittedBy: _, ...raw } = body;
-    return this.crawlerService.importItem(raw, submittedBy, secret);
+    return this.crawlerService.importItem(raw, submittedBy, secret, { mirror });
   }
 
   @Post("import-naver-id")
@@ -156,11 +157,14 @@ export class CrawlerController {
     @Body() body: Record<string, unknown>,
   ) {
     const secret = headers["x-crawler-secret"] ?? "";
+    const mirror = headers["x-crawler-mirror"] === "1";
     const submittedBy =
       typeof body.submittedBy === "string"
         ? body.submittedBy
         : "crawler-naver-backfill";
-    return this.crawlerService.importNaverId(body, submittedBy, secret);
+    return this.crawlerService.importNaverId(body, submittedBy, secret, {
+      mirror,
+    });
   }
 
   @Post("backfill-naver-id")

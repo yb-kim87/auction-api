@@ -31,15 +31,17 @@ import type {
   StartCrawlDto,
 } from "./crawler.types";
 
-const WORKER_PORT = Number(process.env.CRAWLER_WORKER_PORT ?? 8765);
-const WORKER_URL = `http://127.0.0.1:${WORKER_PORT}`;
+const DEFAULT_WORKER_PORT = Number(process.env.CRAWLER_WORKER_PORT ?? 8765);
 const WORKER_START_TIMEOUT_MS = 30_000;
+const REMOTE_WORKER_OFFLINE_MESSAGE =
+  "관리자 PC가 꺼져 있거나 크롤러 워커에 연결할 수 없습니다. PC에서 auction-api(npm run start:dev)와 크롤러 터널을 실행한 뒤 다시 시도해 주세요.";
 
 @Injectable()
 export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CrawlerService.name);
   private workerProcess: ChildProcess | null = null;
   private workerStarting: Promise<void> | null = null;
+  private workerCallbackKey = "";
   private readonly logs: CrawlerLogEntry[] = [];
   private readonly maxLogs = 500;
   private localStatus: CrawlerStatus = this.defaultStatus();
@@ -67,7 +69,9 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
   onModuleDestroy() {
     if (this.schedulerTimer) clearInterval(this.schedulerTimer);
-    void this.stopWorker();
+    if (!this.isRemoteWorkerMode()) {
+      void this.stopWorker();
+    }
   }
 
   getConfig(): CrawlerConfig {
@@ -156,7 +160,69 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   async getStatus(): Promise<CrawlerStatus> {
     await this.syncWorkerStatus();
     this.applyScheduleToStatus();
-    return { ...this.localStatus };
+    const status: CrawlerStatus = {
+      ...this.localStatus,
+      remoteWorker: this.isRemoteWorkerMode(),
+    };
+    if (status.remoteWorker && !status.workerRunning) {
+      status.error = REMOTE_WORKER_OFFLINE_MESSAGE;
+    }
+    return status;
+  }
+
+  private workerPort(): number {
+    const configured = process.env.CRAWLER_WORKER_URL?.trim();
+    if (configured) {
+      try {
+        const parsed = Number(new URL(configured).port);
+        if (parsed > 0) return parsed;
+      } catch {
+        // ignore invalid URL
+      }
+    }
+    return DEFAULT_WORKER_PORT;
+  }
+
+  private workerBaseUrl(): string {
+    const configured = process.env.CRAWLER_WORKER_URL?.trim();
+    if (configured) {
+      return configured.replace(/\/$/, "");
+    }
+    return `http://127.0.0.1:${this.workerPort()}`;
+  }
+
+  private isRemoteWorkerMode(): boolean {
+    const configured = process.env.CRAWLER_WORKER_URL?.trim();
+    if (!configured) return false;
+    try {
+      const host = new URL(configured).hostname.toLowerCase();
+      return host !== "127.0.0.1" && host !== "localhost";
+    } catch {
+      return !/^(https?:\/\/)?(127\.0\.0\.1|localhost)/i.test(configured);
+    }
+  }
+
+  private workerAuthHeaders(): Record<string, string> {
+    const secret = process.env.CRAWLER_WORKER_SECRET?.trim();
+    if (!secret) return {};
+    return { "X-Crawler-Worker-Secret": secret };
+  }
+
+  private workerUnavailableMessage(): string {
+    return REMOTE_WORKER_OFFLINE_MESSAGE;
+  }
+
+  private isWorkerConnectionError(message: string): boolean {
+    const lower = message.toLowerCase();
+    return (
+      lower.includes("econnrefused") ||
+      lower.includes("enotfound") ||
+      lower.includes("etimedout") ||
+      lower.includes("fetch failed") ||
+      lower.includes("network") ||
+      lower.includes("abort") ||
+      lower.includes("socket")
+    );
   }
 
   private crawlerDir() {
@@ -190,16 +256,74 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return [runner, "serve"];
   }
 
+  private isLocalCallback(url: string) {
+    return /^(https?:\/\/)?(127\.0\.0\.1|localhost)(:\d+)?\//i.test(url.trim());
+  }
+
+  private primaryCallbackConfig() {
+    if (this.isRemoteWorkerMode()) {
+      const publicUrl =
+        process.env.PUBLIC_API_URL?.trim() ||
+        process.env.PRODUCTION_API_URL?.trim();
+      if (publicUrl) {
+        return {
+          callbackUrl: `${publicUrl.replace(/\/$/, "")}/crawler/import-item`,
+          callbackSecret: process.env.CRAWLER_SECRET ?? "local-crawler-secret",
+        };
+      }
+    }
+    return {
+      callbackUrl: `http://127.0.0.1:${process.env.PORT ?? 3001}/crawler/import-item`,
+      callbackSecret: process.env.CRAWLER_SECRET ?? "local-crawler-secret",
+    };
+  }
+
+  private mirrorCallbackConfig(): {
+    callbackUrl: string;
+    callbackSecret: string;
+  } | null {
+    const mirror =
+      process.env.CRAWLER_MIRROR_URL?.trim() ||
+      process.env.CRAWLER_CALLBACK_URL?.trim();
+    if (!mirror || this.isLocalCallback(mirror)) {
+      return null;
+    }
+    const primary = this.primaryCallbackConfig().callbackUrl;
+    if (mirror.replace(/\/$/, "") === primary.replace(/\/$/, "")) {
+      return null;
+    }
+    return {
+      callbackUrl: mirror,
+      callbackSecret: process.env.CRAWLER_SECRET ?? "local-crawler-secret",
+    };
+  }
+
+  private callbackConfig() {
+    return this.primaryCallbackConfig();
+  }
+
+  private dualWriteConfig() {
+    const primary = this.primaryCallbackConfig();
+    const mirror = this.mirrorCallbackConfig();
+    return {
+      ...primary,
+      mirrorCallbackUrl: mirror?.callbackUrl ?? null,
+      mirrorCallbackSecret: mirror?.callbackSecret ?? null,
+    };
+  }
+
   private workerEnv() {
+    const { callbackUrl, callbackSecret, mirrorCallbackUrl } =
+      this.dualWriteConfig();
     return {
       ...process.env,
-      CRAWLER_WORKER_PORT: String(WORKER_PORT),
+      CRAWLER_WORKER_PORT: String(this.workerPort()),
+      CRAWLER_WORKER_SECRET: process.env.CRAWLER_WORKER_SECRET ?? "",
       TANK_AUCTION_USER: process.env.TANK_AUCTION_USER ?? "",
       TANK_AUCTION_PASSWORD: process.env.TANK_AUCTION_PASSWORD ?? "",
-      CRAWLER_CALLBACK_URL:
-        process.env.CRAWLER_CALLBACK_URL ??
-        `http://127.0.0.1:${process.env.PORT ?? 3001}/crawler/import-item`,
-      CRAWLER_SECRET: process.env.CRAWLER_SECRET ?? "local-crawler-secret",
+      CRAWLER_CALLBACK_URL: callbackUrl,
+      CRAWLER_MIRROR_URL: mirrorCallbackUrl ?? "",
+      CRAWLER_SECRET: callbackSecret,
     };
   }
 
@@ -208,15 +332,19 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     init?: RequestInit,
   ): Promise<T> {
     try {
-      const res = await fetch(`${WORKER_URL}${path}`, {
+      const res = await fetch(`${this.workerBaseUrl()}${path}`, {
         ...init,
         headers: {
           "Content-Type": "application/json",
+          ...this.workerAuthHeaders(),
           ...(init?.headers ?? {}),
         },
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("크롤러 워커 인증 실패 (CRAWLER_WORKER_SECRET 확인)");
+        }
         throw new Error(
           typeof data.error === "string"
             ? data.error
@@ -227,14 +355,21 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "크롤러 워커 통신 오류";
+      if (
+        this.isRemoteWorkerMode() &&
+        this.isWorkerConnectionError(message)
+      ) {
+        throw new ServiceUnavailableException(this.workerUnavailableMessage());
+      }
       throw new ServiceUnavailableException(message);
     }
   }
 
   private async isWorkerHealthy(): Promise<boolean> {
     try {
-      const res = await fetch(`${WORKER_URL}/health`, {
-        signal: AbortSignal.timeout(1500),
+      const res = await fetch(`${this.workerBaseUrl()}/health`, {
+        signal: AbortSignal.timeout(this.isRemoteWorkerMode() ? 5000 : 1500),
+        headers: this.workerAuthHeaders(),
       });
       return res.ok;
     } catch {
@@ -242,10 +377,41 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async ensureWorker(): Promise<void> {
+  private async ensureRemoteWorker(): Promise<void> {
     if (await this.isWorkerHealthy()) {
       this.localStatus.workerRunning = true;
+      const { callbackUrl, callbackSecret, mirrorCallbackUrl } =
+        this.dualWriteConfig();
+      this.workerCallbackKey = `${callbackUrl}|${callbackSecret}|${mirrorCallbackUrl ?? ""}`;
       return;
+    }
+    this.localStatus.workerRunning = false;
+    this.localStatus.browserReady = false;
+    throw new ServiceUnavailableException(this.workerUnavailableMessage());
+  }
+
+  private async ensureWorker(): Promise<void> {
+    if (this.isRemoteWorkerMode()) {
+      await this.ensureRemoteWorker();
+      return;
+    }
+
+    const { callbackUrl, callbackSecret, mirrorCallbackUrl } =
+      this.dualWriteConfig();
+    const callbackKey = `${callbackUrl}|${callbackSecret}|${mirrorCallbackUrl ?? ""}`;
+
+    if (await this.isWorkerHealthy()) {
+      if (this.workerCallbackKey && this.workerCallbackKey !== callbackKey) {
+        this.appendLog(
+          "info",
+          "크롤러 콜백 설정이 변경되어 워커를 재시작합니다.",
+        );
+        await this.stopWorker();
+      } else {
+        this.localStatus.workerRunning = true;
+        this.workerCallbackKey = callbackKey;
+        return;
+      }
     }
 
     if (this.workerStarting) {
@@ -262,6 +428,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async startWorker(): Promise<void> {
+    const { callbackUrl, callbackSecret, mirrorCallbackUrl } =
+      this.dualWriteConfig();
+    const callbackKey = `${callbackUrl}|${callbackSecret}|${mirrorCallbackUrl ?? ""}`;
+
     const runner = join(this.crawlerDir(), "runner.py");
     if (!existsSync(runner)) {
       throw new ServiceUnavailableException(
@@ -312,6 +482,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       if (await this.isWorkerHealthy()) {
         this.localStatus.workerRunning = true;
         this.localStatus.phase = "idle";
+        this.workerCallbackKey = callbackKey;
         this.appendLog("info", "크롤러 워커가 준비되었습니다.");
         return;
       }
@@ -324,6 +495,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async stopWorker() {
+    if (this.isRemoteWorkerMode()) {
+      this.localStatus.workerRunning = false;
+      this.localStatus.browserReady = false;
+      this.localStatus.phase = "idle";
+      return;
+    }
+
     if (await this.isWorkerHealthy()) {
       try {
         await this.workerFetch("/shutdown", { method: "POST", body: "{}" });
@@ -360,7 +538,17 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const remote = await this.workerFetch<Partial<CrawlerStatus>>("/status");
+      const remote = await this.workerFetch<
+        Partial<CrawlerStatus> & { events?: string[] }
+      >("/status");
+      if (remote.events?.length) {
+        for (const message of remote.events) {
+          const level: CrawlerLogEntry["level"] = message.includes("오류")
+            ? "error"
+            : "info";
+          this.appendLog(level, message);
+        }
+      }
       this.mergeWorkerStatus(remote);
       if (remote.phase === "idle" || remote.phase === "stopped") {
         this.jobRunning = false;
@@ -693,11 +881,36 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       `${submittedBy}님이 조회를 시작합니다 (총 ${urls.length}건).`,
     );
 
+    const {
+      callbackUrl,
+      callbackSecret,
+      mirrorCallbackUrl,
+      mirrorCallbackSecret,
+    } = this.dualWriteConfig();
+    const mirror = this.mirrorCallbackConfig();
+    if (this.isRemoteWorkerMode()) {
+      this.appendLog("info", "DB 적재: 운영(Railway)");
+      if (mirror) {
+        this.appendLog("info", `로컬 mirror: ${mirror.callbackUrl}`);
+      }
+    } else {
+      this.appendLog("info", `DB 적재: 로컬${mirror ? " + 운영" : ""}`);
+      if (mirror) {
+        this.appendLog("info", `운영 mirror: ${mirror.callbackUrl}`);
+      }
+    }
+
     const result = await this.workerFetch<{ ok: boolean; message?: string }>(
       "/crawl/start",
       {
         method: "POST",
-        body: JSON.stringify({ urls }),
+        body: JSON.stringify({
+          urls,
+          callbackUrl,
+          callbackSecret,
+          mirrorCallbackUrl,
+          mirrorCallbackSecret,
+        }),
       },
     );
     if (result.message) this.appendLog("info", result.message);
@@ -720,6 +933,16 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async restartWorker(submittedBy: string) {
+    if (this.isRemoteWorkerMode()) {
+      this.appendLog(
+        "info",
+        `${submittedBy}님이 관리자 PC 크롤러 워커 재연결을 시도합니다.`,
+      );
+      await this.ensureRemoteWorker();
+      this.appendLog("info", "관리자 PC 크롤러 워커에 연결되었습니다.");
+      return { ok: true };
+    }
+
     this.appendLog("info", `${submittedBy}님이 크롤러 워커 재시작을 요청했습니다.`);
     await this.stopWorker();
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -731,6 +954,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     raw: Record<string, unknown>,
     submittedBy: string,
     secret: string,
+    options: { mirror?: boolean } = {},
   ) {
     const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
     if (secret !== expected) {
@@ -747,31 +971,30 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       return result;
     }
 
-    if (result.created) {
-      this.localStatus.created += 1;
-      this.appendLog(
-        "info",
-        `[등록] ${dto.auctionNo || dto.address || "물건"}`,
-      );
-    } else {
-      this.localStatus.updated += 1;
-      this.appendLog(
-        "info",
-        `[갱신] ${dto.auctionNo || dto.address || "물건"}`,
-      );
+    if (!options.mirror) {
+      if (result.created) {
+        this.localStatus.created += 1;
+      } else {
+        this.localStatus.updated += 1;
+      }
     }
 
-    this.config = loadCrawlerConfig();
-    const algo = this.config.algorithm;
-    if (
-      algo.enabled &&
-      algo.telegramEnabled &&
-      checkAlgorithmMatch(dto, algo)
-    ) {
-      const message = buildAlgorithmTelegramMessage(dto);
-      const sent = await this.telegramService.send(message);
-      if (sent) {
-        this.appendLog("info", `텔레그램 알림: ${dto.auctionNo || dto.address}`);
+    if (!options.mirror) {
+      this.config = loadCrawlerConfig();
+      const algo = this.config.algorithm;
+      if (
+        algo.enabled &&
+        algo.telegramEnabled &&
+        checkAlgorithmMatch(dto, algo)
+      ) {
+        const message = buildAlgorithmTelegramMessage(dto);
+        const sent = await this.telegramService.send(message);
+        if (sent) {
+          this.appendLog(
+            "info",
+            `텔레그램 알림: ${dto.auctionNo || dto.address}`,
+          );
+        }
       }
     }
 
@@ -782,6 +1005,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     raw: Record<string, unknown>,
     submittedBy: string,
     secret: string,
+    options: { mirror?: boolean } = {},
   ) {
     const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
     if (secret !== expected) {
@@ -796,7 +1020,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       submittedBy || "crawler-naver-backfill",
     );
 
-    if (result.updated) {
+    if (result.updated && !options.mirror) {
       this.localStatus.updated += 1;
       this.appendLog(
         "info",
@@ -829,11 +1053,20 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       `${submittedBy}님이 네이버 ID 수집을 시작합니다 (총 ${items.length}건).`,
     );
 
+    const { callbackUrl, callbackSecret, mirrorCallbackUrl, mirrorCallbackSecret } =
+      this.dualWriteConfig();
+
     const result = await this.workerFetch<{ ok: boolean; message?: string }>(
       "/crawl/backfill-naver-id",
       {
         method: "POST",
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({
+          items,
+          callbackUrl,
+          callbackSecret,
+          mirrorCallbackUrl,
+          mirrorCallbackSecret,
+        }),
       },
     );
     if (result.message) this.appendLog("info", result.message);

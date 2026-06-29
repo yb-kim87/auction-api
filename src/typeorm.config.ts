@@ -12,6 +12,7 @@ export function buildTypeOrmConfig(): TypeOrmModuleOptions {
   const databaseUrl = process.env.DATABASE_URL?.trim();
 
   if (databaseUrl) {
+    console.log("[DB] PostgreSQL (DATABASE_URL)");
     return {
       type: "postgres",
       url: databaseUrl,
@@ -29,6 +30,7 @@ export function buildTypeOrmConfig(): TypeOrmModuleOptions {
     mkdirSync(dataDir, { recursive: true });
   }
 
+  console.log("[DB] sql.js local file (data/auction.db)");
   return {
     type: "sqljs",
     location: join(dataDir, "auction.db"),
