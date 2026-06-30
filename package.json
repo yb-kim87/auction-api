@@ -8,6 +8,8 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "sync:production": "node scripts/sync-local-to-railway.mjs",
+    "sync:production:all": "node scripts/sync-local-to-production.mjs",
+    "sync:production:all:dry": "node scripts/sync-local-to-production.mjs --dry-run",
     "sync:production:dry": "node scripts/sync-local-to-railway.mjs --dry-run",
     "sync:from-production": "node scripts/sync-production-to-local.mjs",
     "sync:from-production:dry": "node scripts/sync-production-to-local.mjs --dry-run",

@@ -207,6 +207,41 @@ ${blocks.join("\n\n---\n\n")}`;
     return this.knowledgeRepo.save(item);
   }
 
+  async upsertKnowledgeFromSync(input: UpsertKnowledgeInput & { id?: string }) {
+    const title = input.title.trim();
+    const content = input.content.trim();
+    if (!title || !content) {
+      return { ok: false as const, reason: "empty" };
+    }
+
+    let item = input.id
+      ? await this.knowledgeRepo.findOne({ where: { id: input.id } })
+      : null;
+    if (!item) {
+      item = await this.knowledgeRepo.findOne({ where: { title } });
+    }
+
+    const created = !item;
+    if (item) {
+      item.title = title;
+      item.category = input.category?.trim() ?? item.category;
+      item.tags = input.tags?.trim() ?? item.tags;
+      item.content = content;
+      if (input.active !== undefined) item.active = input.active;
+    } else {
+      item = this.knowledgeRepo.create({
+        title,
+        category: input.category?.trim() ?? "기타",
+        tags: input.tags?.trim() ?? "",
+        content,
+        active: input.active ?? true,
+      });
+    }
+
+    const saved = await this.knowledgeRepo.save(item);
+    return { ok: true as const, created, item: saved };
+  }
+
   async remove(id: string) {
     const item = await this.knowledgeRepo.findOne({ where: { id } });
     if (!item) {

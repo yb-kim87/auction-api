@@ -180,11 +180,44 @@ export class CrawlerController {
     return this.crawlerService.getCafeStatus();
   }
 
+  @Get("cafe/collected-urls")
+  async cafeCollectedUrls(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.crawlerService.getCafeCollectedUrls();
+  }
+
+  @Post("cafe/collect-urls")
+  async cafeCollectUrls(
+    @Headers() headers: Record<string, string>,
+    @Body()
+    body: {
+      cafeUrl?: string;
+      maxArticles?: number;
+      maxPages?: number;
+      userId?: string;
+      password?: string;
+    },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.startCafeUrlCollect(body, ctx.username);
+  }
+
   @Post("cafe/open-login")
   async cafeOpenLogin(@Headers() headers: Record<string, string>) {
     const ctx = getAuthContext(headers);
     requireAdmin(ctx);
     return this.crawlerService.openCafeLogin(ctx.username);
+  }
+
+  @Post("cafe/browser/restart")
+  async cafeBrowserRestart(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { navigate?: string },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.restartCafeBrowser(ctx.username, body.navigate);
   }
 
   @Post("cafe/login")
@@ -267,5 +300,23 @@ export class CrawlerController {
       typeof body.submittedBy === "string" ? body.submittedBy : "crawler-cafe";
     const { submittedBy: _, ...raw } = body;
     return this.crawlerService.importCafePost(raw, submittedBy, secret);
+  }
+
+  @Post("sync/knowledge-draft")
+  syncKnowledgeDraft(
+    @Headers() headers: Record<string, string>,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const secret = headers["x-crawler-secret"] ?? "";
+    return this.crawlerService.syncKnowledgeDraft(body, secret);
+  }
+
+  @Post("sync/knowledge")
+  syncKnowledge(
+    @Headers() headers: Record<string, string>,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const secret = headers["x-crawler-secret"] ?? "";
+    return this.crawlerService.syncKnowledge(body, secret);
   }
 }

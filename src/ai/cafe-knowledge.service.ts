@@ -29,6 +29,60 @@ export type UpdateKnowledgeDraftInput = {
   status?: KnowledgeDraftStatus;
 };
 
+function parseArticleIdFromUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+
+  try {
+    const parsed = new URL(trimmed);
+    for (const key of ["iframe_url_utf8", "iframe_url"]) {
+      const nested = parsed.searchParams.get(key);
+      if (nested) {
+        let decoded = nested;
+        for (let i = 0; i < 4; i += 1) {
+          if (!decoded.includes("%")) break;
+          decoded = decodeURIComponent(decoded);
+        }
+        const nestedId = parseArticleIdFromUrl(decoded);
+        if (nestedId) return nestedId;
+      }
+    }
+    for (const key of ["articleid", "articleId"]) {
+      const value = parsed.searchParams.get(key)?.trim();
+      if (value && /^\d+$/.test(value)) return value;
+    }
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    if (parts.length >= 2 && /^\d+$/.test(parts[parts.length - 1] ?? "")) {
+      return parts[parts.length - 1] ?? "";
+    }
+  } catch {
+    const match = trimmed.match(/articleid=(\d+)/i);
+    if (match) return match[1];
+  }
+  return "";
+}
+
+function resolveCafeArticleId(sourceArticleId: string, sourceUrl: string): string {
+  const fromUrl = parseArticleIdFromUrl(sourceUrl);
+  const id = sourceArticleId.trim();
+  if (fromUrl) return fromUrl;
+  return id;
+}
+
+function normalizeSourceUrl(url: string): string {
+  const trimmed = url.trim().split("#")[0].replace(/\/$/, "");
+  try {
+    const parsed = new URL(trimmed);
+    const articleId = parseArticleIdFromUrl(trimmed);
+    if (articleId) {
+      return `${parsed.hostname.toLowerCase()}/article/${articleId}`;
+    }
+    return `${parsed.hostname.toLowerCase()}${parsed.pathname.toLowerCase().replace(/\/$/, "")}`;
+  } catch {
+    return trimmed.toLowerCase();
+  }
+}
+
 @Injectable()
 export class CafeKnowledgeService {
   constructor(
@@ -54,24 +108,72 @@ export class CafeKnowledgeService {
     return item;
   }
 
+  async getKnownCafeSources(cafeUrl?: string) {
+    const items = await this.draftRepo.find({
+      select: ["sourceUrl", "sourceArticleId", "cafeUrl", "status"],
+    });
+    const base = cafeUrl?.trim().replace(/\/$/, "") ?? "";
+    const filtered = base
+      ? items.filter((item) => {
+          const itemCafe = item.cafeUrl.trim().replace(/\/$/, "");
+          return !itemCafe || itemCafe === base || itemCafe.startsWith(base);
+        })
+      : items;
+
+    const urls = [
+      ...new Set(
+        filtered.map((item) => item.sourceUrl.trim()).filter(Boolean),
+      ),
+    ];
+    const articleIds = [
+      ...new Set(
+        filtered.map((item) => item.sourceArticleId.trim()).filter(Boolean),
+      ),
+    ];
+    return { urls, articleIds };
+  }
+
   async importRawPost(input: ImportCafePostInput) {
-    const sourceArticleId = input.sourceArticleId.trim();
+    const sourceUrl = input.sourceUrl.trim();
+    const sourceArticleId = resolveCafeArticleId(
+      input.sourceArticleId,
+      sourceUrl,
+    );
     const rawContent = input.rawContent.trim();
-    if (!sourceArticleId || !rawContent) {
+    if ((!sourceArticleId && !sourceUrl) || !rawContent) {
       return { skipped: true as const, reason: "empty" };
     }
 
-    const existing = await this.draftRepo.findOne({
-      where: { sourceArticleId },
-    });
-    if (existing) {
-      return { skipped: true as const, reason: "duplicate", item: existing };
+    if (sourceArticleId) {
+      const byId = await this.draftRepo.findOne({
+        where: { sourceArticleId },
+      });
+      if (byId) {
+        return { skipped: true as const, reason: "duplicate", item: byId };
+      }
+    }
+
+    if (sourceUrl) {
+      const normalized = normalizeSourceUrl(sourceUrl);
+      const candidates = await this.draftRepo.find({
+        select: ["id", "sourceUrl", "sourceArticleId"],
+      });
+      const byUrl = candidates.find(
+        (row) => normalizeSourceUrl(row.sourceUrl) === normalized,
+      );
+      if (byUrl) {
+        return {
+          skipped: true as const,
+          reason: "duplicate_url",
+          item: byUrl,
+        };
+      }
     }
 
     const item = await this.draftRepo.save(
       this.draftRepo.create({
-        sourceArticleId,
-        sourceUrl: input.sourceUrl.trim(),
+        sourceArticleId: sourceArticleId || normalizeSourceUrl(sourceUrl),
+        sourceUrl,
         sourceTitle: input.sourceTitle?.trim() ?? "",
         sourceBoard: input.sourceBoard?.trim() ?? "",
         cafeUrl: input.cafeUrl?.trim() ?? "",
@@ -80,6 +182,91 @@ export class CafeKnowledgeService {
       }),
     );
     return { skipped: false as const, item };
+  }
+
+  async importSkippedMarker(input: ImportCafePostInput & { skipReason?: string }) {
+    const sourceUrl = input.sourceUrl.trim();
+    const sourceArticleId = resolveCafeArticleId(
+      input.sourceArticleId,
+      sourceUrl,
+    );
+    if (!sourceArticleId && !sourceUrl) {
+      return { skipped: true as const, reason: "empty" };
+    }
+
+    if (sourceArticleId) {
+      const existing = await this.draftRepo.findOne({
+        where: { sourceArticleId },
+      });
+      if (existing) {
+        return { skipped: true as const, reason: "duplicate", item: existing };
+      }
+    }
+
+    const item = await this.draftRepo.save(
+      this.draftRepo.create({
+        sourceArticleId: sourceArticleId || normalizeSourceUrl(sourceUrl),
+        sourceUrl,
+        sourceTitle: input.sourceTitle?.trim() ?? "",
+        sourceBoard: input.sourceBoard?.trim() ?? "",
+        cafeUrl: input.cafeUrl?.trim() ?? "",
+        rawContent: (input.rawContent || "[prefilter-skipped]").slice(0, 500),
+        status: "skipped",
+        aiNote: input.skipReason?.trim() || "경매 지식과 무관한 글",
+      }),
+    );
+    return { skipped: false as const, item, marked: true as const };
+  }
+
+  async upsertDraftFromSync(input: {
+    id?: string;
+    sourceArticleId: string;
+    sourceUrl: string;
+    sourceTitle?: string;
+    sourceBoard?: string;
+    cafeUrl?: string;
+    rawContent?: string;
+    title?: string;
+    category?: string;
+    tags?: string;
+    content?: string;
+    aiNote?: string;
+    status?: KnowledgeDraftStatus;
+    errorMessage?: string | null;
+  }) {
+    const sourceArticleId = resolveCafeArticleId(
+      input.sourceArticleId,
+      input.sourceUrl,
+    );
+    if (!sourceArticleId) {
+      return { ok: false as const, reason: "empty_id" };
+    }
+
+    let item = await this.draftRepo.findOne({ where: { sourceArticleId } });
+    const created = !item;
+    const payload = {
+      sourceArticleId,
+      sourceUrl: input.sourceUrl.trim(),
+      sourceTitle: input.sourceTitle?.trim() ?? "",
+      sourceBoard: input.sourceBoard?.trim() ?? "",
+      cafeUrl: input.cafeUrl?.trim() ?? "",
+      rawContent: (input.rawContent ?? "").slice(0, 20000),
+      title: input.title?.trim() ?? "",
+      category: input.category?.trim() ?? "",
+      tags: input.tags?.trim() ?? "",
+      content: input.content?.trim() ?? "",
+      aiNote: input.aiNote?.trim() ?? "",
+      status: input.status ?? "structured",
+      errorMessage: input.errorMessage ?? null,
+    };
+
+    if (item) {
+      Object.assign(item, payload);
+    } else {
+      item = this.draftRepo.create(payload);
+    }
+    const saved = await this.draftRepo.save(item);
+    return { ok: true as const, created, item: saved };
   }
 
   async updateDraft(id: string, input: UpdateKnowledgeDraftInput) {

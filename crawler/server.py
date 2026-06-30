@@ -22,7 +22,7 @@ import item_crawl
 from tank_login import ensure_login, is_logged_in, login
 from url_collect import apply_preset, collect_urls
 
-CRAWLER_SERVER_REVISION = "2026-06-29-cafe-crawl-stream"
+CRAWLER_SERVER_REVISION = "2026-06-30-cafe-login-fix"
 
 
 def _reload_crawler_modules():
@@ -99,6 +99,8 @@ class CafeCrawlState:
         self.naver_logged_in = False
         self.crawl_thread: threading.Thread | None = None
         self.events: list[str] = []
+        self.collected_urls: list[dict] = []
+        self.sub_phase = ""
 
     def push_event(self, message: str):
         with self.lock:
@@ -120,10 +122,143 @@ class CafeCrawlState:
                 "error": self.error,
                 "lastMessage": self.last_message,
                 "events": events,
+                "subPhase": self.sub_phase,
+                "urlCollectTotal": len(self.collected_urls),
+                "collectedUrls": [
+                    {
+                        "url": item.get("url", ""),
+                        "title": item.get("title", ""),
+                        "articleId": item.get("articleId", ""),
+                    }
+                    for item in self.collected_urls[:50]
+                ],
             }
 
 
 CAFE_STATE = CafeCrawlState()
+CAFE_DRIVER_LOCK = threading.Lock()
+
+
+def _cafe_urls_store_path():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent / "data" / "crawler"
+    root.mkdir(parents=True, exist_ok=True)
+    return root / "cafe-collected-urls.json"
+
+
+def _save_cafe_collected_urls(cafe_url: str, entries: list[dict]) -> None:
+    import datetime
+
+    payload = {
+        "cafeUrl": cafe_url,
+        "collectedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "total": len(entries),
+        "urls": [
+            {
+                "url": item.get("url", ""),
+                "title": item.get("title", ""),
+                "articleId": item.get("articleId", ""),
+            }
+            for item in entries
+        ],
+    }
+    _cafe_urls_store_path().write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def _load_cafe_collected_urls() -> dict:
+    path = _cafe_urls_store_path()
+    if not path.is_file():
+        return {"cafeUrl": "", "collectedAt": None, "total": 0, "urls": []}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    return {"cafeUrl": "", "collectedAt": None, "total": 0, "urls": []}
+
+
+def cafe_collect_urls_worker(
+    cafe_url: str,
+    max_articles: int,
+    max_pages: int,
+    naver_user_id: str = "",
+    naver_password: str = "",
+    known_urls: list | None = None,
+    known_article_ids: list | None = None,
+):
+    from naver_cafe_crawl import (
+        NaverLoginRequiredError,
+        collect_cafe_urls_only,
+        ensure_naver_login,
+        is_naver_logged_in,
+    )
+    from browser import ensure_cafe_driver
+
+    try:
+        with CAFE_STATE.lock:
+            CAFE_STATE.phase = "collecting_urls"
+            CAFE_STATE.sub_phase = "urls_only"
+            CAFE_STATE.cafe_url = cafe_url
+            CAFE_STATE.completed = 0
+            CAFE_STATE.total = 0
+            CAFE_STATE.imported = 0
+            CAFE_STATE.skipped = 0
+            CAFE_STATE.error = None
+            CAFE_STATE.stop_requested = False
+            CAFE_STATE.collected_urls = []
+
+        driver = ensure_cafe_driver()
+
+        def on_progress(message: str):
+            CAFE_STATE.push_event(message)
+            with CAFE_STATE.lock:
+                CAFE_STATE.last_message = message
+
+        with CAFE_DRIVER_LOCK:
+            with CAFE_STATE.lock:
+                CAFE_STATE.naver_logged_in = is_naver_logged_in(driver)
+            ensure_naver_login(driver, naver_user_id or None, naver_password or None)
+            with CAFE_STATE.lock:
+                CAFE_STATE.naver_logged_in = True
+
+            result = collect_cafe_urls_only(
+                driver,
+                cafe_url,
+                max_articles=max_articles,
+                max_pages=max_pages,
+                on_progress=on_progress,
+                naver_user_id=naver_user_id or None,
+                naver_password=naver_password or None,
+                known_urls=known_urls or [],
+                known_article_ids=known_article_ids or [],
+            )
+
+        entries = result.get("entries") or []
+        _save_cafe_collected_urls(cafe_url, entries)
+
+        with CAFE_STATE.lock:
+            CAFE_STATE.collected_urls = list(entries)
+            CAFE_STATE.total = len(entries)
+            CAFE_STATE.phase = "idle"
+            CAFE_STATE.sub_phase = "urls_ready"
+            CAFE_STATE.last_message = f"글 URL {len(entries)}건 수집 완료"
+    except NaverLoginRequiredError as exc:
+        with CAFE_STATE.lock:
+            CAFE_STATE.phase = "error"
+            CAFE_STATE.error = str(exc)
+            CAFE_STATE.last_message = str(exc)
+        CAFE_STATE.push_event(str(exc))
+    except Exception as exc:
+        with CAFE_STATE.lock:
+            CAFE_STATE.phase = "error"
+            CAFE_STATE.error = str(exc)
+            CAFE_STATE.last_message = str(exc)
+        CAFE_STATE.push_event(str(exc))
 
 
 def _is_invalid_session(exc: Exception) -> bool:
@@ -375,6 +510,8 @@ def cafe_crawl_worker(
     callback_secret: str | None = None,
     naver_user_id: str = "",
     naver_password: str = "",
+    known_urls: list | None = None,
+    known_article_ids: list | None = None,
 ):
     from naver_cafe_crawl import (
         NaverLoginRequiredError,
@@ -394,6 +531,8 @@ def cafe_crawl_worker(
             CAFE_STATE.skipped = 0
             CAFE_STATE.error = None
             CAFE_STATE.stop_requested = False
+            CAFE_STATE.collected_urls = []
+            CAFE_STATE.sub_phase = "collecting_urls"
 
         driver = ensure_cafe_driver()
 
@@ -409,47 +548,58 @@ def cafe_crawl_worker(
         with CAFE_STATE.lock:
             CAFE_STATE.naver_logged_in = is_naver_logged_in(driver)
 
-        ensure_naver_login(driver, naver_user_id or None, naver_password or None)
-        with CAFE_STATE.lock:
-            CAFE_STATE.naver_logged_in = True
-
-        def on_urls_ready(count: int):
+        with CAFE_DRIVER_LOCK:
+            ensure_naver_login(driver, naver_user_id or None, naver_password or None)
             with CAFE_STATE.lock:
-                CAFE_STATE.total = count
+                CAFE_STATE.naver_logged_in = True
 
-        def on_article_saved(data: dict, _entry: dict) -> dict:
-            result = post_cafe_post_to_api(
-                data,
-                callback_url=callback_url,
-                callback_secret=callback_secret,
+            def on_urls_collected(entries: list[dict]):
+                _save_cafe_collected_urls(cafe_url, entries)
+                with CAFE_STATE.lock:
+                    CAFE_STATE.collected_urls = list(entries)
+                    CAFE_STATE.sub_phase = "reading_articles"
+
+            def on_urls_ready(count: int):
+                with CAFE_STATE.lock:
+                    CAFE_STATE.total = count
+
+            def on_article_saved(data: dict, _entry: dict) -> dict:
+                result = post_cafe_post_to_api(
+                    data,
+                    callback_url=callback_url,
+                    callback_secret=callback_secret,
+                )
+                with CAFE_STATE.lock:
+                    CAFE_STATE.completed += 1
+                    if result.get("skipped"):
+                        CAFE_STATE.skipped += 1
+                    else:
+                        CAFE_STATE.imported += 1
+                return result
+
+            stats = crawl_and_process_articles(
+                driver,
+                cafe_url,
+                max_articles=max_articles,
+                max_pages=max_pages,
+                on_progress=on_progress,
+                should_stop=should_stop,
+                on_article_saved=on_article_saved,
+                on_urls_ready=on_urls_ready,
+                on_urls_collected=on_urls_collected,
+                naver_user_id=naver_user_id or None,
+                naver_password=naver_password or None,
+                known_urls=known_urls or [],
+                known_article_ids=known_article_ids or [],
             )
-            with CAFE_STATE.lock:
-                CAFE_STATE.completed += 1
-                if result.get("skipped"):
-                    CAFE_STATE.skipped += 1
-                else:
-                    CAFE_STATE.imported += 1
-            return result
 
-        stats = crawl_and_process_articles(
-            driver,
-            cafe_url,
-            max_articles=max_articles,
-            max_pages=max_pages,
-            on_progress=on_progress,
-            should_stop=should_stop,
-            on_article_saved=on_article_saved,
-            on_urls_ready=on_urls_ready,
-            naver_user_id=naver_user_id or None,
-            naver_password=naver_password or None,
-        )
-
+        skipped_known = stats.get("skipped_known", 0)
         with CAFE_STATE.lock:
             CAFE_STATE.total = stats.get("total", CAFE_STATE.completed)
             CAFE_STATE.phase = "idle"
             CAFE_STATE.last_message = (
                 f"카페 수집 완료 — 저장 {CAFE_STATE.imported}건, "
-                f"중복/스킵 {CAFE_STATE.skipped}건"
+                f"DB중복 {CAFE_STATE.skipped}건, 기수집 {skipped_known}건"
             )
     except NaverLoginRequiredError as exc:
         with CAFE_STATE.lock:
@@ -941,6 +1091,25 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/cafe/status":
             self._send_json(200, CAFE_STATE.snapshot())
             return
+        if path == "/cafe/collected-urls":
+            data = _load_cafe_collected_urls()
+            with CAFE_STATE.lock:
+                if CAFE_STATE.collected_urls:
+                    data = {
+                        "cafeUrl": CAFE_STATE.cafe_url or data.get("cafeUrl", ""),
+                        "collectedAt": data.get("collectedAt"),
+                        "total": len(CAFE_STATE.collected_urls),
+                        "urls": [
+                            {
+                                "url": item.get("url", ""),
+                                "title": item.get("title", ""),
+                                "articleId": item.get("articleId", ""),
+                            }
+                            for item in CAFE_STATE.collected_urls
+                        ],
+                    }
+            self._send_json(200, {"ok": True, **data})
+            return
         if path == "/cafe/session":
             from browser import CONTEXT_CAFE, get_existing_driver
 
@@ -1173,32 +1342,42 @@ class Handler(BaseHTTPRequestHandler):
                     )
                     return
                 try:
-                    from browser import CONTEXT_CAFE, ensure_cafe_driver, profile_dir_for
+                    from browser import (
+                        CONTEXT_CAFE,
+                        ensure_cafe_driver,
+                        profile_dir_for,
+                        restart_cafe_browser,
+                    )
                     from naver_cafe_crawl import (
+                        NAVER_LOGIN_PAGE,
                         NaverLoginRequiredError,
                         is_naver_logged_in,
                         login_naver,
                     )
 
-                    driver = ensure_cafe_driver()
-                    try:
-                        message = login_naver(driver, user_id, password)
-                    except NaverLoginRequiredError as exc:
-                        logged_in = is_naver_logged_in(driver)
-                        with CAFE_STATE.lock:
-                            CAFE_STATE.naver_logged_in = logged_in
-                        self._send_json(
-                            503,
-                            {
-                                "ok": False,
-                                "error": str(exc),
-                                "naverLoggedIn": logged_in,
-                                "message": str(exc),
-                            },
-                        )
-                        return
+                    with CAFE_DRIVER_LOCK:
+                        try:
+                            driver = ensure_cafe_driver(navigate=NAVER_LOGIN_PAGE)
+                        except Exception:
+                            driver = restart_cafe_browser(navigate=NAVER_LOGIN_PAGE)
+                        try:
+                            message = login_naver(driver, user_id, password)
+                            logged_in = is_naver_logged_in(driver)
+                        except NaverLoginRequiredError as exc:
+                            logged_in = is_naver_logged_in(driver, allow_navigate=True)
+                            with CAFE_STATE.lock:
+                                CAFE_STATE.naver_logged_in = logged_in
+                            self._send_json(
+                                200,
+                                {
+                                    "ok": logged_in,
+                                    "naverLoggedIn": logged_in,
+                                    "needsManualAuth": not logged_in,
+                                    "message": str(exc),
+                                },
+                            )
+                            return
 
-                    logged_in = is_naver_logged_in(driver)
                     with CAFE_STATE.lock:
                         CAFE_STATE.naver_logged_in = logged_in
                     self._send_json(
@@ -1211,17 +1390,70 @@ class Handler(BaseHTTPRequestHandler):
                         },
                     )
                 except Exception as exc:
-                    self._send_json(500, {"ok": False, "error": str(exc)})
+                    self._send_json(
+                        500,
+                        {"ok": False, "error": str(exc), "browserError": True},
+                    )
+                return
+
+            if path == "/cafe/browser/restart":
+                try:
+                    from browser import (
+                        CONTEXT_CAFE,
+                        profile_dir_for,
+                        restart_cafe_browser,
+                    )
+                    from naver_cafe_crawl import NAVER_LOGIN_PAGE, is_naver_logged_in
+
+                    navigate = (
+                        body.get("navigate")
+                        or body.get("url")
+                        or NAVER_LOGIN_PAGE
+                    )
+                    with CAFE_DRIVER_LOCK:
+                        driver = restart_cafe_browser(navigate=navigate)
+                        logged_in = is_naver_logged_in(driver)
+                    with CAFE_STATE.lock:
+                        CAFE_STATE.naver_logged_in = logged_in
+                    self._send_json(
+                        200,
+                        {
+                            "ok": True,
+                            "message": "카페용 Chrome을 재시작했습니다.",
+                            "naverLoggedIn": logged_in,
+                            "currentUrl": driver.current_url or "",
+                            "profileDir": profile_dir_for(CONTEXT_CAFE),
+                        },
+                    )
+                except Exception as exc:
+                    self._send_json(
+                        500,
+                        {"ok": False, "error": str(exc), "browserError": True},
+                    )
                 return
 
             if path == "/cafe/open-login":
                 try:
-                    from browser import CONTEXT_CAFE, ensure_cafe_driver, profile_dir_for
-                    from naver_cafe_crawl import is_naver_logged_in, open_naver_login
+                    from browser import (
+                        CONTEXT_CAFE,
+                        profile_dir_for,
+                        restart_cafe_browser,
+                    )
+                    from naver_cafe_crawl import (
+                        NAVER_LOGIN_PAGE,
+                        is_naver_logged_in,
+                        open_naver_login,
+                    )
 
-                    driver = ensure_cafe_driver()
-                    message = open_naver_login(driver)
-                    logged_in = is_naver_logged_in(driver)
+                    with CAFE_DRIVER_LOCK:
+                        try:
+                            from browser import ensure_cafe_driver
+
+                            driver = ensure_cafe_driver(navigate=NAVER_LOGIN_PAGE)
+                        except Exception:
+                            driver = restart_cafe_browser(navigate=NAVER_LOGIN_PAGE)
+                        message = open_naver_login(driver)
+                        logged_in = is_naver_logged_in(driver)
                     with CAFE_STATE.lock:
                         CAFE_STATE.naver_logged_in = logged_in
                     self._send_json(
@@ -1234,7 +1466,10 @@ class Handler(BaseHTTPRequestHandler):
                         },
                     )
                 except Exception as exc:
-                    self._send_json(500, {"ok": False, "error": str(exc)})
+                    self._send_json(
+                        500,
+                        {"ok": False, "error": str(exc), "browserError": True},
+                    )
                 return
 
             if path == "/cafe/open":
@@ -1273,10 +1508,11 @@ class Handler(BaseHTTPRequestHandler):
                     from browser import CONTEXT_CAFE, ensure_cafe_driver, get_existing_driver
                     from naver_cafe_crawl import is_naver_logged_in
 
-                    driver = get_existing_driver(CONTEXT_CAFE) or ensure_cafe_driver()
-                    logged_in = is_naver_logged_in(driver)
-                    if not logged_in:
-                        logged_in = is_naver_logged_in(driver, allow_navigate=True)
+                    with CAFE_DRIVER_LOCK:
+                        driver = get_existing_driver(CONTEXT_CAFE) or ensure_cafe_driver()
+                        logged_in = is_naver_logged_in(driver)
+                        if not logged_in:
+                            logged_in = is_naver_logged_in(driver, allow_navigate=True)
                     with CAFE_STATE.lock:
                         CAFE_STATE.naver_logged_in = logged_in
                     if logged_in:
@@ -1294,6 +1530,47 @@ class Handler(BaseHTTPRequestHandler):
                     self._send_json(500, {"ok": False, "error": str(exc)})
                 return
 
+            if path == "/cafe/collect-urls/start":
+                if CAFE_STATE.crawl_thread and CAFE_STATE.crawl_thread.is_alive():
+                    self._send_json(409, {"error": "이미 카페 작업이 진행 중입니다."})
+                    return
+
+                cafe_url = (
+                    body.get("cafeUrl")
+                    or body.get("cafe_url")
+                    or "https://cafe.naver.com/0113053470"
+                )
+                max_articles = int(body.get("maxArticles") or body.get("max_articles") or 50)
+                max_pages = int(body.get("maxPages") or body.get("max_pages") or 5)
+                naver_user_id, naver_password = _naver_credentials(body)
+                known_urls = body.get("knownUrls") or body.get("known_urls") or []
+                known_article_ids = (
+                    body.get("knownArticleIds") or body.get("known_article_ids") or []
+                )
+
+                CAFE_STATE.crawl_thread = threading.Thread(
+                    target=cafe_collect_urls_worker,
+                    args=(
+                        cafe_url,
+                        max(1, min(max_articles, 500)),
+                        max(1, min(max_pages, 50)),
+                        naver_user_id,
+                        naver_password,
+                        known_urls,
+                        known_article_ids,
+                    ),
+                    daemon=True,
+                )
+                CAFE_STATE.crawl_thread.start()
+                self._send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "message": f"글 URL 수집을 시작합니다 (최대 {max_articles}건).",
+                    },
+                )
+                return
+
             if path == "/cafe/crawl/start":
                 if CAFE_STATE.crawl_thread and CAFE_STATE.crawl_thread.is_alive():
                     self._send_json(409, {"error": "이미 카페 수집이 진행 중입니다."})
@@ -1309,17 +1586,23 @@ class Handler(BaseHTTPRequestHandler):
                 callback_url = body.get("callbackUrl") or body.get("callback_url")
                 callback_secret = body.get("callbackSecret") or body.get("callback_secret")
                 naver_user_id, naver_password = _naver_credentials(body)
+                known_urls = body.get("knownUrls") or body.get("known_urls") or []
+                known_article_ids = (
+                    body.get("knownArticleIds") or body.get("known_article_ids") or []
+                )
 
                 CAFE_STATE.crawl_thread = threading.Thread(
                     target=cafe_crawl_worker,
                     args=(
                         cafe_url,
                         max(1, min(max_articles, 200)),
-                        max(1, min(max_pages, 20)),
+                        max(1, min(max_pages, 50)),
                         callback_url,
                         callback_secret,
                         naver_user_id,
                         naver_password,
+                        known_urls,
+                        known_article_ids,
                     ),
                     daemon=True,
                 )

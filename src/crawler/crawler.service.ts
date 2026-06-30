@@ -10,6 +10,8 @@ import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import { AuctionsService } from "../auctions/auctions.service";
 import { CafeKnowledgeService } from "../ai/cafe-knowledge.service";
+import type { KnowledgeDraftStatus } from "../ai/knowledge-draft.entity";
+import { KnowledgeService } from "../ai/knowledge.service";
 import {
   loadCrawlerConfig,
   saveCrawlerConfig,
@@ -55,6 +57,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     private readonly auctionsService: AuctionsService,
     private readonly telegramService: CrawlerTelegramService,
     private readonly cafeKnowledgeService: CafeKnowledgeService,
+    private readonly knowledgeService: KnowledgeService,
   ) {
     const dataDir = join(process.cwd(), "data", "crawler");
     if (!existsSync(dataDir)) {
@@ -1264,6 +1267,65 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return this.workerFetch<Record<string, unknown>>("/cafe/status");
   }
 
+  async getCafeCollectedUrls() {
+    await this.ensureWorker();
+    return this.workerFetch<{
+      ok: boolean;
+      cafeUrl?: string;
+      collectedAt?: string | null;
+      total?: number;
+      urls?: Array<{ url: string; title?: string; articleId?: string }>;
+    }>("/cafe/collected-urls", { method: "GET" });
+  }
+
+  async startCafeUrlCollect(
+    dto: {
+      cafeUrl?: string;
+      maxArticles?: number;
+      maxPages?: number;
+      userId?: string;
+      password?: string;
+    },
+    username: string,
+  ) {
+    await this.ensureWorker();
+    const credentials = this.resolveNaverCredentials(dto);
+    if (credentials.userId && credentials.password) {
+      this.updateConfig({
+        naverCredentials: {
+          userId: credentials.userId,
+          password: credentials.password,
+        },
+      });
+    }
+    const cafeUrl =
+      dto.cafeUrl?.trim() ||
+      process.env.NAVER_CAFE_URL?.trim() ||
+      "https://cafe.naver.com/0113053470";
+
+    const known = await this.cafeKnowledgeService.getKnownCafeSources(cafeUrl);
+
+    this.appendLog(
+      "info",
+      `[${username}] 카페 URL 목록 수집 시작 (${cafeUrl}, 최대 ${dto.maxArticles ?? 50}건) — 기수집 ${known.articleIds.length}건 제외`,
+    );
+
+    return this.workerFetch<{ ok: boolean; message?: string }>(
+      "/cafe/collect-urls/start",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          cafeUrl,
+          maxArticles: dto.maxArticles ?? 50,
+          maxPages: dto.maxPages ?? 5,
+          knownUrls: known.urls,
+          knownArticleIds: known.articleIds,
+          ...this.naverCredentialBody(dto),
+        }),
+      },
+    );
+  }
+
   private resolveNaverCredentials(dto: CrawlerLoginDto = {}) {
     this.config = loadCrawlerConfig();
     const userId =
@@ -1308,14 +1370,26 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       ok: boolean;
       message?: string;
       naverLoggedIn?: boolean;
+      needsManualAuth?: boolean;
     }>("/cafe/login", {
       method: "POST",
       body: JSON.stringify({
         naverUserId: credentials.userId,
         naverPassword: credentials.password,
       }),
+      signal: AbortSignal.timeout(200_000),
     });
-    if (result.message) this.appendLog("info", result.message);
+    if (result.naverLoggedIn) {
+      this.appendLog("info", result.message ?? "네이버 로그인 완료");
+    } else if (result.needsManualAuth) {
+      this.appendLog(
+        "warn",
+        result.message ??
+          "Chrome 창에서 추가 인증을 완료한 뒤 로그인 확인을 눌러 주세요.",
+      );
+    } else if (result.message) {
+      this.appendLog("warn", result.message);
+    }
     return result;
   }
 
@@ -1326,6 +1400,20 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       "/cafe/open-login",
       { method: "POST", body: "{}" },
     );
+  }
+
+  async restartCafeBrowser(username: string, navigate?: string) {
+    await this.ensureWorker();
+    this.appendLog("info", `[${username}] 카페 Chrome 재시작`);
+    return this.workerFetch<{
+      ok: boolean;
+      message?: string;
+      naverLoggedIn?: boolean;
+      currentUrl?: string;
+    }>("/cafe/browser/restart", {
+      method: "POST",
+      body: JSON.stringify(navigate ? { navigate } : {}),
+    });
   }
 
   async openCafe(cafeUrl: string, username: string) {
@@ -1378,9 +1466,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       process.env.NAVER_CAFE_URL?.trim() ||
       "https://cafe.naver.com/0113053470";
 
+    const known = await this.cafeKnowledgeService.getKnownCafeSources(cafeUrl);
     this.appendLog(
       "info",
-      `[${username}] 카페 수집 시작 (${cafeUrl}, 최대 ${dto.maxArticles ?? 30}건)`,
+      `[${username}] 카페 수집 시작 (${cafeUrl}, 최대 ${dto.maxArticles ?? 30}건, ${dto.maxPages ?? 5}페이지) — 기수집 ${known.urls.length}건 URL 제외`,
     );
 
     return this.workerFetch<{ ok: boolean; message?: string }>(
@@ -1391,6 +1480,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
           cafeUrl,
           maxArticles: dto.maxArticles ?? 30,
           maxPages: dto.maxPages ?? 5,
+          knownUrls: known.urls,
+          knownArticleIds: known.articleIds,
           callbackUrl,
           callbackSecret,
           ...this.naverCredentialBody(),
@@ -1468,6 +1559,26 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     const sourceArticleId = String(raw.sourceArticleId ?? "").trim();
     const sourceUrl = String(raw.sourceUrl ?? "").trim();
     const rawContent = String(raw.rawContent ?? "").trim();
+    const markAsSkipped = Boolean(raw.markAsSkipped);
+
+    if (markAsSkipped) {
+      const result = await this.cafeKnowledgeService.importSkippedMarker({
+        sourceArticleId,
+        sourceUrl,
+        sourceTitle: String(raw.sourceTitle ?? ""),
+        sourceBoard: String(raw.sourceBoard ?? ""),
+        cafeUrl: String(raw.cafeUrl ?? ""),
+        rawContent,
+        skipReason: String(raw.skipReason ?? raw.skip_reason ?? ""),
+      });
+      if (!result.skipped && "item" in result) {
+        this.appendLog(
+          "info",
+          `카페 글 스킵 기록: ${String(raw.sourceTitle ?? sourceArticleId)}`,
+        );
+      }
+      return result;
+    }
 
     const result = await this.cafeKnowledgeService.importRawPost({
       sourceArticleId,
@@ -1478,6 +1589,31 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       rawContent,
     });
 
+    if (!result.skipped && "item" in result && result.item) {
+      try {
+        const draft = await this.cafeKnowledgeService.structureDraft(
+          result.item.id,
+        );
+        if (draft.status === "structured") {
+          this.appendLog(
+            "info",
+            `카페 지식 초안 정리: ${draft.title || result.item.sourceTitle}`,
+          );
+        } else if (draft.status === "skipped") {
+          this.appendLog(
+            "info",
+            `카페 글 스킵(AI): ${String(raw.sourceTitle ?? sourceArticleId)} — ${draft.aiNote ?? ""}`,
+          );
+        }
+        return { ...result, draftStatus: draft.status, draftId: draft.id };
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "AI 초안 정리 실패";
+        this.appendLog("warn", `카페 AI 정리 실패: ${message}`);
+        return { ...result, structureError: message };
+      }
+    }
+
     if (!result.skipped) {
       this.appendLog(
         "info",
@@ -1486,5 +1622,47 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     }
 
     return result;
+  }
+
+  async syncKnowledgeDraft(raw: Record<string, unknown>, secret: string) {
+    const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
+    if (secret !== expected) {
+      throw new ServiceUnavailableException("크롤러 인증 실패");
+    }
+
+    return this.cafeKnowledgeService.upsertDraftFromSync({
+      sourceArticleId: String(raw.sourceArticleId ?? ""),
+      sourceUrl: String(raw.sourceUrl ?? ""),
+      sourceTitle: String(raw.sourceTitle ?? ""),
+      sourceBoard: String(raw.sourceBoard ?? ""),
+      cafeUrl: String(raw.cafeUrl ?? ""),
+      rawContent: String(raw.rawContent ?? ""),
+      title: String(raw.title ?? ""),
+      category: String(raw.category ?? ""),
+      tags: String(raw.tags ?? ""),
+      content: String(raw.content ?? ""),
+      aiNote: String(raw.aiNote ?? ""),
+      status: (String(raw.status ?? "structured") || "structured") as KnowledgeDraftStatus,
+      errorMessage:
+        raw.errorMessage === null || raw.errorMessage === undefined
+          ? null
+          : String(raw.errorMessage),
+    });
+  }
+
+  async syncKnowledge(raw: Record<string, unknown>, secret: string) {
+    const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
+    if (secret !== expected) {
+      throw new ServiceUnavailableException("크롤러 인증 실패");
+    }
+
+    return this.knowledgeService.upsertKnowledgeFromSync({
+      id: raw.id ? String(raw.id) : undefined,
+      title: String(raw.title ?? ""),
+      category: String(raw.category ?? ""),
+      tags: String(raw.tags ?? ""),
+      content: String(raw.content ?? ""),
+      active: raw.active === undefined ? true : Boolean(raw.active),
+    });
   }
 }
