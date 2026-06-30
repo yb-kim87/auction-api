@@ -8,12 +8,31 @@ import {
   ForbiddenException,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
-import { getAuthContext, requireAdmin } from "../common/auth-context";
+import { getAuthContext, requireAdmin, requireAuth } from "../common/auth-context";
 import { UserRole } from "../common/constants";
+import type { UpdateProfileDto } from "./update-profile.dto";
 
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get("me")
+  async getMe(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    requireAuth(ctx);
+    return this.usersService.getProfileByUsername(ctx.username);
+  }
+
+  @Patch("me")
+  async updateMe(
+    @Headers() headers: Record<string, string>,
+    @Body() body: UpdateProfileDto,
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAuth(ctx);
+    const user = await this.usersService.updateProfile(ctx.username, body);
+    return user;
+  }
 
   @Get()
   async findAll(@Headers() headers: Record<string, string>) {

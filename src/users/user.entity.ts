@@ -23,6 +23,21 @@ export class User {
   @Column({ type: "text", default: UserRole.MEMBER })
   role!: UserRole;
 
+  @Column({ type: "text", default: "" })
+  investableFunds!: string;
+
+  @Column({ type: "text", default: "" })
+  existingLoanAmount!: string;
+
+  @Column({ type: "integer", default: 0 })
+  housingCount!: number;
+
+  @Column({ type: "text", default: "" })
+  investmentGoal!: string;
+
+  @Column({ type: "text", default: "" })
+  targetReturn!: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

@@ -9,12 +9,20 @@ import requests
 
 import importlib
 
-from browser import browser_is_ready, close_driver, ensure_driver
+from browser import (
+    CONTEXT_CAFE,
+    CONTEXT_TANK,
+    browser_is_ready,
+    close_driver,
+    ensure_driver,
+    get_existing_driver,
+    is_session_alive,
+)
 import item_crawl
 from tank_login import ensure_login, is_logged_in, login
 from url_collect import apply_preset, collect_urls
 
-CRAWLER_SERVER_REVISION = "2026-06-28-naver-id-backfill"
+CRAWLER_SERVER_REVISION = "2026-06-29-cafe-crawl-stream"
 
 
 def _reload_crawler_modules():
@@ -23,6 +31,9 @@ def _reload_crawler_modules():
 
     importlib.reload(naver_crawl)
     importlib.reload(item_crawl)
+    import url_collect
+
+    importlib.reload(url_collect)
     return item_crawl.crawl_item
 
 
@@ -53,7 +64,7 @@ class CrawlerState:
             self.events.clear()
             return {
                 "phase": self.phase,
-                "browserReady": browser_is_ready(),
+                "browserReady": browser_is_ready(CONTEXT_TANK),
                 "urls": list(self.urls),
                 "completed": self.completed,
                 "total": self.total,
@@ -73,6 +84,48 @@ class CrawlerState:
 STATE = CrawlerState()
 
 
+class CafeCrawlState:
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.phase = "idle"
+        self.cafe_url = ""
+        self.completed = 0
+        self.total = 0
+        self.imported = 0
+        self.skipped = 0
+        self.error = None
+        self.last_message = None
+        self.stop_requested = False
+        self.naver_logged_in = False
+        self.crawl_thread: threading.Thread | None = None
+        self.events: list[str] = []
+
+    def push_event(self, message: str):
+        with self.lock:
+            self.events.append(message)
+
+    def snapshot(self) -> dict:
+        with self.lock:
+            events = list(self.events)
+            self.events.clear()
+            return {
+                "phase": self.phase,
+                "cafeUrl": self.cafe_url,
+                "completed": self.completed,
+                "total": self.total,
+                "imported": self.imported,
+                "skipped": self.skipped,
+                "browserReady": browser_is_ready(CONTEXT_CAFE),
+                "naverLoggedIn": self.naver_logged_in,
+                "error": self.error,
+                "lastMessage": self.last_message,
+                "events": events,
+            }
+
+
+CAFE_STATE = CafeCrawlState()
+
+
 def _is_invalid_session(exc: Exception) -> bool:
     message = str(exc).lower()
     return "invalid session id" in message or "invalidsessionid" in message
@@ -87,6 +140,31 @@ def _run_login(user_id, password) -> str:
             driver = ensure_driver(force_new=True)
             return ensure_login(driver, user_id=user_id, user_pw=password)
         raise
+
+
+class LoginRequiredError(RuntimeError):
+    pass
+
+
+def _ensure_logged_in(user_id=None, password=None) -> str:
+    driver = ensure_driver()
+    if is_logged_in(driver):
+        return "탱크옥션 로그인 상태입니다."
+    message = ensure_login(driver, user_id=user_id, user_pw=password)
+    if not is_logged_in(driver):
+        raise LoginRequiredError(
+            "탱크옥션 로그인에 실패했습니다. ID/비밀번호를 확인하거나 "
+            "브라우저에서 직접 로그인해 주세요."
+        )
+    return message
+
+
+def _fail_login_state(message: str) -> None:
+    with STATE.lock:
+        STATE.phase = "error"
+        STATE.error = message
+        STATE.last_message = message
+        STATE.events.append(message)
 
 
 def _with_live_driver(action, force_retry: bool = True):
@@ -111,6 +189,43 @@ def _resolve_callback(callback_url: str | None = None, callback_secret: str | No
         ).strip(),
         "secret": (callback_secret or os.environ.get("CRAWLER_SECRET", "local-crawler-secret")).strip(),
     }
+
+
+def _entry_label(entry: str) -> str:
+    if "_" in entry:
+        prefix = entry.split("_", 1)[0].strip()
+        if prefix and not prefix.startswith("http"):
+            return prefix
+    return entry[:48]
+
+
+def _set_live_message(message: str) -> None:
+    with STATE.lock:
+        STATE.last_message = message
+
+
+def _post_mirror_item(
+    mirror_url: str,
+    mirror_secret: str,
+    payload: dict,
+    label: str,
+) -> None:
+    try:
+        mirror_res = requests.post(
+            mirror_url,
+            json=payload,
+            headers={
+                "X-Crawler-Secret": mirror_secret,
+                "Content-Type": "application/json",
+                "X-Crawler-Mirror": "1",
+            },
+            timeout=30,
+        )
+        mirror_res.raise_for_status()
+    except Exception as exc:
+        err = f"운영 DB 동기화 실패 ({label}): {exc}"
+        print(f"[crawler] {err}", flush=True)
+        STATE.push_event(err)
 
 
 def post_item_to_api(
@@ -139,23 +254,12 @@ def post_item_to_api(
             mirror_callback_secret
             or os.environ.get("CRAWLER_SECRET", cfg["secret"])
         ).strip()
-        try:
-            mirror_res = requests.post(
-                mirror_url,
-                json=payload,
-                headers={
-                    "X-Crawler-Secret": mirror_secret,
-                    "Content-Type": "application/json",
-                    "X-Crawler-Mirror": "1",
-                },
-                timeout=30,
-            )
-            mirror_res.raise_for_status()
-        except Exception as exc:
-            label = _auction_label(item)
-            err = f"운영 DB 동기화 실패 ({label}): {exc}"
-            print(f"[crawler] {err}", flush=True)
-            STATE.push_event(err)
+        label = _auction_label(item)
+        threading.Thread(
+            target=_post_mirror_item,
+            args=(mirror_url, mirror_secret, payload, label),
+            daemon=True,
+        ).start()
 
     return result
 
@@ -220,6 +324,213 @@ def post_naver_id_to_api(
     return result
 
 
+def post_cafe_post_to_api(
+    item: dict,
+    callback_url: str | None = None,
+    callback_secret: str | None = None,
+) -> dict:
+    cfg = _resolve_callback(callback_url, callback_secret)
+    base = cfg["url"].rsplit("/", 1)[0]
+    secret = cfg["secret"]
+    payload = {
+        **item,
+        "submittedBy": "crawler-cafe",
+    }
+    headers = {
+        "X-Crawler-Secret": secret,
+        "Content-Type": "application/json",
+    }
+    res = requests.post(
+        f"{base}/import-cafe-post",
+        json=payload,
+        headers=headers,
+        timeout=60,
+    )
+    res.raise_for_status()
+    return res.json()
+
+
+def _naver_credentials(body: dict) -> tuple[str, str]:
+    user_id = (
+        body.get("naverUserId")
+        or body.get("naver_user_id")
+        or body.get("userId")
+        or body.get("user_id")
+        or ""
+    )
+    password = (
+        body.get("naverPassword")
+        or body.get("naver_password")
+        or body.get("password")
+        or ""
+    )
+    return str(user_id).strip(), str(password)
+
+
+def cafe_crawl_worker(
+    cafe_url: str,
+    max_articles: int,
+    max_pages: int,
+    callback_url: str | None = None,
+    callback_secret: str | None = None,
+    naver_user_id: str = "",
+    naver_password: str = "",
+):
+    from naver_cafe_crawl import (
+        NaverLoginRequiredError,
+        crawl_and_process_articles,
+        ensure_naver_login,
+        is_naver_logged_in,
+    )
+    from browser import ensure_cafe_driver
+
+    try:
+        with CAFE_STATE.lock:
+            CAFE_STATE.phase = "crawling"
+            CAFE_STATE.cafe_url = cafe_url
+            CAFE_STATE.completed = 0
+            CAFE_STATE.total = 0
+            CAFE_STATE.imported = 0
+            CAFE_STATE.skipped = 0
+            CAFE_STATE.error = None
+            CAFE_STATE.stop_requested = False
+
+        driver = ensure_cafe_driver()
+
+        def on_progress(message: str):
+            CAFE_STATE.push_event(message)
+            with CAFE_STATE.lock:
+                CAFE_STATE.last_message = message
+
+        def should_stop() -> bool:
+            with CAFE_STATE.lock:
+                return CAFE_STATE.stop_requested
+
+        with CAFE_STATE.lock:
+            CAFE_STATE.naver_logged_in = is_naver_logged_in(driver)
+
+        ensure_naver_login(driver, naver_user_id or None, naver_password or None)
+        with CAFE_STATE.lock:
+            CAFE_STATE.naver_logged_in = True
+
+        def on_urls_ready(count: int):
+            with CAFE_STATE.lock:
+                CAFE_STATE.total = count
+
+        def on_article_saved(data: dict, _entry: dict) -> dict:
+            result = post_cafe_post_to_api(
+                data,
+                callback_url=callback_url,
+                callback_secret=callback_secret,
+            )
+            with CAFE_STATE.lock:
+                CAFE_STATE.completed += 1
+                if result.get("skipped"):
+                    CAFE_STATE.skipped += 1
+                else:
+                    CAFE_STATE.imported += 1
+            return result
+
+        stats = crawl_and_process_articles(
+            driver,
+            cafe_url,
+            max_articles=max_articles,
+            max_pages=max_pages,
+            on_progress=on_progress,
+            should_stop=should_stop,
+            on_article_saved=on_article_saved,
+            on_urls_ready=on_urls_ready,
+            naver_user_id=naver_user_id or None,
+            naver_password=naver_password or None,
+        )
+
+        with CAFE_STATE.lock:
+            CAFE_STATE.total = stats.get("total", CAFE_STATE.completed)
+            CAFE_STATE.phase = "idle"
+            CAFE_STATE.last_message = (
+                f"카페 수집 완료 — 저장 {CAFE_STATE.imported}건, "
+                f"중복/스킵 {CAFE_STATE.skipped}건"
+            )
+    except NaverLoginRequiredError as exc:
+        with CAFE_STATE.lock:
+            CAFE_STATE.phase = "error"
+            CAFE_STATE.error = str(exc)
+            CAFE_STATE.last_message = str(exc)
+        CAFE_STATE.push_event(str(exc))
+    except Exception as exc:
+        with CAFE_STATE.lock:
+            CAFE_STATE.phase = "error"
+            CAFE_STATE.error = str(exc)
+            CAFE_STATE.last_message = str(exc)
+        CAFE_STATE.push_event(str(exc))
+
+
+def cafe_single_article_worker(
+    article_url: str,
+    cafe_url: str,
+    callback_url: str | None = None,
+    callback_secret: str | None = None,
+    naver_user_id: str = "",
+    naver_password: str = "",
+):
+    from naver_cafe_crawl import (
+        NaverLoginRequiredError,
+        crawl_single_article,
+        ensure_naver_login,
+        is_naver_logged_in,
+    )
+    from browser import ensure_cafe_driver
+
+    with CAFE_STATE.lock:
+        CAFE_STATE.phase = "crawling"
+        CAFE_STATE.error = None
+        CAFE_STATE.stop_requested = False
+        CAFE_STATE.completed = 0
+        CAFE_STATE.total = 1
+        CAFE_STATE.imported = 0
+        CAFE_STATE.skipped = 0
+
+    try:
+        driver = ensure_cafe_driver()
+        with CAFE_STATE.lock:
+            CAFE_STATE.naver_logged_in = is_naver_logged_in(driver)
+        ensure_naver_login(driver, naver_user_id or None, naver_password or None)
+        with CAFE_STATE.lock:
+            CAFE_STATE.naver_logged_in = True
+
+        CAFE_STATE.push_event(f"단일 글 수집: {article_url[:80]}")
+        data = crawl_single_article(
+            driver,
+            article_url,
+            cafe_url=cafe_url,
+            naver_user_id=naver_user_id or None,
+            naver_password=naver_password or None,
+        )
+        result = post_cafe_post_to_api(
+            data,
+            callback_url=callback_url,
+            callback_secret=callback_secret,
+        )
+        with CAFE_STATE.lock:
+            CAFE_STATE.completed = 1
+            if result.get("skipped"):
+                CAFE_STATE.skipped = 1
+            else:
+                CAFE_STATE.imported = 1
+            CAFE_STATE.phase = "idle"
+            CAFE_STATE.last_message = (
+                "단일 글 수집 완료 (중복)" if result.get("skipped") else "단일 글 초안 저장 완료"
+            )
+        return result
+    except Exception as exc:
+        with CAFE_STATE.lock:
+            CAFE_STATE.phase = "error"
+            CAFE_STATE.error = str(exc)
+            CAFE_STATE.last_message = str(exc)
+        CAFE_STATE.push_event(str(exc))
+        raise
+
+
 def _auction_label(item: dict) -> str:
     return str(item.get("auctionNo") or item.get("address") or "물건").strip()
 
@@ -241,7 +552,14 @@ def _record_import_result(
             naver_note = " (면적 미수집)"
 
     with STATE.lock:
-        if result.get("skipped"):
+        STATE.completed = index
+        if result.get("skipped") and result.get("reason") in (
+            "invalid_auction_no",
+            "invalid_address",
+            "invalid_link",
+        ):
+            status_label = f"{label} 저장 스킵 (물건 아님)"
+        elif result.get("skipped"):
             status_label = None
         elif result.get("created"):
             STATE.created += 1
@@ -252,9 +570,9 @@ def _record_import_result(
 
         if status_label:
             STATE.events.append(status_label)
-            STATE.last_message = f"[{index + 1}/{total}] {status_label}{naver_note}"
+            STATE.last_message = f"[{index}/{total}] {status_label}{naver_note}"
         else:
-            STATE.last_message = f"[{index + 1}/{total}] {label} (변경 없음){naver_note}"
+            STATE.last_message = f"[{index}/{total}] {label} (변경 없음){naver_note}"
 
 
 def crawl_worker(
@@ -263,6 +581,8 @@ def crawl_worker(
     callback_secret: str | None = None,
     mirror_callback_url: str | None = None,
     mirror_callback_secret: str | None = None,
+    user_id: str | None = None,
+    password: str | None = None,
 ):
     cfg = _resolve_callback(callback_url, callback_secret)
     mirror_url = (
@@ -275,6 +595,12 @@ def crawl_worker(
     else:
         print(f"[crawler] import callback → {target}", flush=True)
     try:
+        try:
+            _ensure_logged_in(user_id, password)
+        except (LoginRequiredError, RuntimeError) as exc:
+            _fail_login_state(str(exc))
+            return
+
         with STATE.lock:
             STATE.phase = "crawling"
             STATE.completed = 0
@@ -290,6 +616,10 @@ def crawl_worker(
         driver.implicitly_wait(1)
 
         for index, entry in enumerate(urls):
+            pos = index + 1
+            total_count = len(urls)
+            entry_label = _entry_label(entry)
+
             with STATE.lock:
                 if STATE.stop_requested:
                     STATE.phase = "stopped"
@@ -298,11 +628,30 @@ def crawl_worker(
                     return
 
             try:
-                if not browser_is_ready():
+                if not browser_is_ready(CONTEXT_TANK):
                     driver = ensure_driver(force_new=True)
                     driver.implicitly_wait(1)
+                if not is_logged_in(driver):
+                    try:
+                        _ensure_logged_in(user_id, password)
+                    except (LoginRequiredError, RuntimeError) as exc:
+                        _fail_login_state(f"조회 중 로그인 만료: {exc}")
+                        return
                 crawl_item = _reload_crawler_modules()
+                _set_live_message(f"[{pos}/{total_count}] {entry_label} 조회 중...")
                 item = crawl_item(driver, entry)
+                if not item_crawl.is_valid_crawl_item(item):
+                    with STATE.lock:
+                        STATE.completed = pos
+                        skip_msg = (
+                            f"[{pos}/{total_count}] 저장 스킵 (물건 아님): "
+                            f"{item.get('auctionNo') or item.get('address') or entry[:40]}"
+                        )
+                        STATE.events.append(skip_msg)
+                        STATE.last_message = skip_msg
+                    continue
+                item_label = _auction_label(item)
+                _set_live_message(f"[{pos}/{total_count}] {item_label} 저장 중...")
                 result = post_item_to_api(
                     item,
                     callback_url=cfg["url"],
@@ -310,19 +659,30 @@ def crawl_worker(
                     mirror_callback_url=mirror_url or None,
                     mirror_callback_secret=mirror_callback_secret,
                 )
-                with STATE.lock:
-                    STATE.completed = index + 1
-                _record_import_result(item, result, index + 1, len(urls))
+                _record_import_result(item, result, pos, total_count)
             except Exception as exc:
                 if _is_invalid_session(exc):
                     with STATE.lock:
                         STATE.last_message = (
-                            f"브라우저 세션 만료 — 재연결 후 재시도 ({index + 1}/{len(urls)})"
+                            f"브라우저 세션 만료 — 재연결 후 재시도 ({pos}/{total_count})"
                         )
                     try:
                         driver = ensure_driver(force_new=True)
                         driver.implicitly_wait(1)
+                        _set_live_message(f"[{pos}/{total_count}] {entry_label} 조회 중...")
                         item = crawl_item(driver, entry)
+                        if not item_crawl.is_valid_crawl_item(item):
+                            with STATE.lock:
+                                STATE.completed = pos
+                                skip_msg = (
+                                    f"[{pos}/{total_count}] 저장 스킵 (물건 아님): "
+                                    f"{item.get('auctionNo') or item.get('address') or entry[:40]}"
+                                )
+                                STATE.events.append(skip_msg)
+                                STATE.last_message = skip_msg
+                            continue
+                        item_label = _auction_label(item)
+                        _set_live_message(f"[{pos}/{total_count}] {item_label} 저장 중...")
                         result = post_item_to_api(
                             item,
                             callback_url=cfg["url"],
@@ -330,26 +690,27 @@ def crawl_worker(
                             mirror_callback_url=mirror_url or None,
                             mirror_callback_secret=mirror_callback_secret,
                         )
-                        with STATE.lock:
-                            STATE.completed = index + 1
-                        _record_import_result(item, result, index + 1, len(urls))
+                        _record_import_result(item, result, pos, total_count)
                         continue
                     except Exception as retry_exc:
-                        err_msg = f"오류 ({index + 1}/{len(urls)}): {retry_exc}"
+                        err_msg = f"오류 ({pos}/{total_count}): {retry_exc}"
                         with STATE.lock:
+                            STATE.completed = pos
                             STATE.last_message = err_msg
                             STATE.events.append(err_msg)
                 else:
-                    err_msg = f"오류 ({index + 1}/{len(urls)}): {exc}"
+                    err_msg = f"오류 ({pos}/{total_count}): {exc}"
                     with STATE.lock:
+                        STATE.completed = pos
                         STATE.last_message = err_msg
                         STATE.events.append(err_msg)
 
-            time.sleep(0.4)
+            time.sleep(0.1)
 
         with STATE.lock:
             STATE.phase = "idle"
-            done_msg = f"조회작업 완료 ({len(urls)}건)"
+            STATE.completed = total_count
+            done_msg = f"조회작업 완료 ({total_count}건)"
             STATE.last_message = done_msg
             STATE.events.append(done_msg)
     except Exception as exc:
@@ -360,10 +721,9 @@ def crawl_worker(
             STATE.events.append(f"조회작업 오류: {exc}")
     finally:
         try:
-            from browser import _driver, is_session_alive
-
-            if _driver is not None and is_session_alive(_driver):
-                _driver.implicitly_wait(5)
+            driver = get_existing_driver(CONTEXT_TANK)
+            if driver is not None and is_session_alive(driver):
+                driver.implicitly_wait(5)
         except Exception:
             pass
 
@@ -410,7 +770,7 @@ def naver_id_backfill_worker(
             label = auction_no or url[:40]
 
             try:
-                if not browser_is_ready():
+                if not browser_is_ready(CONTEXT_TANK):
                     driver = ensure_driver(force_new=True)
                     driver.implicitly_wait(1)
                 importlib.reload(item_crawl)
@@ -494,10 +854,9 @@ def naver_id_backfill_worker(
             STATE.last_message = str(exc)
     finally:
         try:
-            from browser import _driver, is_session_alive
-
-            if _driver is not None and is_session_alive(_driver):
-                _driver.implicitly_wait(5)
+            driver = get_existing_driver(CONTEXT_TANK)
+            if driver is not None and is_session_alive(driver):
+                driver.implicitly_wait(5)
         except Exception:
             pass
 
@@ -542,9 +901,9 @@ class Handler(BaseHTTPRequestHandler):
         return False
 
     def do_GET(self):
-        if not self._require_auth():
-            return
         path = urlparse(self.path).path
+        if path != "/health" and not self._require_auth():
+            return
         if path == "/health":
             try:
                 from naver_crawl import NAVER_CRAWL_REVISION
@@ -563,18 +922,43 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(200, STATE.snapshot())
             return
         if path == "/session":
+            from browser import CONTEXT_TANK, get_existing_driver
+            from tank_login import is_logged_in
+
             logged_in = False
-            browser_ready = browser_is_ready()
+            driver = get_existing_driver(CONTEXT_TANK)
+            browser_ready = driver is not None
             if browser_ready:
                 try:
-                    from browser import _driver
-
-                    logged_in = is_logged_in(_driver)
+                    logged_in = is_logged_in(driver)
                 except Exception:
                     logged_in = False
             self._send_json(
                 200,
                 {"browserReady": browser_ready, "loggedIn": logged_in},
+            )
+            return
+        if path == "/cafe/status":
+            self._send_json(200, CAFE_STATE.snapshot())
+            return
+        if path == "/cafe/session":
+            from browser import CONTEXT_CAFE, get_existing_driver
+
+            naver_logged_in = False
+            driver = get_existing_driver(CONTEXT_CAFE)
+            browser_ready = driver is not None
+            if browser_ready:
+                try:
+                    from naver_cafe_crawl import is_naver_logged_in
+
+                    naver_logged_in = is_naver_logged_in(driver)
+                    with CAFE_STATE.lock:
+                        CAFE_STATE.naver_logged_in = naver_logged_in
+                except Exception:
+                    naver_logged_in = False
+            self._send_json(
+                200,
+                {"browserReady": browser_ready, "naverLoggedIn": naver_logged_in},
             )
             return
         self._send_json(404, {"error": "not found"})
@@ -591,12 +975,18 @@ class Handler(BaseHTTPRequestHandler):
                     STATE.phase = "logging_in"
                 user_id = body.get("userId") or body.get("user_id")
                 password = body.get("password")
-                message = _run_login(user_id, password)
+                try:
+                    message = _ensure_logged_in(user_id, password)
+                except (LoginRequiredError, RuntimeError) as exc:
+                    _fail_login_state(str(exc))
+                    self._send_json(503, {"ok": False, "error": str(exc)})
+                    return
                 with STATE.lock:
                     STATE.phase = "idle"
-                    STATE.browser_ready = browser_is_ready()
+                    STATE.browser_ready = browser_is_ready(CONTEXT_TANK)
+                    STATE.error = None
                     STATE.last_message = message
-                self._send_json(200, {"ok": True, "message": message})
+                self._send_json(200, {"ok": True, "message": message, "loggedIn": True})
                 return
 
             if path == "/ensure-login":
@@ -604,10 +994,16 @@ class Handler(BaseHTTPRequestHandler):
                     STATE.phase = "logging_in"
                 user_id = body.get("userId") or body.get("user_id")
                 password = body.get("password")
-                message = _run_login(user_id, password)
+                try:
+                    message = _ensure_logged_in(user_id, password)
+                except (LoginRequiredError, RuntimeError) as exc:
+                    _fail_login_state(str(exc))
+                    self._send_json(503, {"ok": False, "error": str(exc), "loggedIn": False})
+                    return
                 with STATE.lock:
                     STATE.phase = "idle"
-                    STATE.browser_ready = browser_is_ready()
+                    STATE.browser_ready = browser_is_ready(CONTEXT_TANK)
+                    STATE.error = None
                     STATE.last_message = message
                 self._send_json(
                     200,
@@ -619,31 +1015,60 @@ class Handler(BaseHTTPRequestHandler):
                 preset = body.get("preset", "현재")
                 clear = body.get("clear", True)
                 search = body.get("search")
+                user_id = body.get("userId") or body.get("user_id")
+                password = body.get("password")
                 with STATE.lock:
                     STATE.phase = "collecting"
                     STATE.preset = preset
+                    STATE.error = None
+
+                try:
+                    login_message = _ensure_logged_in(user_id, password)
+                except (LoginRequiredError, RuntimeError) as exc:
+                    _fail_login_state(str(exc))
+                    self._send_json(503, {"ok": False, "error": str(exc), "urls": []})
+                    return
 
                 def collect_action(driver):
+                    if not is_logged_in(driver):
+                        raise LoginRequiredError(
+                            "탱크옥션 로그인이 풀렸습니다. 다시 로그인해 주세요."
+                        )
                     try:
                         driver.implicitly_wait(0)
+
+                        def on_progress(message: str):
+                            STATE.set_message(message)
+
                         message = apply_preset(driver, preset, search)
-                        entries = collect_urls(driver)
+                        entries = collect_urls(driver, on_progress=on_progress)
                         return message, entries
                     finally:
                         driver.implicitly_wait(1)
 
                 try:
                     message, entries = _with_live_driver(collect_action)
+                except LoginRequiredError as exc:
+                    _fail_login_state(str(exc))
+                    self._send_json(503, {"ok": False, "error": str(exc), "urls": []})
+                    return
                 except Exception as exc:
                     if not _is_invalid_session(exc):
                         raise
-                    message, entries = _with_live_driver(
-                        collect_action, force_retry=False
-                    )
+                    try:
+                        _ensure_logged_in(user_id, password)
+                        message, entries = _with_live_driver(
+                            collect_action, force_retry=False
+                        )
+                    except (LoginRequiredError, RuntimeError) as login_exc:
+                        _fail_login_state(str(login_exc))
+                        self._send_json(503, {"ok": False, "error": str(login_exc), "urls": []})
+                        return
                 with STATE.lock:
                     STATE.completed = 0
                     STATE.phase = "idle"
-                    STATE.last_message = f"{message} ({len(entries)}건 수집)"
+                    STATE.error = None
+                    STATE.last_message = f"{login_message} / {message} ({len(entries)}건 수집)"
                 self._send_json(
                     200,
                     {"ok": True, "urls": entries, "message": STATE.last_message},
@@ -675,6 +1100,8 @@ class Handler(BaseHTTPRequestHandler):
                 callback_secret = body.get("callbackSecret") or body.get("callback_secret")
                 mirror_callback_url = body.get("mirrorCallbackUrl") or body.get("mirror_callback_url")
                 mirror_callback_secret = body.get("mirrorCallbackSecret") or body.get("mirror_callback_secret")
+                user_id = body.get("userId") or body.get("user_id")
+                password = body.get("password")
                 STATE.crawl_thread = threading.Thread(
                     target=crawl_worker,
                     args=(
@@ -683,6 +1110,8 @@ class Handler(BaseHTTPRequestHandler):
                         callback_secret,
                         mirror_callback_url,
                         mirror_callback_secret,
+                        user_id,
+                        password,
                     ),
                     daemon=True,
                 )
@@ -732,6 +1161,232 @@ class Handler(BaseHTTPRequestHandler):
                         "ok": True,
                         "message": f"네이버 ID 수집을 시작합니다 ({len(items)}건).",
                     },
+                )
+                return
+
+            if path == "/cafe/login":
+                user_id, password = _naver_credentials(body)
+                if not user_id or not password:
+                    self._send_json(
+                        400,
+                        {"ok": False, "error": "네이버 ID와 비밀번호를 입력해 주세요."},
+                    )
+                    return
+                try:
+                    from browser import CONTEXT_CAFE, ensure_cafe_driver, profile_dir_for
+                    from naver_cafe_crawl import (
+                        NaverLoginRequiredError,
+                        is_naver_logged_in,
+                        login_naver,
+                    )
+
+                    driver = ensure_cafe_driver()
+                    try:
+                        message = login_naver(driver, user_id, password)
+                    except NaverLoginRequiredError as exc:
+                        logged_in = is_naver_logged_in(driver)
+                        with CAFE_STATE.lock:
+                            CAFE_STATE.naver_logged_in = logged_in
+                        self._send_json(
+                            503,
+                            {
+                                "ok": False,
+                                "error": str(exc),
+                                "naverLoggedIn": logged_in,
+                                "message": str(exc),
+                            },
+                        )
+                        return
+
+                    logged_in = is_naver_logged_in(driver)
+                    with CAFE_STATE.lock:
+                        CAFE_STATE.naver_logged_in = logged_in
+                    self._send_json(
+                        200,
+                        {
+                            "ok": True,
+                            "message": message,
+                            "naverLoggedIn": logged_in,
+                            "profileDir": profile_dir_for(CONTEXT_CAFE),
+                        },
+                    )
+                except Exception as exc:
+                    self._send_json(500, {"ok": False, "error": str(exc)})
+                return
+
+            if path == "/cafe/open-login":
+                try:
+                    from browser import CONTEXT_CAFE, ensure_cafe_driver, profile_dir_for
+                    from naver_cafe_crawl import is_naver_logged_in, open_naver_login
+
+                    driver = ensure_cafe_driver()
+                    message = open_naver_login(driver)
+                    logged_in = is_naver_logged_in(driver)
+                    with CAFE_STATE.lock:
+                        CAFE_STATE.naver_logged_in = logged_in
+                    self._send_json(
+                        200,
+                        {
+                            "ok": True,
+                            "message": message,
+                            "naverLoggedIn": logged_in,
+                            "profileDir": profile_dir_for(CONTEXT_CAFE),
+                        },
+                    )
+                except Exception as exc:
+                    self._send_json(500, {"ok": False, "error": str(exc)})
+                return
+
+            if path == "/cafe/open":
+                cafe_url = (
+                    body.get("cafeUrl")
+                    or body.get("cafe_url")
+                    or "https://cafe.naver.com/0113053470"
+                )
+                try:
+                    from browser import ensure_cafe_driver
+                    from naver_cafe_crawl import open_cafe, is_naver_logged_in
+
+                    driver = ensure_cafe_driver(navigate=cafe_url)
+                    message = open_cafe(driver, cafe_url)
+                    logged_in = is_naver_logged_in(driver)
+                    if not logged_in:
+                        user_id, password = _naver_credentials(body)
+                        if user_id and password:
+                            from naver_cafe_crawl import ensure_naver_login
+
+                            ensure_naver_login(driver, user_id, password)
+                            logged_in = is_naver_logged_in(driver)
+                    with CAFE_STATE.lock:
+                        CAFE_STATE.cafe_url = cafe_url
+                        CAFE_STATE.naver_logged_in = logged_in
+                    self._send_json(
+                        200,
+                        {"ok": True, "message": message, "naverLoggedIn": logged_in},
+                    )
+                except Exception as exc:
+                    self._send_json(500, {"ok": False, "error": str(exc)})
+                return
+
+            if path == "/cafe/check-login":
+                try:
+                    from browser import CONTEXT_CAFE, ensure_cafe_driver, get_existing_driver
+                    from naver_cafe_crawl import is_naver_logged_in
+
+                    driver = get_existing_driver(CONTEXT_CAFE) or ensure_cafe_driver()
+                    logged_in = is_naver_logged_in(driver)
+                    if not logged_in:
+                        logged_in = is_naver_logged_in(driver, allow_navigate=True)
+                    with CAFE_STATE.lock:
+                        CAFE_STATE.naver_logged_in = logged_in
+                    if logged_in:
+                        message = "네이버 로그인 확인됨 (카페 전용 Chrome)"
+                    else:
+                        message = (
+                            "네이버 로그인이 필요합니다. "
+                            "「로그인 페이지 열기」로 연 Chrome 창에서 로그인해 주세요."
+                        )
+                    self._send_json(
+                        200,
+                        {"ok": True, "naverLoggedIn": logged_in, "message": message},
+                    )
+                except Exception as exc:
+                    self._send_json(500, {"ok": False, "error": str(exc)})
+                return
+
+            if path == "/cafe/crawl/start":
+                if CAFE_STATE.crawl_thread and CAFE_STATE.crawl_thread.is_alive():
+                    self._send_json(409, {"error": "이미 카페 수집이 진행 중입니다."})
+                    return
+
+                cafe_url = (
+                    body.get("cafeUrl")
+                    or body.get("cafe_url")
+                    or "https://cafe.naver.com/0113053470"
+                )
+                max_articles = int(body.get("maxArticles") or body.get("max_articles") or 30)
+                max_pages = int(body.get("maxPages") or body.get("max_pages") or 5)
+                callback_url = body.get("callbackUrl") or body.get("callback_url")
+                callback_secret = body.get("callbackSecret") or body.get("callback_secret")
+                naver_user_id, naver_password = _naver_credentials(body)
+
+                CAFE_STATE.crawl_thread = threading.Thread(
+                    target=cafe_crawl_worker,
+                    args=(
+                        cafe_url,
+                        max(1, min(max_articles, 200)),
+                        max(1, min(max_pages, 20)),
+                        callback_url,
+                        callback_secret,
+                        naver_user_id,
+                        naver_password,
+                    ),
+                    daemon=True,
+                )
+                CAFE_STATE.crawl_thread.start()
+                self._send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "message": f"카페 수집을 시작합니다 (최대 {max_articles}건).",
+                    },
+                )
+                return
+
+            if path == "/cafe/crawl/stop":
+                with CAFE_STATE.lock:
+                    CAFE_STATE.stop_requested = True
+                    CAFE_STATE.last_message = "카페 수집 중단 요청을 접수했습니다."
+                self._send_json(200, {"ok": True})
+                return
+
+            if path == "/cafe/crawl/single":
+                if CAFE_STATE.crawl_thread and CAFE_STATE.crawl_thread.is_alive():
+                    self._send_json(409, {"error": "이미 카페 수집이 진행 중입니다."})
+                    return
+
+                article_url = (
+                    body.get("articleUrl")
+                    or body.get("article_url")
+                    or ""
+                ).strip()
+                if not article_url or "cafe.naver.com" not in article_url:
+                    self._send_json(
+                        400,
+                        {"error": "카페 글 URL을 입력해 주세요. (cafe.naver.com)"},
+                    )
+                    return
+
+                cafe_url = (
+                    body.get("cafeUrl")
+                    or body.get("cafe_url")
+                    or "https://cafe.naver.com/0113053470"
+                )
+                callback_url = body.get("callbackUrl") or body.get("callback_url")
+                callback_secret = body.get("callbackSecret") or body.get("callback_secret")
+                naver_user_id, naver_password = _naver_credentials(body)
+
+                def run_single():
+                    try:
+                        cafe_single_article_worker(
+                            article_url,
+                            cafe_url,
+                            callback_url,
+                            callback_secret,
+                            naver_user_id,
+                            naver_password,
+                        )
+                    except Exception:
+                        pass
+
+                CAFE_STATE.crawl_thread = threading.Thread(
+                    target=run_single,
+                    daemon=True,
+                )
+                CAFE_STATE.crawl_thread.start()
+                self._send_json(
+                    200,
+                    {"ok": True, "message": "단일 글 수집을 시작합니다."},
                 )
                 return
 

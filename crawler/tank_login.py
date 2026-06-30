@@ -174,6 +174,13 @@ def login(driver, user_id: str | None = None, user_pw: str | None = None) -> str
 
         _click_first(driver, LOGIN_TIMEOUT, SUBMIT_SELECTORS, "로그인 제출 버튼")
         time.sleep(0.3)
+
+        driver.switch_to.default_content()
+        if not is_logged_in(driver):
+            raise RuntimeError(
+                "탱크옥션 로그인에 실패했습니다. ID/비밀번호를 확인하거나 "
+                "브라우저에서 직접 로그인해 주세요."
+            )
     finally:
         driver.implicitly_wait(5)
         driver.switch_to.default_content()

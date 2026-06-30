@@ -1,8 +1,9 @@
 import { config as loadEnv } from "dotenv";
+import { join } from "path";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 
-loadEnv();
+loadEnv({ path: join(__dirname, "..", ".env") });
 
 function buildCorsOrigins(): string[] {
   const defaults = ["http://localhost:3000", "http://127.0.0.1:3000"];
@@ -23,7 +24,9 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
+  const openAiReady = Boolean(process.env.OPENAI_API_KEY?.trim());
   console.log(`Auction API running on http://localhost:${port}`);
+  console.log(`경매코치 AI: ${openAiReady ? "사용 가능" : "설정 필요 (.env OPENAI_API_KEY)"}`);
 }
 
 bootstrap();

@@ -33,6 +33,10 @@ export function loadCrawlerConfig(): CrawlerConfig {
         ...DEFAULT_CRAWLER_CONFIG.credentials,
         ...parsed.credentials,
       },
+      naverCredentials: {
+        ...DEFAULT_CRAWLER_CONFIG.naverCredentials,
+        ...parsed.naverCredentials,
+      },
     };
   } catch {
     return structuredClone(DEFAULT_CRAWLER_CONFIG);

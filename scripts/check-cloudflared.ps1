@@ -22,21 +22,17 @@ function Resolve-Cloudflared {
 Write-Host ""
 $exe = Resolve-Cloudflared
 if (-not $exe) {
-    Write-Host "FAIL: cloudflared not found. Run: winget install Cloudflare.cloudflared" -ForegroundColor Red
+    Write-Host "FAIL: cloudflared not found" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "OK: cloudflared path:" -ForegroundColor Green
-Write-Host "    $exe"
-Write-Host ""
+Write-Host "OK: $exe" -ForegroundColor Green
 & $exe --version
 Write-Host ""
 
 $cmd = Get-Command cloudflared -ErrorAction SilentlyContinue
 if ($cmd) {
-    Write-Host "OK: cloudflared command works in PATH" -ForegroundColor Green
+    Write-Host "OK: cloudflared in PATH" -ForegroundColor Green
 } else {
-    Write-Host "NOTE: cloudflared is not in PATH in this terminal session." -ForegroundColor Yellow
-    Write-Host "      Restart Cursor completely, or use:"
-    Write-Host "      powershell -File scripts/start-crawler-tunnel.ps1"
+    Write-Host "NOTE: not in PATH yet - restart Cursor or use full path" -ForegroundColor Yellow
 }

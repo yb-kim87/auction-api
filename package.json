@@ -8,7 +8,14 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "sync:production": "node scripts/sync-local-to-railway.mjs",
-    "sync:production:dry": "node scripts/sync-local-to-railway.mjs --dry-run"
+    "sync:production:dry": "node scripts/sync-local-to-railway.mjs --dry-run",
+    "sync:from-production": "node scripts/sync-production-to-local.mjs",
+    "sync:from-production:dry": "node scripts/sync-production-to-local.mjs --dry-run",
+    "cleanup:production": "node scripts/cleanup-auctions.mjs",
+    "cleanup:production:dry": "node scripts/cleanup-auctions.mjs --dry-run",
+    "cleanup:local": "node scripts/cleanup-auctions.mjs --local",
+    "cleanup:local:dry": "node scripts/cleanup-auctions.mjs --local --dry-run",
+    "seed:knowledge": "node scripts/seed-knowledge.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",

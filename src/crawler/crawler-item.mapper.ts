@@ -1,6 +1,8 @@
 import type { UpdateAuctionDto } from "../auctions/update-auction.dto";
 import { parseBuiltYear } from "../auctions/excel-columns";
 import { cleanAddress, cleanEducation, cleanBuildingRegistry, cleanTenantDetail, cleanElevatorAndParking } from "../auctions/address-parser";
+import { hasNaverPrice } from "../auctions/naver-price.util";
+import { normalizeCrawlAuctionNo } from "../auctions/crawl-item-validation.util";
 
 function str(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -40,11 +42,16 @@ export function mapCrawledItem(raw: Record<string, unknown>): Partial<UpdateAuct
     str(raw.parking),
   );
 
+  const naverPrice = num(raw.naverPrice ?? raw.naver_lowest_price);
+  const hasNaver = hasNaverPrice(naverPrice);
+  const rawAuctionNo = str(raw.auctionNo ?? raw.auction_no);
+  const auctionNo = normalizeCrawlAuctionNo(rawAuctionNo) ?? rawAuctionNo;
+
   return {
     memo: str(raw.memo),
     link: str(raw.link),
     views: num(raw.views),
-    auctionNo: str(raw.auctionNo ?? raw.auction_no),
+    auctionNo: auctionNo,
     address: cleanAddress(str(raw.address)),
     totalUnits: num(raw.totalUnits ?? raw.total_units),
     usage: str(raw.usage),
@@ -54,11 +61,15 @@ export function mapCrawledItem(raw: Record<string, unknown>): Partial<UpdateAuct
     appraisedValue: num(raw.appraisedValue ?? raw.appraisal_price),
     minPrice: num(raw.minPrice ?? raw.min_price),
     salePrice: numOrNull(raw.salePrice ?? raw.sale_price),
-    naverPrice: num(raw.naverPrice ?? raw.naver_lowest_price),
+    naverPrice,
     naverId: str(raw.naverId ?? raw.naver_id),
-    diffNaverSale: numOrNull(raw.diffNaverSale ?? raw.gap_margin_sold_price),
-    diffNaverMin: num(raw.diffNaverMin ?? raw.gap_margin),
-    diffNaverAppraised: num(raw.diffNaverAppraised ?? raw.new_case_gap_margin),
+    diffNaverSale: hasNaver
+      ? numOrNull(raw.diffNaverSale ?? raw.gap_margin_sold_price)
+      : null,
+    diffNaverMin: hasNaver ? num(raw.diffNaverMin ?? raw.gap_margin) : 0,
+    diffNaverAppraised: hasNaver
+      ? num(raw.diffNaverAppraised ?? raw.new_case_gap_margin)
+      : 0,
     tradingCount: parseTradingCount(raw.tradingCount ?? raw.real_trade_count),
     bidInfo: str(raw.bidInfo ?? raw.bid_info),
     owner: str(raw.owner),

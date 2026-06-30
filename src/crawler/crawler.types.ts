@@ -38,6 +38,7 @@ export type CrawlerConfig = {
   algorithm: CrawlerAlgorithmConfig;
   schedule: CrawlerScheduleConfig;
   credentials: CrawlerCredentialsConfig;
+  naverCredentials: CrawlerCredentialsConfig;
 };
 
 export const DEFAULT_CRAWLER_CONFIG: CrawlerConfig = {
@@ -71,6 +72,10 @@ export const DEFAULT_CRAWLER_CONFIG: CrawlerConfig = {
   credentials: {
     userId: "zgamez",
     password: "young1!",
+  },
+  naverCredentials: {
+    userId: "",
+    password: "",
   },
 };
 

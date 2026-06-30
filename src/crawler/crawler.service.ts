@@ -5,10 +5,11 @@ import {
   OnModuleInit,
   ServiceUnavailableException,
 } from "@nestjs/common";
-import { spawn, type ChildProcess } from "child_process";
+import { execSync, spawn, type ChildProcess } from "child_process";
 import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import { AuctionsService } from "../auctions/auctions.service";
+import { CafeKnowledgeService } from "../ai/cafe-knowledge.service";
 import {
   loadCrawlerConfig,
   saveCrawlerConfig,
@@ -53,6 +54,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly auctionsService: AuctionsService,
     private readonly telegramService: CrawlerTelegramService,
+    private readonly cafeKnowledgeService: CafeKnowledgeService,
   ) {
     const dataDir = join(process.cwd(), "data", "crawler");
     if (!existsSync(dataDir)) {
@@ -104,6 +106,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       algorithm: { ...this.config.algorithm, ...partial.algorithm },
       schedule: nextSchedule,
       credentials: { ...this.config.credentials, ...partial.credentials },
+      naverCredentials: {
+        ...this.config.naverCredentials,
+        ...partial.naverCredentials,
+      },
     };
     saveCrawlerConfig(this.config);
     this.applyScheduleToStatus();
@@ -278,6 +284,17 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
+  private cafeCallbackConfig() {
+    const base = this.primaryCallbackConfig();
+    return {
+      callbackUrl: base.callbackUrl.replace(
+        /\/import-item$/,
+        "/import-cafe-post",
+      ),
+      callbackSecret: base.callbackSecret,
+    };
+  }
+
   private mirrorCallbackConfig(): {
     callbackUrl: string;
     callbackSecret: string;
@@ -369,11 +386,31 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     try {
       const res = await fetch(`${this.workerBaseUrl()}/health`, {
         signal: AbortSignal.timeout(this.isRemoteWorkerMode() ? 5000 : 1500),
+      });
+      if (!res.ok) return false;
+
+      const secret = process.env.CRAWLER_WORKER_SECRET?.trim();
+      if (!secret || this.isRemoteWorkerMode()) return true;
+
+      const statusRes = await fetch(`${this.workerBaseUrl()}/status`, {
+        signal: AbortSignal.timeout(1500),
         headers: this.workerAuthHeaders(),
       });
-      return res.ok;
+      return statusRes.ok;
     } catch {
       return false;
+    }
+  }
+
+  private forceKillLocalWorkerPort(): void {
+    if (this.isRemoteWorkerMode() || process.platform !== "win32") return;
+    try {
+      execSync(
+        `powershell -NoProfile -Command "$p=(Get-NetTCPConnection -LocalPort ${this.workerPort()} -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess; if ($p) { Stop-Process -Id $p -Force }"`,
+        { stdio: "ignore" },
+      );
+    } catch {
+      // ignore
     }
   }
 
@@ -411,6 +448,19 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         this.localStatus.workerRunning = true;
         this.workerCallbackKey = callbackKey;
         return;
+      }
+    } else if (!this.isRemoteWorkerMode()) {
+      const healthOnly = await fetch(`${this.workerBaseUrl()}/health`, {
+        signal: AbortSignal.timeout(1500),
+      }).then((res) => res.ok).catch(() => false);
+      if (healthOnly) {
+        this.appendLog(
+          "warn",
+          "워커 인증 키가 API와 다릅니다. 기존 워커를 종료하고 다시 시작합니다.",
+        );
+        this.forceKillLocalWorkerPort();
+        this.workerProcess = null;
+        this.localStatus.workerRunning = false;
       }
     }
 
@@ -506,8 +556,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       try {
         await this.workerFetch("/shutdown", { method: "POST", body: "{}" });
       } catch {
-        // ignore
+        this.forceKillLocalWorkerPort();
       }
+    } else {
+      this.forceKillLocalWorkerPort();
     }
     if (this.workerProcess) {
       this.workerProcess.kill();
@@ -519,6 +571,15 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private mergeWorkerStatus(remote: Partial<CrawlerStatus>) {
+    if (this.isRemoteWorkerMode()) {
+      this.localStatus = {
+        ...this.localStatus,
+        ...remote,
+        workerRunning: true,
+      };
+      return;
+    }
+
     const { created: _c, updated: _u, ...rest } = remote;
     this.localStatus = {
       ...this.localStatus,
@@ -550,7 +611,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         }
       }
       this.mergeWorkerStatus(remote);
-      if (remote.phase === "idle" || remote.phase === "stopped") {
+      if (remote.phase === "idle" || remote.phase === "stopped" || remote.phase === "error") {
         this.jobRunning = false;
       }
     } catch {
@@ -584,6 +645,16 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         listType: "auction" as const,
         propertyTypes: ["다가구주택", "상가주택"],
         status: "진행물건",
+      };
+    }
+    if (preset === "빌라") {
+      return {
+        ...base,
+        listType: "auction" as const,
+        propertyTypes: base.propertyTypes?.length
+          ? base.propertyTypes
+          : ["연립주택", "다세대주택", "도시형생활주택"],
+        status: base.status || "진행물건",
       };
     }
 
@@ -658,12 +729,28 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return result;
   }
 
+  private crawlerCredentialBody() {
+    const credentials = this.resolveCredentials({});
+    return {
+      userId: credentials.userId,
+      password: credentials.password,
+    };
+  }
+
+  private markLoginFailure(message: string) {
+    this.localStatus.phase = "error";
+    this.localStatus.error = message;
+    this.localStatus.lastMessage = message;
+    this.jobRunning = false;
+    this.appendLog("error", message);
+  }
+
   private async ensureCrawlerLoggedIn(
     submittedBy: string,
     retried = false,
     options: { strict?: boolean } = {},
   ) {
-    const strict = options.strict ?? false;
+    const strict = options.strict ?? true;
     try {
       await this.ensureWorker();
       const credentials = this.resolveCredentials({});
@@ -676,10 +763,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
       this.appendLog(
         "info",
-        `${submittedBy}: 브라우저 미연결 또는 미로그인 — 저장된 계정으로 자동 로그인합니다.`,
+        `${submittedBy}: 탱크옥션 로그인이 풀렸습니다 — 저장된 계정으로 자동 로그인합니다.`,
       );
 
-      const result = await this.workerFetch<{ ok: boolean; message?: string }>(
+      await this.workerFetch<{ ok: boolean; message?: string; loggedIn?: boolean }>(
         "/ensure-login",
         {
           method: "POST",
@@ -689,7 +776,22 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
           }),
         },
       );
-      if (result.message) this.appendLog("info", result.message);
+
+      const after = await this.workerFetch<{
+        browserReady: boolean;
+        loggedIn: boolean;
+      }>("/session");
+      if (!after.loggedIn) {
+        const message =
+          "탱크옥션 로그인에 실패했습니다. ID/비밀번호를 확인한 뒤 다시 시도해 주세요.";
+        this.markLoginFailure(message);
+        if (strict) {
+          throw new ServiceUnavailableException(message);
+        }
+        return;
+      }
+
+      this.appendLog("info", "탱크옥션 자동 로그인 완료");
       await this.syncWorkerStatus();
     } catch (error) {
       const message =
@@ -709,17 +811,20 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         return;
       }
       if (strict) {
-        throw error;
+        this.markLoginFailure(message);
+        throw error instanceof ServiceUnavailableException
+          ? error
+          : new ServiceUnavailableException(message);
       }
       this.appendLog(
         "warn",
-        `${submittedBy}: 자동 로그인에 실패했습니다. 브라우저 로그인 상태를 확인한 뒤 계속 진행합니다. (${message})`,
+        `${submittedBy}: 자동 로그인에 실패했습니다. (${message})`,
       );
     }
   }
 
   async collectUrls(dto: CollectUrlsDto, submittedBy: string) {
-    await this.ensureCrawlerLoggedIn(submittedBy, false, { strict: false });
+    await this.ensureCrawlerLoggedIn(submittedBy);
 
     this.appendLog(
       "info",
@@ -744,7 +849,9 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         preset: dto.preset,
         clear: dto.clear ?? true,
         search: searchConfig,
+        ...this.crawlerCredentialBody(),
       }),
+      signal: AbortSignal.timeout(600_000),
     });
 
     if (result.message) this.appendLog("info", result.message);
@@ -881,41 +988,48 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       `${submittedBy}님이 조회를 시작합니다 (총 ${urls.length}건).`,
     );
 
-    const {
-      callbackUrl,
-      callbackSecret,
-      mirrorCallbackUrl,
-      mirrorCallbackSecret,
-    } = this.dualWriteConfig();
-    const mirror = this.mirrorCallbackConfig();
-    if (this.isRemoteWorkerMode()) {
-      this.appendLog("info", "DB 적재: 운영(Railway)");
-      if (mirror) {
-        this.appendLog("info", `로컬 mirror: ${mirror.callbackUrl}`);
+    try {
+      const {
+        callbackUrl,
+        callbackSecret,
+        mirrorCallbackUrl,
+        mirrorCallbackSecret,
+      } = this.dualWriteConfig();
+      const mirror = this.mirrorCallbackConfig();
+      if (this.isRemoteWorkerMode()) {
+        this.appendLog("info", "DB 적재: 운영(Railway)");
+        if (mirror) {
+          this.appendLog("info", `로컬 mirror: ${mirror.callbackUrl}`);
+        }
+      } else {
+        this.appendLog("info", `DB 적재: 로컬${mirror ? " + 운영" : ""}`);
+        if (mirror) {
+          this.appendLog("info", `운영 mirror: ${mirror.callbackUrl}`);
+        }
       }
-    } else {
-      this.appendLog("info", `DB 적재: 로컬${mirror ? " + 운영" : ""}`);
-      if (mirror) {
-        this.appendLog("info", `운영 mirror: ${mirror.callbackUrl}`);
-      }
-    }
 
-    const result = await this.workerFetch<{ ok: boolean; message?: string }>(
-      "/crawl/start",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          urls,
-          callbackUrl,
-          callbackSecret,
-          mirrorCallbackUrl,
-          mirrorCallbackSecret,
-        }),
-      },
-    );
-    if (result.message) this.appendLog("info", result.message);
-    await this.syncWorkerStatus();
-    return result;
+      const result = await this.workerFetch<{ ok: boolean; message?: string }>(
+        "/crawl/start",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            urls,
+            callbackUrl,
+            callbackSecret,
+            mirrorCallbackUrl,
+            mirrorCallbackSecret,
+            ...this.crawlerCredentialBody(),
+          }),
+        },
+      );
+      if (result.message) this.appendLog("info", result.message);
+      await this.syncWorkerStatus();
+      return result;
+    } catch (error) {
+      this.jobRunning = false;
+      await this.syncWorkerStatus();
+      throw error;
+    }
   }
 
   async stopCrawl(submittedBy: string) {
@@ -968,6 +1082,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     );
 
     if (result.skipped) {
+      const reason = (result as { reason?: string }).reason;
+      if (reason === "invalid_auction_no" || reason === "invalid_address" || reason === "invalid_link") {
+        this.appendLog(
+          "warn",
+          `저장 스킵 (물건 아님): ${String(dto.auctionNo ?? dto.address ?? "?")}`,
+        );
+      }
       return result;
     }
 
@@ -988,13 +1109,14 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         checkAlgorithmMatch(dto, algo)
       ) {
         const message = buildAlgorithmTelegramMessage(dto);
-        const sent = await this.telegramService.send(message);
-        if (sent) {
-          this.appendLog(
-            "info",
-            `텔레그램 알림: ${dto.auctionNo || dto.address}`,
-          );
-        }
+        void this.telegramService.send(message).then((sent) => {
+          if (sent) {
+            this.appendLog(
+              "info",
+              `텔레그램 알림: ${dto.auctionNo || dto.address}`,
+            );
+          }
+        });
       }
     }
 
@@ -1135,5 +1257,234 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       );
       this.jobRunning = false;
     }
+  }
+
+  async getCafeStatus() {
+    await this.ensureWorker();
+    return this.workerFetch<Record<string, unknown>>("/cafe/status");
+  }
+
+  private resolveNaverCredentials(dto: CrawlerLoginDto = {}) {
+    this.config = loadCrawlerConfig();
+    const userId =
+      dto.userId?.trim() ||
+      this.config.naverCredentials?.userId?.trim() ||
+      process.env.NAVER_USER?.trim() ||
+      "";
+    const password =
+      dto.password ||
+      this.config.naverCredentials?.password ||
+      process.env.NAVER_PASSWORD ||
+      "";
+    return { userId, password };
+  }
+
+  private naverCredentialBody(dto: CrawlerLoginDto = {}) {
+    const credentials = this.resolveNaverCredentials(dto);
+    return {
+      naverUserId: credentials.userId,
+      naverPassword: credentials.password,
+    };
+  }
+
+  async loginCafe(dto: CrawlerLoginDto, username: string) {
+    const credentials = this.resolveNaverCredentials(dto);
+    if (!credentials.userId || !credentials.password) {
+      throw new ServiceUnavailableException(
+        "네이버 ID와 비밀번호를 입력해 주세요.",
+      );
+    }
+
+    this.updateConfig({
+      naverCredentials: {
+        userId: credentials.userId,
+        password: credentials.password,
+      },
+    });
+
+    await this.ensureWorker();
+    this.appendLog("info", `[${username}] 네이버 자동 로그인 시도`);
+    const result = await this.workerFetch<{
+      ok: boolean;
+      message?: string;
+      naverLoggedIn?: boolean;
+    }>("/cafe/login", {
+      method: "POST",
+      body: JSON.stringify({
+        naverUserId: credentials.userId,
+        naverPassword: credentials.password,
+      }),
+    });
+    if (result.message) this.appendLog("info", result.message);
+    return result;
+  }
+
+  async openCafeLogin(username: string) {
+    await this.ensureWorker();
+    this.appendLog("info", `[${username}] 네이버 로그인 페이지 열기`);
+    return this.workerFetch<{ ok: boolean; message?: string }>(
+      "/cafe/open-login",
+      { method: "POST", body: "{}" },
+    );
+  }
+
+  async openCafe(cafeUrl: string, username: string) {
+    await this.ensureWorker();
+    this.appendLog("info", `[${username}] 카페 페이지 열기: ${cafeUrl}`);
+    return this.workerFetch<{ ok: boolean; message?: string; naverLoggedIn?: boolean }>(
+      "/cafe/open",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          cafeUrl,
+          ...this.naverCredentialBody(),
+        }),
+      },
+    );
+  }
+
+  async checkCafeLogin(username: string) {
+    await this.ensureWorker();
+    return this.workerFetch<{
+      ok: boolean;
+      naverLoggedIn?: boolean;
+      message?: string;
+    }>("/cafe/check-login", { method: "POST", body: "{}" });
+  }
+
+  async startCafeCrawl(
+    dto: {
+      cafeUrl?: string;
+      maxArticles?: number;
+      maxPages?: number;
+      userId?: string;
+      password?: string;
+    },
+    username: string,
+  ) {
+    await this.ensureWorker();
+    const credentials = this.resolveNaverCredentials(dto);
+    if (credentials.userId && credentials.password) {
+      this.updateConfig({
+        naverCredentials: {
+          userId: credentials.userId,
+          password: credentials.password,
+        },
+      });
+    }
+    const { callbackUrl, callbackSecret } = this.cafeCallbackConfig();
+    const cafeUrl =
+      dto.cafeUrl?.trim() ||
+      process.env.NAVER_CAFE_URL?.trim() ||
+      "https://cafe.naver.com/0113053470";
+
+    this.appendLog(
+      "info",
+      `[${username}] 카페 수집 시작 (${cafeUrl}, 최대 ${dto.maxArticles ?? 30}건)`,
+    );
+
+    return this.workerFetch<{ ok: boolean; message?: string }>(
+      "/cafe/crawl/start",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          cafeUrl,
+          maxArticles: dto.maxArticles ?? 30,
+          maxPages: dto.maxPages ?? 5,
+          callbackUrl,
+          callbackSecret,
+          ...this.naverCredentialBody(),
+        }),
+      },
+    );
+  }
+
+  async stopCafeCrawl(username: string) {
+    await this.ensureWorker();
+    this.appendLog("info", `[${username}] 카페 수집 중단 요청`);
+    return this.workerFetch<{ ok: boolean }>("/cafe/crawl/stop", {
+      method: "POST",
+      body: "{}",
+    });
+  }
+
+  async importCafeArticle(
+    dto: {
+      articleUrl: string;
+      cafeUrl?: string;
+      userId?: string;
+      password?: string;
+    },
+    username: string,
+  ) {
+    await this.ensureWorker();
+    const credentials = this.resolveNaverCredentials(dto);
+    if (credentials.userId && credentials.password) {
+      this.updateConfig({
+        naverCredentials: {
+          userId: credentials.userId,
+          password: credentials.password,
+        },
+      });
+    }
+    const { callbackUrl, callbackSecret } = this.cafeCallbackConfig();
+    const articleUrl = dto.articleUrl?.trim() ?? "";
+    if (!articleUrl.includes("cafe.naver.com")) {
+      throw new ServiceUnavailableException(
+        "카페 글 URL을 입력해 주세요. (cafe.naver.com)",
+      );
+    }
+
+    this.appendLog("info", `[${username}] 카페 단일 글 수집: ${articleUrl}`);
+
+    return this.workerFetch<{ ok: boolean; message?: string }>(
+      "/cafe/crawl/single",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          articleUrl,
+          cafeUrl:
+            dto.cafeUrl?.trim() ||
+            process.env.NAVER_CAFE_URL?.trim() ||
+            "https://cafe.naver.com/0113053470",
+          callbackUrl,
+          callbackSecret,
+          ...this.naverCredentialBody(),
+        }),
+      },
+    );
+  }
+
+  async importCafePost(
+    raw: Record<string, unknown>,
+    submittedBy: string,
+    secret: string,
+  ) {
+    const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
+    if (secret !== expected) {
+      throw new ServiceUnavailableException("크롤러 인증 실패");
+    }
+
+    const sourceArticleId = String(raw.sourceArticleId ?? "").trim();
+    const sourceUrl = String(raw.sourceUrl ?? "").trim();
+    const rawContent = String(raw.rawContent ?? "").trim();
+
+    const result = await this.cafeKnowledgeService.importRawPost({
+      sourceArticleId,
+      sourceUrl,
+      sourceTitle: String(raw.sourceTitle ?? ""),
+      sourceBoard: String(raw.sourceBoard ?? ""),
+      cafeUrl: String(raw.cafeUrl ?? ""),
+      rawContent,
+    });
+
+    if (!result.skipped) {
+      this.appendLog(
+        "info",
+        `카페 글 저장: ${String(raw.sourceTitle ?? sourceArticleId)}`,
+      );
+    }
+
+    return result;
   }
 }

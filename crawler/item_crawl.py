@@ -175,19 +175,36 @@ AUCTION_NO_SELECTORS = [
 ]
 
 
+AUCTION_NO_PATTERN = re.compile(r"(\d{4}타경\d+)")
+
+
+def _normalize_auction_no(raw: str) -> str:
+    text = (raw or "").strip().replace("\u00a0", " ")
+    if not text:
+        return ""
+    compact = re.sub(r"\s+", "", text)
+    match = AUCTION_NO_PATTERN.search(compact)
+    if match:
+        return match.group(1)
+    dash = re.search(r"(\d{4})\s*-\s*(\d+)", text)
+    if dash:
+        return f"{dash.group(1)}타경{dash.group(2)}"
+    return ""
+
+
 def _auction_no_from_label(raw_entry: str) -> str:
     if "_" not in raw_entry:
         return ""
     prefix = raw_entry.split("_", 1)[0].strip()
     if not prefix or prefix.startswith("http"):
         return ""
-    return prefix
+    return _normalize_auction_no(prefix)
 
 
 def _auction_no_from_page_text(driver) -> str:
     try:
         body = driver.find_element(By.TAG_NAME, "body").text
-        match = re.search(r"(\d{4}타경\d+)", body)
+        match = AUCTION_NO_PATTERN.search(body.replace(" ", ""))
         if match:
             return match.group(1)
         match = re.search(r"(\d{4})\s*-\s*(\d+)", body[:800])
@@ -199,15 +216,6 @@ def _auction_no_from_page_text(driver) -> str:
 
 
 def _extract_auction_no(driver, raw_entry: str, wait: WebDriverWait) -> str:
-    for by, selector in AUCTION_NO_SELECTORS:
-        try:
-            element = wait.until(EC.presence_of_element_located((by, selector)))
-            text = _element_text(element)
-            if text:
-                return text
-        except Exception:
-            continue
-
     label = _auction_no_from_label(raw_entry)
     if label:
         return label
@@ -215,6 +223,16 @@ def _extract_auction_no(driver, raw_entry: str, wait: WebDriverWait) -> str:
     page_text = _auction_no_from_page_text(driver)
     if page_text:
         return page_text
+
+    for by, selector in AUCTION_NO_SELECTORS:
+        try:
+            element = wait.until(EC.presence_of_element_located((by, selector)))
+            text = _element_text(element)
+            normalized = _normalize_auction_no(text)
+            if normalized:
+                return normalized
+        except Exception:
+            continue
 
     return "없음"
 
@@ -500,8 +518,8 @@ def crawl_item(driver, raw_entry: str) -> dict:
         "sale_price": sale_price,
         "naver_lowest_price": naver["naver_lowest_price"] or 0,
         "gap_margin_sold_price": naver["gap_margin_sold_price"],
-        "gap_margin": naver["gap_margin"] or 0,
-        "new_case_gap_margin": naver["new_case_gap_margin"] or 0,
+        "gap_margin": naver["gap_margin"],
+        "new_case_gap_margin": naver["new_case_gap_margin"],
         "real_trade_count": naver["real_trade_count"],
         "bid_info": bid_info.strip(),
         "owner": owner,
@@ -520,6 +538,38 @@ def crawl_item(driver, raw_entry: str) -> dict:
         "naver_id": str(naver.get("complex_id") or "").strip(),
         "record_time": datetime.now().isoformat(timespec="seconds"),
     }
+
+
+_INVALID_AUCTION_HINTS = (
+    "MY위젯",
+    "도움말",
+    "위젯",
+    "로그아웃",
+    "로그인",
+)
+
+
+def is_valid_crawl_item(item: dict) -> bool:
+    raw_no = str(item.get("auctionNo") or item.get("auction_no") or "").strip()
+    if any(hint in raw_no for hint in _INVALID_AUCTION_HINTS):
+        return False
+
+    auction_no = _normalize_auction_no(raw_no)
+    if not auction_no:
+        return False
+
+    address = str(item.get("address") or "").strip()
+    if not address or address in ("없음", "값없음"):
+        return False
+
+    link = str(item.get("link") or "").strip()
+    if link:
+        if "tankauction.com" not in link:
+            return False
+        if not re.search(r"/(ca|pa)/(caView|paView)\.php", link):
+            return False
+
+    return True
 
 
 def fetch_naver_id_only(driver, raw_entry: str) -> dict:

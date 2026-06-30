@@ -14,6 +14,7 @@ import { parseAddressMeta } from "./address-parser";
 import { normalizeTankLink } from "../crawler/crawler-url.util";
 import type { UpdateAuctionDto } from "./update-auction.dto";
 import { buildAuctionEntity, mergeAuctionFromSource, resolvePriceDiffs } from "./auction-builder";
+import { validateCrawledItem } from "./crawl-item-validation.util";
 import { AuctionStatus } from "../common/constants";
 import { normalizeAuctionNo } from "./auction-no.util";
 import {
@@ -44,6 +45,20 @@ export class AuctionsService implements OnModuleInit {
 
   async onModuleInit() {
     await this.backfillAuctionNoNorm();
+    await this.logProductionDbHealth();
+  }
+
+  private async logProductionDbHealth() {
+    if (!process.env.DATABASE_URL?.trim()) return;
+
+    const total = await this.countAll();
+    console.log(`[DB] 운영 auctions ${total}건`);
+
+    if (total === 0) {
+      console.warn(
+        "[DB] 경고: 운영 DB가 비어 있습니다. Postgres 재생성/DATABASE_URL 변경 여부를 확인하세요.",
+      );
+    }
   }
 
   private async backfillAuctionNoNorm() {
@@ -192,6 +207,14 @@ export class AuctionsService implements OnModuleInit {
   }
 
   async removeAll() {
+    if (
+      process.env.DATABASE_URL?.trim() &&
+      process.env.ALLOW_DELETE_ALL !== "true"
+    ) {
+      throw new BadRequestException(
+        "운영 DB에서는 전체 삭제가 비활성화되어 있습니다. Railway Variables에 ALLOW_DELETE_ALL=true 설정 후에만 가능합니다.",
+      );
+    }
     const result = await this.auctionRepo.delete({});
     return { deleted: result.affected ?? 0, total: 0 };
   }
@@ -394,16 +417,20 @@ export class AuctionsService implements OnModuleInit {
     dto: Partial<UpdateAuctionDto>,
     submittedBy: string,
   ) {
-    if (!dto.auctionNo?.trim() && !dto.address?.trim()) {
+    const validation = validateCrawledItem(dto);
+    if (!validation.valid) {
       return {
         skipped: true as const,
         unchanged: false as const,
         created: false,
         item: null,
+        reason: validation.reason,
       };
     }
 
-    const { item, created, unchanged } = await this.upsertOne(dto, {
+    const normalizedDto = { ...dto, auctionNo: validation.auctionNo };
+
+    const { item, created, unchanged } = await this.upsertOne(normalizedDto, {
       status: AuctionStatus.APPROVED,
       submittedBy,
       changeSource: "crawler",

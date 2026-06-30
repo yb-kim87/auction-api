@@ -36,3 +36,17 @@ export function requireConsultantOrAdmin(ctx: AuthContext) {
     throw new ForbiddenException("접근 권한이 없습니다.");
   }
 }
+
+const SEARCH_ACCESS_ROLES: UserRole[] = [
+  UserRole.STUDENT,
+  UserRole.CONSULTING_STUDENT,
+  UserRole.CONSULTANT,
+  UserRole.ADMIN,
+];
+
+export function requireSearchAccess(ctx: AuthContext) {
+  requireAuth(ctx);
+  if (!ctx.role || !SEARCH_ACCESS_ROLES.includes(ctx.role as UserRole)) {
+    throw new ForbiddenException("AI 분석은 수강생 이상 등급에서 이용할 수 있습니다.");
+  }
+}

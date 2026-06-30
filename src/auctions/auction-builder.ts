@@ -4,6 +4,7 @@ import { parseAddressMeta, cleanAddress, cleanEducation, cleanBuildingRegistry, 
 import { AuctionStatus } from "../common/constants";
 import type { AuctionRow } from "./excel-columns";
 import { normalizeAuctionNo } from "./auction-no.util";
+import { hasNaverPrice } from "./naver-price.util";
 
 interface CreateMeta {
   status: AuctionStatus;
@@ -22,6 +23,14 @@ type DiffSource = {
 
 export function resolvePriceDiffs(parsed: DiffSource) {
   const naver = parsed.naverPrice ?? 0;
+  if (!hasNaverPrice(naver)) {
+    return {
+      diffNaverSale: null,
+      diffNaverMin: 0,
+      diffNaverAppraised: 0,
+    };
+  }
+
   const min = parsed.minPrice ?? 0;
   const appraised = parsed.appraisedValue ?? 0;
   const sale = parsed.salePrice;

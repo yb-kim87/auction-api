@@ -173,4 +173,99 @@ export class CrawlerController {
     requireAdmin(ctx);
     return this.crawlerService.backfillNaverIds(ctx.username);
   }
+
+  @Get("cafe/status")
+  async cafeStatus(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.crawlerService.getCafeStatus();
+  }
+
+  @Post("cafe/open-login")
+  async cafeOpenLogin(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.openCafeLogin(ctx.username);
+  }
+
+  @Post("cafe/login")
+  async cafeLogin(
+    @Headers() headers: Record<string, string>,
+    @Body() body: CrawlerLoginDto,
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.loginCafe(body, ctx.username);
+  }
+
+  @Post("cafe/open")
+  async cafeOpen(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { cafeUrl?: string },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.openCafe(
+      body.cafeUrl ?? "https://cafe.naver.com/0113053470",
+      ctx.username,
+    );
+  }
+
+  @Post("cafe/check-login")
+  async cafeCheckLogin(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.checkCafeLogin(ctx.username);
+  }
+
+  @Post("cafe/start")
+  async cafeStart(
+    @Headers() headers: Record<string, string>,
+    @Body()
+    body: {
+      cafeUrl?: string;
+      maxArticles?: number;
+      maxPages?: number;
+      userId?: string;
+      password?: string;
+    },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.startCafeCrawl(body, ctx.username);
+  }
+
+  @Post("cafe/stop")
+  async cafeStop(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.stopCafeCrawl(ctx.username);
+  }
+
+  @Post("cafe/import-article")
+  async cafeImportArticle(
+    @Headers() headers: Record<string, string>,
+    @Body()
+    body: {
+      articleUrl: string;
+      cafeUrl?: string;
+      userId?: string;
+      password?: string;
+    },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.importCafeArticle(body, ctx.username);
+  }
+
+  @Post("import-cafe-post")
+  importCafePost(
+    @Headers() headers: Record<string, string>,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const secret = headers["x-crawler-secret"] ?? "";
+    const submittedBy =
+      typeof body.submittedBy === "string" ? body.submittedBy : "crawler-cafe";
+    const { submittedBy: _, ...raw } = body;
+    return this.crawlerService.importCafePost(raw, submittedBy, secret);
+  }
 }
