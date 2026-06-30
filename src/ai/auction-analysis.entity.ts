@@ -25,11 +25,11 @@ export class AuctionAnalysis {
   model!: string;
 
   /** 물건 데이터 변경 시 캐시 무효화 판단용 */
-  @Column({ type: "datetime", nullable: true })
+  @Column({ type: "timestamptz", nullable: true })
   auctionSnapshotAt!: Date | null;
 
   /** 경매지식 변경 시 캐시 무효화 판단용 */
-  @Column({ type: "datetime", nullable: true })
+  @Column({ type: "timestamptz", nullable: true })
   knowledgeMaxUpdatedAt!: Date | null;
 
   @CreateDateColumn()

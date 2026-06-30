@@ -33,7 +33,7 @@ export class Auction {
   @Column({ default: false })
   isUpdated!: boolean;
 
-  @Column({ type: "datetime", nullable: true })
+  @Column({ type: "timestamptz", nullable: true })
   updatedAt!: Date | null;
 
   @Column({ default: "" })
