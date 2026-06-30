@@ -26,25 +26,9 @@ function resolveSynchronize(databaseUrl: string | undefined): boolean {
   return process.env.TYPEORM_SYNCHRONIZE === "true";
 }
 
-function isManagedDeploy(): boolean {
-  return Boolean(
-    process.env.RAILWAY_ENVIRONMENT ||
-      process.env.RAILWAY_SERVICE_ID ||
-      process.env.RAILWAY_PROJECT_ID ||
-      process.env.NODE_ENV === "production",
-  );
-}
-
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {
   const databaseUrl = process.env.DATABASE_URL?.trim();
   const synchronize = resolveSynchronize(databaseUrl);
-
-  if (!databaseUrl && isManagedDeploy()) {
-    throw new Error(
-      "[DB] DATABASE_URL이 없습니다. Railway/Vercel 등 운영 환경에서는 Postgres 연결이 필수입니다. " +
-        "DATABASE_URL 없이 기동하면 sql.js 임시 파일을 쓰며 재배포마다 데이터가 사라집니다.",
-    );
-  }
 
   if (databaseUrl) {
     console.log(
