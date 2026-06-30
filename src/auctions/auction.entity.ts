@@ -7,6 +7,7 @@ import {
   AfterLoad,
 } from "typeorm";
 import { AuctionStatus } from "../common/constants";
+import { resolveTimestampType } from "../common/column-types.util";
 import { cleanAddress, cleanEducation, cleanBuildingRegistry, cleanTenantDetail, cleanElevatorAndParking } from "./address-parser";
 
 @Entity("auctions")
@@ -33,7 +34,7 @@ export class Auction {
   @Column({ default: false })
   isUpdated!: boolean;
 
-  @Column({ type: "timestamptz", nullable: true })
+  @Column({ type: resolveTimestampType(), nullable: true })
   updatedAt!: Date | null;
 
   @Column({ default: "" })
