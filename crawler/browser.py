@@ -1,4 +1,5 @@
 import glob
+import logging
 import os
 import threading
 import time
@@ -6,6 +7,10 @@ from pathlib import Path
 
 import undetected_chromedriver as uc
 from selenium.common.exceptions import InvalidSessionIdException, WebDriverException
+
+from chrome_profile import prepare_profile
+
+log = logging.getLogger(__name__)
 
 UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -19,6 +24,8 @@ NAVER_LOGIN_URL = "https://nid.naver.com/nidlogin.login?mode=form&url=https://ww
 
 _drivers: dict[str, object] = {}
 _driver_lock = threading.RLock()
+# 탱크/카페 WebDriver 조작 직렬화 (ThreadingHTTPServer 동시 요청 방지)
+selenium_lock = _driver_lock
 
 
 def _api_root() -> Path:
@@ -71,8 +78,11 @@ def _profile_dir(context: str) -> str:
     if override:
         return override
 
-    folder = "chrome-profile-cafe" if context == CONTEXT_CAFE else "chrome-profile-tank"
-    return str(_api_root() / "data" / "crawler" / folder)
+    profile_dir, actions = prepare_profile(_api_root(), context)
+    for action in actions:
+        log.warning("[chrome-profile:%s] %s", context, action)
+        print(f"[chrome-profile:{context}] {action}", flush=True)
+    return profile_dir
 
 
 def _apply_user_agent(driver) -> None:
@@ -127,11 +137,30 @@ def _format_chrome_error(exc: Exception) -> str:
     return f"Chrome 시작 오류: {exc}"
 
 
-def _create_chrome(options: uc.ChromeOptions):
+def _build_chrome_options(profile_dir: str) -> uc.ChromeOptions:
+    opts = uc.ChromeOptions()
+    opts.add_argument("--lang=ko-KR")
+    opts.add_argument("--window-size=1920,1080")
+    opts.add_argument("--disable-blink-features=AutomationControlled")
+    opts.add_argument(f"--user-agent={UA}")
+    opts.add_argument(f"--user-data-dir={profile_dir}")
+    opts.add_argument("--profile-directory=Default")
+    opts.add_argument("--no-first-run")
+    opts.add_argument("--no-default-browser-check")
+    opts.add_argument("--disable-session-crashed-bubble")
+    opts.add_argument("--disable-dev-shm-usage")
+    opts.add_argument("--no-sandbox")
+    opts.add_argument("--disable-backgrounding-occluded-windows")
+    opts.add_argument("--disable-renderer-backgrounding")
+    return opts
+
+
+def _create_chrome(build_options):
     version_main = _chrome_major_version()
     last_exc: Exception | None = None
 
     for use_subprocess in (True, False):
+        options = build_options()
         kwargs: dict = {"options": options, "use_subprocess": use_subprocess}
         if version_main is not None:
             kwargs["version_main"] = version_main
@@ -143,6 +172,10 @@ def _create_chrome(options: uc.ChromeOptions):
             driver_path = _resolve_chromedriver_path()
             if not driver_path:
                 continue
+            options = build_options()
+            kwargs = {"options": options, "use_subprocess": use_subprocess}
+            if version_main is not None:
+                kwargs["version_main"] = version_main
             kwargs["driver_executable_path"] = driver_path
             try:
                 return uc.Chrome(**kwargs)
@@ -163,15 +196,6 @@ def is_session_alive(driver) -> bool:
         return True
     except (InvalidSessionIdException, WebDriverException):
         return False
-
-
-def _focus_driver(driver) -> None:
-    try:
-        handles = driver.window_handles
-        if handles:
-            driver.switch_to.window(handles[-1])
-    except Exception:
-        pass
 
 
 def _close_context_unlocked(context: str) -> None:
@@ -218,7 +242,6 @@ def get_driver(
 
         driver = _drivers.get(context)
         if not force_new and driver is not None and is_session_alive(driver):
-            _focus_driver(driver)
             if navigate:
                 current = (driver.current_url or "").strip()
                 target = navigate.strip()
@@ -232,19 +255,8 @@ def get_driver(
         profile_dir = _profile_dir(context)
         os.makedirs(profile_dir, exist_ok=True)
 
-        opts = uc.ChromeOptions()
-        opts.add_argument("--lang=ko-KR")
-        opts.add_argument("--window-size=1920,1080")
-        opts.add_argument("--disable-blink-features=AutomationControlled")
-        opts.add_argument(f"--user-agent={UA}")
-        # 로그인 쿠키 유지 — 이 폴더를 삭제하면 네이버 재로그인 필요
-        opts.add_argument(f"--user-data-dir={profile_dir}")
-        opts.add_argument("--profile-directory=Default")
-        opts.add_argument("--no-first-run")
-        opts.add_argument("--no-default-browser-check")
-        opts.add_argument("--disable-session-crashed-bubble")
-        opts.add_argument("--disable-dev-shm-usage")
-        opts.add_argument("--no-sandbox")
+        def build_options():
+            return _build_chrome_options(profile_dir)
 
         last_exc: Exception | None = None
         driver = None
@@ -254,7 +266,7 @@ def get_driver(
                     _close_context_unlocked(context)
                     _clear_chrome_profile_locks(profile_dir)
                     time.sleep(1.5)
-                driver = _create_chrome(opts)
+                driver = _create_chrome(build_options)
                 break
             except Exception as exc:
                 last_exc = exc

@@ -1,6 +1,6 @@
 import type { UpdateAuctionDto } from "./update-auction.dto";
 
-const AUCTION_NO_PATTERN = /^\d{4}타경\d+$/;
+const AUCTION_NO_PATTERN = /^\d{4}타경\d+(?:\(\d+\))?$/;
 
 const INVALID_AUCTION_NO_HINTS = [
   /MY위젯/i,
@@ -16,8 +16,16 @@ export function normalizeCrawlAuctionNo(raw: string): string | null {
   if (!trimmed) return null;
 
   const compact = trimmed.replace(/\s/g, "");
-  const taMatch = compact.match(/(\d{4}타경\d+)/);
-  if (taMatch) return taMatch[1];
+  const taMatch = compact.match(/^(\d{4})타경(\d+)(?:\((\d+)\))?$/);
+  if (taMatch) {
+    const [, year, serial, pn] = taMatch;
+    return pn ? `${year}타경${serial}(${pn})` : `${year}타경${serial}`;
+  }
+  const embedded = compact.match(/(\d{4})타경(\d+)(?:\((\d+)\))?/);
+  if (embedded) {
+    const [, year, serial, pn] = embedded;
+    return pn ? `${year}타경${serial}(${pn})` : `${year}타경${serial}`;
+  }
 
   const dashMatch = trimmed.match(/(\d{4})\s*-\s*(\d+)/);
   if (dashMatch) return `${dashMatch[1]}타경${dashMatch[2]}`;

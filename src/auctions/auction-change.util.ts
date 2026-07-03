@@ -1,6 +1,7 @@
 import { Auction } from "./auction.entity";
 import type { UpdateAuctionDto } from "./update-auction.dto";
 import type { AuctionFieldChange } from "./auction-change.entity";
+import { formatTenantStatusText } from "./tenant-status.util";
 
 export type ChangeSource =
   | "excel"
@@ -51,7 +52,7 @@ export const AUCTION_FIELD_LABELS: Record<string, string> = {
   landShare: "토지지분",
   buildingRegistry: "건물등기",
   education: "교육환경",
-  tenantDetail: "임차상세",
+  tenantDetail: "임차인 현황",
   priceDetail: "호가 상세",
   tradingDetail: "실거래 상세",
   recordTime: "기록시간",
@@ -160,6 +161,11 @@ function formatDisplayValue(
     }
     if (COUNT_FIELDS.has(field)) return value.toLocaleString("ko-KR");
     return String(value);
+  }
+
+  if (field === "tenantDetail") {
+    const formatted = formatTenantStatusText(String(value));
+    return formatted || "-";
   }
 
   return String(value);

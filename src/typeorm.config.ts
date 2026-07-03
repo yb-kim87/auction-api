@@ -8,6 +8,7 @@ import { User } from "./users/user.entity";
 import { AuctionAnalysis } from "./ai/auction-analysis.entity";
 import { AuctionKnowledge } from "./ai/knowledge.entity";
 import { KnowledgeDraft } from "./ai/knowledge-draft.entity";
+import { LoanPolicy } from "./loan-policy/loan-policy.entity";
 
 const entities = [
   Auction,
@@ -17,6 +18,7 @@ const entities = [
   AuctionAnalysis,
   AuctionKnowledge,
   KnowledgeDraft,
+  LoanPolicy,
 ];
 
 function resolveSynchronize(databaseUrl: string | undefined): boolean {

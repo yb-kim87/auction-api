@@ -166,6 +166,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     this.logs.length = 0;
   }
 
+  appendWorkerLog(level: CrawlerLogEntry["level"], message: string) {
+    this.appendLog(level, message);
+  }
+
   async getStatus(): Promise<CrawlerStatus> {
     await this.syncWorkerStatus();
     this.applyScheduleToStatus();
@@ -392,11 +396,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       });
       if (!res.ok) return false;
 
+      if (this.jobRunning) return true;
+
       const secret = process.env.CRAWLER_WORKER_SECRET?.trim();
       if (!secret || this.isRemoteWorkerMode()) return true;
 
       const statusRes = await fetch(`${this.workerBaseUrl()}/status`, {
-        signal: AbortSignal.timeout(1500),
+        signal: AbortSignal.timeout(3000),
         headers: this.workerAuthHeaders(),
       });
       return statusRes.ok;
@@ -513,10 +519,26 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
     proc.stderr?.on("data", (chunk: Buffer) => {
       const text = chunk.toString().trim();
-      if (text) {
-        this.logger.warn(`[crawler-worker] ${text}`);
-        this.appendLog("warn", text);
+      if (!text) return;
+      if (
+        text.includes("ConnectionAbortedError") ||
+        text.includes("WinError 10053") ||
+        text.includes("BrokenPipeError")
+      ) {
+        return;
       }
+      this.logger.warn(`[crawler-worker] ${text}`);
+      if (
+        text.includes("Stacktrace:") &&
+        text.includes("undetected_chromedriver")
+      ) {
+        this.appendLog(
+          "warn",
+          "Chrome 드라이버 오류 — 「워커 재시작」 후 탱크옥션 로그인을 다시 시도해 주세요.",
+        );
+        return;
+      }
+      this.appendLog("warn", text);
     });
 
     proc.on("exit", (code) => {
@@ -593,10 +615,12 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
   private async syncWorkerStatus() {
     if (!(await this.isWorkerHealthy())) {
-      this.localStatus.workerRunning = false;
-      this.localStatus.browserReady = false;
-      if (this.localStatus.phase !== "error" && !this.jobRunning) {
-        this.localStatus.phase = "idle";
+      if (!this.jobRunning) {
+        this.localStatus.workerRunning = false;
+        this.localStatus.browserReady = false;
+        if (this.localStatus.phase !== "error") {
+          this.localStatus.phase = "idle";
+        }
       }
       return;
     }
@@ -604,7 +628,9 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     try {
       const remote = await this.workerFetch<
         Partial<CrawlerStatus> & { events?: string[] }
-      >("/status");
+      >("/status", {
+        signal: AbortSignal.timeout(this.jobRunning ? 2500 : 5000),
+      });
       if (remote.events?.length) {
         for (const message of remote.events) {
           const level: CrawlerLogEntry["level"] = message.includes("오류")
@@ -618,7 +644,9 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         this.jobRunning = false;
       }
     } catch {
-      this.localStatus.workerRunning = false;
+      if (!this.jobRunning) {
+        this.localStatus.workerRunning = false;
+      }
     }
   }
 
@@ -842,20 +870,42 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     const linkExistingMap =
       await this.auctionsService.getLinkCollectFilterMap();
 
-    const result = await this.workerFetch<{
+    this.jobRunning = true;
+    this.localStatus.phase = "collecting";
+
+    let result: {
       ok: boolean;
       urls: CrawlerUrlEntry[];
       message?: string;
-    }>("/collect-urls", {
-      method: "POST",
-      body: JSON.stringify({
-        preset: dto.preset,
-        clear: dto.clear ?? true,
-        search: searchConfig,
-        ...this.crawlerCredentialBody(),
-      }),
-      signal: AbortSignal.timeout(600_000),
-    });
+    };
+    try {
+      result = await this.workerFetch<{
+        ok: boolean;
+        urls: CrawlerUrlEntry[];
+        message?: string;
+      }>("/collect-urls", {
+        method: "POST",
+        body: JSON.stringify({
+          preset: dto.preset,
+          clear: dto.clear ?? true,
+          search: searchConfig,
+          ...this.crawlerCredentialBody(),
+        }),
+        signal: AbortSignal.timeout(600_000),
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "주소 수집에 실패했습니다.";
+      this.appendLog(
+        "error",
+        message.includes("fetch failed")
+          ? "크롤러 워커 통신 실패 — 「워커 재시작」 후 다시 시도해 주세요."
+          : message,
+      );
+      throw error;
+    } finally {
+      this.jobRunning = false;
+    }
 
     if (result.message) this.appendLog("info", result.message);
 
@@ -895,6 +945,12 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
+    this.appendLog(
+      "info",
+      `탱크 ${rawUrls.length}건 → 작업목록 ${finalUrls.length}건` +
+        (excluded > 0 ? ` (DB중복·입찰기일 미도래 ${excluded}건 제외)` : ""),
+    );
+
     this.localStatus.urls = finalUrls;
     this.localStatus.total = finalUrls.length;
     this.localStatus.completed = 0;
@@ -911,6 +967,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return {
       ...result,
       urls: finalUrls,
+      rawCount: rawUrls.length,
       excluded,
       deduped: deduped + mergeDeduped,
       naverRefresh,
@@ -1037,11 +1094,16 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
   async stopCrawl(submittedBy: string) {
     this.appendLog("info", `${submittedBy}님이 작업 중단을 요청했습니다.`);
-    if (await this.isWorkerHealthy()) {
+    try {
       await this.workerFetch("/crawl/stop", {
         method: "POST",
         body: "{}",
       });
+    } catch (error) {
+      this.appendLog(
+        "warn",
+        `워커 중단 요청 실패: ${error instanceof Error ? error.message : "unknown"}`,
+      );
     }
     this.localStatus.phase = "stopped";
     this.jobRunning = false;
@@ -1079,6 +1141,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     }
 
     const dto = mapCrawledItem(raw);
+    const label = String(dto.auctionNo || dto.address || "?").trim();
+
     const result = await this.auctionsService.importCrawledItem(
       dto,
       submittedBy || "crawler",
@@ -1087,12 +1151,37 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     if (result.skipped) {
       const reason = (result as { reason?: string }).reason;
       if (reason === "invalid_auction_no" || reason === "invalid_address" || reason === "invalid_link") {
-        this.appendLog(
-          "warn",
-          `저장 스킵 (물건 아님): ${String(dto.auctionNo ?? dto.address ?? "?")}`,
-        );
+        if (!options.mirror) {
+          const detail =
+            reason === "invalid_auction_no"
+              ? "경매번호 형식 오류"
+              : reason === "invalid_address"
+                ? "주소 없음"
+                : "탱크 링크 형식 오류";
+          this.appendLog("warn", `저장 스킵 (${detail}): ${label}`);
+        }
+      } else if ((result as { unchanged?: boolean }).unchanged) {
+        if (!options.mirror) {
+          this.appendLog("info", `${label} (변경 없음 — DB에 이미 있음)`);
+        }
+      } else if (!options.mirror) {
+        this.appendLog("warn", `${label} 저장 스킵 (${reason || "unknown"})`);
       }
       return result;
+    }
+
+    if (!options.mirror) {
+      const fromCrawlerWorker =
+        submittedBy === "crawler" ||
+        submittedBy.startsWith("crawler-");
+      if (!fromCrawlerWorker) {
+        this.appendLog(
+          "info",
+          result.created
+            ? `${dto.auctionNo || dto.address} 등록완료`
+            : `${dto.auctionNo || dto.address} 갱신완료`,
+        );
+      }
     }
 
     if (!options.mirror) {

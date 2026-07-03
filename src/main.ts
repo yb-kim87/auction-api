@@ -1,6 +1,7 @@
 import { config as loadEnv } from "dotenv";
 import { join } from "path";
 import { NestFactory } from "@nestjs/core";
+import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 
 loadEnv({ path: join(__dirname, "..", ".env") });
@@ -20,7 +21,10 @@ async function bootstrap() {
   app.enableCors({
     origin: buildCorsOrigins(),
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true,
   });
+
+  app.use(cookieParser());
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);

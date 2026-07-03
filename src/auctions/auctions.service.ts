@@ -98,6 +98,7 @@ export class AuctionsService implements OnModuleInit {
     return this.auctionRepo
       .createQueryBuilder("auction")
       .orderBy("COALESCE(auction.updatedAt, auction.createdAt)", "DESC")
+      .addOrderBy("auction.createdAt", "DESC")
       .getMany();
   }
 
@@ -355,6 +356,7 @@ export class AuctionsService implements OnModuleInit {
 
       const merged = mergeAuctionFromSource(existing, dto, {
         preserveMemoIfEmpty,
+        preserveExistingIfEmpty: meta.changeSource === "crawler",
       });
       const { city, district, propType } = parseAddressMeta(merged.address);
       const diffs = resolvePriceDiffs(merged);
@@ -713,7 +715,7 @@ export class AuctionsService implements OnModuleInit {
         토지지분: "35.7㎡",
         건물등기: "이상없음",
         교육환경: "대치초, 대치중",
-        임차상세: "-",
+        임차인현황: "-",
         "호가 상세": "22년 3월 1.55억 거래",
         "실거래 상세": "최근 3건",
         기록시간: "2025-01-15 09:22",

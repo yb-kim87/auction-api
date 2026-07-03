@@ -133,6 +133,7 @@ export type CrawlerStatus = {
   excludeDuplicates: boolean;
   error: string | null;
   lastMessage: string | null;
+  tankLoggedIn?: boolean | null;
   remoteWorker?: boolean;
 };
 

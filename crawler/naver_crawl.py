@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-NAVER_CRAWL_REVISION = "2026-06-28-price-sort"
+NAVER_CRAWL_REVISION = "2026-06-29-tx-tab-click-only"
 
 import re
 import time
@@ -13,9 +13,26 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from crawl_abort import CrawlStoppedError, ShouldStop, check_stop, wait_until
+
 ARTICLE_URL = (
     "https://fin.land.naver.com/complexes/{complex_id}"
     "?tradeTypes=A1&sortingType=%EB%82%AE%EC%9D%80%EA%B0%80%EA%B2%A9%EC%88%9C&tab=article"
+)
+TRANSACTION_URL = (
+    "https://fin.land.naver.com/complexes/{complex_id}"
+    "?tradeType=A1&marketPriceCP=kab&tab=transaction"
+)
+
+NAVER_COMPLEX_URL_RE = re.compile(
+    r"(?:fin|new)\.land\.naver\.com/complexes/(\d+)",
+    re.I,
+)
+_LINE_TAB_SELECTOR = (
+    "[class*='LineTab-module_link'], "
+    "[class*='ComplexTab'] a, "
+    "[class*='ComplexTab'] button, "
+    "[role='tab']"
 )
 
 AREA_TOLERANCE_M2 = 2.0
@@ -281,34 +298,150 @@ def parse_article_card(text: str) -> NaverArticle | None:
     )
 
 
-def resolve_complex_id(driver) -> tuple[str | None, str | None]:
-    elements = WebDriverWait(driver, 2).until(
-        EC.presence_of_all_elements_located(
-            (By.XPATH, "//a[contains(text(), 'N단지정보')]")
+def _tid_from_current_url(driver) -> str | None:
+    url = driver.current_url or ""
+    match = re.search(r"[?&]tid=(\d+)", url)
+    return match.group(1) if match else None
+
+
+def _complex_id_from_dom_once(driver) -> str | None:
+    """탱크 caView — #dj_no, complexes 링크, page_source."""
+    for by, value in (
+        (By.ID, "dj_no"),
+        (By.CSS_SELECTOR, "input#dj_no"),
+    ):
+        for element in driver.find_elements(by, value):
+            raw = (element.get_attribute("value") or "").strip()
+            if raw.isdigit() and int(raw) > 0:
+                return raw
+
+    for element in driver.find_elements(
+        By.CSS_SELECTOR, "[data-action='out-link'][data-url*='complexes/']"
+    ):
+        data_url = element.get_attribute("data-url") or ""
+        match = re.search(r"complexes/(\d+)", data_url)
+        if match:
+            return match.group(1)
+
+    for element in driver.find_elements(By.CSS_SELECTOR, "a[href*='complexes/']"):
+        href = element.get_attribute("href") or ""
+        match = re.search(r"complexes/(\d+)", href)
+        if match:
+            return match.group(1)
+
+    for xpath in (
+        "//a[contains(text(), 'N단지정보')]",
+        "//a[contains(text(), 'N단지')]",
+        "//span[contains(text(), 'N단지정보')]",
+    ):
+        for element in driver.find_elements(By.XPATH, xpath):
+            href = element.get_attribute("href") or element.get_attribute("data-url") or ""
+            match = re.search(r"complexes/(\d+)", href)
+            if match:
+                return match.group(1)
+
+    source = driver.page_source or ""
+    match = re.search(r'id=["\']dj_no["\'][^>]*value=["\'](\d+)["\']', source)
+    if match and int(match.group(1)) > 0:
+        return match.group(1)
+    for match in re.finditer(
+        r"(?:new|fin)\.land\.naver\.com/complexes/(\d+)", source, re.I
+    ):
+        return match.group(1)
+    return None
+
+
+def _poll_complex_id_from_dom(driver, timeout: float = 4.0) -> str | None:
+    """late-stage client-apartment-complex-info 렌더 대기."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        complex_id = _complex_id_from_dom_once(driver)
+        if complex_id:
+            return complex_id
+        time.sleep(0.25)
+    return _complex_id_from_dom_once(driver)
+
+
+def _complex_id_from_env_api(driver, tid: str) -> str | None:
+    """탱크 /molit/res/EnvViewData.php — dtDj.dj_no (구 N단지정보 링크 대체)."""
+    try:
+        raw = driver.execute_async_script(
+            """
+            const tid = arguments[0];
+            const cb = arguments[arguments.length - 1];
+            const params = new URLSearchParams({ tid: String(tid), gb: '1' });
+            fetch('/molit/res/EnvViewData.php?' + params.toString(), {
+              method: 'GET',
+              credentials: 'same-origin',
+              headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+              },
+            })
+              .then(r => r.text())
+              .then(text => {
+                const start = text.indexOf('{');
+                if (start < 0) { cb(null); return; }
+                const data = JSON.parse(text.slice(start));
+                const dtDj = data?.dtDj || {};
+                const aptRow = dtDj?.aptRow && typeof dtDj.aptRow === 'object'
+                  && !Array.isArray(dtDj.aptRow)
+                  ? dtDj.aptRow
+                  : (Object.prototype.hasOwnProperty.call(dtDj, 'apt_code') ? dtDj : {});
+                const aptInfo = dtDj?.aptInfo || {};
+                const djNo = Number(
+                  aptRow?.dj_no || aptInfo?.dj_no?.value || dtDj?.dj_no || data?.dj_no || 0
+                );
+                cb(djNo > 0 ? String(djNo) : null);
+              })
+              .catch(() => cb(null));
+            """,
+            tid,
         )
+        if raw and str(raw).isdigit() and int(raw) > 0:
+            return str(raw)
+    except Exception:
+        pass
+    return None
+
+
+def resolve_complex_id(driver, tid: str | None = None) -> tuple[str | None, str | None]:
+    tid = tid or _tid_from_current_url(driver)
+
+    if tid:
+        complex_id = _complex_id_from_env_api(driver, tid)
+        if complex_id:
+            return complex_id, None
+
+    complex_id = _complex_id_from_dom_once(driver)
+    if complex_id:
+        return complex_id, None
+
+    complex_id = _poll_complex_id_from_dom(driver, timeout=0.8)
+    if complex_id:
+        return complex_id, None
+
+    return None, "단지정보 없음 (dj_no·complexes 링크·EnvViewData 미발견)"
+
+
+def _wait_article_page(
+    driver, timeout: int = 6, should_stop: ShouldStop = None
+) -> None:
+    wait_until(
+        driver,
+        lambda d: "financial.pstatic.net/404" not in d.current_url,
+        timeout=timeout,
+        should_stop=should_stop,
     )
-    if not elements:
-        return None, "n단지정보 없음"
-
-    href = elements[0].get_attribute("href")
-    match = re.search(r"complexes/(\d+)", str(href))
-    if not match:
-        return None, "Complex ID 없음"
-    return match.group(1), None
-
-
-def _wait_article_page(driver, timeout: int = 15) -> None:
-    WebDriverWait(driver, timeout).until(
-        lambda d: "financial.pstatic.net/404" not in d.current_url
-    )
-    WebDriverWait(driver, timeout).until(
-        EC.presence_of_element_located(
-            (
-                By.CSS_SELECTOR,
-                "[class*='ArticleCard-module'][class*='__area-data'], "
-                "[class*='ComplexArticleItem_area-information']",
-            )
-        )
+    wait_until(
+        driver,
+        lambda d: d.find_elements(
+            By.CSS_SELECTOR,
+            "[class*='ArticleCard-module'][class*='__area-data'], "
+            "[class*='ComplexArticleItem_area-information']",
+        ),
+        timeout=timeout,
+        should_stop=should_stop,
     )
 
 
@@ -318,11 +451,11 @@ def _open_area_filter(driver) -> bool:
         chip = next((c for c in chips if c.text.strip() == "전체면적"), None)
         if chip:
             chip.click()
-            time.sleep(0.8)
+            time.sleep(0.15)
             return True
         button = driver.find_element(By.XPATH, "//button[contains(., '전체면적')]")
         button.click()
-        time.sleep(0.8)
+        time.sleep(0.15)
         return True
     except Exception:
         return False
@@ -346,7 +479,7 @@ def _close_area_filter(driver) -> None:
             driver.find_element(By.TAG_NAME, "body").click()
         except Exception:
             pass
-    time.sleep(1.2)
+    time.sleep(0.2)
 
 
 def _read_area_options_from_open_layer(driver) -> list[AreaOption]:
@@ -390,7 +523,7 @@ def apply_target_area_filters(
         )
         if all_label:
             all_label.click()
-            time.sleep(0.4)
+            time.sleep(0.15)
             labels = _area_filter_labels(driver)
 
         matched_labels: list[str] = []
@@ -402,7 +535,7 @@ def apply_target_area_filters(
             if abs(option.exclusive_m2 - target_m2) > tolerance:
                 continue
             label.click()
-            time.sleep(0.2)
+            time.sleep(0.08)
             matched_labels.append(text.replace("\n", " ").strip())
 
         if not matched_labels:
@@ -421,7 +554,7 @@ def apply_area_filter(driver, area: AreaOption) -> bool:
     return applied
 
 
-def _scroll_article_list(driver, rounds: int = 8) -> None:
+def _scroll_article_list(driver, rounds: int = 2) -> None:
     containers = driver.find_elements(
         By.CSS_SELECTOR,
         "[class*='SideLayer-module'][class*='__area-content'], "
@@ -442,7 +575,7 @@ def _scroll_article_list(driver, rounds: int = 8) -> None:
             )
         else:
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
-        time.sleep(0.4)
+        time.sleep(0.12)
 
 
 def collect_article_cards(driver) -> list[str]:
@@ -470,21 +603,163 @@ def collect_article_cards(driver) -> list[str]:
     return texts
 
 
+def _naver_complex_id_from_url(driver) -> str | None:
+    match = NAVER_COMPLEX_URL_RE.search(driver.current_url or "")
+    return match.group(1) if match else None
+
+
+def _is_on_naver_land_complex(driver) -> bool:
+    return _naver_complex_id_from_url(driver) is not None
+
+
+def _is_on_naver_complex(driver, complex_id: str | None) -> bool:
+    if not complex_id:
+        return _is_on_naver_land_complex(driver)
+    current_id = _naver_complex_id_from_url(driver)
+    return current_id is not None and current_id == str(complex_id).strip()
+
+
+def _tab_head_label(element) -> str:
+    return _element_text(element).split("\n")[0].strip()
+
+
+def _on_transaction_tab(driver) -> bool:
+    if driver.find_elements(
+        By.CSS_SELECTOR, "[class*='ComplexTransactionPriceFilter']"
+    ):
+        return True
+    for tab in driver.find_elements(By.CSS_SELECTOR, _LINE_TAB_SELECTOR):
+        label = _tab_head_label(tab)
+        if label == "시세" and tab.get_attribute("aria-selected") == "true":
+            return True
+        classes = tab.get_attribute("class") or ""
+        if label == "시세" and (
+            "active" in classes.lower() or "selected" in classes.lower()
+        ):
+            return True
+    return False
+
+
+def _on_article_tab(driver) -> bool:
+    if _on_transaction_tab(driver):
+        return False
+    return bool(
+        driver.find_elements(
+            By.CSS_SELECTOR,
+            "[class*='ArticleCard-module'][class*='__area-data'], "
+            "[class*='ComplexArticleItem_area-information'], "
+            "[class*='ChipsItem-module_chip']",
+        )
+    )
+
+
+def _click_line_tab(driver, label: str) -> None:
+    for tab in driver.find_elements(By.CSS_SELECTOR, _LINE_TAB_SELECTOR):
+        if _tab_head_label(tab) == label:
+            driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", tab
+            )
+            try:
+                tab.click()
+            except Exception:
+                driver.execute_script("arguments[0].click();", tab)
+            return
+
+    clicked = driver.execute_script(
+        """
+        const label = String(arguments[0] || '');
+        const nodes = document.querySelectorAll(
+          "a, button, [role='tab'], [class*='LineTab']"
+        );
+        for (const el of nodes) {
+          const head = (el.innerText || el.textContent || '')
+            .trim()
+            .split(/\\n/)[0]
+            .trim();
+          if (head !== label) continue;
+          el.scrollIntoView({ block: 'center' });
+          el.click();
+          return true;
+        }
+        return false;
+        """,
+        label,
+    )
+    if clicked:
+        return
+    raise TimeoutException(f"{label} 탭을 찾을 수 없음")
+
+
+def _click_article_tab(driver) -> None:
+    if _on_article_tab(driver):
+        return
+    for label in ("매물", "호가"):
+        try:
+            _click_line_tab(driver, label)
+            return
+        except TimeoutException:
+            continue
+    raise TimeoutException("매물 탭을 찾을 수 없음")
+
+
+def _switch_to_transaction_tab(
+    driver,
+    timeout: float = 6,
+    should_stop: ShouldStop = None,
+) -> None:
+    """네이버 단지 페이지에서 시세 탭만 클릭 — driver.get 금지."""
+    check_stop(should_stop)
+    if not _on_transaction_tab(driver):
+        _click_price_tab(driver)
+    wait_until(
+        driver,
+        lambda d: d.find_elements(
+            By.CSS_SELECTOR, "[class*='ComplexTransactionPriceFilter']"
+        ),
+        timeout=timeout,
+        should_stop=should_stop,
+    )
+
+
+def _ensure_article_page(
+    driver,
+    complex_id: str,
+    should_stop: ShouldStop = None,
+) -> None:
+    """단지 매물(호가) 탭 — 같은 단지면 탭 전환, 아니면 최초 1회만 URL 로드."""
+    check_stop(should_stop)
+    if not _is_on_naver_complex(driver, complex_id):
+        driver.get(ARTICLE_URL.format(complex_id=complex_id))
+        try:
+            _wait_article_page(driver, should_stop=should_stop)
+        except TimeoutException as exc:
+            raise TimeoutException("네이버 호가 페이지 로드 실패") from exc
+        return
+
+    if _on_transaction_tab(driver):
+        _click_article_tab(driver)
+        try:
+            _wait_article_page(driver, timeout=4, should_stop=should_stop)
+        except TimeoutException:
+            pass
+
+
 def scrape_articles(
     driver,
     complex_id: str,
     target_m2: float,
+    should_stop: ShouldStop = None,
 ) -> NaverArticleResult:
     result = NaverArticleResult(complex_id=complex_id)
+    check_stop(should_stop)
 
-    if "fin.land.naver.com" not in driver.current_url:
-        driver.get(ARTICLE_URL.format(complex_id=complex_id))
-        try:
-            _wait_article_page(driver)
-        except TimeoutException:
-            result.error = "네이버 호가 페이지 로드 실패"
-            return result
+    try:
+        _ensure_article_page(driver, complex_id, should_stop=should_stop)
+    except TimeoutException:
+        result.error = "네이버 호가 페이지 로드 실패"
+        return result
 
+    check_stop(should_stop)
     filter_applied, matched_labels = apply_target_area_filters(
         driver, target_m2, tolerance=AREA_FILTER_TOLERANCE_M2
     )
@@ -493,10 +768,11 @@ def scrape_articles(
 
     if filter_applied:
         try:
-            _wait_article_page(driver, timeout=10)
+            _wait_article_page(driver, timeout=4, should_stop=should_stop)
         except TimeoutException:
             pass
 
+    check_stop(should_stop)
     raw_cards = collect_article_cards(driver)
     articles: list[NaverArticle] = []
     for raw in raw_cards:
@@ -528,30 +804,64 @@ def scrape_articles(
 
 
 def _click_price_tab(driver) -> None:
-    if driver.find_elements(
-        By.CSS_SELECTOR, "[class*='ComplexTransactionPriceFilter']"
-    ):
+    if _on_transaction_tab(driver):
         return
-    for tab in driver.find_elements(
-        By.CSS_SELECTOR, "[class*='LineTab-module_link']"
-    ):
-        if _element_text(tab) == "시세":
-            driver.execute_script(
-                "arguments[0].scrollIntoView({block: 'center'});", tab
-            )
-            tab.click()
-            time.sleep(2)
-            return
-    raise TimeoutException("시세 탭을 찾을 수 없음")
+    _click_line_tab(driver, "시세")
 
 
-def _ensure_price_tab(driver, timeout: int = 15) -> None:
+def _ensure_price_tab(driver, timeout: int = 10) -> None:
     _click_price_tab(driver)
     WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located(
             (By.CSS_SELECTOR, "[class*='ComplexTransactionPriceFilter']")
         )
     )
+
+
+def _ensure_transaction_page(
+    driver,
+    complex_id: str | None = None,
+    timeout: int = 6,
+    should_stop: ShouldStop = None,
+    *,
+    after_article_page: bool = False,
+) -> None:
+    """호가(매물) 직후엔 시세 탭 클릭만. URL 이동은 네이버 단지 밖일 때만."""
+    check_stop(should_stop)
+    if after_article_page or _is_on_naver_land_complex(driver):
+        _switch_to_transaction_tab(
+            driver, timeout=timeout, should_stop=should_stop
+        )
+        return
+
+    if complex_id:
+        driver.get(TRANSACTION_URL.format(complex_id=complex_id))
+    elif not _on_transaction_tab(driver):
+        _click_price_tab(driver)
+
+    wait_until(
+        driver,
+        lambda d: d.find_elements(
+            By.CSS_SELECTOR, "[class*='ComplexTransactionPriceFilter']"
+        ),
+        timeout=timeout,
+        should_stop=should_stop,
+    )
+
+
+def _wait_tx_table(driver, timeout: float = 1.5) -> None:
+    try:
+        WebDriverWait(driver, timeout, poll_frequency=0.1).until(
+            EC.presence_of_element_located(
+                (
+                    By.CSS_SELECTOR,
+                    "[class*='ComplexTransactionPriceTable'], "
+                    "[class*='TransactionPriceTable']",
+                )
+            )
+        )
+    except TimeoutException:
+        pass
 
 
 def _open_tx_area_picker(driver) -> bool:
@@ -571,10 +881,9 @@ def _open_tx_area_picker(driver) -> bool:
         if area_button is None:
             return False
         area_button.click()
-        WebDriverWait(driver, 5).until(
+        WebDriverWait(driver, 3, poll_frequency=0.1).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "[class*='RadioLayer']"))
         )
-        time.sleep(0.5)
         return True
     except Exception:
         return False
@@ -599,14 +908,13 @@ def _reset_radio_scroll(driver) -> None:
     box = _radio_scroll_box(driver)
     if box:
         driver.execute_script("arguments[0].scrollTop = 0", box)
-        time.sleep(0.2)
 
 
 def _scroll_radio_layer_down(driver) -> None:
     box = _radio_scroll_box(driver)
     if box:
-        driver.execute_script("arguments[0].scrollTop += 320", box)
-        time.sleep(0.25)
+        driver.execute_script("arguments[0].scrollTop += 480", box)
+        time.sleep(0.1)
 
 
 def _close_tx_area_picker(driver) -> None:
@@ -617,10 +925,12 @@ def _scan_tx_area_choices(
     driver,
     target_m2: float,
     tolerance: float = AREA_FILTER_TOLERANCE_M2,
+    should_stop: ShouldStop = None,
 ) -> dict[tuple[float, str], str]:
     choices: dict[tuple[float, str], str] = {}
     _reset_radio_scroll(driver)
-    for _ in range(18):
+    for _ in range(4):
+        check_stop(should_stop)
         for element in _radio_layer_labels(driver):
             text = _element_text(element).replace("\n", " ")
             if not text:
@@ -635,6 +945,8 @@ def _scan_tx_area_choices(
             if key in choices and "세대" not in text:
                 continue
             choices[key] = text
+        if choices:
+            break
         _scroll_radio_layer_down(driver)
     return choices
 
@@ -666,19 +978,54 @@ def _parse_tx_area_keys_from_labels(
 
 
 def _select_tx_area_key(
-    driver, exclusive_m2: float, suffix: str
+    driver, exclusive_m2: float, suffix: str, should_stop: ShouldStop = None
 ) -> bool:
+    check_stop(should_stop)
     if not _open_tx_area_picker(driver):
         return False
+    try:
+        clicked = driver.execute_script(
+            """
+            const m2 = Number(arguments[0]);
+            const suffix = String(arguments[1] || '').toUpperCase();
+            const labels = [
+              ...document.querySelectorAll(
+                "[class*='RadioLayer'] [class*='__label'], [class*='RadioLayer'] label"
+              ),
+            ];
+            for (const el of labels) {
+              const text = (el.innerText || el.textContent || '').replace(/\\n/g, ' ');
+              const match = text.match(/([\\d.]+)([A-Za-z]?)/);
+              if (!match) continue;
+              const val = parseFloat(match[1]);
+              const suf = (match[2] || '').toUpperCase();
+              if (!Number.isFinite(val)) continue;
+              if (Math.abs(val - m2) > 2.0) continue;
+              if (suffix && suf !== suffix) continue;
+              el.click();
+              return true;
+            }
+            return false;
+            """,
+            exclusive_m2,
+            suffix,
+        )
+        if clicked:
+            _close_tx_area_picker(driver)
+            _wait_tx_table(driver, timeout=1.5)
+            return True
+    except Exception:
+        pass
     _reset_radio_scroll(driver)
-    for _ in range(18):
+    for _ in range(4):
+        check_stop(should_stop)
         for element in _radio_layer_labels(driver):
             text = _element_text(element).replace("\n", " ")
             token = parse_exclusive_token(text)
             if token == (exclusive_m2, suffix):
                 element.click()
-                time.sleep(0.4)
                 _close_tx_area_picker(driver)
+                _wait_tx_table(driver, timeout=1.5)
                 return True
         _scroll_radio_layer_down(driver)
     _close_tx_area_picker(driver)
@@ -827,7 +1174,9 @@ def _count_tx_rows_by_year(text: str) -> dict[str, int]:
         if not year_match:
             continue
         year = year_match.group(1)
-        counts[year] = sum(1 for row in rows if not _is_cancelled_tx_row(row))
+        counts[year] = counts.get(year, 0) + sum(
+            1 for row in rows if not _is_cancelled_tx_row(row)
+        )
     return counts
 
 
@@ -845,22 +1194,39 @@ def scrape_transactions(
     driver,
     target_m2: float,
     matched_area_labels: str = "",
+    complex_id: str | None = None,
+    should_stop: ShouldStop = None,
+    *,
+    after_article_page: bool = False,
 ) -> NaverTransactionResult:
     result = NaverTransactionResult()
+    check_stop(should_stop)
     try:
-        _ensure_price_tab(driver)
+        _ensure_transaction_page(
+            driver,
+            complex_id=complex_id,
+            should_stop=should_stop,
+            after_article_page=after_article_page,
+        )
     except TimeoutException:
         result.error = "시세 탭 로드 실패"
         return result
 
     area_keys = _parse_tx_area_keys_from_labels(matched_area_labels, target_m2)
-    if not area_keys:
-        if not _open_tx_area_picker(driver):
-            result.error = "실거래 면적 타입 없음"
-            return result
-        matched = _scan_tx_area_choices(driver, target_m2)
+
+    # 호가(±2㎡)와 동일 — 시세 탭 면적 선택지에서 target±tolerance 전부 병합
+    if _open_tx_area_picker(driver):
+        scanned = _scan_tx_area_choices(
+            driver, target_m2, should_stop=should_stop
+        )
         _close_tx_area_picker(driver)
-        area_keys = [(k[0], k[1], label) for k, label in matched.items()]
+        seen_keys = {(m2, suf) for m2, suf, _ in area_keys}
+        for (exclusive_m2, suffix), label in scanned.items():
+            key = (exclusive_m2, suffix)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            area_keys.append((exclusive_m2, suffix, label))
 
     if not area_keys:
         result.error = "실거래 면적 타입 없음"
@@ -868,9 +1234,11 @@ def scrape_transactions(
 
     blocks: list[NaverTransactionBlock] = []
     for exclusive_m2, suffix, area_label in area_keys:
-        if not _select_tx_area_key(driver, exclusive_m2, suffix):
+        check_stop(should_stop)
+        if not _select_tx_area_key(
+            driver, exclusive_m2, suffix, should_stop=should_stop
+        ):
             continue
-        time.sleep(1.0)
         content = _scrape_transaction_tables(driver)
         if content:
             blocks.append(NaverTransactionBlock(area_label=area_label, content=content))
@@ -904,13 +1272,24 @@ def empty_naver_result(naver_price_detail: str = "", **overrides) -> dict:
     return payload
 
 
-def extract_naver_prices(driver, building_area: str, build_year: str = "") -> dict:
+def extract_naver_prices(
+    driver,
+    building_area: str,
+    build_year: str = "",
+    *,
+    complex_id: str | None = None,
+    tid: str | None = None,
+    should_stop: ShouldStop = None,
+) -> dict:
     del build_year  # 실거래·추가 필터에 추후 사용
+    check_stop(should_stop)
 
-    complex_id, error = resolve_complex_id(driver)
-    if error:
-        return empty_naver_result(error)
+    if not complex_id:
+        complex_id, error = resolve_complex_id(driver, tid=tid)
+        if error:
+            return empty_naver_result(error)
 
+    check_stop(should_stop)
     try:
         target_m2 = parse_building_area_m2(building_area)
         if target_m2 is None:
@@ -919,12 +1298,20 @@ def extract_naver_prices(driver, building_area: str, build_year: str = "") -> di
         return empty_naver_result("면적 파싱 실패", complex_id=complex_id)
 
     try:
-        article_result = scrape_articles(driver, complex_id, target_m2)
+        article_result = scrape_articles(
+            driver, complex_id, target_m2, should_stop=should_stop
+        )
+        check_stop(should_stop)
         tx_result = scrape_transactions(
             driver,
             target_m2,
             article_result.matched_area_label,
+            complex_id=complex_id,
+            should_stop=should_stop,
+            after_article_page=True,
         )
+    except CrawlStoppedError:
+        raise
     except Exception:
         return empty_naver_result("호가 조회 실패", complex_id=complex_id)
 

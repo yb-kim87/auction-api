@@ -55,22 +55,6 @@ export function resolvePriceDiffs(parsed: DiffSource) {
 
 type FieldSource = Partial<AuctionRow> | Partial<UpdateAuctionDto>;
 
-function pickString(
-  value: string | null | undefined,
-  fallback: string,
-): string {
-  if (value === undefined || value === null) return fallback;
-  return String(value).trim();
-}
-
-function pickNumber(
-  value: number | null | undefined,
-  fallback: number,
-): number {
-  if (value == null || !Number.isFinite(value)) return fallback;
-  return value;
-}
-
 /** 빈 값이 들어오면 기존 메모 유지, 내용이 다를 때만 갱신 */
 function mergeMemo(
   existing: string,
@@ -85,7 +69,81 @@ function mergeMemo(
 
 type MergeOptions = {
   preserveMemoIfEmpty?: boolean;
+  /** 크롤 갱신 — 수집 실패(빈값·0·없음) 시 기존 DB 값 유지 */
+  preserveExistingIfEmpty?: boolean;
 };
+
+const CRAWL_EMPTY_TEXT = new Set(["", "없음", "값없음", "임차정보없음"]);
+
+function hasExistingText(value: string): boolean {
+  const text = String(value ?? "").trim();
+  return !!text && !CRAWL_EMPTY_TEXT.has(text);
+}
+
+function pickStringWithOptions(
+  value: string | null | undefined,
+  fallback: string,
+  options?: MergeOptions,
+): string {
+  if (value === undefined || value === null) return fallback;
+  const next = String(value).trim();
+  if (!options?.preserveExistingIfEmpty) {
+    return next;
+  }
+  if (!hasExistingText(fallback)) {
+    return next || fallback;
+  }
+  if (!next || CRAWL_EMPTY_TEXT.has(next)) {
+    return fallback;
+  }
+  return next;
+}
+
+function pickNumberWithOptions(
+  value: number | null | undefined,
+  fallback: number,
+  options?: MergeOptions,
+  zeroIsEmpty = true,
+): number {
+  if (value == null || !Number.isFinite(value)) return fallback;
+  if (
+    options?.preserveExistingIfEmpty &&
+    zeroIsEmpty &&
+    value === 0 &&
+    fallback !== 0
+  ) {
+    return fallback;
+  }
+  return value;
+}
+
+function pickNullableNumberWithOptions(
+  value: number | null | undefined,
+  fallback: number | null,
+  options?: MergeOptions,
+): number | null {
+  if (value === undefined) return fallback;
+  if (value === null) {
+    if (
+      options?.preserveExistingIfEmpty &&
+      fallback != null &&
+      fallback > 0
+    ) {
+      return fallback;
+    }
+    return null;
+  }
+  if (!Number.isFinite(value)) return fallback;
+  if (
+    options?.preserveExistingIfEmpty &&
+    value === 0 &&
+    fallback != null &&
+    fallback > 0
+  ) {
+    return fallback;
+  }
+  return value;
+}
 
 /** 갱신 시 빈 엑셀 셀(null)이 기존 NOT NULL 필드를 지우지 않도록 병합 */
 export function mergeAuctionFromSource(
@@ -93,37 +151,57 @@ export function mergeAuctionFromSource(
   source: FieldSource,
   options?: MergeOptions,
 ): UpdateAuctionDto {
+  const pickStr = (value: string | null | undefined, fallback: string) =>
+    pickStringWithOptions(value, fallback, options);
+  const pickNum = (
+    value: number | null | undefined,
+    fallback: number,
+    zeroIsEmpty = true,
+  ) => pickNumberWithOptions(value, fallback, options, zeroIsEmpty);
+  const pickNullableNum = (value: number | null | undefined, fallback: number | null) =>
+    pickNullableNumberWithOptions(value, fallback, options);
+
   const memo = options?.preserveMemoIfEmpty
     ? mergeMemo(existing.memo, source.memo)
-    : pickString(source.memo, existing.memo);
+    : pickStr(source.memo, existing.memo);
 
-  return {
+  const merged: UpdateAuctionDto = {
     memo,
-    link: pickString(source.link, existing.link),
-    views: pickNumber(source.views, existing.views),
-    auctionNo:
-      pickString(source.auctionNo, existing.auctionNo) || existing.auctionNo,
+    link: pickStr(source.link, existing.link),
+    views: pickNum(source.views, existing.views, false),
+    auctionNo: pickStr(source.auctionNo, existing.auctionNo) || existing.auctionNo,
     address: cleanAddress(
-      pickString(source.address, existing.address) || existing.address,
+      pickStr(source.address, existing.address) || existing.address,
     ),
-    totalUnits: pickNumber(source.totalUnits, existing.totalUnits),
-    usage: pickString(source.usage, existing.usage),
-    area: pickString(source.area, existing.area),
+    totalUnits: pickNum(source.totalUnits, existing.totalUnits),
+    usage: pickStr(source.usage, existing.usage),
+    area: pickStr(source.area, existing.area),
     builtYear:
-      source.builtYear != null && Number.isFinite(source.builtYear)
-        ? source.builtYear
-        : existing.builtYear,
-    bidDate: pickString(source.bidDate, existing.bidDate),
-    appraisedValue: pickNumber(source.appraisedValue, existing.appraisedValue),
-    minPrice: pickNumber(source.minPrice, existing.minPrice),
+      options?.preserveExistingIfEmpty &&
+      (source.builtYear == null ||
+        !Number.isFinite(source.builtYear) ||
+        source.builtYear === 0) &&
+      existing.builtYear > 0
+        ? existing.builtYear
+        : source.builtYear != null && Number.isFinite(source.builtYear)
+          ? source.builtYear
+          : existing.builtYear,
+    bidDate: pickStr(source.bidDate, existing.bidDate),
+    appraisedValue: pickNum(source.appraisedValue, existing.appraisedValue),
+    minPrice: pickNum(source.minPrice, existing.minPrice),
     salePrice:
-      source.salePrice !== undefined ? source.salePrice : existing.salePrice,
-    naverPrice: pickNumber(source.naverPrice, existing.naverPrice),
+      source.salePrice !== undefined
+        ? pickNullableNum(source.salePrice, existing.salePrice)
+        : existing.salePrice,
+    naverPrice: pickNum(source.naverPrice, existing.naverPrice),
     naverId: (() => {
       if (source.naverId === undefined || source.naverId === null) {
         return existing.naverId;
       }
       const next = String(source.naverId).trim();
+      if (options?.preserveExistingIfEmpty && !next && existing.naverId) {
+        return existing.naverId;
+      }
       return next || existing.naverId;
     })(),
     diffNaverSale:
@@ -139,33 +217,49 @@ export function mergeAuctionFromSource(
         ? source.diffNaverAppraised
         : existing.diffNaverAppraised,
     elevator: cleanElevatorAndParking(
-      pickString(source.elevator, existing.elevator),
-      pickString(source.parking, existing.parking),
+      pickStr(source.elevator, existing.elevator),
+      pickStr(source.parking, existing.parking),
     ).elevator,
     parking: cleanElevatorAndParking(
-      pickString(source.elevator, existing.elevator),
-      pickString(source.parking, existing.parking),
+      pickStr(source.elevator, existing.elevator),
+      pickStr(source.parking, existing.parking),
     ).parking,
-    landShare: pickString(source.landShare, existing.landShare),
+    landShare: pickStr(source.landShare, existing.landShare),
     buildingRegistry: cleanBuildingRegistry(
-      pickString(source.buildingRegistry, existing.buildingRegistry),
+      pickStr(source.buildingRegistry, existing.buildingRegistry),
     ),
-    education: cleanEducation(pickString(source.education, existing.education)),
-    tradingCount: pickString(source.tradingCount, existing.tradingCount),
-    bidInfo: pickString(source.bidInfo, existing.bidInfo),
-    owner: pickString(source.owner, existing.owner),
-    appraiser: pickString(source.appraiser, existing.appraiser),
-    officialLandPrice: pickNumber(
+    education: cleanEducation(pickStr(source.education, existing.education)),
+    tradingCount: pickStr(source.tradingCount, existing.tradingCount),
+    bidInfo: pickStr(source.bidInfo, existing.bidInfo),
+    owner: pickStr(source.owner, existing.owner),
+    appraiser: pickStr(source.appraiser, existing.appraiser),
+    officialLandPrice: pickNum(
       source.officialLandPrice,
       existing.officialLandPrice,
     ),
-    tenantInfo: pickString(source.tenantInfo, existing.tenantInfo),
-    specialNote: pickString(source.specialNote, existing.specialNote),
-    tenantDetail: cleanTenantDetail(pickString(source.tenantDetail, existing.tenantDetail)),
-    priceDetail: pickString(source.priceDetail, existing.priceDetail),
-    tradingDetail: pickString(source.tradingDetail, existing.tradingDetail),
-    recordTime: pickString(source.recordTime, existing.recordTime),
+    tenantInfo: pickStr(source.tenantInfo, existing.tenantInfo),
+    specialNote: pickStr(source.specialNote, existing.specialNote),
+    tenantDetail: cleanTenantDetail(
+      pickStr(source.tenantDetail, existing.tenantDetail),
+    ),
+    priceDetail: pickStr(source.priceDetail, existing.priceDetail),
+    tradingDetail: pickStr(source.tradingDetail, existing.tradingDetail),
+    recordTime: pickStr(source.recordTime, existing.recordTime),
   };
+
+  if (
+    options?.preserveExistingIfEmpty &&
+    !hasNaverPrice(source.naverPrice) &&
+    hasNaverPrice(existing.naverPrice)
+  ) {
+    merged.naverPrice = existing.naverPrice;
+    merged.naverId = existing.naverId;
+    merged.priceDetail = existing.priceDetail;
+    merged.tradingDetail = existing.tradingDetail;
+    merged.tradingCount = existing.tradingCount;
+  }
+
+  return merged;
 }
 
 export function buildAuctionEntity(

@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Auction } from "../auctions/auction.entity";
+import { formatTenantStatusText } from "../auctions/tenant-status.util";
 import { AuctionStatus, UserRole } from "../common/constants";
 import { UsersService } from "../users/users.service";
 import { AuctionAnalysis } from "./auction-analysis.entity";
@@ -112,7 +113,7 @@ ${profileBlock}
 [권리·임차]
 - 등기부: ${auction.buildingRegistry || "없음"}
 - 임차인: ${auction.tenantInfo || "없음"}
-- 임차 상세: ${auction.tenantDetail || "없음"}
+- 임차인 현황: ${formatTenantStatusText(auction.tenantDetail) || "없음"}
 - 특이사항: ${auction.specialNote || "없음"}
 
 [기타]

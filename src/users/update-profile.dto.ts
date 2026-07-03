@@ -7,4 +7,5 @@ export type UpdateProfileDto = {
   housingCount?: number | string;
   targetReturn?: string;
   investmentGoal?: string;
+  firstTimeBuyer?: boolean;
 };

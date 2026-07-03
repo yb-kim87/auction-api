@@ -38,6 +38,9 @@ export class User {
   @Column({ type: "text", default: "" })
   targetReturn!: string;
 
+  @Column({ type: "boolean", default: false })
+  firstTimeBuyer!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

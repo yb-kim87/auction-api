@@ -1,3 +1,5 @@
+import { formatTenantStatusText } from "./tenant-status.util";
+
 const SIDO_NAMES = [
   "서울특별시",
   "부산광역시",
@@ -72,6 +74,8 @@ export function cleanBuildingRegistry(buildingRegistry: string): string {
 }
 
 export function cleanTenantDetail(tenantDetail: string): string {
+  const formatted = formatTenantStatusText(tenantDetail);
+  if (formatted) return formatted;
   if (!tenantDetail || tenantDetail === "없음" || tenantDetail === "값없음") {
     return tenantDetail;
   }

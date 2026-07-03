@@ -7,4 +7,5 @@ export interface SignupDto {
   housingCount?: number | string;
   investmentGoal?: string;
   targetReturn?: string;
+  firstTimeBuyer?: boolean;
 }

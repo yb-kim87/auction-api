@@ -8,6 +8,7 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  ServiceUnavailableException,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import {
@@ -62,6 +63,25 @@ export class CrawlerController {
   clearLogs(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
     this.crawlerService.clearLogs();
+    return { ok: true };
+  }
+
+  @Post("worker-log")
+  workerLog(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { message?: string; level?: string },
+  ) {
+    const secret = headers["x-crawler-secret"] ?? "";
+    const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
+    if (secret !== expected) {
+      throw new ServiceUnavailableException("크롤러 인증 실패");
+    }
+    const message = String(body.message ?? "").trim();
+    if (message) {
+      const level =
+        body.level === "warn" || body.level === "error" ? body.level : "info";
+      this.crawlerService.appendWorkerLog(level, message);
+    }
     return { ok: true };
   }
 

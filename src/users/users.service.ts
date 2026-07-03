@@ -45,6 +45,20 @@ export class UsersService implements OnModuleInit {
         }),
       );
     }
+
+    const uiConsultant = await this.userRepo.findOne({
+      where: { username: "ui" },
+    });
+    if (!uiConsultant) {
+      await this.userRepo.save(
+        this.userRepo.create({
+          username: "ui",
+          password: "ui",
+          name: "컨설턴트",
+          role: UserRole.CONSULTANT,
+        }),
+      );
+    }
   }
 
   findAll() {
@@ -140,6 +154,14 @@ export class UsersService implements OnModuleInit {
       }
     }
 
+    if (dto.firstTimeBuyer !== undefined) {
+      const next = Boolean(dto.firstTimeBuyer);
+      if (user.firstTimeBuyer !== next) {
+        user.firstTimeBuyer = next;
+        changed = true;
+      }
+    }
+
     const nextPassword = dto.newPassword?.trim() ?? "";
     if (nextPassword) {
       const currentPassword = dto.currentPassword?.trim() ?? "";
@@ -175,6 +197,7 @@ export class UsersService implements OnModuleInit {
     housingCount: number;
     investmentGoal: string;
     targetReturn: string;
+    firstTimeBuyer: boolean;
   }) {
     const exists = await this.findByUsername(input.username);
     if (exists) {
@@ -192,6 +215,7 @@ export class UsersService implements OnModuleInit {
         housingCount: input.housingCount,
         investmentGoal: input.investmentGoal,
         targetReturn: input.targetReturn,
+        firstTimeBuyer: input.firstTimeBuyer,
       }),
     );
   }

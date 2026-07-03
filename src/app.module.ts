@@ -6,6 +6,7 @@ import { CrawlerModule } from "./crawler/crawler.module";
 import { FavoritesModule } from "./favorites/favorites.module";
 import { UsersModule } from "./users/users.module";
 import { AiModule } from "./ai/ai.module";
+import { LoanPolicyModule } from "./loan-policy/loan-policy.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -17,6 +18,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     FavoritesModule,
     UsersModule,
     AiModule,
+    LoanPolicyModule,
   ],
 })
 export class AppModule {}

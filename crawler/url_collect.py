@@ -11,7 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 CA_LIST_URL = "https://www.tankauction.com/ca/caList.php"
 PA_LIST_URL = "https://www.tankauction.com/pa/paList.php"
-COLLECT_TIMEOUT = 2
+COLLECT_TIMEOUT = 5
 LIST_READY_TIMEOUT = 20
 POLL = 0.1
 
@@ -29,20 +29,54 @@ def _wait_clickable(driver, by, value, timeout: float = COLLECT_TIMEOUT):
 
 
 def _safe_click(driver, element):
-    driver.execute_script(
-        "arguments[0].scrollIntoView({block:'center', inline:'nearest'});",
-        element,
-    )
     try:
-        element.click()
-    except ElementClickInterceptedException:
         driver.execute_script("arguments[0].click();", element)
+    except Exception:
+        try:
+            element.click()
+        except ElementClickInterceptedException:
+            driver.execute_script("arguments[0].click();", element)
+
+
+def _list_has_rows(driver) -> bool:
+    if driver.find_elements(By.NAME, "chk_idx"):
+        return True
+    if driver.find_elements(By.CSS_SELECTOR, "a[href*='caView.php?tid=']"):
+        return True
+    if driver.find_elements(By.CSS_SELECTOR, "a[href*='paView.php?cltrNo=']"):
+        return True
+    return False
 
 
 def _wait_list_ready(driver, timeout: float = LIST_READY_TIMEOUT):
-    WebDriverWait(driver, timeout, poll_frequency=POLL).until(
-        EC.presence_of_element_located((By.NAME, "chk_idx"))
-    )
+    def _ready(_driver):
+        return _list_has_rows(_driver)
+
+    WebDriverWait(driver, timeout, poll_frequency=POLL).until(_ready)
+
+
+def _find_page_size_select(driver):
+    for name in ("dataSize", "dataSize_s"):
+        try:
+            element = driver.find_element(By.NAME, name)
+            if element.is_displayed():
+                return Select(element)
+        except Exception:
+            continue
+    return None
+
+
+def _set_page_size(driver, page_size: str):
+    select = _find_page_size_select(driver)
+    if select is None:
+        return
+    try:
+        select.select_by_visible_text(str(page_size))
+    except Exception:
+        try:
+            select.select_by_value(str(page_size))
+        except Exception:
+            pass
 
 
 def _is_public_list(driver) -> bool:
@@ -121,7 +155,7 @@ def _current_page_number(driver) -> str:
     return "1"
 
 
-def _parse_total_count(driver) -> int | None:
+def _parse_total_count(driver, *, lightweight: bool = False) -> int | None:
     patterns = (
         r"검색(?:된)?\s*물건수\s*[:：]?\s*([\d,]+)",
         r"총\s*([\d,]+)\s*건",
@@ -143,15 +177,16 @@ def _parse_total_count(driver) -> int | None:
         except Exception:
             pass
 
-    try:
-        sources.append(driver.find_element(By.TAG_NAME, "body").text[:5000])
-    except Exception:
-        pass
+    if not lightweight:
+        try:
+            sources.append(driver.find_element(By.TAG_NAME, "body").text[:5000])
+        except Exception:
+            pass
 
-    try:
-        sources.append(driver.page_source[:80000])
-    except Exception:
-        pass
+        try:
+            sources.append(driver.page_source[:80000])
+        except Exception:
+            pass
 
     for text in sources:
         for pattern in patterns:
@@ -165,13 +200,14 @@ def _page_size_on_list(driver) -> int:
     rows = driver.find_elements(By.NAME, "chk_idx")
     if rows:
         return len(rows)
-    try:
-        select = Select(driver.find_element(By.NAME, "dataSize_s"))
-        value = (select.first_selected_option.text or "").strip()
-        if value.isdigit():
-            return int(value)
-    except Exception:
-        pass
+    select = _find_page_size_select(driver)
+    if select is not None:
+        try:
+            value = (select.first_selected_option.text or "").strip()
+            if value.isdigit():
+                return int(value)
+        except Exception:
+            pass
     return 100
 
 
@@ -179,7 +215,9 @@ def _go_to_page(driver, target: int) -> bool:
     target_str = str(target)
     current = int(_current_page_number(driver) or "1")
     if current == target:
-        _wait_list_ready(driver)
+        if _list_has_rows(driver):
+            return True
+        _wait_list_ready(driver, timeout=5)
         return True
 
     if _click_page_number(driver, target_str):
@@ -289,15 +327,24 @@ def _click_next_page_block(driver) -> bool:
 
 def _first_row_key(driver) -> str:
     rows = driver.find_elements(By.NAME, "chk_idx")
-    if not rows:
-        return ""
-    return rows[0].get_attribute("value") or ""
+    if rows:
+        return rows[0].get_attribute("value") or ""
+    for selector in (
+        "a[href*='caView.php?tid=']",
+        "a[href*='paView.php?cltrNo=']",
+    ):
+        for element in driver.find_elements(By.CSS_SELECTOR, selector):
+            href = element.get_attribute("href") or ""
+            match = re.search(r"(?:tid|cltrNo)=(\d+)", href)
+            if match:
+                return match.group(1)
+    return ""
 
 
 def _wait_list_changed(driver, previous_key: str, timeout: float = LIST_READY_TIMEOUT) -> bool:
     try:
         WebDriverWait(driver, timeout, poll_frequency=POLL).until(
-            EC.presence_of_element_located((By.NAME, "chk_idx"))
+            lambda d: _list_has_rows(d)
         )
         if not previous_key:
             return True
@@ -309,6 +356,37 @@ def _wait_list_changed(driver, previous_key: str, timeout: float = LIST_READY_TI
         return WebDriverWait(driver, timeout, poll_frequency=POLL).until(_changed)
     except Exception:
         return False
+
+
+def _collect_from_view_links(driver, page_now: str, is_public: bool) -> list[dict]:
+    entries: list[dict] = []
+    seen: set[str] = set()
+    selector = (
+        "a[href*='paView.php?cltrNo=']"
+        if is_public
+        else "a[href*='caView.php?tid=']"
+    )
+    param = "cltrNo" if is_public else "tid"
+    base = "https://www.tankauction.com/pa/paView.php" if is_public else "https://www.tankauction.com/ca/caView.php"
+
+    for element in driver.find_elements(By.CSS_SELECTOR, selector):
+        href = element.get_attribute("href") or ""
+        match = re.search(rf"{param}=(\d+)", href)
+        if not match:
+            continue
+        item_id = match.group(1)
+        if item_id in seen:
+            continue
+        seen.add(item_id)
+
+        case_num = (element.text or "").strip() or item_id
+        if not is_public:
+            case_num = case_num.replace("-", "타경")
+        url = f"{base}?{param}={item_id}&chkNo={page_now}&TotNo={len(seen)}"
+        label = f"{case_num}_{url}"
+        entries.append({"label": label, "url": label})
+
+    return entries
 
 
 def _collect_page_entries(driver, page_now: str, is_public: bool) -> list[dict]:
@@ -341,7 +419,10 @@ def _collect_page_entries(driver, page_now: str, is_public: bool) -> list[dict]:
         except Exception:
             continue
 
-    return entries
+    if entries:
+        return entries
+
+    return _collect_from_view_links(driver, page_now, is_public)
 
 
 def _click_chk_ment(driver, keyword: str):
@@ -351,10 +432,19 @@ def _click_chk_ment(driver, keyword: str):
             return
 
 
+def _configure_driver_timeouts(driver):
+    try:
+        driver.set_page_load_timeout(45)
+        driver.set_script_timeout(30)
+    except Exception:
+        pass
+
+
 def apply_search_config(driver, config: dict | None):
     if not config:
         return "검색 조건 없이 진행합니다."
 
+    _configure_driver_timeouts(driver)
     list_type = config.get("listType", "auction")
     url = PA_LIST_URL if list_type == "public" else CA_LIST_URL
     driver.get(url)
@@ -399,10 +489,13 @@ def apply_search_config(driver, config: dict | None):
     else:
         _safe_click(driver, _wait_clickable(driver, By.ID, "btnSrch"))
 
+    _wait_list_ready(driver, timeout=LIST_READY_TIMEOUT)
+
     page_size = config.get("pageSize", "100")
-    select = Select(_wait_visible(driver, By.NAME, "dataSize_s"))
-    select.select_by_visible_text(str(page_size))
-    _wait_list_ready(driver)
+    before_key = _first_row_key(driver)
+    _set_page_size(driver, str(page_size))
+    if before_key and not _wait_list_changed(driver, before_key, timeout=8):
+        _wait_list_ready(driver, timeout=8)
     return "검색 조건을 적용했습니다."
 
 
@@ -466,14 +559,40 @@ def apply_preset(driver, preset: str, search: dict | None = None):
     )
 
 
-def collect_urls(driver, on_progress=None) -> list[dict]:
+def collect_urls(
+    driver,
+    on_progress=None,
+    *,
+    current_page_only: bool = False,
+) -> list[dict]:
     def progress(message: str):
         if on_progress:
             on_progress(message)
 
     entries: list[dict] = []
-    _wait_list_ready(driver)
+    list_timeout = 5 if current_page_only else LIST_READY_TIMEOUT
+
+    if not _list_has_rows(driver):
+        try:
+            _wait_list_ready(driver, timeout=list_timeout)
+        except Exception as exc:
+            raise RuntimeError(
+                "탱크옥션 목록을 찾지 못했습니다. "
+                "로그인·검색 조건을 확인하거나 프리셋을 바꿔 주세요."
+            ) from exc
+
+    if not _list_has_rows(driver):
+        raise RuntimeError(
+            "검색 결과가 없습니다. 검색 조건(물건종류·감정가 등)을 확인해 주세요."
+        )
+
     is_public = _is_public_list(driver)
+
+    if current_page_only:
+        page_now = _current_page_number(driver)
+        page_entries = _collect_page_entries(driver, page_now, is_public)
+        progress(f"현재 페이지 {len(page_entries)}건 수집")
+        return page_entries
 
     total_count = _parse_total_count(driver)
     page_size = _page_size_on_list(driver)

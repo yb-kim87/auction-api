@@ -1,5 +1,10 @@
 import { IncomingHttpHeaders } from "http";
 import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import {
+  AUTH_TOKEN_COOKIE,
+  parseCookieValue,
+  verifyAuthToken,
+} from "../auth/jwt.util";
 import { UserRole } from "./constants";
 
 export interface AuthContext {
@@ -8,9 +13,19 @@ export interface AuthContext {
 }
 
 export function getAuthContext(headers: IncomingHttpHeaders): AuthContext {
-  const username = String(headers["x-auction-user"] ?? "").trim();
-  const role = String(headers["x-auction-role"] ?? "").trim() as UserRole | "";
-  return { username, role };
+  const cookieHeader = String(headers.cookie ?? headers.Cookie ?? "");
+  const token = parseCookieValue(cookieHeader, AUTH_TOKEN_COOKIE);
+  if (token) {
+    const payload = verifyAuthToken(token);
+    if (payload?.sub) {
+      return {
+        username: payload.sub,
+        role: payload.role as UserRole,
+      };
+    }
+  }
+
+  return { username: "", role: "" };
 }
 
 export function requireAuth(ctx: AuthContext) {
@@ -20,18 +35,21 @@ export function requireAuth(ctx: AuthContext) {
 }
 
 export function requireAdmin(ctx: AuthContext) {
+  requireAuth(ctx);
   if (ctx.role !== UserRole.ADMIN) {
     throw new ForbiddenException("관리자 권한이 필요합니다.");
   }
 }
 
 export function requireConsultant(ctx: AuthContext) {
+  requireAuth(ctx);
   if (ctx.role !== UserRole.CONSULTANT) {
     throw new ForbiddenException("컨설턴트 권한이 필요합니다.");
   }
 }
 
 export function requireConsultantOrAdmin(ctx: AuthContext) {
+  requireAuth(ctx);
   if (ctx.role !== UserRole.CONSULTANT && ctx.role !== UserRole.ADMIN) {
     throw new ForbiddenException("접근 권한이 없습니다.");
   }

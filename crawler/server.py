@@ -14,27 +14,37 @@ from browser import (
     CONTEXT_TANK,
     browser_is_ready,
     close_driver,
+    ensure_cafe_driver,
     ensure_driver,
     get_existing_driver,
     is_session_alive,
+    selenium_lock,
 )
 import item_crawl
-from tank_login import ensure_login, is_logged_in, login
+from crawl_abort import CrawlStoppedError
+from tank_login import ensure_login, is_logged_in, login, _is_logged_in_unlocked
 from url_collect import apply_preset, collect_urls
 
-CRAWLER_SERVER_REVISION = "2026-06-30-cafe-login-fix"
+CRAWLER_SERVER_REVISION = "2026-07-01-tank-baseinfo"
 
 
 def _reload_crawler_modules():
     """워커 재시작 없이 crawler/*.py 변경 반영."""
     import naver_crawl
+    import crawl_abort
 
+    importlib.reload(crawl_abort)
     importlib.reload(naver_crawl)
     importlib.reload(item_crawl)
     import url_collect
 
     importlib.reload(url_collect)
     return item_crawl.crawl_item
+
+
+def _crawl_should_stop() -> bool:
+    with STATE.lock:
+        return STATE.stop_requested
 
 
 class CrawlerState:
@@ -53,6 +63,8 @@ class CrawlerState:
         self.stop_requested = False
         self.crawl_thread: threading.Thread | None = None
         self.events: list[str] = []
+        self.cached_tank_logged_in: bool | None = None
+        self._login_check_at = 0.0
 
     def push_event(self, message: str):
         with self.lock:
@@ -62,9 +74,41 @@ class CrawlerState:
         with self.lock:
             events = list(self.events)
             self.events.clear()
+            busy = self.phase in ("collecting", "logging_in", "crawling", "starting")
+            if busy:
+                ready = self.browser_ready
+            else:
+                ready = browser_is_ready(CONTEXT_TANK)
+                self.browser_ready = ready
+
+            tank_logged_in = self.cached_tank_logged_in
+            login_check_cooldown = 45.0
+            should_probe_login = (
+                not busy
+                and (
+                    tank_logged_in is None
+                    or time.time() - self._login_check_at >= login_check_cooldown
+                )
+            )
+            if should_probe_login:
+                try:
+                    with selenium_lock:
+                        driver = get_existing_driver(CONTEXT_TANK)
+                        if driver is not None:
+                            tank_logged_in = _is_logged_in_unlocked(driver)
+                            self.cached_tank_logged_in = tank_logged_in
+                            self._login_check_at = time.time()
+                            if tank_logged_in and self.phase == "logging_in":
+                                self.phase = "idle"
+                                self.error = None
+                                self.last_message = "탱크옥션 로그인 상태입니다."
+                except Exception:
+                    pass
+
             return {
                 "phase": self.phase,
-                "browserReady": browser_is_ready(CONTEXT_TANK),
+                "browserReady": ready,
+                "tankLoggedIn": tank_logged_in,
                 "urls": list(self.urls),
                 "completed": self.completed,
                 "total": self.total,
@@ -281,17 +325,22 @@ class LoginRequiredError(RuntimeError):
     pass
 
 
+def _crawler_on_tank_site(driver) -> bool:
+    return "tankauction.com" in (driver.current_url or "")
+
+
 def _ensure_logged_in(user_id=None, password=None) -> str:
-    driver = ensure_driver()
-    if is_logged_in(driver):
-        return "탱크옥션 로그인 상태입니다."
-    message = ensure_login(driver, user_id=user_id, user_pw=password)
-    if not is_logged_in(driver):
-        raise LoginRequiredError(
-            "탱크옥션 로그인에 실패했습니다. ID/비밀번호를 확인하거나 "
-            "브라우저에서 직접 로그인해 주세요."
-        )
-    return message
+    with selenium_lock:
+        driver = ensure_driver()
+        if is_logged_in(driver):
+            return "탱크옥션 로그인 상태입니다."
+        message = ensure_login(driver, user_id=user_id, user_pw=password)
+        if not is_logged_in(driver):
+            raise LoginRequiredError(
+                "탱크옥션 로그인에 실패했습니다. ID/비밀번호를 확인하거나 "
+                "브라우저에서 직접 로그인해 주세요."
+            )
+        return message
 
 
 def _fail_login_state(message: str) -> None:
@@ -324,6 +373,28 @@ def _resolve_callback(callback_url: str | None = None, callback_secret: str | No
         ).strip(),
         "secret": (callback_secret or os.environ.get("CRAWLER_SECRET", "local-crawler-secret")).strip(),
     }
+
+
+def _push_api_log(
+    message: str,
+    level: str = "info",
+    callback_url: str | None = None,
+    callback_secret: str | None = None,
+) -> None:
+    cfg = _resolve_callback(callback_url, callback_secret)
+    log_url = cfg["url"].rsplit("/", 1)[0] + "/worker-log"
+    try:
+        requests.post(
+            log_url,
+            json={"message": message, "level": level},
+            headers={
+                "X-Crawler-Secret": cfg["secret"],
+                "Content-Type": "application/json",
+            },
+            timeout=5,
+        )
+    except Exception:
+        pass
 
 
 def _entry_label(entry: str) -> str:
@@ -690,6 +761,9 @@ def _record_import_result(
     result: dict,
     index: int,
     total: int,
+    *,
+    callback_url: str | None = None,
+    callback_secret: str | None = None,
 ) -> None:
     label = _auction_label(item)
     naver_note = ""
@@ -701,28 +775,29 @@ def _record_import_result(
         elif area in ("0", "없음", ""):
             naver_note = " (면적 미수집)"
 
+    if result.get("skipped") and result.get("unchanged"):
+        status_label = f"{label} (변경 없음)"
+    elif result.get("skipped"):
+        reason = str(result.get("reason") or "저장 스킵")
+        if reason in ("invalid_auction_no", "invalid_address", "invalid_link"):
+            status_label = f"{label} 저장 스킵 (물건 아님)"
+        else:
+            status_label = f"{label} 저장 스킵 ({reason})"
+    elif result.get("created"):
+        status_label = f"{label} 등록완료"
+    else:
+        status_label = f"{label} 갱신완료"
+
+    log_line = f"[{index}/{total}] {status_label}{naver_note}"
+    _push_api_log(log_line, "info", callback_url, callback_secret)
+
     with STATE.lock:
         STATE.completed = index
-        if result.get("skipped") and result.get("reason") in (
-            "invalid_auction_no",
-            "invalid_address",
-            "invalid_link",
-        ):
-            status_label = f"{label} 저장 스킵 (물건 아님)"
-        elif result.get("skipped"):
-            status_label = None
-        elif result.get("created"):
+        if result.get("created"):
             STATE.created += 1
-            status_label = f"{label} 등록완료"
-        else:
+        elif not result.get("skipped"):
             STATE.updated += 1
-            status_label = f"{label} 갱신완료"
-
-        if status_label:
-            STATE.events.append(status_label)
-            STATE.last_message = f"[{index}/{total}] {status_label}{naver_note}"
-        else:
-            STATE.last_message = f"[{index}/{total}] {label} (변경 없음){naver_note}"
+        STATE.last_message = log_line
 
 
 def crawl_worker(
@@ -778,27 +853,41 @@ def crawl_worker(
                     return
 
             try:
-                if not browser_is_ready(CONTEXT_TANK):
-                    driver = ensure_driver(force_new=True)
-                    driver.implicitly_wait(1)
-                if not is_logged_in(driver):
-                    try:
-                        _ensure_logged_in(user_id, password)
-                    except (LoginRequiredError, RuntimeError) as exc:
-                        _fail_login_state(f"조회 중 로그인 만료: {exc}")
-                        return
-                crawl_item = _reload_crawler_modules()
-                _set_live_message(f"[{pos}/{total_count}] {entry_label} 조회 중...")
-                item = crawl_item(driver, entry)
+                with selenium_lock:
+                    if not browser_is_ready(CONTEXT_TANK):
+                        driver = ensure_driver(force_new=True)
+                        driver.implicitly_wait(1)
+                    if _crawler_on_tank_site(driver):
+                        if not is_logged_in(driver):
+                            try:
+                                _ensure_logged_in(user_id, password)
+                            except (LoginRequiredError, RuntimeError) as exc:
+                                _fail_login_state(f"조회 중 로그인 만료: {exc}")
+                                return
+                    crawl_item = _reload_crawler_modules()
+                    _set_live_message(f"[{pos}/{total_count}] {entry_label} 조회 중...")
+                    query_log = f"[{pos}/{total_count}] {entry_label} 조회 시작"
+                    _push_api_log(query_log, "info", cfg["url"], cfg["secret"])
+                    with STATE.lock:
+                        STATE.last_message = query_log
+                    item = crawl_item(driver, entry, should_stop=_crawl_should_stop)
+                    gaps = item_crawl.summarize_tank_collection_gaps(item)
+                    if gaps:
+                        gap_msg = (
+                            f"[{pos}/{total_count}] {entry_label} 탱크 미수집: "
+                            + ", ".join(gaps)
+                        )
+                        _push_api_log(gap_msg, "warn", cfg["url"], cfg["secret"])
                 if not item_crawl.is_valid_crawl_item(item):
+                    _, skip_reason = item_crawl.validate_crawl_item_reason(item)
                     with STATE.lock:
                         STATE.completed = pos
                         skip_msg = (
-                            f"[{pos}/{total_count}] 저장 스킵 (물건 아님): "
+                            f"[{pos}/{total_count}] 저장 스킵 ({skip_reason}): "
                             f"{item.get('auctionNo') or item.get('address') or entry[:40]}"
                         )
-                        STATE.events.append(skip_msg)
                         STATE.last_message = skip_msg
+                    _push_api_log(skip_msg, "warn", cfg["url"], cfg["secret"])
                     continue
                 item_label = _auction_label(item)
                 _set_live_message(f"[{pos}/{total_count}] {item_label} 저장 중...")
@@ -809,7 +898,21 @@ def crawl_worker(
                     mirror_callback_url=mirror_url or None,
                     mirror_callback_secret=mirror_callback_secret,
                 )
-                _record_import_result(item, result, pos, total_count)
+                _record_import_result(
+                    item,
+                    result,
+                    pos,
+                    total_count,
+                    callback_url=cfg["url"],
+                    callback_secret=cfg["secret"],
+                )
+            except CrawlStoppedError:
+                with STATE.lock:
+                    STATE.phase = "stopped"
+                    STATE.last_message = "사용자 요청으로 조회가 중단되었습니다."
+                    STATE.events.append("조회작업 중단")
+                _push_api_log("조회작업 중단", "info", cfg["url"], cfg["secret"])
+                return
             except Exception as exc:
                 if _is_invalid_session(exc):
                     with STATE.lock:
@@ -817,19 +920,23 @@ def crawl_worker(
                             f"브라우저 세션 만료 — 재연결 후 재시도 ({pos}/{total_count})"
                         )
                     try:
-                        driver = ensure_driver(force_new=True)
-                        driver.implicitly_wait(1)
-                        _set_live_message(f"[{pos}/{total_count}] {entry_label} 조회 중...")
-                        item = crawl_item(driver, entry)
+                        with selenium_lock:
+                            driver = ensure_driver(force_new=True)
+                            driver.implicitly_wait(1)
+                            _set_live_message(f"[{pos}/{total_count}] {entry_label} 조회 중...")
+                            item = crawl_item(
+                                driver, entry, should_stop=_crawl_should_stop
+                            )
                         if not item_crawl.is_valid_crawl_item(item):
+                            _, skip_reason = item_crawl.validate_crawl_item_reason(item)
                             with STATE.lock:
                                 STATE.completed = pos
                                 skip_msg = (
-                                    f"[{pos}/{total_count}] 저장 스킵 (물건 아님): "
+                                    f"[{pos}/{total_count}] 저장 스킵 ({skip_reason}): "
                                     f"{item.get('auctionNo') or item.get('address') or entry[:40]}"
                                 )
-                                STATE.events.append(skip_msg)
                                 STATE.last_message = skip_msg
+                            _push_api_log(skip_msg, "warn", cfg["url"], cfg["secret"])
                             continue
                         item_label = _auction_label(item)
                         _set_live_message(f"[{pos}/{total_count}] {item_label} 저장 중...")
@@ -840,8 +947,22 @@ def crawl_worker(
                             mirror_callback_url=mirror_url or None,
                             mirror_callback_secret=mirror_callback_secret,
                         )
-                        _record_import_result(item, result, pos, total_count)
+                        _record_import_result(
+                            item,
+                            result,
+                            pos,
+                            total_count,
+                            callback_url=cfg["url"],
+                            callback_secret=cfg["secret"],
+                        )
                         continue
+                    except CrawlStoppedError:
+                        with STATE.lock:
+                            STATE.phase = "stopped"
+                            STATE.last_message = "사용자 요청으로 조회가 중단되었습니다."
+                            STATE.events.append("조회작업 중단")
+                        _push_api_log("조회작업 중단", "info", cfg["url"], cfg["secret"])
+                        return
                     except Exception as retry_exc:
                         err_msg = f"오류 ({pos}/{total_count}): {retry_exc}"
                         with STATE.lock:
@@ -855,6 +976,14 @@ def crawl_worker(
                         STATE.last_message = err_msg
                         STATE.events.append(err_msg)
 
+            if _crawl_should_stop():
+                with STATE.lock:
+                    STATE.phase = "stopped"
+                    STATE.last_message = "사용자 요청으로 조회가 중단되었습니다."
+                    STATE.events.append("조회작업 중단")
+                _push_api_log("조회작업 중단", "info", cfg["url"], cfg["secret"])
+                return
+
             time.sleep(0.1)
 
         with STATE.lock:
@@ -862,7 +991,7 @@ def crawl_worker(
             STATE.completed = total_count
             done_msg = f"조회작업 완료 ({total_count}건)"
             STATE.last_message = done_msg
-            STATE.events.append(done_msg)
+        _push_api_log(done_msg, "info", cfg["url"], cfg["secret"])
     except Exception as exc:
         with STATE.lock:
             STATE.phase = "error"
@@ -1028,11 +1157,15 @@ class Handler(BaseHTTPRequestHandler):
 
     def _send_json(self, status: int, payload: dict):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionAbortedError, BrokenPipeError):
+            # UI 상태 폴링 중 이전 요청이 끊길 때 — 무시
+            return
 
     def _read_json(self) -> dict:
         length = int(self.headers.get("Content-Length", "0"))
@@ -1072,17 +1205,26 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(200, STATE.snapshot())
             return
         if path == "/session":
-            from browser import CONTEXT_TANK, get_existing_driver
-            from tank_login import is_logged_in
-
-            logged_in = False
-            driver = get_existing_driver(CONTEXT_TANK)
-            browser_ready = driver is not None
-            if browser_ready:
-                try:
-                    logged_in = is_logged_in(driver)
-                except Exception:
-                    logged_in = False
+            with STATE.lock:
+                busy = STATE.phase in ("collecting", "logging_in", "crawling", "starting")
+                cached = STATE.cached_tank_logged_in
+            logged_in = cached if cached is not None else False
+            browser_ready = browser_is_ready(CONTEXT_TANK)
+            if not busy:
+                with selenium_lock:
+                    driver = get_existing_driver(CONTEXT_TANK)
+                    browser_ready = driver is not None
+                    if browser_ready:
+                        try:
+                            logged_in = _is_logged_in_unlocked(driver)
+                            with STATE.lock:
+                                STATE.cached_tank_logged_in = logged_in
+                        except Exception:
+                            logged_in = False
+            with STATE.lock:
+                if logged_in and STATE.phase == "logging_in":
+                    STATE.phase = "idle"
+                    STATE.error = None
             self._send_json(
                 200,
                 {"browserReady": browser_ready, "loggedIn": logged_in},
@@ -1111,8 +1253,6 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(200, {"ok": True, **data})
             return
         if path == "/cafe/session":
-            from browser import CONTEXT_CAFE, get_existing_driver
-
             naver_logged_in = False
             driver = get_existing_driver(CONTEXT_CAFE)
             browser_ready = driver is not None
@@ -1145,17 +1285,26 @@ class Handler(BaseHTTPRequestHandler):
                 user_id = body.get("userId") or body.get("user_id")
                 password = body.get("password")
                 try:
-                    message = _ensure_logged_in(user_id, password)
-                except (LoginRequiredError, RuntimeError) as exc:
-                    _fail_login_state(str(exc))
-                    self._send_json(503, {"ok": False, "error": str(exc)})
-                    return
-                with STATE.lock:
-                    STATE.phase = "idle"
-                    STATE.browser_ready = browser_is_ready(CONTEXT_TANK)
-                    STATE.error = None
-                    STATE.last_message = message
-                self._send_json(200, {"ok": True, "message": message, "loggedIn": True})
+                    try:
+                        message = _ensure_logged_in(user_id, password)
+                    except (LoginRequiredError, RuntimeError) as exc:
+                        _fail_login_state(str(exc))
+                        self._send_json(503, {"ok": False, "error": str(exc)})
+                        return
+                    with STATE.lock:
+                        STATE.phase = "idle"
+                        STATE.browser_ready = browser_is_ready(CONTEXT_TANK)
+                        STATE.error = None
+                        STATE.last_message = message
+                        STATE.cached_tank_logged_in = True
+                    self._send_json(
+                        200,
+                        {"ok": True, "message": message, "loggedIn": True},
+                    )
+                finally:
+                    with STATE.lock:
+                        if STATE.phase == "logging_in":
+                            STATE.phase = "idle"
                 return
 
             if path == "/ensure-login":
@@ -1164,20 +1313,29 @@ class Handler(BaseHTTPRequestHandler):
                 user_id = body.get("userId") or body.get("user_id")
                 password = body.get("password")
                 try:
-                    message = _ensure_logged_in(user_id, password)
-                except (LoginRequiredError, RuntimeError) as exc:
-                    _fail_login_state(str(exc))
-                    self._send_json(503, {"ok": False, "error": str(exc), "loggedIn": False})
-                    return
-                with STATE.lock:
-                    STATE.phase = "idle"
-                    STATE.browser_ready = browser_is_ready(CONTEXT_TANK)
-                    STATE.error = None
-                    STATE.last_message = message
-                self._send_json(
-                    200,
-                    {"ok": True, "message": message, "loggedIn": True},
-                )
+                    try:
+                        message = _ensure_logged_in(user_id, password)
+                    except (LoginRequiredError, RuntimeError) as exc:
+                        _fail_login_state(str(exc))
+                        self._send_json(
+                            503,
+                            {"ok": False, "error": str(exc), "loggedIn": False},
+                        )
+                        return
+                    with STATE.lock:
+                        STATE.phase = "idle"
+                        STATE.browser_ready = browser_is_ready(CONTEXT_TANK)
+                        STATE.error = None
+                        STATE.last_message = message
+                        STATE.cached_tank_logged_in = True
+                    self._send_json(
+                        200,
+                        {"ok": True, "message": message, "loggedIn": True},
+                    )
+                finally:
+                    with STATE.lock:
+                        if STATE.phase == "logging_in":
+                            STATE.phase = "idle"
                 return
 
             if path == "/collect-urls":
@@ -1192,56 +1350,83 @@ class Handler(BaseHTTPRequestHandler):
                     STATE.error = None
 
                 try:
-                    login_message = _ensure_logged_in(user_id, password)
-                except (LoginRequiredError, RuntimeError) as exc:
-                    _fail_login_state(str(exc))
-                    self._send_json(503, {"ok": False, "error": str(exc), "urls": []})
-                    return
-
-                def collect_action(driver):
-                    if not is_logged_in(driver):
-                        raise LoginRequiredError(
-                            "탱크옥션 로그인이 풀렸습니다. 다시 로그인해 주세요."
-                        )
                     try:
-                        driver.implicitly_wait(0)
+                        if STATE.cached_tank_logged_in:
+                            with selenium_lock:
+                                driver = ensure_driver()
+                                if _is_logged_in_unlocked(driver):
+                                    login_message = "탱크옥션 로그인 상태입니다."
+                                else:
+                                    login_message = _ensure_logged_in(user_id, password)
+                        else:
+                            login_message = _ensure_logged_in(user_id, password)
+                    except (LoginRequiredError, RuntimeError) as exc:
+                        _fail_login_state(str(exc))
+                        self._send_json(503, {"ok": False, "error": str(exc), "urls": []})
+                        return
+
+                    def collect_action(driver):
+                        with selenium_lock:
+                            if not _is_logged_in_unlocked(driver):
+                                raise LoginRequiredError(
+                                    "탱크옥션 로그인이 풀렸습니다. 다시 로그인해 주세요."
+                                )
+                            with STATE.lock:
+                                STATE.cached_tank_logged_in = True
+                            driver.implicitly_wait(0)
 
                         def on_progress(message: str):
                             STATE.set_message(message)
 
-                        message = apply_preset(driver, preset, search)
-                        entries = collect_urls(driver, on_progress=on_progress)
-                        return message, entries
-                    finally:
-                        driver.implicitly_wait(1)
+                        try:
+                            with selenium_lock:
+                                preset_message = apply_preset(driver, preset, search)
+                            with selenium_lock:
+                                entries = collect_urls(
+                                    driver,
+                                    on_progress=on_progress,
+                                    current_page_only=(preset == "현재"),
+                                )
+                            return preset_message, entries
+                        finally:
+                            with selenium_lock:
+                                driver.implicitly_wait(1)
 
-                try:
-                    message, entries = _with_live_driver(collect_action)
-                except LoginRequiredError as exc:
-                    _fail_login_state(str(exc))
-                    self._send_json(503, {"ok": False, "error": str(exc), "urls": []})
-                    return
-                except Exception as exc:
-                    if not _is_invalid_session(exc):
-                        raise
                     try:
-                        _ensure_logged_in(user_id, password)
-                        message, entries = _with_live_driver(
-                            collect_action, force_retry=False
-                        )
-                    except (LoginRequiredError, RuntimeError) as login_exc:
-                        _fail_login_state(str(login_exc))
-                        self._send_json(503, {"ok": False, "error": str(login_exc), "urls": []})
+                        message, entries = _with_live_driver(collect_action)
+                    except LoginRequiredError as exc:
+                        _fail_login_state(str(exc))
+                        self._send_json(503, {"ok": False, "error": str(exc), "urls": []})
                         return
-                with STATE.lock:
-                    STATE.completed = 0
-                    STATE.phase = "idle"
-                    STATE.error = None
-                    STATE.last_message = f"{login_message} / {message} ({len(entries)}건 수집)"
-                self._send_json(
-                    200,
-                    {"ok": True, "urls": entries, "message": STATE.last_message},
-                )
+                    except Exception as exc:
+                        if not _is_invalid_session(exc):
+                            raise
+                        try:
+                            _ensure_logged_in(user_id, password)
+                            message, entries = _with_live_driver(
+                                collect_action, force_retry=False
+                            )
+                        except (LoginRequiredError, RuntimeError) as login_exc:
+                            _fail_login_state(str(login_exc))
+                            self._send_json(
+                                503, {"ok": False, "error": str(login_exc), "urls": []}
+                            )
+                            return
+                    with STATE.lock:
+                        STATE.completed = 0
+                        STATE.phase = "idle"
+                        STATE.error = None
+                        STATE.last_message = (
+                            f"{login_message} / {message} ({len(entries)}건 수집)"
+                        )
+                    self._send_json(
+                        200,
+                        {"ok": True, "urls": entries, "message": STATE.last_message},
+                    )
+                finally:
+                    with STATE.lock:
+                        if STATE.phase == "collecting":
+                            STATE.phase = "idle"
                 return
 
             if path == "/urls":
@@ -1294,7 +1479,12 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/crawl/stop":
                 with STATE.lock:
                     STATE.stop_requested = True
-                    STATE.last_message = "중단 요청을 접수했습니다."
+                    if STATE.phase == "crawling":
+                        STATE.last_message = (
+                            "중단 요청 접수 — 현재 물건 조회를 멈추는 중…"
+                        )
+                    else:
+                        STATE.last_message = "중단 요청을 접수했습니다."
                 self._send_json(200, {"ok": True})
                 return
 
@@ -1505,7 +1695,6 @@ class Handler(BaseHTTPRequestHandler):
 
             if path == "/cafe/check-login":
                 try:
-                    from browser import CONTEXT_CAFE, ensure_cafe_driver, get_existing_driver
                     from naver_cafe_crawl import is_naver_logged_in
 
                     with CAFE_DRIVER_LOCK:

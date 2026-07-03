@@ -30,7 +30,7 @@ export const EXCEL_COLUMN_MAP: Record<string, string> = {
   토지지분: "landShare",
   건물등기: "buildingRegistry",
   교육환경: "education",
-  임차상세: "tenantDetail",
+  임차인현황: "tenantDetail",
   "호가 상세": "priceDetail",
   "실거래 상세": "tradingDetail",
   기록시간: "recordTime",
