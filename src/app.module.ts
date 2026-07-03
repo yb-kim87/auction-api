@@ -8,6 +8,7 @@ import { UsersModule } from "./users/users.module";
 import { AiModule } from "./ai/ai.module";
 import { LoanPolicyModule } from "./loan-policy/loan-policy.module";
 import { UserActionsModule } from "./user-actions/user-actions.module";
+import { AiPlatformModule } from "./ai-platform/ai-platform.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -21,6 +22,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     AiModule,
     LoanPolicyModule,
     UserActionsModule,
+    AiPlatformModule,
   ],
 })
 export class AppModule {}

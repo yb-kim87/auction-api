@@ -10,6 +10,10 @@ import { AuctionKnowledge } from "./ai/knowledge.entity";
 import { KnowledgeDraft } from "./ai/knowledge-draft.entity";
 import { LoanPolicy } from "./loan-policy/loan-policy.entity";
 import { UserItemAction } from "./user-actions/user-item-action.entity";
+import { ItemNormalizedData } from "./ai-platform/normalizer/item-normalized-data.entity";
+import { ItemAiFeature } from "./ai-platform/feature-engine/item-ai-feature.entity";
+import { ItemAiTag } from "./ai-platform/tag-engine/item-ai-tag.entity";
+import { AiPlatformHistory } from "./ai-platform/shared/ai-platform-history.entity";
 
 const entities = [
   Auction,
@@ -21,6 +25,10 @@ const entities = [
   KnowledgeDraft,
   LoanPolicy,
   UserItemAction,
+  ItemNormalizedData,
+  ItemAiFeature,
+  ItemAiTag,
+  AiPlatformHistory,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {
