@@ -17,7 +17,11 @@
     "cleanup:production:dry": "node scripts/cleanup-auctions.mjs --dry-run",
     "cleanup:local": "node scripts/cleanup-auctions.mjs --local",
     "cleanup:local:dry": "node scripts/cleanup-auctions.mjs --local --dry-run",
-    "seed:knowledge": "node scripts/seed-knowledge.mjs"
+    "seed:knowledge": "node scripts/seed-knowledge.mjs",
+    "typeorm": "typeorm-ts-node-commonjs -d src/data-source.ts",
+    "migration:generate": "npm run typeorm -- migration:generate",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",

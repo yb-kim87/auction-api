@@ -21,26 +21,13 @@ const entities = [
   LoanPolicy,
 ];
 
-function resolveSynchronize(databaseUrl: string | undefined): boolean {
-  if (!databaseUrl) {
-    return true;
-  }
-  return process.env.TYPEORM_SYNCHRONIZE === "true";
-}
-
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {
   const databaseUrl = process.env.DATABASE_URL?.trim();
-  const synchronize = resolveSynchronize(databaseUrl);
 
   if (databaseUrl) {
     console.log(
-      `[DB] PostgreSQL (DATABASE_URL) synchronize=${synchronize}`,
+      "[DB] PostgreSQL (DATABASE_URL) synchronize=false, migrationsRun=true",
     );
-    if (!synchronize) {
-      console.log(
-        "[DB] 운영 DB 스키마 자동 변경 비활성 — TYPEORM_SYNCHRONIZE=true 로만 켭니다.",
-      );
-    }
     return {
       type: "postgres",
       url: databaseUrl,
@@ -49,7 +36,9 @@ export function buildTypeOrmConfig(): TypeOrmModuleOptions {
           ? false
           : { rejectUnauthorized: false },
       entities,
-      synchronize,
+      synchronize: false,
+      migrations: [join(__dirname, "migrations", "*.{js,ts}")],
+      migrationsRun: true,
     };
   }
 
