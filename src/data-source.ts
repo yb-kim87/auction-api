@@ -8,6 +8,7 @@ import { AuctionAnalysis } from "./ai/auction-analysis.entity";
 import { AuctionKnowledge } from "./ai/knowledge.entity";
 import { KnowledgeDraft } from "./ai/knowledge-draft.entity";
 import { LoanPolicy } from "./loan-policy/loan-policy.entity";
+import { UserItemAction } from "./user-actions/user-item-action.entity";
 
 /**
  * TypeORM CLI 전용 (migration:generate / migration:run 등).
@@ -27,6 +28,7 @@ export default new DataSource({
     AuctionKnowledge,
     KnowledgeDraft,
     LoanPolicy,
+    UserItemAction,
   ],
   migrations: ["src/migrations/*.ts"],
   synchronize: false,

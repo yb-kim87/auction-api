@@ -9,6 +9,7 @@ import { AuctionAnalysis } from "./ai/auction-analysis.entity";
 import { AuctionKnowledge } from "./ai/knowledge.entity";
 import { KnowledgeDraft } from "./ai/knowledge-draft.entity";
 import { LoanPolicy } from "./loan-policy/loan-policy.entity";
+import { UserItemAction } from "./user-actions/user-item-action.entity";
 
 const entities = [
   Auction,
@@ -19,6 +20,7 @@ const entities = [
   AuctionKnowledge,
   KnowledgeDraft,
   LoanPolicy,
+  UserItemAction,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

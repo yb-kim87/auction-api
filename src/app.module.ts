@@ -7,6 +7,7 @@ import { FavoritesModule } from "./favorites/favorites.module";
 import { UsersModule } from "./users/users.module";
 import { AiModule } from "./ai/ai.module";
 import { LoanPolicyModule } from "./loan-policy/loan-policy.module";
+import { UserActionsModule } from "./user-actions/user-actions.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -19,6 +20,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     UsersModule,
     AiModule,
     LoanPolicyModule,
+    UserActionsModule,
   ],
 })
 export class AppModule {}
