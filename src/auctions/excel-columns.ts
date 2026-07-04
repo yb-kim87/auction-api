@@ -213,6 +213,7 @@ export interface AuctionRow {
   salePrice: number | null;
   naverPrice: number;
   naverPriceFloor?: number | null;
+  naverPriceFloorLabel?: string | null;
   naverId: string;
   diffNaverSale: number | null;
   diffNaverMin: number;

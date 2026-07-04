@@ -198,6 +198,10 @@ export function mergeAuctionFromSource(
       source.naverPriceFloor !== undefined
         ? source.naverPriceFloor
         : existing.naverPriceFloor,
+    naverPriceFloorLabel:
+      source.naverPriceFloorLabel !== undefined
+        ? source.naverPriceFloorLabel
+        : existing.naverPriceFloorLabel,
     naverId: (() => {
       if (source.naverId === undefined || source.naverId === null) {
         return existing.naverId;
@@ -258,6 +262,7 @@ export function mergeAuctionFromSource(
   ) {
     merged.naverPrice = existing.naverPrice;
     merged.naverPriceFloor = existing.naverPriceFloor;
+    merged.naverPriceFloorLabel = existing.naverPriceFloorLabel;
     merged.naverId = existing.naverId;
     merged.priceDetail = existing.priceDetail;
     merged.tradingDetail = existing.tradingDetail;
@@ -296,6 +301,7 @@ export function buildAuctionEntity(
     salePrice: parsed.salePrice ?? null,
     naverPrice: parsed.naverPrice ?? 0,
     naverPriceFloor: parsed.naverPriceFloor ?? null,
+    naverPriceFloorLabel: parsed.naverPriceFloorLabel ?? null,
     naverId: parsed.naverId ?? "",
     ...diffs,
     elevator,

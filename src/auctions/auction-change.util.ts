@@ -36,6 +36,8 @@ export const AUCTION_FIELD_LABELS: Record<string, string> = {
   minPrice: "최저가",
   salePrice: "낙찰가",
   naverPrice: "네이버 호가",
+  naverPriceFloor: "네이버 호가 층수",
+  naverPriceFloorLabel: "네이버 호가 층수 라벨",
   naverId: "네이버 ID",
   diffNaverSale: "호가-낙찰가",
   diffNaverMin: "호가-최저가",

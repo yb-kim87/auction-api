@@ -597,7 +597,8 @@ export class AuctionsService implements OnModuleInit {
 
       if (
         floorAware.naverPrice === item.naverPrice &&
-        floorAware.naverPriceFloor === item.naverPriceFloor
+        floorAware.naverPriceFloor === item.naverPriceFloor &&
+        floorAware.naverPriceFloorLabel === item.naverPriceFloorLabel
       ) {
         unchanged += 1;
         continue;
@@ -606,6 +607,7 @@ export class AuctionsService implements OnModuleInit {
       const before = this.cloneAuctionState(item);
       item.naverPrice = floorAware.naverPrice;
       item.naverPriceFloor = floorAware.naverPriceFloor;
+      item.naverPriceFloorLabel = floorAware.naverPriceFloorLabel;
       const diffs = resolvePriceDiffs({
         naverPrice: item.naverPrice,
         minPrice: item.minPrice,

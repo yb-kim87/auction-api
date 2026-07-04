@@ -45,6 +45,7 @@ export function mapCrawledItem(raw: Record<string, unknown>): Partial<UpdateAuct
 
   let naverPrice = num(raw.naverPrice ?? raw.naver_lowest_price);
   let naverPriceFloor: number | null = null;
+  let naverPriceFloorLabel: string | null = null;
   let floorOverrideApplied = false;
 
   const usage = str(raw.usage);
@@ -57,6 +58,7 @@ export function mapCrawledItem(raw: Record<string, unknown>): Partial<UpdateAuct
     if (floorAware.naverPrice != null) {
       naverPrice = floorAware.naverPrice;
       naverPriceFloor = floorAware.naverPriceFloor;
+      naverPriceFloorLabel = floorAware.naverPriceFloorLabel;
       floorOverrideApplied = true;
     }
   }
@@ -106,6 +108,7 @@ export function mapCrawledItem(raw: Record<string, unknown>): Partial<UpdateAuct
     salePrice,
     naverPrice,
     naverPriceFloor,
+    naverPriceFloorLabel,
     naverId: str(raw.naverId ?? raw.naver_id),
     diffNaverSale,
     diffNaverMin,
