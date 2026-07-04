@@ -245,6 +245,13 @@ export class AuctionsController {
     return this.auctionsService.backfillTradingCountFromDetail(ctx.username);
   }
 
+  @Post("backfill-naver-floor-price")
+  backfillNaverFloorPrice(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.auctionsService.backfillNaverFloorPrice(ctx.username);
+  }
+
   @Delete(":id")
   removeOne(
     @Headers() headers: Record<string, string>,

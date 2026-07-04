@@ -26,6 +26,7 @@ import {
 } from "./auction-change.util";
 import { parseTradingCountFromDetail } from "./trading-count.util";
 import type { AuctionFieldChange } from "./auction-change.entity";
+import { parseUnitFloorFromAddress, selectFloorAwareNaverPrice } from "./naver-floor-price.util";
 
 interface WriteMeta {
   status: AuctionStatus;
@@ -565,6 +566,78 @@ export class AuctionsService implements OnModuleInit {
     }
 
     return { total: rows.length, updated, unchanged };
+  }
+
+  /**
+   * 용도가 "아파트"이고 priceDetail(호가 상세)이 있는 기존 물건에 대해,
+   * 재크롤링 없이 저장된 priceDetail을 다시 파싱해 층수 기준 네이버 호가로 갱신한다.
+   * 물건 자신이 1·2층이면 1·2층 매물 중 최저가, 그 외에는 3층 이상 매물 중 최저가를 적용한다.
+   */
+  async backfillNaverFloorPrice(updatedBy: string) {
+    const rows = await this.auctionRepo.find({
+      where: { usage: "아파트" },
+    });
+
+    let updated = 0;
+    let unchanged = 0;
+    let skipped = 0;
+
+    for (const item of rows) {
+      if (!item.priceDetail?.trim()) {
+        skipped += 1;
+        continue;
+      }
+
+      const targetFloor = parseUnitFloorFromAddress(item.address);
+      const floorAware = selectFloorAwareNaverPrice(item.priceDetail, targetFloor);
+      if (floorAware.naverPrice == null) {
+        skipped += 1;
+        continue;
+      }
+
+      if (
+        floorAware.naverPrice === item.naverPrice &&
+        floorAware.naverPriceFloor === item.naverPriceFloor
+      ) {
+        unchanged += 1;
+        continue;
+      }
+
+      const before = this.cloneAuctionState(item);
+      item.naverPrice = floorAware.naverPrice;
+      item.naverPriceFloor = floorAware.naverPriceFloor;
+      const diffs = resolvePriceDiffs({
+        naverPrice: item.naverPrice,
+        minPrice: item.minPrice,
+        appraisedValue: item.appraisedValue,
+        salePrice: item.salePrice,
+      });
+      item.diffNaverSale = diffs.diffNaverSale;
+      item.diffNaverMin = diffs.diffNaverMin;
+      item.diffNaverAppraised = diffs.diffNaverAppraised;
+
+      const changes = buildFieldChanges(
+        snapshotAuction(before),
+        snapshotAuction(item),
+      );
+      if (changes.length === 0) {
+        unchanged += 1;
+        continue;
+      }
+
+      await this.auctionRepo.save(item);
+      await this.recordChanges(
+        item.id,
+        before,
+        item,
+        updatedBy,
+        "admin_edit",
+        changes,
+      );
+      updated += 1;
+    }
+
+    return { total: rows.length, updated, unchanged, skipped };
   }
 
   async createOne(dto: UpdateAuctionDto, meta: WriteMeta) {

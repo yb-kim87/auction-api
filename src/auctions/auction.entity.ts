@@ -69,6 +69,9 @@ export class Auction {
   @Column({ type: "integer", default: 0 })
   naverPrice!: number;
 
+  @Column({ type: "integer", nullable: true })
+  naverPriceFloor!: number | null;
+
   @Column({ default: "" })
   naverId!: string;
 
