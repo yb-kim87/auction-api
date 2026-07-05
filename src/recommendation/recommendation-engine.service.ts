@@ -57,9 +57,14 @@ export class RecommendationEngineService {
   async getRecommendations(
     username: string,
     options?: { overrideInvestableWon?: number; limit?: number },
-  ): Promise<{ items: Auction[]; criteria: RecommendationCriteria | null; loanRatio: number | null }> {
+  ): Promise<{
+    items: Auction[];
+    criteria: RecommendationCriteria | null;
+    loanRatio: number | null;
+    loanPolicyLabel: string | null;
+  }> {
     const criteria = await this.buildCriteriaForUser(username, options?.overrideInvestableWon);
-    if (!criteria) return { items: [], criteria: null, loanRatio: null };
+    if (!criteria) return { items: [], criteria: null, loanRatio: null, loanPolicyLabel: null };
 
     const policies = await this.loanPolicyService.findAll();
     const policy = selectLoanPolicy(criteria, policies);
@@ -93,6 +98,7 @@ export class RecommendationEngineService {
       items: affordable.slice(0, limit).map((row) => row.item),
       criteria,
       loanRatio,
+      loanPolicyLabel: policy?.label ?? null,
     };
   }
 

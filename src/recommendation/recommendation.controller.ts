@@ -23,6 +23,8 @@ export class RecommendationController {
     return {
       items: result.items,
       hasCriteria: result.criteria != null,
+      loanRatio: result.loanRatio,
+      loanPolicyLabel: result.loanPolicyLabel,
     };
   }
 }
