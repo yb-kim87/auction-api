@@ -17,6 +17,7 @@ import {
   requireSearchAccess,
 } from "../common/auth-context";
 import { AiAnalysisService } from "./ai-analysis.service";
+import { AiAssistantService } from "./ai-assistant.service";
 import {
   CafeKnowledgeService,
   type UpdateKnowledgeDraftInput,
@@ -28,9 +29,32 @@ import type { KnowledgeDraftStatus } from "./knowledge-draft.entity";
 export class AiController {
   constructor(
     private readonly aiAnalysisService: AiAnalysisService,
+    private readonly aiAssistantService: AiAssistantService,
     private readonly knowledgeService: KnowledgeService,
     private readonly cafeKnowledgeService: CafeKnowledgeService,
   ) {}
+
+  @Post("ask")
+  async ask(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { question?: string; auctionId?: string },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAuth(ctx);
+    requireSearchAccess(ctx);
+    return this.aiAssistantService.ask(ctx.username, body.question ?? "", body.auctionId);
+  }
+
+  @Post("compare")
+  async compare(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { auctionIdA?: string; auctionIdB?: string },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAuth(ctx);
+    requireSearchAccess(ctx);
+    return this.aiAssistantService.compare(body.auctionIdA ?? "", body.auctionIdB ?? "");
+  }
 
   @Get("auctions/:auctionId/analysis")
   async getAnalysis(

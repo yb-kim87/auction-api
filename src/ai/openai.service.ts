@@ -119,6 +119,93 @@ ${input.rawContent.slice(0, 6000)}`;
     };
   }
 
+  async answerFreeform(systemPrompt: string, userPrompt: string): Promise<string> {
+    if (!this.apiKey) {
+      throw new ServiceUnavailableException(
+        "경매코치 AI를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    }
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: this.model,
+        temperature: 0.4,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new InternalServerErrorException(
+        `경매코치 AI 응답 요청에 실패했습니다. (${response.status})`,
+      );
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = data.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+    }
+    return content;
+  }
+
+  async compareAuctions(
+    systemPrompt: string,
+    userPrompt: string,
+  ): Promise<{ summary: string; betterChoice: string; reasons: string[] }> {
+    if (!this.apiKey) {
+      throw new ServiceUnavailableException(
+        "경매코치 AI를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    }
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: this.model,
+        temperature: 0.3,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new InternalServerErrorException(
+        `경매코치 AI 비교 요청에 실패했습니다. (${response.status})`,
+      );
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = data.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+    }
+    const parsed = JSON.parse(content) as Record<string, unknown>;
+    return {
+      summary: String(parsed.summary ?? ""),
+      betterChoice: String(parsed.betterChoice ?? "상황에따라다름"),
+      reasons: Array.isArray(parsed.reasons) ? parsed.reasons.map((v) => String(v)) : [],
+    };
+  }
+
   async analyzeAuction(systemPrompt: string, userPrompt: string): Promise<AnalysisLlmResult> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException(
