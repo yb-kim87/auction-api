@@ -13,7 +13,6 @@ import {
 } from "./investment-math.util";
 
 const PRICE_MERIT_TAG = "가격메리트검토";
-const RECOMMEND_LIMIT = 40;
 
 export interface RecommendationCriteria {
   investableWon: number;
@@ -85,17 +84,18 @@ export class RecommendationEngineService {
     const priceMeritIds = await this.findPriceMeritItemIds(affordable.map((row) => row.item.id));
 
     affordable.sort((a, b) => {
+      // 예산 내에서 가장 비싼(가장 좋은) 물건을 우선 추천
+      if (b.requiredEquity !== a.requiredEquity) return b.requiredEquity - a.requiredEquity;
+      // 동률일 때만 가격메리트 태그를 보조 신호로 사용
       const meritA = priceMeritIds.has(a.item.id) ? 1 : 0;
       const meritB = priceMeritIds.has(b.item.id) ? 1 : 0;
       if (meritA !== meritB) return meritB - meritA;
-      // 예산 내에서 가장 비싼(가장 좋은) 물건을 우선 추천
-      if (b.requiredEquity !== a.requiredEquity) return b.requiredEquity - a.requiredEquity;
       return b.item.createdAt.getTime() - a.item.createdAt.getTime();
     });
 
-    const limit = options?.limit ?? RECOMMEND_LIMIT;
+    const limited = options?.limit != null ? affordable.slice(0, options.limit) : affordable;
     return {
-      items: affordable.slice(0, limit).map((row) => row.item),
+      items: limited.map((row) => row.item),
       criteria,
       loanRatio,
       loanPolicyLabel: policy?.label ?? null,
