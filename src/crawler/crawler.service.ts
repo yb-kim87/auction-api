@@ -8,6 +8,8 @@ import {
 import { execSync, spawn, type ChildProcess } from "child_process";
 import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
+import * as http from "http";
+import * as https from "https";
 import { AuctionsService } from "../auctions/auctions.service";
 import { CafeKnowledgeService } from "../ai/cafe-knowledge.service";
 import type { KnowledgeDraftStatus } from "../ai/knowledge-draft.entity";
@@ -38,6 +40,75 @@ const DEFAULT_WORKER_PORT = Number(process.env.CRAWLER_WORKER_PORT ?? 8765);
 const WORKER_START_TIMEOUT_MS = 30_000;
 const REMOTE_WORKER_OFFLINE_MESSAGE =
   "관리자 PC가 꺼져 있거나 크롤러 워커에 연결할 수 없습니다. PC에서 auction-api(npm run start:dev)와 크롤러 터널을 실행한 뒤 다시 시도해 주세요.";
+
+// Node 24 undici의 AbortSignal.timeout()은 로컬 fetch가 빈번할 때
+// 내부 타이머/소켓 정리 경합으로 AssertionError를 유발할 수 있어(관리자
+// 화면의 /status 폴링에서 재현됨), 수동 AbortController로 대체한다.
+function abortTimeoutSignal(ms: number): AbortSignal {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  if (typeof timer.unref === "function") timer.unref();
+  return controller.signal;
+}
+
+interface SimpleResponse {
+  ok: boolean;
+  status: number;
+  json(): Promise<any>;
+}
+
+// Node 24 undici(fetch)의 소켓 종료 처리 버그(AssertionError: false == true,
+// Parser.finish/Socket.onHttpSocketEnd)가 크롤러 워커와의 빈번한 로컬 통신에서
+// 프로세스를 통째로 죽인다. 이 워커 통신 경로에서만 undici를 완전히 우회하고
+// Node 내장 http/https 모듈로 직접 요청한다.
+function nodeHttpFetch(
+  url: string,
+  init: { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal },
+): Promise<SimpleResponse> {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const transport = parsed.protocol === "https:" ? https : http;
+    const headers = { ...init.headers };
+    // Content-Length가 없으면 Node가 chunked 인코딩으로 보내는데, 파이썬
+    // http.server(BaseHTTPRequestHandler)는 Content-Length만 보고 바디
+    // 길이를 읽으므로(청크 디코딩 미지원) 바디가 통째로 무시된다.
+    if (init.body != null) {
+      headers["Content-Length"] = String(Buffer.byteLength(init.body));
+    }
+    const req = transport.request(
+      {
+        hostname: parsed.hostname,
+        port: parsed.port,
+        path: `${parsed.pathname}${parsed.search}`,
+        method: init.method ?? "GET",
+        headers,
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => {
+          const status = res.statusCode ?? 0;
+          const bodyText = Buffer.concat(chunks).toString("utf8");
+          resolve({
+            ok: status >= 200 && status < 300,
+            status,
+            json: async () => (bodyText ? JSON.parse(bodyText) : {}),
+          });
+        });
+      },
+    );
+    req.on("error", reject);
+    if (init.signal) {
+      if (init.signal.aborted) {
+        req.destroy(new Error("aborted"));
+      } else {
+        init.signal.addEventListener("abort", () => req.destroy(new Error("aborted")));
+      }
+    }
+    if (init.body) req.write(init.body);
+    req.end();
+  });
+}
 
 @Injectable()
 export class CrawlerService implements OnModuleInit, OnModuleDestroy {
@@ -353,10 +424,15 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
   private async workerFetch<T>(
     path: string,
-    init?: RequestInit,
+    init?: {
+      method?: string;
+      headers?: Record<string, string>;
+      body?: string;
+      signal?: AbortSignal;
+    },
   ): Promise<T> {
     try {
-      const res = await fetch(`${this.workerBaseUrl()}${path}`, {
+      const res = await nodeHttpFetch(`${this.workerBaseUrl()}${path}`, {
         ...init,
         headers: {
           "Content-Type": "application/json",
@@ -391,8 +467,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
   private async isWorkerHealthy(): Promise<boolean> {
     try {
-      const res = await fetch(`${this.workerBaseUrl()}/health`, {
-        signal: AbortSignal.timeout(this.isRemoteWorkerMode() ? 5000 : 1500),
+      const res = await nodeHttpFetch(`${this.workerBaseUrl()}/health`, {
+        signal: abortTimeoutSignal(this.isRemoteWorkerMode() ? 5000 : 1500),
       });
       if (!res.ok) return false;
 
@@ -401,8 +477,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       const secret = process.env.CRAWLER_WORKER_SECRET?.trim();
       if (!secret || this.isRemoteWorkerMode()) return true;
 
-      const statusRes = await fetch(`${this.workerBaseUrl()}/status`, {
-        signal: AbortSignal.timeout(3000),
+      const statusRes = await nodeHttpFetch(`${this.workerBaseUrl()}/status`, {
+        signal: abortTimeoutSignal(3000),
         headers: this.workerAuthHeaders(),
       });
       return statusRes.ok;
@@ -459,8 +535,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         return;
       }
     } else if (!this.isRemoteWorkerMode()) {
-      const healthOnly = await fetch(`${this.workerBaseUrl()}/health`, {
-        signal: AbortSignal.timeout(1500),
+      const healthOnly = await nodeHttpFetch(`${this.workerBaseUrl()}/health`, {
+        signal: abortTimeoutSignal(1500),
       }).then((res) => res.ok).catch(() => false);
       if (healthOnly) {
         this.appendLog(
@@ -629,7 +705,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       const remote = await this.workerFetch<
         Partial<CrawlerStatus> & { events?: string[] }
       >("/status", {
-        signal: AbortSignal.timeout(this.jobRunning ? 2500 : 5000),
+        signal: abortTimeoutSignal(this.jobRunning ? 2500 : 5000),
       });
       if (remote.events?.length) {
         for (const message of remote.events) {
@@ -891,7 +967,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
           search: searchConfig,
           ...this.crawlerCredentialBody(),
         }),
-        signal: AbortSignal.timeout(600_000),
+        signal: abortTimeoutSignal(600_000),
       });
     } catch (error) {
       const message =
@@ -1466,7 +1542,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         naverUserId: credentials.userId,
         naverPassword: credentials.password,
       }),
-      signal: AbortSignal.timeout(200_000),
+      signal: abortTimeoutSignal(200_000),
     });
     if (result.naverLoggedIn) {
       this.appendLog("info", result.message ?? "네이버 로그인 완료");

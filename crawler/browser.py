@@ -102,8 +102,47 @@ def _navigate_driver(driver, url: str) -> None:
     driver.get(target)
 
 
+def _kill_chrome_using_profile(profile_dir: str) -> None:
+    """해당 프로필 디렉토리를 점유 중인 Chrome 프로세스를 종료.
+
+    Selenium 세션이 죽은 것으로 판단됐는데도 실제 Chrome 창이 그대로
+    남아있으면, 같은 프로필로 새 Chrome을 띄워도 기존 프로세스에 새
+    탭만 열리고 Selenium은 그걸 제어하지 못하는 상태가 된다.
+    """
+    import subprocess
+
+    target = str(Path(profile_dir).resolve()).lower()
+    try:
+        result = subprocess.run(
+            ["wmic", "process", "where", "name='chrome.exe'", "get", "ProcessId,CommandLine"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except Exception:
+        return
+
+    for line in result.stdout.splitlines():
+        line_lower = line.lower()
+        if target not in line_lower:
+            continue
+        parts = line.strip().rsplit(None, 1)
+        if len(parts) != 2 or not parts[1].isdigit():
+            continue
+        pid = parts[1]
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", pid, "/F"],
+                capture_output=True,
+                timeout=5,
+            )
+        except Exception:
+            pass
+
+
 def _clear_chrome_profile_locks(profile_dir: str) -> None:
     """이전 Chrome 비정상 종료 시 남는 프로필 잠금 파일 제거."""
+    _kill_chrome_using_profile(profile_dir)
     base = Path(profile_dir)
     for name in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
         path = base / name
@@ -254,6 +293,7 @@ def get_driver(
 
         profile_dir = _profile_dir(context)
         os.makedirs(profile_dir, exist_ok=True)
+        _clear_chrome_profile_locks(profile_dir)
 
         def build_options():
             return _build_chrome_options(profile_dir)

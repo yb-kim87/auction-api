@@ -67,16 +67,23 @@ def _find_page_size_select(driver):
 
 
 def _set_page_size(driver, page_size: str):
-    select = _find_page_size_select(driver)
-    if select is None:
-        return
-    try:
-        select.select_by_visible_text(str(page_size))
-    except Exception:
+    for _attempt in range(2):
+        select = _find_page_size_select(driver)
+        if select is None:
+            return
         try:
-            select.select_by_value(str(page_size))
+            select.select_by_visible_text(str(page_size))
+            return
+        except StaleElementReferenceException:
+            continue
         except Exception:
-            pass
+            try:
+                select.select_by_value(str(page_size))
+                return
+            except StaleElementReferenceException:
+                continue
+            except Exception:
+                return
 
 
 def _is_public_list(driver) -> bool:
@@ -160,6 +167,9 @@ def _parse_total_count(driver, *, lightweight: bool = False) -> int | None:
         r"검색(?:된)?\s*물건수\s*[:：]?\s*([\d,]+)",
         r"총\s*([\d,]+)\s*건",
         r"([\d,]+)\s*건\s*검색",
+        r"전체\s*[:：]?\s*([\d,]+)\s*건",
+        r"물건\s*([\d,]+)\s*건",
+        r"([\d,]+)\s*개\s*물건",
     )
     sources: list[str] = []
     for selector in (
@@ -440,68 +450,75 @@ def _configure_driver_timeouts(driver):
         pass
 
 
-def apply_search_config(driver, config: dict | None):
+def apply_search_config(driver, config: dict | None, *, skip_navigation: bool = False):
     if not config:
         return "검색 조건 없이 진행합니다."
 
     _configure_driver_timeouts(driver)
     list_type = config.get("listType", "auction")
-    url = PA_LIST_URL if list_type == "public" else CA_LIST_URL
-    driver.get(url)
 
-    property_types = config.get("propertyTypes") or []
-    if property_types:
-        _safe_click(driver, _wait_clickable(driver, By.ID, "btn_power"))
-        for keyword in property_types:
-            _click_chk_ment(driver, keyword)
+    if not skip_navigation:
+        url = PA_LIST_URL if list_type == "public" else CA_LIST_URL
+        driver.get(url)
 
-    status = config.get("status")
-    if status:
-        select = Select(_wait_visible(driver, By.NAME, "stat"))
-        select.select_by_visible_text(status)
+        property_types = config.get("propertyTypes") or []
+        if property_types:
+            _safe_click(driver, _wait_clickable(driver, By.ID, "btn_power"))
+            for keyword in property_types:
+                _click_chk_ment(driver, keyword)
 
-    appraisal_min = config.get("appraisalMin")
-    appraisal_max = config.get("appraisalMax")
-    if appraisal_min:
-        select = Select(_wait_visible(driver, By.NAME, "apslAmtBgn"))
-        select.select_by_visible_text(appraisal_min)
-    if appraisal_max:
-        select = Select(_wait_visible(driver, By.NAME, "apslAmtEnd"))
-        select.select_by_visible_text(appraisal_max)
+        status = config.get("status")
+        if status:
+            select = Select(_wait_visible(driver, By.NAME, "stat"))
+            select.select_by_visible_text(status)
 
-    preserve = config.get("preserveRegistryFrom")
-    if preserve and list_type != "public":
-        _safe_click(driver, _wait_clickable(driver, By.CLASS_NAME, "BtnAddSer_0"))
-        select = Select(_wait_visible(driver, By.NAME, "prsvBgn"))
-        select.select_by_visible_text(str(preserve))
+        appraisal_min = config.get("appraisalMin")
+        appraisal_max = config.get("appraisalMax")
+        if appraisal_min:
+            select = Select(_wait_visible(driver, By.NAME, "apslAmtBgn"))
+            select.select_by_visible_text(appraisal_min)
+        if appraisal_max:
+            select = Select(_wait_visible(driver, By.NAME, "apslAmtEnd"))
+            select.select_by_visible_text(appraisal_max)
 
-    exclude_conditions = config.get("excludeSpecialConditions") or []
-    if exclude_conditions:
-        _safe_click(driver, _wait_clickable(driver, By.ID, "splSrchType4"))
-        for keyword in exclude_conditions:
-            _click_chk_ment(driver, keyword)
+        preserve = config.get("preserveRegistryFrom")
+        if preserve and list_type != "public":
+            _safe_click(driver, _wait_clickable(driver, By.CLASS_NAME, "BtnAddSer_0"))
+            select = Select(_wait_visible(driver, By.NAME, "prsvBgn"))
+            select.select_by_visible_text(str(preserve))
 
-    if list_type == "public":
-        _safe_click(
-            driver,
-            _wait_clickable(driver, By.CSS_SELECTOR, "button.button.btn_tank.radius_10"),
-        )
-    else:
-        _safe_click(driver, _wait_clickable(driver, By.ID, "btnSrch"))
+        exclude_conditions = config.get("excludeSpecialConditions") or []
+        if exclude_conditions:
+            _safe_click(driver, _wait_clickable(driver, By.ID, "splSrchType4"))
+            for keyword in exclude_conditions:
+                _click_chk_ment(driver, keyword)
 
-    _wait_list_ready(driver, timeout=LIST_READY_TIMEOUT)
+        if list_type == "public":
+            _safe_click(
+                driver,
+                _wait_clickable(driver, By.CSS_SELECTOR, "button.button.btn_tank.radius_10"),
+            )
+        else:
+            _safe_click(driver, _wait_clickable(driver, By.ID, "btnSrch"))
+
+        _wait_list_ready(driver, timeout=LIST_READY_TIMEOUT)
 
     page_size = config.get("pageSize", "100")
     before_key = _first_row_key(driver)
     _set_page_size(driver, str(page_size))
-    if before_key and not _wait_list_changed(driver, before_key, timeout=8):
-        _wait_list_ready(driver, timeout=8)
+    if before_key and not _wait_list_changed(driver, before_key, timeout=2):
+        _wait_list_ready(driver, timeout=2)
     return "검색 조건을 적용했습니다."
 
 
 def apply_preset(driver, preset: str, search: dict | None = None):
     if preset == "현재":
-        return "현재 브라우저 페이지에서 URL을 수집합니다."
+        # 검색을 새로 실행하지 않고 현재 화면 상태에서 시작한다는 점만
+        # 다르고, 페이지 크기 설정은 빌라 등 다른 프리셋(apply_search_config)과
+        # 완전히 동일한 로직을 그대로 사용한다.
+        current_config = {"listType": "public" if _is_public_list(driver) else "auction", "pageSize": "100"}
+        apply_search_config(driver, current_config, skip_navigation=True)
+        return "현재 브라우저 페이지에서 URL을 수집합니다. (페이지당 100건으로 설정)"
 
     if search:
         return apply_search_config(driver, search)
@@ -570,7 +587,7 @@ def collect_urls(
             on_progress(message)
 
     entries: list[dict] = []
-    list_timeout = 5 if current_page_only else LIST_READY_TIMEOUT
+    list_timeout = LIST_READY_TIMEOUT
 
     if not _list_has_rows(driver):
         try:
@@ -588,12 +605,6 @@ def collect_urls(
 
     is_public = _is_public_list(driver)
 
-    if current_page_only:
-        page_now = _current_page_number(driver)
-        page_entries = _collect_page_entries(driver, page_now, is_public)
-        progress(f"현재 페이지 {len(page_entries)}건 수집")
-        return page_entries
-
     total_count = _parse_total_count(driver)
     page_size = _page_size_on_list(driver)
     visible_links = len(_page_link_elements(driver))
@@ -605,7 +616,7 @@ def collect_urls(
 
     progress(
         f"목록 {total_count or '?'}건 / 페이지당 {page_size}건 / "
-        f"예상 {expected_pages}페이지"
+        f"예상 {expected_pages}페이지 (페이지링크 {visible_links}개 감지)"
     )
 
     _go_to_page(driver, 1)
@@ -632,11 +643,21 @@ def collect_urls(
 
         safety += 1
         next_page = int(_current_page_number(driver) or "1") + 1
+        jump_targets = {
+            int(element.text.strip())
+            for element in _page_link_elements(driver)
+            if element.text.strip().isdigit()
+        }
+        if not jump_targets or next_page > max(jump_targets):
+            progress(f"더 이상 페이지 링크가 없어 수집을 종료합니다 (누적 {len(entries)}건)")
+            break
         if not _go_to_page(driver, next_page):
+            progress(f"{next_page}페이지 이동 실패 (안전루프 중단)")
             break
 
         page_entries = _collect_page_entries(driver, str(next_page), is_public)
         if not page_entries:
+            progress(f"{next_page}페이지에서 항목을 찾지 못함 (수집 중단)")
             break
 
         last_page_count = len(page_entries)
