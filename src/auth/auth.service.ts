@@ -28,12 +28,16 @@ export class AuthService {
     const username = body.username?.trim() ?? "";
     const password = body.password?.trim() ?? "";
     const name = body.name?.trim() ?? "";
+    const phone = (body.phone ?? "").replace(/\s+/g, "").trim();
 
-    if (!username || !password || !name) {
-      throw new ConflictException("아이디, 비밀번호, 이름을 입력해 주세요.");
+    if (!username || !password || !name || !phone) {
+      throw new ConflictException("아이디, 비밀번호, 이름, 전화번호를 입력해 주세요.");
     }
     if (password.length < 4) {
       throw new ConflictException("비밀번호는 4자 이상이어야 합니다.");
+    }
+    if (!/^01[0-9]-?\d{3,4}-?\d{4}$/.test(phone)) {
+      throw new ConflictException("전화번호 형식을 확인해 주세요. (예: 010-1234-5678)");
     }
 
     const investment = validateInvestmentSignupFields(body);
@@ -42,6 +46,7 @@ export class AuthService {
       username,
       password,
       name,
+      phone,
       ...investment,
     });
 

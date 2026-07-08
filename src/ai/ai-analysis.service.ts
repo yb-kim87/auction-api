@@ -151,9 +151,9 @@ ${profileBlock}
     };
   }
 
-  async getLatest(auctionId: string, username: string) {
+  async getLatest(auctionId: string) {
     const row = await this.analysisRepo.findOne({
-      where: { auctionId, username },
+      where: { auctionId },
       order: { createdAt: "DESC" },
     });
     if (!row) return null;
@@ -174,17 +174,23 @@ ${profileBlock}
     const snapshot = auctionSnapshotAt(auction);
     const knowledgeMaxUpdatedAt =
       await this.knowledgeService.getActiveKnowledgeMaxUpdatedAt();
+    const isAdmin = role === UserRole.ADMIN;
 
-    if (!refresh) {
-      const existing = await this.analysisRepo.findOne({
-        where: { auctionId, username },
-        order: { createdAt: "DESC" },
-      });
-      if (existing?.auctionSnapshotAt) {
-        const stale = await this.isAnalysisStale(existing, auction);
-        if (!stale && existing.auctionSnapshotAt.getTime() >= snapshot.getTime()) {
-          return this.parseResult(existing, { cached: true, stale: false });
-        }
+    // 물건당 전역 캐시: 최초로 누군가 분석하면 그 결과를 모두가 공유한다.
+    // 관리자가 아니면 이미 결과가 있는 물건은 재실행(refresh) 자체를 막는다.
+    const existing = await this.analysisRepo.findOne({
+      where: { auctionId },
+      order: { createdAt: "DESC" },
+    });
+
+    if (existing && !isAdmin) {
+      return this.parseResult(existing, { cached: true, stale: false });
+    }
+
+    if (existing && !refresh && existing.auctionSnapshotAt) {
+      const stale = await this.isAnalysisStale(existing, auction);
+      if (!stale && existing.auctionSnapshotAt.getTime() >= snapshot.getTime()) {
+        return this.parseResult(existing, { cached: true, stale: false });
       }
     }
 
@@ -192,7 +198,7 @@ ${profileBlock}
       ? await this.usersService.findByUsername(username)
       : null;
 
-    if (role !== UserRole.ADMIN) {
+    if (!isAdmin) {
       const limit = user?.aiAnalysisLimit ?? 0;
       const used = user?.aiAnalysisUsed ?? 0;
       if (used >= limit) {
@@ -212,7 +218,7 @@ ${profileBlock}
 
     const llm = await this.openAi.analyzeAuction(SYSTEM_PROMPT, userPrompt);
 
-    if (role !== UserRole.ADMIN && username) {
+    if (!isAdmin && username) {
       await this.usersService.incrementAiAnalysisUsage(username);
     }
 

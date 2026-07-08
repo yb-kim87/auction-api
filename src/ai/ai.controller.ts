@@ -64,7 +64,7 @@ export class AiController {
     const ctx = getAuthContext(headers);
     requireAuth(ctx);
     requireSearchAccess(ctx);
-    const result = await this.aiAnalysisService.getLatest(auctionId, ctx.username);
+    const result = await this.aiAnalysisService.getLatest(auctionId);
     if (!result) {
       throw new NotFoundException("저장된 분석 결과가 없습니다.");
     }

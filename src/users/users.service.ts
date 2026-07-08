@@ -132,6 +132,28 @@ export class UsersService implements OnModuleInit {
       }
     }
 
+    if (dto.creditScore !== undefined) {
+      const next = dto.creditScore.trim();
+      if (!next) {
+        throw new BadRequestException("신용점수를 선택해 주세요.");
+      }
+      if (user.creditScore !== next) {
+        user.creditScore = next;
+        changed = true;
+      }
+    }
+
+    if (dto.annualNetIncome !== undefined) {
+      const next = dto.annualNetIncome.trim();
+      if (!next) {
+        throw new BadRequestException("연순소득을 선택해 주세요.");
+      }
+      if (user.annualNetIncome !== next) {
+        user.annualNetIncome = next;
+        changed = true;
+      }
+    }
+
     if (dto.targetReturn !== undefined) {
       const next = dto.targetReturn.trim();
       if (!next) {
@@ -192,9 +214,12 @@ export class UsersService implements OnModuleInit {
     username: string;
     password: string;
     name: string;
+    phone: string;
     investableFunds: string;
     existingLoanAmount: string;
     housingCount: number;
+    creditScore: string;
+    annualNetIncome: string;
     investmentGoal: string;
     targetReturn: string;
     firstTimeBuyer: boolean;
@@ -209,10 +234,13 @@ export class UsersService implements OnModuleInit {
         username: input.username,
         password: input.password,
         name: input.name,
+        phone: input.phone,
         role: UserRole.MEMBER,
         investableFunds: input.investableFunds,
         existingLoanAmount: input.existingLoanAmount,
         housingCount: input.housingCount,
+        creditScore: input.creditScore,
+        annualNetIncome: input.annualNetIncome,
         investmentGoal: input.investmentGoal,
         targetReturn: input.targetReturn,
         firstTimeBuyer: input.firstTimeBuyer,

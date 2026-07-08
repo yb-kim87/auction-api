@@ -5,6 +5,8 @@ export type UpdateProfileDto = {
   investableFunds?: string;
   existingLoanAmount?: string;
   housingCount?: number | string;
+  creditScore?: string;
+  annualNetIncome?: string;
   targetReturn?: string;
   investmentGoal?: string;
   firstTimeBuyer?: boolean;

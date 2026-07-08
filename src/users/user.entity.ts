@@ -20,6 +20,9 @@ export class User {
   @Column({ default: "" })
   name!: string;
 
+  @Column({ type: "text", default: "" })
+  phone!: string;
+
   @Column({ type: "text", default: UserRole.MEMBER })
   role!: UserRole;
 
@@ -31,6 +34,12 @@ export class User {
 
   @Column({ type: "integer", default: 0 })
   housingCount!: number;
+
+  @Column({ type: "text", default: "" })
+  creditScore!: string;
+
+  @Column({ type: "text", default: "" })
+  annualNetIncome!: string;
 
   @Column({ type: "text", default: "" })
   investmentGoal!: string;
