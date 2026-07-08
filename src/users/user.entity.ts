@@ -41,6 +41,12 @@ export class User {
   @Column({ type: "boolean", default: false })
   firstTimeBuyer!: boolean;
 
+  @Column({ type: "integer", default: 10 })
+  aiAnalysisLimit!: number;
+
+  @Column({ type: "integer", default: 0 })
+  aiAnalysisUsed!: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

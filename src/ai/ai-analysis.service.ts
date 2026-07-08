@@ -188,18 +188,33 @@ ${profileBlock}
       }
     }
 
+    const user = username
+      ? await this.usersService.findByUsername(username)
+      : null;
+
+    if (role !== UserRole.ADMIN) {
+      const limit = user?.aiAnalysisLimit ?? 0;
+      const used = user?.aiAnalysisUsed ?? 0;
+      if (used >= limit) {
+        throw new ForbiddenException(
+          `AI 분석 가능 횟수(${limit}회)를 모두 사용했습니다. 관리자에게 문의해 주세요.`,
+        );
+      }
+    }
+
     const knowledgeItems = await this.knowledgeService.searchForAuction(auction);
     const knowledgeBlock = this.knowledgeService.formatForPrompt(knowledgeItems);
     const citations = knowledgeItems.map((k) =>
       k.category ? `[${k.category}] ${k.title}` : k.title,
     );
 
-    const user = username
-      ? await this.usersService.findByUsername(username)
-      : null;
     const userPrompt = this.buildUserPrompt(auction, user, knowledgeBlock);
 
     const llm = await this.openAi.analyzeAuction(SYSTEM_PROMPT, userPrompt);
+
+    if (role !== UserRole.ADMIN && username) {
+      await this.usersService.incrementAiAnalysisUsage(username);
+    }
 
     const resultPayload = {
       ...llm,

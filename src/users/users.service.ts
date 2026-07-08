@@ -233,6 +233,25 @@ export class UsersService implements OnModuleInit {
     return this.userRepo.save(user);
   }
 
+  async updateAiAnalysisLimit(id: string, limit: number) {
+    if (!Number.isInteger(limit) || limit < 0) {
+      throw new BadRequestException(
+        "AI 분석 제한 횟수는 0 이상의 정수로 입력해 주세요.",
+      );
+    }
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException("회원을 찾을 수 없습니다.");
+    }
+
+    user.aiAnalysisLimit = limit;
+    return this.userRepo.save(user);
+  }
+
+  async incrementAiAnalysisUsage(username: string) {
+    await this.userRepo.increment({ username }, "aiAnalysisUsed", 1);
+  }
+
   sanitize(user: User) {
     const { password: _password, ...rest } = user;
     return rest;

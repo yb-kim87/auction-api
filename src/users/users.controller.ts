@@ -54,4 +54,18 @@ export class UsersController {
     const user = await this.usersService.updateRole(id, body.role);
     return this.usersService.sanitize(user);
   }
+
+  @Patch(":id/ai-limit")
+  async updateAiAnalysisLimit(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+    @Body() body: { limit?: number },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    const user = await this.usersService.updateAiAnalysisLimit(
+      id,
+      Number(body.limit),
+    );
+    return this.usersService.sanitize(user);
+  }
 }
