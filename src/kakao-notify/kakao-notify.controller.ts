@@ -269,6 +269,32 @@ export class KakaoNotifyController {
     return this.kakaoNotifyService.deleteLeadsByIds(ids);
   }
 
+  // TODO(1회성 이관 전용, 사용 후 제거): 로컬에서 정리된 리드를 운영으로 그대로 옮길 때 사용.
+  @Post("leads/backfill-batch")
+  async backfillLeadsBatch(
+    @Headers() headers: Record<string, string>,
+    @Body()
+    body: {
+      items?: Array<{
+        source: KakaoLeadSource;
+        sourceRefId: string;
+        name: string;
+        phone: string;
+        email?: string;
+        gender?: string;
+        birthDate?: string;
+        address?: string;
+        adName?: string;
+        joinedAt?: string | null;
+        rawPayload?: string;
+        status?: string;
+      }>;
+    },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.kakaoNotifyService.backfillLeadsBatch(body.items ?? []);
+  }
+
   @Get("instagram/sheet-config")
   async getInstagramSheetConfig(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
