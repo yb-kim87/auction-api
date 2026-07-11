@@ -46,6 +46,7 @@ export class KakaoNotifyController {
     return { ok: true };
   }
 
+
   @Get("scheduler/status")
   async getSchedulerStatus(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
