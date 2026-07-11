@@ -184,49 +184,6 @@ export class KakaoNotifyService {
     return result;
   }
 
-  /** 로컬 등 다른 환경에서 이미 정리된 리드 목록을 그대로 이관할 때 사용(1회성). */
-  async backfillLeadsBatch(
-    items: Array<{
-      source: KakaoLeadSource;
-      sourceRefId: string;
-      name: string;
-      phone: string;
-      email?: string;
-      gender?: string;
-      birthDate?: string;
-      address?: string;
-      adName?: string;
-      joinedAt?: string | null;
-      rawPayload?: string;
-      status?: string;
-    }>,
-  ): Promise<{ processed: number; created: number }> {
-    let processed = 0;
-    let created = 0;
-    for (const item of items) {
-      processed += 1;
-      const result = await this.ingestLead({
-        source: item.source,
-        sourceRefId: item.sourceRefId,
-        name: item.name,
-        rawPhone: item.phone,
-        email: item.email,
-        gender: item.gender,
-        birthDate: item.birthDate,
-        address: item.address,
-        adName: item.adName,
-        joinedAt: item.joinedAt ? new Date(item.joinedAt) : null,
-        rawPayload: item.rawPayload ? JSON.parse(item.rawPayload) : {},
-      });
-      if (result.outcome === "created" || result.outcome === "resubmitted") {
-        created += 1;
-        result.lead.status = (item.status as KakaoLead["status"]) ?? "sent";
-        await this.leadRepo.save(result.lead);
-      }
-    }
-    return { processed, created };
-  }
-
   /** 특정 유입경로의 리드를 전량 삭제한다(백필 순서 재작업 등 1회성 정리용). */
   async deleteLeadsBySource(source: KakaoLeadSource): Promise<{ deleted: number }> {
     const result = await this.leadRepo.delete({ source });
