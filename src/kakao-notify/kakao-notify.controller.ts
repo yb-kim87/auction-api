@@ -18,6 +18,7 @@ import { InstagramSyncService } from "./instagram-sync.service";
 import { KakaoSyncRunnerService } from "./kakao-sync-runner.service";
 import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
 import { TelegramAlertService } from "./telegram-alert.service";
+import { KakaoScheduledDispatchService } from "./kakao-scheduled-dispatch.service";
 import type { KakaoLeadSource } from "./kakao-lead.entity";
 
 @Controller("kakao-notify")
@@ -32,6 +33,7 @@ export class KakaoNotifyController {
     private readonly syncRunner: KakaoSyncRunnerService,
     private readonly scheduler: KakaoNotifyScheduler,
     private readonly telegramAlert: TelegramAlertService,
+    private readonly scheduledDispatchService: KakaoScheduledDispatchService,
   ) {}
 
   @Post("telegram/test")
@@ -139,13 +141,29 @@ export class KakaoNotifyController {
       name?: string;
       phone?: string;
       templateCode?: string;
+      templateName?: string;
       variables?: Record<string, string>;
+      scheduledAt?: string;
     },
   ) {
     const ctx = getAuthContext(headers);
     requireAdmin(ctx);
     if (!body.phone?.trim()) {
       throw new BadRequestException("전화번호를 입력해 주세요.");
+    }
+    if (body.scheduledAt) {
+      if (!body.templateCode?.trim()) {
+        throw new BadRequestException("템플릿을 선택해 주세요.");
+      }
+      return this.scheduledDispatchService.createTestSchedule({
+        name: body.name ?? "",
+        phone: body.phone,
+        templateCode: body.templateCode,
+        templateName: body.templateName ?? "",
+        variables: body.variables ?? {},
+        scheduledAt: new Date(body.scheduledAt),
+        adminUsername: ctx.username,
+      });
     }
     return this.kakaoNotifyService.testSend({
       name: body.name ?? "",
@@ -321,8 +339,10 @@ export class KakaoNotifyController {
     body: {
       ids?: string[];
       templateCode?: string;
+      templateName?: string;
       variables?: Record<string, string>;
       templateNameVar?: string;
+      scheduledAt?: string;
     },
   ) {
     const ctx = getAuthContext(headers);
@@ -334,6 +354,17 @@ export class KakaoNotifyController {
     if (!body.templateCode?.trim()) {
       throw new BadRequestException("템플릿을 선택해 주세요.");
     }
+    if (body.scheduledAt) {
+      return this.scheduledDispatchService.createBulkSchedule({
+        leadIds: ids,
+        templateCode: body.templateCode,
+        templateName: body.templateName ?? "",
+        variables: body.variables ?? {},
+        templateNameVar: body.templateNameVar,
+        scheduledAt: new Date(body.scheduledAt),
+        adminUsername: ctx.username,
+      });
+    }
     return this.kakaoNotifyService.dispatchBulk({
       leadIds: ids,
       templateCode: body.templateCode,
@@ -341,6 +372,31 @@ export class KakaoNotifyController {
       templateNameVar: body.templateNameVar,
       adminUsername: ctx.username,
     });
+  }
+
+  @Get("scheduled-dispatches")
+  async listScheduledDispatches(
+    @Headers() headers: Record<string, string>,
+    @Query("status") status?: string,
+    @Query("page") page?: string,
+    @Query("pageSize") pageSize?: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.scheduledDispatchService.list({
+      status: status || undefined,
+      page: Math.max(1, Number(page) || 1),
+      pageSize: Math.min(100, Math.max(1, Number(pageSize) || 20)),
+    });
+  }
+
+  @Post("scheduled-dispatches/:id/cancel")
+  async cancelScheduledDispatch(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.scheduledDispatchService.cancel(id, ctx.username);
   }
 
   @Get("instagram/sheet-config")

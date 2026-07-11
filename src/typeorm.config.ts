@@ -18,6 +18,7 @@ import { KakaoLead } from "./kakao-notify/kakao-lead.entity";
 import { KakaoDispatchLog } from "./kakao-notify/kakao-dispatch-log.entity";
 import { KakaoSyncState } from "./kakao-notify/kakao-sync-state.entity";
 import { KakaoNotifySetting } from "./kakao-notify/kakao-notify-setting.entity";
+import { KakaoScheduledDispatch } from "./kakao-notify/kakao-scheduled-dispatch.entity";
 
 const entities = [
   Auction,
@@ -37,6 +38,7 @@ const entities = [
   KakaoDispatchLog,
   KakaoSyncState,
   KakaoNotifySetting,
+  KakaoScheduledDispatch,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

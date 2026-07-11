@@ -7,7 +7,7 @@ import {
 } from "typeorm";
 
 export type KakaoDispatchResult = "success" | "failed";
-export type KakaoDispatchTrigger = "auto" | "manual_retry" | "test" | "bulk_manual";
+export type KakaoDispatchTrigger = "auto" | "manual_retry" | "test" | "bulk_manual" | "scheduled";
 
 @Entity("kakao_dispatch_logs")
 export class KakaoDispatchLog {
