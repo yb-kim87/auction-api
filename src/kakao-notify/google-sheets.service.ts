@@ -17,8 +17,14 @@ export class GoogleSheetsService {
   }
 
   private get privateKey() {
+    let raw = (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ?? "").trim();
+    // 값 앞뒤에 큰따옴표가 그대로 포함된 채 등록된 경우(예: 배포 플랫폼 환경변수
+    // UI에 .env 원문을 그대로 복사) 제거한다.
+    if (raw.startsWith('"') && raw.endsWith('"')) {
+      raw = raw.slice(1, -1);
+    }
     // .env에 개행이 \n 문자열로 들어오는 경우가 많아 실제 개행으로 복원
-    return (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
+    return raw.replace(/\\n/g, "\n");
   }
 
   isConfigured(): boolean {
