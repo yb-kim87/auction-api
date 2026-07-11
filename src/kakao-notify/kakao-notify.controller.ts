@@ -46,6 +46,19 @@ export class KakaoNotifyController {
     return { ok: true };
   }
 
+  // TODO(1회성 데이터 보정 전용, 사용 후 제거): 시간대 버그로 잘못 저장된 joinedAt 수정.
+  @Post("leads/:id/fix-joined-at")
+  async fixLeadJoinedAt(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+    @Body() body: { joinedAt?: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    if (!body.joinedAt) {
+      throw new BadRequestException("joinedAt 값을 입력해 주세요.");
+    }
+    return this.kakaoNotifyService.fixLeadJoinedAt(id, body.joinedAt);
+  }
 
   @Get("scheduler/status")
   async getSchedulerStatus(@Headers() headers: Record<string, string>) {

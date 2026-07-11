@@ -153,7 +153,7 @@ export class ImwebSyncService {
           }
 
           processed += 1;
-          const joinedAt = member.join_time ? new Date(member.join_time) : null;
+          const joinedAt = member.join_time ? parseImwebJoinTime(member.join_time) : null;
 
           if (
             state.lastSyncedAt &&
@@ -233,7 +233,7 @@ export class ImwebSyncService {
 
       for (const member of sorted) {
         processed += 1;
-        const joinedAt = member.join_time ? new Date(member.join_time) : null;
+        const joinedAt = member.join_time ? parseImwebJoinTime(member.join_time) : null;
 
         const result = await this.kakaoNotifyService.backfillLeadAsSent({
           source: "imweb",
@@ -264,4 +264,18 @@ export class ImwebSyncService {
     this.logger.log(`아임웹 백필 완료: ${processed}건 확인, ${created}건 신규 저장`);
     return { processed, created };
   }
+}
+
+/**
+ * 아임웹 join_time("YYYY-MM-DD HH:mm:ss")은 타임존 정보가 없는 KST
+ * 문자열이다. new Date(join_time)로 그대로 파싱하면 서버 실행 환경의
+ * 시간대(예: Railway의 UTC)에 따라 실제와 다른 시각으로 잘못 해석되므로,
+ * 항상 KST(+09:00)로 명시해 파싱한다.
+ */
+function parseImwebJoinTime(raw: string): Date | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const isoLike = trimmed.replace(" ", "T") + "+09:00";
+  const parsed = new Date(isoLike);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
