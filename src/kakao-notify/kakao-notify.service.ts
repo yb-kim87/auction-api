@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { KakaoLead, KakaoLeadSource } from "./kakao-lead.entity";
 import { KakaoDispatchLog, KakaoDispatchTrigger } from "./kakao-dispatch-log.entity";
 import { SolapiService } from "./solapi.service";
@@ -111,13 +111,27 @@ export class KakaoNotifyService {
   /** 리드에 알림톡 발송 시도 + 로그 기록 + 리드 상태 갱신 */
   async dispatchToLead(
     lead: KakaoLead,
-    options: { triggeredBy: KakaoDispatchTrigger; triggeredByAdmin?: string } = {
+    options: {
+      triggeredBy: KakaoDispatchTrigger;
+      triggeredByAdmin?: string;
+      /** 지정하면 저장된 기본 템플릿 설정 대신 이 템플릿/변수로 발송한다(일괄발송용). */
+      override?: { templateCode: string; variables: Record<string, string>; templateNameVar?: string };
+    } = {
       triggeredBy: "auto",
     },
   ): Promise<KakaoDispatchLog> {
     const prevAttempts = await this.logRepo.count({ where: { leadId: lead.id } });
 
-    const { templateCode, variables } = await this.settingService.resolveVariables(lead);
+    const { templateCode, variables } = options.override
+      ? {
+          templateCode: options.override.templateCode,
+          variables: this.settingService.resolveVariablesFor(
+            lead,
+            options.override.variables,
+            options.override.templateNameVar || "회원명",
+          ),
+        }
+      : await this.settingService.resolveVariables(lead);
     const result = await this.solapi.sendAlimtalk({
       toPhone: lead.phone,
       variables,
@@ -224,6 +238,37 @@ export class KakaoNotifyService {
       .where("id IN (:...ids)", { ids })
       .execute();
     return { deleted: result.affected ?? 0 };
+  }
+
+  /**
+   * 관리자가 목록에서 선택한 리드들에게 지정한 템플릿으로 일괄 발송한다.
+   * 각 건은 dispatchToLead와 동일하게 개별 발송 로그(triggeredBy:
+   * "bulk_manual")를 남기며, 한 건 실패해도 나머지는 계속 진행한다.
+   */
+  async dispatchBulk(input: {
+    leadIds: string[];
+    templateCode: string;
+    variables: Record<string, string>;
+    templateNameVar?: string;
+    adminUsername: string;
+  }): Promise<{ total: number; success: number; failed: number }> {
+    const leads = await this.leadRepo.find({ where: { id: In(input.leadIds) } });
+    let success = 0;
+    let failed = 0;
+    for (const lead of leads) {
+      const log = await this.dispatchToLead(lead, {
+        triggeredBy: "bulk_manual",
+        triggeredByAdmin: input.adminUsername,
+        override: {
+          templateCode: input.templateCode,
+          variables: input.variables,
+          templateNameVar: input.templateNameVar,
+        },
+      });
+      if (log.result === "success") success += 1;
+      else failed += 1;
+    }
+    return { total: leads.length, success, failed };
   }
 
   async findLeads(query: {

@@ -73,9 +73,24 @@ export class KakaoNotifySettingService {
     } catch {
       base = {};
     }
+    return {
+      templateCode: setting.templateCode,
+      variables: this.resolveVariablesFor(lead, base, setting.templateNameVar || "회원명"),
+    };
+  }
 
+  /**
+   * 관리자가 목록에서 골라 즉석으로 선택한 템플릿으로 일괄발송할 때 사용.
+   * 저장된 기본 설정과 무관하게, 넘겨준 variables/nameVar 기준으로
+   * "$field:필드명" 참조를 리드 데이터로 치환한다.
+   */
+  resolveVariablesFor(
+    lead: Pick<KakaoLead, keyof KakaoLead> | { name: string },
+    variables: Record<string, string>,
+    nameVar: string,
+  ): Record<string, string> {
     const resolved: Record<string, string> = {};
-    for (const [key, value] of Object.entries(base)) {
+    for (const [key, value] of Object.entries(variables)) {
       if (value.startsWith(FIELD_REF_PREFIX)) {
         const field = value.slice(FIELD_REF_PREFIX.length) as keyof KakaoLead;
         const raw = (lead as Record<string, unknown>)[field];
@@ -84,11 +99,6 @@ export class KakaoNotifySettingService {
         resolved[key] = value;
       }
     }
-
-    const nameVar = setting.templateNameVar || "회원명";
-    return {
-      templateCode: setting.templateCode,
-      variables: { ...resolved, [nameVar]: lead.name || "고객" },
-    };
+    return { ...resolved, [nameVar]: lead.name || "고객" };
   }
 }

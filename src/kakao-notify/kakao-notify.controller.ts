@@ -299,6 +299,35 @@ export class KakaoNotifyController {
     return this.kakaoNotifyService.deleteLeadsByIds(ids);
   }
 
+  @Post("leads/bulk-send")
+  async bulkSend(
+    @Headers() headers: Record<string, string>,
+    @Body()
+    body: {
+      ids?: string[];
+      templateCode?: string;
+      variables?: Record<string, string>;
+      templateNameVar?: string;
+    },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    const ids = (body.ids ?? []).filter((id) => typeof id === "string" && id.trim());
+    if (ids.length === 0) {
+      throw new BadRequestException("발송할 고객을 선택해 주세요.");
+    }
+    if (!body.templateCode?.trim()) {
+      throw new BadRequestException("템플릿을 선택해 주세요.");
+    }
+    return this.kakaoNotifyService.dispatchBulk({
+      leadIds: ids,
+      templateCode: body.templateCode,
+      variables: body.variables ?? {},
+      templateNameVar: body.templateNameVar,
+      adminUsername: ctx.username,
+    });
+  }
+
   @Get("instagram/sheet-config")
   async getInstagramSheetConfig(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
