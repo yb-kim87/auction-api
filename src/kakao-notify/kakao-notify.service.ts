@@ -204,14 +204,6 @@ export class KakaoNotifyService {
     return result;
   }
 
-  /** 특정 리드의 joinedAt만 직접 보정한다(시간대 버그 등으로 잘못 저장된 값 수정용, 1회성). */
-  async fixLeadJoinedAt(id: string, joinedAt: string): Promise<KakaoLead> {
-    const lead = await this.leadRepo.findOne({ where: { id } });
-    if (!lead) throw new NotFoundException("고객 정보를 찾을 수 없습니다.");
-    lead.joinedAt = new Date(joinedAt);
-    return this.leadRepo.save(lead);
-  }
-
   /** 특정 유입경로의 리드를 전량 삭제한다(백필 순서 재작업 등 1회성 정리용). */
   async deleteLeadsBySource(source: KakaoLeadSource): Promise<{ deleted: number }> {
     const result = await this.leadRepo.delete({ source });
