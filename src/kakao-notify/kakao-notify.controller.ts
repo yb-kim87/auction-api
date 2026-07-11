@@ -233,6 +233,26 @@ export class KakaoNotifyController {
     return this.syncStateService.findAll();
   }
 
+  /** 1회성: 잘못 기록된 lastSyncedAt(9시간 미래로 밀려있던 값)을 정확한 UTC로 보정한다. */
+  @Post("sync-state/:source/fix-last-synced-at")
+  async fixLastSyncedAt(
+    @Headers() headers: Record<string, string>,
+    @Param("source") source: string,
+    @Body() body: { lastSyncedAt?: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    if (source !== "imweb" && source !== "instagram") {
+      throw new BadRequestException("알 수 없는 유입경로입니다.");
+    }
+    if (!body.lastSyncedAt) {
+      throw new BadRequestException("lastSyncedAt을 지정해 주세요.");
+    }
+    return this.syncStateService.recordRunResult(source as KakaoLeadSource, {
+      status: "ok",
+      lastSyncedAt: new Date(body.lastSyncedAt),
+    });
+  }
+
   /** 아임웹 + 인스타를 동시에(각각 독립적으로) 실행해 신규 리드를 자동 발송한다. */
   @Post("sync/run-now")
   async runNowAll(@Headers() headers: Record<string, string>) {
