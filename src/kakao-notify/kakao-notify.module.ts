@@ -13,6 +13,7 @@ import { ImwebSyncService } from "./imweb-sync.service";
 import { InstagramSyncService } from "./instagram-sync.service";
 import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
 import { KakaoSyncRunnerService } from "./kakao-sync-runner.service";
+import { TelegramAlertService } from "./telegram-alert.service";
 import { KakaoNotifyController } from "./kakao-notify.controller";
 
 @Module({
@@ -34,6 +35,7 @@ import { KakaoNotifyController } from "./kakao-notify.controller";
     InstagramSyncService,
     KakaoNotifyScheduler,
     KakaoSyncRunnerService,
+    TelegramAlertService,
   ],
   controllers: [KakaoNotifyController],
   exports: [KakaoNotifyService, SolapiService],

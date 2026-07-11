@@ -6,6 +6,10 @@ import { KakaoDispatchLog, KakaoDispatchTrigger } from "./kakao-dispatch-log.ent
 import { SolapiService } from "./solapi.service";
 import { KakaoNotifySettingService } from "./kakao-notify-setting.service";
 import { normalizePhone } from "./phone.util";
+import { TelegramAlertService } from "./telegram-alert.service";
+
+/** 연속으로 이 횟수만큼 발송이 실패하면 솔라피 자체 장애로 보고 텔레그램으로 알린다. */
+const DISPATCH_FAILURE_ALERT_THRESHOLD = 3;
 
 export type IngestResult =
   | { outcome: "created"; lead: KakaoLead }
@@ -22,7 +26,10 @@ export class KakaoNotifyService {
     private readonly logRepo: Repository<KakaoDispatchLog>,
     private readonly solapi: SolapiService,
     private readonly settingService: KakaoNotifySettingService,
+    private readonly telegramAlert: TelegramAlertService,
   ) {}
+
+  private consecutiveDispatchFailures = 0;
 
   /**
    * 리드 upsert. 같은 (source, sourceRefId)는 이미 처리한 원본 행을 다시
@@ -133,6 +140,19 @@ export class KakaoNotifyService {
 
     lead.status = result.ok ? "sent" : "failed";
     await this.leadRepo.save(lead);
+
+    if (result.ok) {
+      this.consecutiveDispatchFailures = 0;
+    } else {
+      this.consecutiveDispatchFailures += 1;
+      if (this.consecutiveDispatchFailures === DISPATCH_FAILURE_ALERT_THRESHOLD) {
+        void this.telegramAlert.send(
+          `⚠️ 알림톡 발송이 ${this.consecutiveDispatchFailures}회 연속 실패했습니다.\n` +
+            `최근 오류: ${result.errorMessage ?? "알 수 없는 오류"}\n` +
+            `솔라피 연동 상태를 확인해 주세요.`,
+        );
+      }
+    }
 
     return log;
   }

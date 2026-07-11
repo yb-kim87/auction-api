@@ -17,6 +17,7 @@ import { ImwebSyncService } from "./imweb-sync.service";
 import { InstagramSyncService } from "./instagram-sync.service";
 import { KakaoSyncRunnerService } from "./kakao-sync-runner.service";
 import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
+import { TelegramAlertService } from "./telegram-alert.service";
 import type { KakaoLeadSource } from "./kakao-lead.entity";
 
 @Controller("kakao-notify")
@@ -30,7 +31,20 @@ export class KakaoNotifyController {
     private readonly instagramSync: InstagramSyncService,
     private readonly syncRunner: KakaoSyncRunnerService,
     private readonly scheduler: KakaoNotifyScheduler,
+    private readonly telegramAlert: TelegramAlertService,
   ) {}
+
+  @Post("telegram/test")
+  async testTelegramAlert(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    if (!this.telegramAlert.isConfigured()) {
+      throw new BadRequestException(
+        "텔레그램 알림이 설정되지 않았습니다. TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID를 확인해 주세요.",
+      );
+    }
+    await this.telegramAlert.send("🔔 알림톡 관리 시스템 테스트 알림입니다. 정상적으로 수신되면 설정이 완료된 것입니다.");
+    return { ok: true };
+  }
 
   @Get("scheduler/status")
   async getSchedulerStatus(@Headers() headers: Record<string, string>) {

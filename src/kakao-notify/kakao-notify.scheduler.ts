@@ -2,10 +2,18 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/commo
 import { ImwebSyncService } from "./imweb-sync.service";
 import { InstagramSyncService } from "./instagram-sync.service";
 import { KakaoSyncStateService } from "./kakao-sync-state.service";
+import { TelegramAlertService } from "./telegram-alert.service";
 
 const DEFAULT_INTERVAL_MINUTES = 5;
 const MIN_INTERVAL_MINUTES = 1;
 const MAX_INTERVAL_MINUTES = 180;
+/** 같은 소스가 연속으로 이 횟수만큼 실패하면 텔레그램으로 알린다. */
+const FAILURE_ALERT_THRESHOLD = 3;
+
+const SOURCE_ALERT_LABELS: Record<"imweb" | "instagram", string> = {
+  imweb: "아임웹",
+  instagram: "인스타",
+};
 
 /**
  * 관리자가 관리자 화면에서 ON/OFF와 폴링 간격(분)을 직접 조정하는 자동
@@ -19,11 +27,13 @@ export class KakaoNotifyScheduler implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(KakaoNotifyScheduler.name);
   private timer: ReturnType<typeof setInterval> | null = null;
   private running = false;
+  private readonly consecutiveFailures = new Map<"imweb" | "instagram", number>();
 
   constructor(
     private readonly imwebSync: ImwebSyncService,
     private readonly instagramSync: InstagramSyncService,
     private readonly syncStateService: KakaoSyncStateService,
+    private readonly telegramAlert: TelegramAlertService,
   ) {}
 
   async onModuleInit() {
@@ -111,6 +121,10 @@ export class KakaoNotifyScheduler implements OnModuleInit, OnModuleDestroy {
     try {
       const result = await run();
       this.logger.log(`${source} 자동발송: ${result.processed}건 확인, ${result.created}건 신규`);
+      if (this.consecutiveFailures.get(source)) {
+        this.consecutiveFailures.set(source, 0);
+        void this.telegramAlert.send(`✅ ${SOURCE_ALERT_LABELS[source]} 자동발송이 다시 정상 작동합니다.`);
+      }
       return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : "알 수 없는 오류";
@@ -119,6 +133,14 @@ export class KakaoNotifyScheduler implements OnModuleInit, OnModuleDestroy {
         status: "error",
         errorMessage: message,
       });
+
+      const failures = (this.consecutiveFailures.get(source) ?? 0) + 1;
+      this.consecutiveFailures.set(source, failures);
+      if (failures === FAILURE_ALERT_THRESHOLD) {
+        void this.telegramAlert.send(
+          `⚠️ ${SOURCE_ALERT_LABELS[source]} 자동발송이 ${failures}회 연속 실패했습니다.\n오류: ${message}`,
+        );
+      }
     }
   }
 }
