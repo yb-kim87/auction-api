@@ -14,6 +14,10 @@ import { ItemNormalizedData } from "./ai-platform/normalizer/item-normalized-dat
 import { ItemAiFeature } from "./ai-platform/feature-engine/item-ai-feature.entity";
 import { ItemAiTag } from "./ai-platform/tag-engine/item-ai-tag.entity";
 import { AiPlatformHistory } from "./ai-platform/shared/ai-platform-history.entity";
+import { KakaoLead } from "./kakao-notify/kakao-lead.entity";
+import { KakaoDispatchLog } from "./kakao-notify/kakao-dispatch-log.entity";
+import { KakaoSyncState } from "./kakao-notify/kakao-sync-state.entity";
+import { KakaoNotifySetting } from "./kakao-notify/kakao-notify-setting.entity";
 
 const entities = [
   Auction,
@@ -29,6 +33,10 @@ const entities = [
   ItemAiFeature,
   ItemAiTag,
   AiPlatformHistory,
+  KakaoLead,
+  KakaoDispatchLog,
+  KakaoSyncState,
+  KakaoNotifySetting,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

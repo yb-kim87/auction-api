@@ -1,0 +1,71 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  Unique,
+} from "typeorm";
+
+export type KakaoLeadSource = "imweb" | "instagram";
+export type KakaoLeadStatus =
+  | "pending"
+  | "sent"
+  | "failed"
+  | "skipped_duplicate";
+
+@Entity("kakao_leads")
+@Unique("UQ_kakao_leads_source_ref", ["source", "sourceRefId"])
+@Unique("UQ_kakao_leads_source_phone", ["source", "phone"])
+export class KakaoLead {
+  @PrimaryGeneratedColumn("uuid")
+  id!: string;
+
+  @Index()
+  @Column({ type: "text" })
+  source!: KakaoLeadSource;
+
+  @Column({ type: "text" })
+  sourceRefId!: string;
+
+  @Column({ type: "text", default: "" })
+  name!: string;
+
+  @Column({ type: "text" })
+  phone!: string;
+
+  @Column({ type: "text", default: "" })
+  email!: string;
+
+  @Column({ type: "text", default: "" })
+  gender!: string;
+
+  @Column({ type: "text", default: "" })
+  birthDate!: string;
+
+  @Column({ type: "text", default: "" })
+  address!: string;
+
+  /** 인스타그램 인스턴트 폼의 유입소재(광고명) */
+  @Column({ type: "text", default: "" })
+  adName!: string;
+
+  /** 원본 시스템에서의 가입/신청 시각(가입시간 컬럼) */
+  @Column({ type: Date, nullable: true })
+  joinedAt!: Date | null;
+
+  /** 원본 API/시트 응답 전체(JSON 문자열, 디버깅·재처리용) */
+  @Column({ type: "text", default: "" })
+  rawPayload!: string;
+
+  @Index()
+  @Column({ type: "text", default: "pending" })
+  status!: KakaoLeadStatus;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
+}

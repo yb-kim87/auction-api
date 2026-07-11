@@ -10,6 +10,7 @@ import { LoanPolicyModule } from "./loan-policy/loan-policy.module";
 import { UserActionsModule } from "./user-actions/user-actions.module";
 import { AiPlatformModule } from "./ai-platform/ai-platform.module";
 import { RecommendationModule } from "./recommendation/recommendation.module";
+import { KakaoNotifyModule } from "./kakao-notify/kakao-notify.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -25,6 +26,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     UserActionsModule,
     AiPlatformModule,
     RecommendationModule,
+    KakaoNotifyModule,
   ],
 })
 export class AppModule {}
