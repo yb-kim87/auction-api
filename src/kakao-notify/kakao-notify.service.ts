@@ -227,7 +227,29 @@ export class KakaoNotifyService {
     qb.skip((query.page - 1) * query.pageSize).take(query.pageSize);
 
     const [items, total] = await qb.getManyAndCount();
-    return { items, total, page: query.page, pageSize: query.pageSize };
+
+    // 같은 전화번호로 다른 유입경로/재신청 이력이 있는지 목록에서도 바로 보이게
+    // 표시하기 위해, 현재 페이지에 있는 전화번호들의 전체 리드 개수를 함께 조회한다.
+    const phones = [...new Set(items.map((l) => l.phone))];
+    const duplicateCountMap = new Map<string, number>();
+    if (phones.length > 0) {
+      const counts = await this.leadRepo
+        .createQueryBuilder("lead")
+        .select("lead.phone", "phone")
+        .addSelect("COUNT(*)", "count")
+        .where("lead.phone IN (:...phones)", { phones })
+        .groupBy("lead.phone")
+        .getRawMany<{ phone: string; count: string }>();
+      for (const row of counts) {
+        duplicateCountMap.set(row.phone, Number(row.count));
+      }
+    }
+    const itemsWithDuplicateInfo = items.map((lead) => ({
+      ...lead,
+      hasDuplicateApplications: (duplicateCountMap.get(lead.phone) ?? 1) > 1,
+    }));
+
+    return { items: itemsWithDuplicateInfo, total, page: query.page, pageSize: query.pageSize };
   }
 
   async getLeadWithLogs(id: string) {
