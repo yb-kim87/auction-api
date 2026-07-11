@@ -35,7 +35,10 @@ export class KakaoNotifyController {
   @Get("scheduler/status")
   async getSchedulerStatus(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
-    return { enabled: await this.scheduler.isEnabled() };
+    return {
+      enabled: await this.scheduler.isEnabled(),
+      intervalMinutes: await this.scheduler.getIntervalMinutes(),
+    };
   }
 
   @Post("scheduler/toggle")
@@ -46,6 +49,19 @@ export class KakaoNotifyController {
     requireAdmin(getAuthContext(headers));
     await this.scheduler.setEnabled(body.enabled === true);
     return { enabled: body.enabled === true };
+  }
+
+  @Post("scheduler/interval")
+  async setSchedulerInterval(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { intervalMinutes?: number },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    if (!body.intervalMinutes || !Number.isFinite(body.intervalMinutes)) {
+      throw new BadRequestException("올바른 간격(분)을 입력해 주세요.");
+    }
+    const intervalMinutes = await this.scheduler.setIntervalMinutes(body.intervalMinutes);
+    return { intervalMinutes };
   }
 
   @Get("leads")
