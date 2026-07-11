@@ -271,6 +271,24 @@ export class KakaoNotifyService {
     return { total: leads.length, success, failed };
   }
 
+  /** 필터 조건에 맞는 전체 리드의 ID만 조회한다(목록 "전체선택"용, 페이징 없음). */
+  async findLeadIds(query: {
+    source?: KakaoLeadSource;
+    status?: string;
+    search?: string;
+  }): Promise<string[]> {
+    const qb = this.leadRepo.createQueryBuilder("lead").select("lead.id", "id");
+    if (query.source) qb.andWhere("lead.source = :source", { source: query.source });
+    if (query.status) qb.andWhere("lead.status = :status", { status: query.status });
+    if (query.search) {
+      qb.andWhere("(lead.name LIKE :search OR lead.phone LIKE :search)", {
+        search: `%${query.search}%`,
+      });
+    }
+    const rows = await qb.getRawMany<{ id: string }>();
+    return rows.map((r) => r.id);
+  }
+
   async findLeads(query: {
     source?: KakaoLeadSource;
     status?: string;

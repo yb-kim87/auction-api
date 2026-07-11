@@ -97,6 +97,21 @@ export class KakaoNotifyController {
     });
   }
 
+  @Get("leads/ids")
+  async findLeadIds(
+    @Headers() headers: Record<string, string>,
+    @Query("source") source?: string,
+    @Query("status") status?: string,
+    @Query("search") search?: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.kakaoNotifyService.findLeadIds({
+      source: (source as KakaoLeadSource) || undefined,
+      status: status || undefined,
+      search: search || undefined,
+    });
+  }
+
   @Get("leads/:id")
   async getLead(
     @Headers() headers: Record<string, string>,
