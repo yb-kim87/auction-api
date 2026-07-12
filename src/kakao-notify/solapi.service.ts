@@ -182,6 +182,8 @@ export class SolapiService {
       );
     }
 
+    // TEMP DEBUG
+    console.log("RAW_TEMPLATE_SAMPLE", JSON.stringify((body.templateList ?? [])[0]));
     return (body.templateList ?? [])
       .filter((t) => t.status === "APPROVED")
       .map((t) => ({
