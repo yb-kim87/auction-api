@@ -304,24 +304,32 @@ export class KakaoNotifyService {
     return this.leadRepo.save(lead);
   }
 
-  /** 일자별 신규 가입 건수를 소스별로 집계한다(대시보드 그래프용, 실제 가입일 기준). */
+  /** 일자별 신규 가입 건수를 소스별로 집계한다(대시보드 그래프용, KST 기준 실제 가입일). */
   async getDailyStats(days: number): Promise<
     Array<{ date: string; imweb: number; instagram: number; total: number }>
   > {
-    const since = new Date();
-    since.setDate(since.getDate() - (days - 1));
-    since.setHours(0, 0, 0, 0);
+    // 서버(Railway)는 UTC로 돌아가므로 new Date()의 로컬 시간대에 의존하지 않고, KST
+    // 기준 "오늘" 날짜를 직접 문자열로 계산한다(목록 화면의 가입시각 표시와 동일 기준).
+    const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const todayKstStr = nowKst.toISOString().slice(0, 10);
+    const sinceDate = new Date(`${todayKstStr}T00:00:00Z`);
+    sinceDate.setUTCDate(sinceDate.getUTCDate() - (days - 1));
+    const sinceKstStr = sinceDate.toISOString().slice(0, 10);
 
     // 실제 가입/신청일(joinedAt) 기준으로 집계한다. 이관·백필 등으로 수집시각(createdAt)이
     // 실제 가입일과 크게 어긋나는 경우가 있어, "그 날짜에 유입된 DB"를 정확히 보여주려면
-    // joinedAt을 우선 사용해야 한다(없으면 createdAt으로 대체).
-    const dateExpr = "COALESCE(DATE(lead.joinedAt), DATE(lead.createdAt))";
+    // joinedAt을 우선 사용해야 한다(없으면 createdAt으로 대체). DB에는 UTC로 저장되어
+    // 있으므로, 목록 화면(KST 표시)과 동일한 날짜가 나오도록 KST로 변환한 뒤 날짜를 뽑는다.
+    const isPostgres = this.leadRepo.manager.connection.options.type === "postgres";
+    const dateExpr = isPostgres
+      ? "COALESCE(DATE(lead.joinedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'), DATE(lead.createdAt AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'))"
+      : "COALESCE(DATE(lead.joinedAt, '+9 hours'), DATE(lead.createdAt, '+9 hours'))";
     const rows = await this.leadRepo
       .createQueryBuilder("lead")
       .select(dateExpr, "date")
       .addSelect("lead.source", "source")
       .addSelect("COUNT(*)", "count")
-      .where(`${dateExpr} >= :since`, { since: since.toISOString().slice(0, 10) })
+      .where(`${dateExpr} >= :since`, { since: sinceKstStr })
       .groupBy(dateExpr)
       .addGroupBy("lead.source")
       .orderBy(dateExpr, "ASC")
@@ -341,8 +349,8 @@ export class KakaoNotifyService {
 
     const result: Array<{ date: string; imweb: number; instagram: number; total: number }> = [];
     for (let i = 0; i < days; i += 1) {
-      const d = new Date(since);
-      d.setDate(since.getDate() + i);
+      const d = new Date(`${sinceKstStr}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + i);
       const dateKey = d.toISOString().slice(0, 10);
       const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0 };
       result.push({ date: dateKey, ...entry, total: entry.imweb + entry.instagram });
