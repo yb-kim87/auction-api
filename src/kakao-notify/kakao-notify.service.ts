@@ -279,16 +279,13 @@ export class KakaoNotifyService {
     source?: KakaoLeadSource;
     status?: string;
     search?: string;
+    group?: string;
+    joinedFrom?: string;
+    joinedTo?: string;
     includeExcluded?: boolean;
   }): Promise<string[]> {
     const qb = this.leadRepo.createQueryBuilder("lead").select("lead.id", "id");
-    if (query.source) qb.andWhere("lead.source = :source", { source: query.source });
-    if (query.status) qb.andWhere("lead.status = :status", { status: query.status });
-    if (query.search) {
-      qb.andWhere("(lead.name LIKE :search OR lead.phone LIKE :search)", {
-        search: `%${query.search}%`,
-      });
-    }
+    this.applyLeadFilters(qb, query);
     if (!query.includeExcluded) {
       qb.andWhere("lead.excludedFromBulk = :excluded", { excluded: false });
     }
@@ -304,17 +301,99 @@ export class KakaoNotifyService {
     return this.leadRepo.save(lead);
   }
 
-  /** 일자별 신규 가입 건수를 소스별로 집계한다(대시보드 그래프용, KST 기준 실제 가입일). */
-  async getDailyStats(days: number): Promise<
+  /** 관리자가 목록에서 개별 리드에 그룹명(예: "2월 세미나")을 지정한다. */
+  async setGroupLabel(id: string, groupLabel: string): Promise<KakaoLead> {
+    const lead = await this.leadRepo.findOne({ where: { id } });
+    if (!lead) throw new NotFoundException("고객 정보를 찾을 수 없습니다.");
+    lead.groupLabel = groupLabel.trim();
+    return this.leadRepo.save(lead);
+  }
+
+  /** 선택한 리드들에 한 번에 그룹명을 지정한다(대량 그룹핑용). */
+  async setGroupLabelBulk(ids: string[], groupLabel: string): Promise<{ updated: number }> {
+    if (ids.length === 0) return { updated: 0 };
+    const result = await this.leadRepo
+      .createQueryBuilder()
+      .update(KakaoLead)
+      .set({ groupLabel: groupLabel.trim() })
+      .where("id IN (:...ids)", { ids })
+      .execute();
+    return { updated: result.affected ?? 0 };
+  }
+
+  /** 현재 사용 중인 그룹명 목록(중복 제거, 빈 값 제외)을 반환한다(필터 드롭다운용). */
+  async findGroupLabels(): Promise<string[]> {
+    const rows = await this.leadRepo
+      .createQueryBuilder("lead")
+      .select("DISTINCT lead.groupLabel", "groupLabel")
+      .where("lead.groupLabel != :empty", { empty: "" })
+      .orderBy("lead.groupLabel", "ASC")
+      .getRawMany<{ groupLabel: string }>();
+    return rows.map((r) => r.groupLabel);
+  }
+
+  private applyLeadFilters(
+    qb: ReturnType<Repository<KakaoLead>["createQueryBuilder"]>,
+    query: {
+      source?: KakaoLeadSource;
+      status?: string;
+      search?: string;
+      group?: string;
+      joinedFrom?: string;
+      joinedTo?: string;
+    },
+  ): void {
+    if (query.source) qb.andWhere("lead.source = :source", { source: query.source });
+    if (query.status) qb.andWhere("lead.status = :status", { status: query.status });
+    if (query.search) {
+      qb.andWhere("(lead.name LIKE :search OR lead.phone LIKE :search)", {
+        search: `%${query.search}%`,
+      });
+    }
+    if (query.group) qb.andWhere("lead.groupLabel = :group", { group: query.group });
+    // joinedFrom/joinedTo는 KST 기준 날짜(YYYY-MM-DD) 문자열로 받는다(목록의 가입시각 KST
+    // 표시와 동일 기준). DB에는 UTC로 저장되어 있으므로 KST 자정을 UTC로 환산해 비교한다.
+    if (query.joinedFrom) {
+      const fromUtc = new Date(`${query.joinedFrom}T00:00:00+09:00`);
+      qb.andWhere("lead.joinedAt >= :joinedFrom", { joinedFrom: fromUtc.toISOString() });
+    }
+    if (query.joinedTo) {
+      const toUtc = new Date(`${query.joinedTo}T23:59:59.999+09:00`);
+      qb.andWhere("lead.joinedAt <= :joinedTo", { joinedTo: toUtc.toISOString() });
+    }
+  }
+
+  /** 일자별 신규 가입 건수를 소스별로 집계한다(대시보드 그래프용, KST 기준 실제 가입일).
+   *  from/to를 생략하면 오늘로부터 최근 days일을 기본값으로 사용한다. */
+  async getDailyStats(options: { days?: number; from?: string; to?: string }): Promise<
     Array<{ date: string; imweb: number; instagram: number; total: number }>
   > {
     // 서버(Railway)는 UTC로 돌아가므로 new Date()의 로컬 시간대에 의존하지 않고, KST
     // 기준 "오늘" 날짜를 직접 문자열로 계산한다(목록 화면의 가입시각 표시와 동일 기준).
     const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000);
     const todayKstStr = nowKst.toISOString().slice(0, 10);
-    const sinceDate = new Date(`${todayKstStr}T00:00:00Z`);
-    sinceDate.setUTCDate(sinceDate.getUTCDate() - (days - 1));
-    const sinceKstStr = sinceDate.toISOString().slice(0, 10);
+
+    let sinceKstStr: string;
+    let untilKstStr: string;
+    if (options.from && options.to) {
+      sinceKstStr = options.from;
+      untilKstStr = options.to;
+    } else {
+      const days = options.days ?? 14;
+      const sinceDate = new Date(`${todayKstStr}T00:00:00Z`);
+      sinceDate.setUTCDate(sinceDate.getUTCDate() - (days - 1));
+      sinceKstStr = sinceDate.toISOString().slice(0, 10);
+      untilKstStr = todayKstStr;
+    }
+    const totalDays =
+      Math.round(
+        (new Date(`${untilKstStr}T00:00:00Z`).getTime() -
+          new Date(`${sinceKstStr}T00:00:00Z`).getTime()) /
+          86_400_000,
+      ) + 1;
+    if (totalDays < 1 || totalDays > 366) {
+      throw new BadRequestException("조회 기간이 올바르지 않습니다.");
+    }
 
     // 실제 가입/신청일(joinedAt) 기준으로 집계한다. 이관·백필 등으로 수집시각(createdAt)이
     // 실제 가입일과 크게 어긋나는 경우가 있어, "그 날짜에 유입된 DB"를 정확히 보여주려면
@@ -330,6 +409,7 @@ export class KakaoNotifyService {
       .addSelect("lead.source", "source")
       .addSelect("COUNT(*)", "count")
       .where(`${dateExpr} >= :since`, { since: sinceKstStr })
+      .andWhere(`${dateExpr} <= :until`, { until: untilKstStr })
       .groupBy(dateExpr)
       .addGroupBy("lead.source")
       .orderBy(dateExpr, "ASC")
@@ -348,7 +428,7 @@ export class KakaoNotifyService {
     }
 
     const result: Array<{ date: string; imweb: number; instagram: number; total: number }> = [];
-    for (let i = 0; i < days; i += 1) {
+    for (let i = 0; i < totalDays; i += 1) {
       const d = new Date(`${sinceKstStr}T00:00:00Z`);
       d.setUTCDate(d.getUTCDate() + i);
       const dateKey = d.toISOString().slice(0, 10);
@@ -362,17 +442,14 @@ export class KakaoNotifyService {
     source?: KakaoLeadSource;
     status?: string;
     search?: string;
+    group?: string;
+    joinedFrom?: string;
+    joinedTo?: string;
     page: number;
     pageSize: number;
   }) {
     const qb = this.leadRepo.createQueryBuilder("lead");
-    if (query.source) qb.andWhere("lead.source = :source", { source: query.source });
-    if (query.status) qb.andWhere("lead.status = :status", { status: query.status });
-    if (query.search) {
-      qb.andWhere("(lead.name LIKE :search OR lead.phone LIKE :search)", {
-        search: `%${query.search}%`,
-      });
-    }
+    this.applyLeadFilters(qb, query);
     qb.orderBy("CASE WHEN lead.joinedAt IS NULL THEN 1 ELSE 0 END", "ASC");
     qb.addOrderBy("lead.joinedAt", "DESC");
     qb.addOrderBy("lead.createdAt", "DESC");

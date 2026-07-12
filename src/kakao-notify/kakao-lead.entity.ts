@@ -69,6 +69,11 @@ export class KakaoLead {
   @Column({ type: "boolean", default: false })
   excludedFromBulk!: boolean;
 
+  /** 관리자가 자유롭게 붙이는 그룹명(예: "2월 세미나"). 목록 필터/일괄 지정용. */
+  @Index()
+  @Column({ type: "text", default: "" })
+  groupLabel!: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

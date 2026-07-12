@@ -88,6 +88,9 @@ export class KakaoNotifyController {
     @Query("source") source?: string,
     @Query("status") status?: string,
     @Query("search") search?: string,
+    @Query("group") group?: string,
+    @Query("joinedFrom") joinedFrom?: string,
+    @Query("joinedTo") joinedTo?: string,
     @Query("page") page?: string,
     @Query("pageSize") pageSize?: string,
   ) {
@@ -96,6 +99,9 @@ export class KakaoNotifyController {
       source: (source as KakaoLeadSource) || undefined,
       status: status || undefined,
       search: search || undefined,
+      group: group || undefined,
+      joinedFrom: joinedFrom || undefined,
+      joinedTo: joinedTo || undefined,
       page: Math.max(1, Number(page) || 1),
       pageSize: Math.min(100, Math.max(1, Number(pageSize) || 20)),
     });
@@ -107,22 +113,63 @@ export class KakaoNotifyController {
     @Query("source") source?: string,
     @Query("status") status?: string,
     @Query("search") search?: string,
+    @Query("group") group?: string,
+    @Query("joinedFrom") joinedFrom?: string,
+    @Query("joinedTo") joinedTo?: string,
   ) {
     requireAdmin(getAuthContext(headers));
     return this.kakaoNotifyService.findLeadIds({
       source: (source as KakaoLeadSource) || undefined,
       status: status || undefined,
       search: search || undefined,
+      group: group || undefined,
+      joinedFrom: joinedFrom || undefined,
+      joinedTo: joinedTo || undefined,
     });
+  }
+
+  @Get("leads/groups")
+  async findGroupLabels(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.kakaoNotifyService.findGroupLabels();
+  }
+
+  @Post("leads/:id/group")
+  async setGroupLabel(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+    @Body() body: { groupLabel?: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.kakaoNotifyService.setGroupLabel(id, body.groupLabel ?? "");
+  }
+
+  @Post("leads/group-bulk")
+  async setGroupLabelBulk(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { ids?: string[]; groupLabel?: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    const ids = (body.ids ?? []).filter((id) => typeof id === "string" && id.trim());
+    if (ids.length === 0) {
+      throw new BadRequestException("그룹을 지정할 고객을 선택해 주세요.");
+    }
+    return this.kakaoNotifyService.setGroupLabelBulk(ids, body.groupLabel ?? "");
   }
 
   @Get("leads/daily-stats")
   async getDailyStats(
     @Headers() headers: Record<string, string>,
     @Query("days") days?: string,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
   ) {
     requireAdmin(getAuthContext(headers));
-    return this.kakaoNotifyService.getDailyStats(Math.min(90, Math.max(1, Number(days) || 14)));
+    return this.kakaoNotifyService.getDailyStats({
+      days: days ? Math.min(366, Math.max(1, Number(days) || 14)) : undefined,
+      from: from || undefined,
+      to: to || undefined,
+    });
   }
 
   @Post("leads/:id/bulk-exclusion")
