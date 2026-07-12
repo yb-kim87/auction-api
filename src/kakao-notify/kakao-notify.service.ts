@@ -321,11 +321,15 @@ export class KakaoNotifyService {
       .groupBy("DATE(lead.createdAt)")
       .addGroupBy("lead.source")
       .orderBy("DATE(lead.createdAt)", "ASC")
-      .getRawMany<{ date: string; source: KakaoLeadSource; count: string }>();
+      .getRawMany<{ date: string | Date; source: KakaoLeadSource; count: string }>();
 
     const byDate = new Map<string, { imweb: number; instagram: number }>();
     for (const row of rows) {
-      const dateKey = row.date.slice(0, 10);
+      // Postgres는 DATE()가 Date 객체로, sql.js(SQLite)는 문자열로 온다.
+      const dateKey =
+        row.date instanceof Date
+          ? row.date.toISOString().slice(0, 10)
+          : String(row.date).slice(0, 10);
       const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0 };
       entry[row.source] = Number(row.count);
       byDate.set(dateKey, entry);
