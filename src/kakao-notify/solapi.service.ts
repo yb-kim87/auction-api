@@ -23,6 +23,9 @@ export type SolapiTemplate = {
   status: string;
   content: string;
   buttons: SolapiTemplateButton[];
+  emphasizeTitle: string | null;
+  emphasizeSubtitle: string | null;
+  extra: string | null;
 };
 
 /**
@@ -172,6 +175,9 @@ export class SolapiService {
         status?: string;
         content?: string;
         buttons?: SolapiTemplateButton[];
+        emphasizeTitle?: string | null;
+        emphasizeSubtitle?: string | null;
+        extra?: string | null;
       }>;
       errorMessage?: string;
     };
@@ -182,8 +188,6 @@ export class SolapiService {
       );
     }
 
-    // TEMP DEBUG
-    console.log("RAW_TEMPLATE_SAMPLE", JSON.stringify((body.templateList ?? [])[0]));
     return (body.templateList ?? [])
       .filter((t) => t.status === "APPROVED")
       .map((t) => ({
@@ -192,6 +196,9 @@ export class SolapiService {
         status: t.status ?? "",
         content: t.content ?? "",
         buttons: t.buttons ?? [],
+        emphasizeTitle: t.emphasizeTitle ?? null,
+        emphasizeSubtitle: t.emphasizeSubtitle ?? null,
+        extra: t.extra ?? null,
       }));
   }
 }
