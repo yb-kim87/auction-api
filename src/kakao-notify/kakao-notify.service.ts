@@ -304,7 +304,7 @@ export class KakaoNotifyService {
     return this.leadRepo.save(lead);
   }
 
-  /** 일자별 신규 수집 건수를 소스별로 집계한다(대시보드 그래프용). */
+  /** 일자별 신규 가입 건수를 소스별로 집계한다(대시보드 그래프용, 실제 가입일 기준). */
   async getDailyStats(days: number): Promise<
     Array<{ date: string; imweb: number; instagram: number; total: number }>
   > {
@@ -312,15 +312,19 @@ export class KakaoNotifyService {
     since.setDate(since.getDate() - (days - 1));
     since.setHours(0, 0, 0, 0);
 
+    // 실제 가입/신청일(joinedAt) 기준으로 집계한다. 이관·백필 등으로 수집시각(createdAt)이
+    // 실제 가입일과 크게 어긋나는 경우가 있어, "그 날짜에 유입된 DB"를 정확히 보여주려면
+    // joinedAt을 우선 사용해야 한다(없으면 createdAt으로 대체).
+    const dateExpr = "COALESCE(DATE(lead.joinedAt), DATE(lead.createdAt))";
     const rows = await this.leadRepo
       .createQueryBuilder("lead")
-      .select("DATE(lead.createdAt)", "date")
+      .select(dateExpr, "date")
       .addSelect("lead.source", "source")
       .addSelect("COUNT(*)", "count")
-      .where("lead.createdAt >= :since", { since })
-      .groupBy("DATE(lead.createdAt)")
+      .where(`${dateExpr} >= :since`, { since: since.toISOString().slice(0, 10) })
+      .groupBy(dateExpr)
       .addGroupBy("lead.source")
-      .orderBy("DATE(lead.createdAt)", "ASC")
+      .orderBy(dateExpr, "ASC")
       .getRawMany<{ date: string | Date; source: KakaoLeadSource; count: string }>();
 
     const byDate = new Map<string, { imweb: number; instagram: number }>();
