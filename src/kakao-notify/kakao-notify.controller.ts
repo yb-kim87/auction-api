@@ -14,7 +14,7 @@ import { KakaoSyncStateService } from "./kakao-sync-state.service";
 import { KakaoNotifySettingService, LEAD_FIELD_OPTIONS } from "./kakao-notify-setting.service";
 import { SolapiService } from "./solapi.service";
 import { ImwebSyncService } from "./imweb-sync.service";
-import { InstagramSyncService, parseSheetDate } from "./instagram-sync.service";
+import { InstagramSyncService } from "./instagram-sync.service";
 import { KakaoSyncRunnerService } from "./kakao-sync-runner.service";
 import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
 import { TelegramAlertService } from "./telegram-alert.service";
@@ -355,51 +355,6 @@ export class KakaoNotifyController {
   async backfillImwebExisting(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
     return this.imwebSync.backfillExistingMembers();
-  }
-
-  /**
-   * TEMP: 별도로 보관 중이던 2026-01~02월 인스타 리드광고 320건을 발송 없이
-   * "발송됨" 상태로만 채워넣는 1회성 백필. 처리 완료 후 제거 예정.
-   */
-  @Post("instagram/backfill-rows")
-  async backfillInstagramRows(
-    @Headers() headers: Record<string, string>,
-    @Body()
-    body: {
-      rows?: Array<{
-        id?: string;
-        createdTime?: string;
-        adName?: string;
-        name?: string;
-        phone?: string;
-      }>;
-    },
-  ) {
-    requireAdmin(getAuthContext(headers));
-    const rows = body.rows ?? [];
-    if (rows.length === 0) {
-      throw new BadRequestException("rows가 비어 있습니다.");
-    }
-
-    let processed = 0;
-    let created = 0;
-    for (const r of rows) {
-      if (!r.phone?.trim()) continue;
-      processed += 1;
-      const sourceRefId = r.id?.trim() || `${r.createdTime ?? ""}|${r.phone}`;
-      const joinedAt = r.createdTime ? parseSheetDate(r.createdTime) : null;
-      const result = await this.kakaoNotifyService.backfillLeadAsSent({
-        source: "instagram",
-        sourceRefId,
-        name: r.name ?? "",
-        rawPhone: r.phone,
-        adName: r.adName ?? "",
-        joinedAt,
-        rawPayload: r,
-      });
-      if (result.outcome === "created" || result.outcome === "resubmitted") created += 1;
-    }
-    return { processed, created };
   }
 
   @Post("leads/delete-by-source/:source")
