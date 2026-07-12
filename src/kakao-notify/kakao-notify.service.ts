@@ -251,11 +251,13 @@ export class KakaoNotifyService {
     variables: Record<string, string>;
     templateNameVar?: string;
     adminUsername: string;
-  }): Promise<{ total: number; success: number; failed: number }> {
+  }): Promise<{ total: number; success: number; failed: number; excluded: number }> {
     const leads = await this.leadRepo.find({ where: { id: In(input.leadIds) } });
+    const targetLeads = leads.filter((l) => !l.excludedFromBulk);
+    const excluded = leads.length - targetLeads.length;
     let success = 0;
     let failed = 0;
-    for (const lead of leads) {
+    for (const lead of targetLeads) {
       const log = await this.dispatchToLead(lead, {
         triggeredBy: "bulk_manual",
         triggeredByAdmin: input.adminUsername,
@@ -268,14 +270,16 @@ export class KakaoNotifyService {
       if (log.result === "success") success += 1;
       else failed += 1;
     }
-    return { total: leads.length, success, failed };
+    return { total: targetLeads.length, success, failed, excluded };
   }
 
-  /** 필터 조건에 맞는 전체 리드의 ID만 조회한다(목록 "전체선택"용, 페이징 없음). */
+  /** 필터 조건에 맞는 전체 리드의 ID만 조회한다(목록 "전체선택"용, 페이징 없음).
+   *  "알림톡 제외" 처리된 리드는 선택 발송 대상이 아니므로 기본적으로 제외한다. */
   async findLeadIds(query: {
     source?: KakaoLeadSource;
     status?: string;
     search?: string;
+    includeExcluded?: boolean;
   }): Promise<string[]> {
     const qb = this.leadRepo.createQueryBuilder("lead").select("lead.id", "id");
     if (query.source) qb.andWhere("lead.source = :source", { source: query.source });
@@ -285,8 +289,57 @@ export class KakaoNotifyService {
         search: `%${query.search}%`,
       });
     }
+    if (!query.includeExcluded) {
+      qb.andWhere("lead.excludedFromBulk = :excluded", { excluded: false });
+    }
     const rows = await qb.getRawMany<{ id: string }>();
     return rows.map((r) => r.id);
+  }
+
+  /** 관리자가 목록에서 개별 리드를 "알림톡 제외" ON/OFF 토글한다(선택 발송 대상에서만 제외). */
+  async setBulkExclusion(id: string, excluded: boolean): Promise<KakaoLead> {
+    const lead = await this.leadRepo.findOne({ where: { id } });
+    if (!lead) throw new NotFoundException("고객 정보를 찾을 수 없습니다.");
+    lead.excludedFromBulk = excluded;
+    return this.leadRepo.save(lead);
+  }
+
+  /** 일자별 신규 수집 건수를 소스별로 집계한다(대시보드 그래프용). */
+  async getDailyStats(days: number): Promise<
+    Array<{ date: string; imweb: number; instagram: number; total: number }>
+  > {
+    const since = new Date();
+    since.setDate(since.getDate() - (days - 1));
+    since.setHours(0, 0, 0, 0);
+
+    const rows = await this.leadRepo
+      .createQueryBuilder("lead")
+      .select("DATE(lead.createdAt)", "date")
+      .addSelect("lead.source", "source")
+      .addSelect("COUNT(*)", "count")
+      .where("lead.createdAt >= :since", { since })
+      .groupBy("DATE(lead.createdAt)")
+      .addGroupBy("lead.source")
+      .orderBy("DATE(lead.createdAt)", "ASC")
+      .getRawMany<{ date: string; source: KakaoLeadSource; count: string }>();
+
+    const byDate = new Map<string, { imweb: number; instagram: number }>();
+    for (const row of rows) {
+      const dateKey = row.date.slice(0, 10);
+      const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0 };
+      entry[row.source] = Number(row.count);
+      byDate.set(dateKey, entry);
+    }
+
+    const result: Array<{ date: string; imweb: number; instagram: number; total: number }> = [];
+    for (let i = 0; i < days; i += 1) {
+      const d = new Date(since);
+      d.setDate(since.getDate() + i);
+      const dateKey = d.toISOString().slice(0, 10);
+      const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0 };
+      result.push({ date: dateKey, ...entry, total: entry.imweb + entry.instagram });
+    }
+    return result;
   }
 
   async findLeads(query: {

@@ -19,6 +19,7 @@ import { KakaoSyncRunnerService } from "./kakao-sync-runner.service";
 import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
 import { TelegramAlertService } from "./telegram-alert.service";
 import { KakaoScheduledDispatchService } from "./kakao-scheduled-dispatch.service";
+import { KakaoAdCreativeService } from "./kakao-ad-creative.service";
 import type { KakaoLeadSource } from "./kakao-lead.entity";
 
 @Controller("kakao-notify")
@@ -34,6 +35,7 @@ export class KakaoNotifyController {
     private readonly scheduler: KakaoNotifyScheduler,
     private readonly telegramAlert: TelegramAlertService,
     private readonly scheduledDispatchService: KakaoScheduledDispatchService,
+    private readonly adCreativeService: KakaoAdCreativeService,
   ) {}
 
   @Post("telegram/test")
@@ -112,6 +114,53 @@ export class KakaoNotifyController {
       status: status || undefined,
       search: search || undefined,
     });
+  }
+
+  @Get("leads/daily-stats")
+  async getDailyStats(
+    @Headers() headers: Record<string, string>,
+    @Query("days") days?: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.kakaoNotifyService.getDailyStats(Math.min(90, Math.max(1, Number(days) || 14)));
+  }
+
+  @Post("leads/:id/bulk-exclusion")
+  async setBulkExclusion(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+    @Body() body: { excluded?: boolean },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.kakaoNotifyService.setBulkExclusion(id, body.excluded === true);
+  }
+
+  @Get("ad-creatives")
+  async listAdCreatives(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.adCreativeService.findAll();
+  }
+
+  @Post("ad-creatives")
+  async upsertAdCreative(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { adName?: string; mediaUrl?: string; mediaType?: "image" | "video" },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.adCreativeService.upsert({
+      adName: body.adName ?? "",
+      mediaUrl: body.mediaUrl ?? "",
+      mediaType: body.mediaType === "video" ? "video" : "image",
+    });
+  }
+
+  @Post("ad-creatives/:id/delete")
+  async deleteAdCreative(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.adCreativeService.delete(id);
   }
 
   @Get("leads/:id")

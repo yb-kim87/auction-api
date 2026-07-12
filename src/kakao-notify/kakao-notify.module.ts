@@ -5,6 +5,7 @@ import { KakaoDispatchLog } from "./kakao-dispatch-log.entity";
 import { KakaoSyncState } from "./kakao-sync-state.entity";
 import { KakaoNotifySetting } from "./kakao-notify-setting.entity";
 import { KakaoScheduledDispatch } from "./kakao-scheduled-dispatch.entity";
+import { KakaoAdCreative } from "./kakao-ad-creative.entity";
 import { SolapiService } from "./solapi.service";
 import { KakaoNotifyService } from "./kakao-notify.service";
 import { KakaoSyncStateService } from "./kakao-sync-state.service";
@@ -16,6 +17,7 @@ import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
 import { KakaoSyncRunnerService } from "./kakao-sync-runner.service";
 import { TelegramAlertService } from "./telegram-alert.service";
 import { KakaoScheduledDispatchService } from "./kakao-scheduled-dispatch.service";
+import { KakaoAdCreativeService } from "./kakao-ad-creative.service";
 import { KakaoNotifyController } from "./kakao-notify.controller";
 
 @Module({
@@ -26,6 +28,7 @@ import { KakaoNotifyController } from "./kakao-notify.controller";
       KakaoSyncState,
       KakaoNotifySetting,
       KakaoScheduledDispatch,
+      KakaoAdCreative,
     ]),
   ],
   providers: [
@@ -40,6 +43,7 @@ import { KakaoNotifyController } from "./kakao-notify.controller";
     KakaoSyncRunnerService,
     TelegramAlertService,
     KakaoScheduledDispatchService,
+    KakaoAdCreativeService,
   ],
   controllers: [KakaoNotifyController],
   exports: [KakaoNotifyService, SolapiService],

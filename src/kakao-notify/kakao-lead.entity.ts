@@ -63,6 +63,12 @@ export class KakaoLead {
   @Column({ type: "text", default: "pending" })
   status!: KakaoLeadStatus;
 
+  /** 관리자가 명시적으로 "알림톡 제외" 처리한 고객. 선택 발송(일괄발송) 대상에서만 제외되고
+   *  자동발송·개별 재발송은 영향받지 않는다. */
+  @Index()
+  @Column({ type: "boolean", default: false })
+  excludedFromBulk!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
 
