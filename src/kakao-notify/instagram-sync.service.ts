@@ -203,7 +203,7 @@ export class InstagramSyncService {
  * ("2026-07-07T22:13:58-05:00")이면 그대로 파싱하고, 공백 구분 형식
  * ("YYYY-MM-DD HH:mm:ss", Make formatDate 결과)이면 KST로 간주한다.
  */
-function parseSheetDate(raw: string): Date | null {
+export function parseSheetDate(raw: string): Date | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   if (/[+-]\d{2}:\d{2}$|Z$/.test(trimmed)) {

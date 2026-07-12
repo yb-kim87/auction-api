@@ -14,7 +14,7 @@ import { KakaoSyncStateService } from "./kakao-sync-state.service";
 import { KakaoNotifySettingService, LEAD_FIELD_OPTIONS } from "./kakao-notify-setting.service";
 import { SolapiService } from "./solapi.service";
 import { ImwebSyncService } from "./imweb-sync.service";
-import { InstagramSyncService } from "./instagram-sync.service";
+import { InstagramSyncService, parseSheetDate } from "./instagram-sync.service";
 import { KakaoSyncRunnerService } from "./kakao-sync-runner.service";
 import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
 import { TelegramAlertService } from "./telegram-alert.service";
@@ -387,14 +387,14 @@ export class KakaoNotifyController {
       if (!r.phone?.trim()) continue;
       processed += 1;
       const sourceRefId = r.id?.trim() || `${r.createdTime ?? ""}|${r.phone}`;
-      const joinedAt = r.createdTime ? new Date(r.createdTime) : null;
+      const joinedAt = r.createdTime ? parseSheetDate(r.createdTime) : null;
       const result = await this.kakaoNotifyService.backfillLeadAsSent({
         source: "instagram",
         sourceRefId,
         name: r.name ?? "",
         rawPhone: r.phone,
         adName: r.adName ?? "",
-        joinedAt: joinedAt && !Number.isNaN(joinedAt.getTime()) ? joinedAt : null,
+        joinedAt,
         rawPayload: r,
       });
       if (result.outcome === "created" || result.outcome === "resubmitted") created += 1;
