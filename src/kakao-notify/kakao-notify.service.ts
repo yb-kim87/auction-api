@@ -7,6 +7,7 @@ import { SolapiService } from "./solapi.service";
 import { KakaoNotifySettingService } from "./kakao-notify-setting.service";
 import { normalizePhone } from "./phone.util";
 import { TelegramAlertService } from "./telegram-alert.service";
+import { KakaoLandingVisit } from "./kakao-landing-visit.entity";
 
 /** 연속으로 이 횟수만큼 발송이 실패하면 솔라피 자체 장애로 보고 텔레그램으로 알린다. */
 const DISPATCH_FAILURE_ALERT_THRESHOLD = 3;
@@ -24,6 +25,8 @@ export class KakaoNotifyService {
     private readonly leadRepo: Repository<KakaoLead>,
     @InjectRepository(KakaoDispatchLog)
     private readonly logRepo: Repository<KakaoDispatchLog>,
+    @InjectRepository(KakaoLandingVisit)
+    private readonly landingVisitRepo: Repository<KakaoLandingVisit>,
     private readonly solapi: SolapiService,
     private readonly settingService: KakaoNotifySettingService,
     private readonly telegramAlert: TelegramAlertService,
@@ -493,10 +496,14 @@ export class KakaoNotifyService {
       where: { phone: lead.phone },
       order: { createdAt: "DESC" },
     });
+    const landingVisit = lead.visitId
+      ? await this.landingVisitRepo.findOne({ where: { visitId: lead.visitId } })
+      : null;
     return {
       lead,
       logs,
       otherApplications: otherApplications.filter((l) => l.id !== lead.id),
+      landingVisit,
     };
   }
 
