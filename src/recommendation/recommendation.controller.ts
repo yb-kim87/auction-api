@@ -25,6 +25,7 @@ export class RecommendationController {
       hasCriteria: result.criteria != null,
       loanRatio: result.loanRatio,
       loanPolicyLabel: result.loanPolicyLabel,
+      loanInfoByItemId: result.loanInfoByItemId,
     };
   }
 }

@@ -9,7 +9,7 @@ import { Auction } from "../auctions/auction.entity";
 import { UsersService } from "../users/users.service";
 import { OpenAiService } from "./openai.service";
 import { RecommendationEngineService } from "../recommendation/recommendation-engine.service";
-import { parseMoneyToWon, requiredEquityForMinPrice } from "../recommendation/investment-math.util";
+import { parseMoneyToWon } from "../recommendation/investment-math.util";
 
 function fmt(n: number) {
   return n.toLocaleString("ko-KR");
@@ -19,10 +19,16 @@ function auctionLine(a: Auction): string {
   return `- ${a.auctionNo} | ${a.address} | ${a.usage} | 최저가 ${fmt(a.minPrice)}원 | 감정가 ${fmt(a.appraisedValue)}원`;
 }
 
-/** 대출정책 적용 후 실제 필요 자기자금까지 명시해, AI가 최저가를 그대로 예산과 비교하지 않게 한다. */
-function auctionLineWithEquity(a: Auction, loanRatio: number): string {
-  const equity = requiredEquityForMinPrice(a.minPrice, loanRatio);
-  return `- ${a.auctionNo} | ${a.address} | ${a.usage} | 최저가 ${fmt(a.minPrice)}원 | 대출 ${Math.round(loanRatio * 100)}% 적용 시 필요 자기자금 약 ${fmt(equity)}원`;
+/** 대출정책(물건별 규제지역 여부 반영) 적용 후 실제 필요 자기자금까지 명시해,
+ *  AI가 최저가를 그대로 예산과 비교하지 않게 한다. */
+function auctionLineWithEquity(
+  a: Auction,
+  loanInfo: { loanPolicyLabel: string; requiredEquity: number } | undefined,
+): string {
+  if (!loanInfo) {
+    return `- ${a.auctionNo} | ${a.address} | ${a.usage} | 최저가 ${fmt(a.minPrice)}원`;
+  }
+  return `- ${a.auctionNo} | ${a.address} | ${a.usage} | 최저가 ${fmt(a.minPrice)}원 | ${loanInfo.loanPolicyLabel} 적용 시 필요 자기자금 약 ${fmt(loanInfo.requiredEquity)}원`;
 }
 
 @Injectable()
@@ -59,7 +65,7 @@ export class AiAssistantService {
     }
 
     const budgetWon = parseMoneyToWon(trimmed);
-    const { items, criteria, loanRatio } = await this.recommendationEngine.getRecommendations(
+    const { items, criteria, loanInfoByItemId } = await this.recommendationEngine.getRecommendations(
       username,
       { overrideInvestableWon: budgetWon ?? undefined, limit: 10 },
     );
@@ -68,19 +74,18 @@ export class AiAssistantService {
       ? `투자가능자금(자기자금): ${user.investableFunds || "미입력"}, 주택수: ${user.housingCount ?? 0}, 생애최초: ${user.firstTimeBuyer ? "예" : "아니오"}`
       : "회원 투자정보 없음";
 
-    const ratio = loanRatio ?? 0.7;
     const candidateBlock =
       items.length > 0
-        ? items.slice(0, 10).map((a) => auctionLineWithEquity(a, ratio)).join("\n")
+        ? items.slice(0, 10).map((a) => auctionLineWithEquity(a, loanInfoByItemId[a.id])).join("\n")
         : "조건에 맞는 후보 물건 없음";
 
     const systemPrompt = `당신은 "경매코치 AI"입니다. 아래 [추천 후보 물건] 목록에 있는 물건만 언급하세요.
 목록에 없는 물건을 지어내지 마세요.
-이 목록은 이미 회원의 자기자금(예산)과 대출정책(주택수·생애최초 여부 기반 대출 비율)을 반영해
-"필요 자기자금 <= 예산"인 물건만 걸러낸 결과입니다.
+이 목록은 이미 회원의 자기자금(예산)과 대출정책(규제지역 여부·주택수·생애최초 여부 기반 감정가/낙찰가 비율 중 낮은 쪽)을
+반영해 "필요 자기자금 <= 예산"인 물건만 걸러낸 결과입니다. 물건마다 규제지역 여부가 달라 적용 비율이 다를 수 있습니다.
 따라서 목록에 있는 물건은 전부 예산으로 투자 가능합니다 — 최저가를 예산과 직접 비교해 "예산 초과"라고 말하지 마세요.
-반드시 "필요 자기자금" 금액을 기준으로 안내하세요.`;
-    const userPrompt = `[회원 투자정보]\n${profileBlock}\n${budgetWon ? `[질문에서 인식한 예산=자기자금] ${fmt(budgetWon)}원\n` : ""}[적용 대출 비율] ${Math.round(ratio * 100)}%\n\n[추천 후보 물건 — 이미 예산 내로 필터링됨]\n${candidateBlock}\n\n[질문]\n${trimmed}`;
+반드시 각 물건에 표시된 "필요 자기자금" 금액을 기준으로 안내하세요.`;
+    const userPrompt = `[회원 투자정보]\n${profileBlock}\n${budgetWon ? `[질문에서 인식한 예산=자기자금] ${fmt(budgetWon)}원\n` : ""}\n[추천 후보 물건 — 이미 예산 내로 필터링됨, 물건별 적용 정책·필요 자기자금 표시]\n${candidateBlock}\n\n[질문]\n${trimmed}`;
 
     const answer = await this.openAi.answerFreeform(systemPrompt, userPrompt);
     return { answer, matchedCount: items.length, criteriaApplied: criteria != null };

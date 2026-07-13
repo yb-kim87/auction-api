@@ -63,6 +63,10 @@ export class Auction {
   @Column({ type: "integer", default: 0 })
   minPrice!: number;
 
+  /** 대출 규제지역 여부(관리자가 물건 등록/수정 시 직접 지정). 대출 한도 계산에 사용된다. */
+  @Column({ type: "boolean", default: false })
+  regulatedArea!: boolean;
+
   @Column({ type: "integer", nullable: true })
   salePrice!: number | null;
 

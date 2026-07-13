@@ -21,16 +21,20 @@ export class LoanPolicyController {
   }
 
   @Patch(":id")
-  async updateRatio(
+  async updatePolicy(
     @Headers() headers: Record<string, string>,
     @Param("id") id: string,
-    @Body() body: { loanRatio?: number },
+    @Body() body: { loanRatio?: number; appraisalRatio?: number },
   ) {
     requireAdmin(getAuthContext(headers));
-    const ratio = Number(body.loanRatio);
-    if (!Number.isFinite(ratio) || ratio <= 0 || ratio > 1) {
-      throw new BadRequestException("대출 비율은 0~1 사이 값으로 입력해 주세요.");
+    const loanRatio = Number(body.loanRatio);
+    const appraisalRatio = Number(body.appraisalRatio);
+    if (!Number.isFinite(loanRatio) || loanRatio <= 0 || loanRatio > 1) {
+      throw new BadRequestException("낙찰가 대출 비율은 0~1 사이 값으로 입력해 주세요.");
     }
-    return this.loanPolicyService.updateRatio(id, ratio);
+    if (!Number.isFinite(appraisalRatio) || appraisalRatio <= 0 || appraisalRatio > 1) {
+      throw new BadRequestException("감정가 대출 비율은 0~1 사이 값으로 입력해 주세요.");
+    }
+    return this.loanPolicyService.updatePolicy(id, { loanRatio, appraisalRatio });
   }
 }

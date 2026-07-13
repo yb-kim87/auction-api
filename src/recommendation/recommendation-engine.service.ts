@@ -8,7 +8,7 @@ import { LoanPolicyService } from "../loan-policy/loan-policy.service";
 import { ItemAiTag } from "../ai-platform/tag-engine/item-ai-tag.entity";
 import {
   parseMoneyToWon,
-  requiredEquityForMinPrice,
+  requiredEquityForItem,
   selectLoanPolicy,
 } from "./investment-math.util";
 
@@ -59,27 +59,55 @@ export class RecommendationEngineService {
   ): Promise<{
     items: Auction[];
     criteria: RecommendationCriteria | null;
+    // 물건마다 규제지역 여부가 달라 적용 정책이 다를 수 있어, 대표값은 더 이상
+    // 단일하지 않다. 물건별 정보는 각 item에 부가 필드로 함께 내려준다
+    // (아래 loanRatioByItemId/loanPolicyLabelByItemId 참고).
     loanRatio: number | null;
     loanPolicyLabel: string | null;
+    loanInfoByItemId: Record<
+      string,
+      { loanRatio: number; appraisalRatio: number; loanPolicyLabel: string; requiredEquity: number }
+    >;
   }> {
     const criteria = await this.buildCriteriaForUser(username, options?.overrideInvestableWon);
-    if (!criteria) return { items: [], criteria: null, loanRatio: null, loanPolicyLabel: null };
+    if (!criteria) {
+      return { items: [], criteria: null, loanRatio: null, loanPolicyLabel: null, loanInfoByItemId: {} };
+    }
 
     const policies = await this.loanPolicyService.findAll();
-    const policy = selectLoanPolicy(criteria, policies);
-    const loanRatio = policy?.loanRatio ?? 0.7;
 
     const auctions = await this.auctionRepo.find({
       where: { status: AuctionStatus.APPROVED },
       order: { createdAt: "DESC" },
     });
 
+    const loanInfoByItemId: Record<
+      string,
+      { loanRatio: number; appraisalRatio: number; loanPolicyLabel: string; requiredEquity: number }
+    > = {};
     const affordable = auctions
-      .map((item) => ({
-        item,
-        requiredEquity: requiredEquityForMinPrice(item.minPrice, loanRatio),
-      }))
-      .filter((row) => row.item.minPrice > 0 && row.requiredEquity <= criteria.investableWon);
+      .map((item) => {
+        const policy = selectLoanPolicy(criteria, item.regulatedArea, policies);
+        const requiredEquity = policy
+          ? requiredEquityForItem(item.minPrice, item.appraisedValue, policy)
+          : item.minPrice;
+        if (policy) {
+          loanInfoByItemId[item.id] = {
+            loanRatio: policy.loanRatio,
+            appraisalRatio: policy.appraisalRatio,
+            loanPolicyLabel: policy.label,
+            requiredEquity,
+          };
+        }
+        return { item, requiredEquity, policy };
+      })
+      .filter(
+        (row) =>
+          row.item.minPrice > 0 &&
+          row.policy &&
+          !row.policy.loanUnavailable &&
+          row.requiredEquity <= criteria.investableWon,
+      );
 
     const priceMeritIds = await this.findPriceMeritItemIds(affordable.map((row) => row.item.id));
 
@@ -94,11 +122,14 @@ export class RecommendationEngineService {
     });
 
     const limited = options?.limit != null ? affordable.slice(0, options.limit) : affordable;
+    // 대표 정책(무주택 기준)은 헤더 요약 문구 등 물건과 무관한 표시에만 사용한다.
+    const fallbackPolicy = selectLoanPolicy(criteria, false, policies);
     return {
       items: limited.map((row) => row.item),
       criteria,
-      loanRatio,
-      loanPolicyLabel: policy?.label ?? null,
+      loanRatio: fallbackPolicy?.loanRatio ?? null,
+      loanPolicyLabel: fallbackPolicy?.label ?? null,
+      loanInfoByItemId,
     };
   }
 
