@@ -14,6 +14,12 @@ export class KakaoAdCreative {
   @Column({ type: "text" })
   adName!: string;
 
+  /** 관리자가 지정한 표시명(예: "이미지_10"). 유입소재(adName) 등록 시에는
+   *  비워두고 목록에 adName 원본을 그대로 쓰며, utm_content(소재ID) 등록
+   *  시에만 사용해 원본 숫자 ID 대신 이 이름으로 표시한다. */
+  @Column({ type: "text", default: "" })
+  label!: string;
+
   /** 이미지/영상 URL(외부 CDN 또는 업로드된 파일 경로) */
   @Column({ type: "text" })
   mediaUrl!: string;

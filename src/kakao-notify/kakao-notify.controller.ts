@@ -203,11 +203,13 @@ export class KakaoNotifyController {
   @Post("ad-creatives")
   async upsertAdCreative(
     @Headers() headers: Record<string, string>,
-    @Body() body: { adName?: string; mediaUrl?: string; mediaType?: "image" | "video" },
+    @Body()
+    body: { adName?: string; label?: string; mediaUrl?: string; mediaType?: "image" | "video" },
   ) {
     requireAdmin(getAuthContext(headers));
     return this.adCreativeService.upsert({
       adName: body.adName ?? "",
+      label: body.label,
       mediaUrl: body.mediaUrl ?? "",
       mediaType: body.mediaType === "video" ? "video" : "image",
     });

@@ -26,6 +26,7 @@ export class KakaoAdCreativeService {
 
   async upsert(input: {
     adName: string;
+    label?: string;
     mediaUrl: string;
     mediaType: "image" | "video";
   }): Promise<KakaoAdCreative> {
@@ -34,6 +35,7 @@ export class KakaoAdCreativeService {
 
     const existing = await this.repo.findOne({ where: { adName: input.adName } });
     if (existing) {
+      existing.label = input.label?.trim() ?? existing.label;
       existing.mediaUrl = input.mediaUrl.trim();
       existing.mediaType = input.mediaType;
       return this.repo.save(existing);
@@ -41,6 +43,7 @@ export class KakaoAdCreativeService {
     return this.repo.save(
       this.repo.create({
         adName: input.adName.trim(),
+        label: input.label?.trim() ?? "",
         mediaUrl: input.mediaUrl.trim(),
         mediaType: input.mediaType,
       }),
