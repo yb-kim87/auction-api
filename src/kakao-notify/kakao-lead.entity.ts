@@ -74,6 +74,17 @@ export class KakaoLead {
   @Column({ type: "text", default: "" })
   groupLabel!: string;
 
+  /** 카카오 소셜 로그인 자동가입이라 회원가입 폼에 UTM을 실을 수 없어, 랜딩페이지
+   *  방문 시각과 가입시각(joinedAt) 근접도로 추정 매칭한 유입 캠페인 정보(참고용). */
+  @Column({ type: "text", default: "" })
+  utmSource!: string;
+
+  @Column({ type: "text", default: "" })
+  utmCampaign!: string;
+
+  @Column({ type: "text", default: "" })
+  utmMedium!: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

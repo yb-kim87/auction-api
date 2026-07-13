@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { KakaoNotifyService } from "./kakao-notify.service";
 import { KakaoSyncStateService } from "./kakao-sync-state.service";
 import { KakaoSyncRunnerService } from "./kakao-sync-runner.service";
+import { KakaoLandingVisitService } from "./kakao-landing-visit.service";
 
 const IMWEB_AUTH_URL = "https://api.imweb.me/v2/auth";
 const IMWEB_MEMBERS_URL = "https://api.imweb.me/v2/member/members";
@@ -45,6 +46,7 @@ export class ImwebSyncService {
     private readonly kakaoNotifyService: KakaoNotifyService,
     private readonly syncStateService: KakaoSyncStateService,
     private readonly runner: KakaoSyncRunnerService,
+    private readonly landingVisitService: KakaoLandingVisitService,
   ) {}
 
   private async fetchAccessToken(): Promise<string> {
@@ -176,7 +178,10 @@ export class ImwebSyncService {
             joinedAt,
             rawPayload: member,
           });
-          if (result.outcome === "created" || result.outcome === "resubmitted") created += 1;
+          if (result.outcome === "created" || result.outcome === "resubmitted") {
+            created += 1;
+            await this.landingVisitService.matchLeadToVisit(result.lead);
+          }
 
           if (joinedAt && (!latestJoinedAt || joinedAt.getTime() > latestJoinedAt.getTime())) {
             latestJoinedAt = joinedAt;

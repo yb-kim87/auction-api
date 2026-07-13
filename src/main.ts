@@ -15,8 +15,39 @@ function buildCorsOrigins(): string[] {
   return [...new Set([...defaults, ...fromEnv])];
 }
 
+/** 랜딩페이지(/public/* 공개 API)를 호출할 수 있는 외부 도메인 화이트리스트. */
+function buildPublicApiOrigins(): string[] {
+  const defaults = ["https://auctioncoachp.imweb.me"];
+  const fromEnv = (process.env.PUBLIC_API_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return [...new Set([...defaults, ...fromEnv])];
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // /public/* 경로(랜딩페이지에서 인증 없이 호출하는 공개 API)는 아임웹 랜딩
+  // 도메인만 허용하고, 그 외 전체 API는 화이트리스트+쿠키 인증을 유지한다.
+  // Nest의 enableCors는 경로별 분기를 지원하지 않으므로 미들웨어를 먼저
+  // 등록해 공개 경로의 CORS 헤더를 직접 세팅하고 짧게 응답을 마친다.
+  const publicApiOrigins = buildPublicApiOrigins();
+  app.use((req: { path: string; method: string; headers: Record<string, string | undefined> }, res: { header: (k: string, v: string) => void; sendStatus: (c: number) => void }, next: () => void) => {
+    if (req.path.startsWith("/public/")) {
+      const origin = req.headers.origin;
+      if (origin && publicApiOrigins.includes(origin)) {
+        res.header("Access-Control-Allow-Origin", origin);
+      }
+      res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      res.header("Access-Control-Allow-Headers", "Content-Type");
+      if (req.method === "OPTIONS") {
+        res.sendStatus(204);
+        return;
+      }
+    }
+    next();
+  });
 
   app.enableCors({
     origin: buildCorsOrigins(),
