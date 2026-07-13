@@ -34,7 +34,6 @@ export const AUCTION_FIELD_LABELS: Record<string, string> = {
   bidDate: "입찰기일",
   appraisedValue: "감정가",
   minPrice: "최저가",
-  regulatedArea: "규제지역 여부",
   salePrice: "낙찰가",
   naverPrice: "네이버 호가",
   naverPriceFloor: "네이버 호가 층수",

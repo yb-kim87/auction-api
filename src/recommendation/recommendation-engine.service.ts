@@ -5,6 +5,7 @@ import { Auction } from "../auctions/auction.entity";
 import { AuctionStatus } from "../common/constants";
 import { UsersService } from "../users/users.service";
 import { LoanPolicyService } from "../loan-policy/loan-policy.service";
+import { RegulatedRegionService, isRegulatedArea } from "../loan-policy/regulated-region.service";
 import { ItemAiTag } from "../ai-platform/tag-engine/item-ai-tag.entity";
 import {
   parseMoneyToWon,
@@ -29,6 +30,7 @@ export class RecommendationEngineService {
     private readonly tagRepo: Repository<ItemAiTag>,
     private readonly usersService: UsersService,
     private readonly loanPolicyService: LoanPolicyService,
+    private readonly regulatedRegionService: RegulatedRegionService,
   ) {}
 
   /**
@@ -75,6 +77,7 @@ export class RecommendationEngineService {
     }
 
     const policies = await this.loanPolicyService.findAll();
+    const regionNames = await this.regulatedRegionService.findAllNames();
 
     const auctions = await this.auctionRepo.find({
       where: { status: AuctionStatus.APPROVED },
@@ -87,7 +90,8 @@ export class RecommendationEngineService {
     > = {};
     const affordable = auctions
       .map((item) => {
-        const policy = selectLoanPolicy(criteria, item.regulatedArea, policies);
+        const regulated = isRegulatedArea(item.city, item.district, regionNames);
+        const policy = selectLoanPolicy(criteria, regulated, policies);
         const requiredEquity = policy
           ? requiredEquityForItem(item.minPrice, item.appraisedValue, policy)
           : item.minPrice;

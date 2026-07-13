@@ -189,10 +189,6 @@ export function mergeAuctionFromSource(
     bidDate: pickStr(source.bidDate, existing.bidDate),
     appraisedValue: pickNum(source.appraisedValue, existing.appraisedValue),
     minPrice: pickNum(source.minPrice, existing.minPrice),
-    regulatedArea:
-      "regulatedArea" in source && source.regulatedArea !== undefined
-        ? source.regulatedArea
-        : existing.regulatedArea,
     salePrice:
       source.salePrice !== undefined
         ? pickNullableNum(source.salePrice, existing.salePrice)
@@ -302,7 +298,6 @@ export function buildAuctionEntity(
     bidDate: parsed.bidDate ?? "",
     appraisedValue: parsed.appraisedValue ?? 0,
     minPrice: parsed.minPrice ?? 0,
-    regulatedArea: "regulatedArea" in parsed ? (parsed.regulatedArea ?? false) : false,
     salePrice: parsed.salePrice ?? null,
     naverPrice: parsed.naverPrice ?? 0,
     naverPriceFloor: parsed.naverPriceFloor ?? null,
