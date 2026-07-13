@@ -117,9 +117,36 @@ export class KakaoLandingVisitService {
         : closest,
     );
 
-    lead.utmSource = visit.utmSource;
-    lead.utmCampaign = visit.utmCampaign;
-    lead.utmMedium = visit.utmMedium;
+    // 가입완료 신호를 보낸 방문(visit)의 UTM이 비어있으면, 같은 광고 클릭이
+    // 페이지 이동 중 다른 visitId로 다시 기록된 경우일 수 있다(예: 아임웹
+    // 랜딩 페이지→가입 페이지 전환 시 저장 타이밍 문제). 이 경우 같은 시간창
+    // 안에서 UTM이 있는 다른 미매칭 방문을 찾아 UTM만 보강한다(visitId·클릭
+    // 추적은 실제 가입완료 신호를 보낸 visit 기준을 그대로 유지).
+    let utmSource = visit.utmSource;
+    let utmCampaign = visit.utmCampaign;
+    let utmMedium = visit.utmMedium;
+    if (!utmSource && !utmCampaign) {
+      const utmFallback = await this.visitRepo
+        .createQueryBuilder("v")
+        .where("v.matched = false")
+        .andWhere("v.id != :excludeId", { excludeId: visit.id })
+        .andWhere("(v.utmSource != '' OR v.utmCampaign != '')")
+        .andWhere("v.visitedAt >= :from", { from })
+        .andWhere("v.visitedAt <= :to", { to })
+        .orderBy("v.visitedAt", "DESC")
+        .getOne();
+      if (utmFallback) {
+        utmSource = utmFallback.utmSource;
+        utmCampaign = utmFallback.utmCampaign;
+        utmMedium = utmFallback.utmMedium;
+        utmFallback.matched = true;
+        await this.visitRepo.save(utmFallback);
+      }
+    }
+
+    lead.utmSource = utmSource;
+    lead.utmCampaign = utmCampaign;
+    lead.utmMedium = utmMedium;
     lead.visitId = visit.visitId;
     if (visit.kakaoRoomClickedAt) lead.kakaoRoomClickedAt = visit.kakaoRoomClickedAt;
     await this.leadRepo.save(lead);
@@ -128,7 +155,7 @@ export class KakaoLandingVisitService {
     await this.visitRepo.save(visit);
 
     this.logger.log(
-      `리드 유입 매칭: ${lead.name || lead.phone} ← ${visit.utmSource}/${visit.utmCampaign} (visitId=${visit.visitId})`,
+      `리드 유입 매칭: ${lead.name || lead.phone} ← ${utmSource}/${utmCampaign} (visitId=${visit.visitId})`,
     );
   }
 }
