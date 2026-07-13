@@ -125,6 +125,7 @@ export class KakaoLandingVisitService {
     let utmSource = visit.utmSource;
     let utmCampaign = visit.utmCampaign;
     let utmMedium = visit.utmMedium;
+    let utmContent = visit.utmContent;
     if (!utmSource && !utmCampaign) {
       const utmFallback = await this.visitRepo
         .createQueryBuilder("v")
@@ -139,6 +140,7 @@ export class KakaoLandingVisitService {
         utmSource = utmFallback.utmSource;
         utmCampaign = utmFallback.utmCampaign;
         utmMedium = utmFallback.utmMedium;
+        utmContent = utmFallback.utmContent;
         utmFallback.matched = true;
         await this.visitRepo.save(utmFallback);
       }
@@ -147,6 +149,7 @@ export class KakaoLandingVisitService {
     lead.utmSource = utmSource;
     lead.utmCampaign = utmCampaign;
     lead.utmMedium = utmMedium;
+    lead.utmContent = utmContent;
     lead.visitId = visit.visitId;
     if (visit.kakaoRoomClickedAt) lead.kakaoRoomClickedAt = visit.kakaoRoomClickedAt;
     await this.leadRepo.save(lead);

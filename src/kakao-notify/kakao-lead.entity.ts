@@ -85,6 +85,11 @@ export class KakaoLead {
   @Column({ type: "text", default: "" })
   utmMedium!: string;
 
+  /** 광고 소재(크리에이티브) ID(utm_content). 메타 광고에서 캠페인/광고그룹과
+   *  별개로 소재 단위 식별자가 여기 담겨 온다. */
+  @Column({ type: "text", default: "" })
+  utmContent!: string;
+
   /** 가입완료 페이지의 "카톡방 참여하기" 버튼을 클릭한 시각(클릭 여부만 확인
    *  가능 — 카카오 오픈채팅 실제 입장 여부는 API로 확인할 수 없는 한계가 있다). */
   @Column({ type: Date, nullable: true })
