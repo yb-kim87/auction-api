@@ -1,6 +1,7 @@
-import { Body, Controller, Logger, Post } from "@nestjs/common";
+import { Body, Controller, Headers, Logger, Post, UnauthorizedException } from "@nestjs/common";
 import { KakaoLandingVisitService } from "./kakao-landing-visit.service";
 import { ImwebSyncService } from "./imweb-sync.service";
+import { InstagramSyncService } from "./instagram-sync.service";
 
 /** 가입완료 신호 수신 후 아임웹 회원 API에 신규 회원이 반영되기까지의
  *  전파 지연을 감안해 이 시간만큼 기다렸다가 동기화를 실행한다. */
@@ -18,6 +19,7 @@ export class KakaoLandingVisitController {
   constructor(
     private readonly landingVisitService: KakaoLandingVisitService,
     private readonly imwebSync: ImwebSyncService,
+    private readonly instagramSync: InstagramSyncService,
   ) {}
 
   @Post("landing-visit")
@@ -60,5 +62,25 @@ export class KakaoLandingVisitController {
   @Post("landing-visit/kakao-room-click")
   async recordKakaoRoomClick(@Body() body: { visitId?: string }) {
     return this.landingVisitService.recordKakaoRoomClick(body.visitId ?? "");
+  }
+
+  /**
+   * 인스타 리드(구글시트) 신규 행 추가 시 시트의 Apps Script 트리거가
+   * 호출하는 웹훅. 인증 없는 공개 엔드포인트라 비밀 토큰으로 검증한다.
+   * 실제 동기화는 백그라운드로 실행해 응답을 바로 돌려준다(Apps Script
+   * 실행시간 제한 때문에 오래 기다리게 하면 안 됨).
+   */
+  @Post("instagram-sheet-webhook")
+  async instagramSheetWebhook(@Headers("x-webhook-secret") secret: string | undefined) {
+    const expected = process.env.INSTAGRAM_SHEET_WEBHOOK_SECRET?.trim();
+    if (!expected || secret !== expected) {
+      throw new UnauthorizedException("유효하지 않은 웹훅 요청입니다.");
+    }
+    this.instagramSync.syncNewRows().catch((err) => {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("이미 동기화가 진행 중")) return;
+      this.logger.error(`인스타 시트 웹훅 동기화 실패: ${message}`);
+    });
+    return { ok: true };
   }
 }
