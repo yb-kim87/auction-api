@@ -8,6 +8,8 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { KakaoNotifyService } from "./kakao-notify.service";
 import { KakaoSyncStateService } from "./kakao-sync-state.service";
@@ -20,6 +22,7 @@ import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
 import { TelegramAlertService } from "./telegram-alert.service";
 import { KakaoScheduledDispatchService } from "./kakao-scheduled-dispatch.service";
 import { KakaoAdCreativeService } from "./kakao-ad-creative.service";
+import { KakaoLandingVisit } from "./kakao-landing-visit.entity";
 import type { KakaoLeadSource } from "./kakao-lead.entity";
 
 @Controller("kakao-notify")
@@ -36,7 +39,16 @@ export class KakaoNotifyController {
     private readonly telegramAlert: TelegramAlertService,
     private readonly scheduledDispatchService: KakaoScheduledDispatchService,
     private readonly adCreativeService: KakaoAdCreativeService,
+    @InjectRepository(KakaoLandingVisit)
+    private readonly landingVisitRepo: Repository<KakaoLandingVisit>,
   ) {}
+
+  /** TEMP: 랜딩 방문 기록 진단용. 확인 후 제거 예정. */
+  @Get("landing-visits-debug")
+  async debugLandingVisits(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.landingVisitRepo.find({ order: { createdAt: "DESC" }, take: 10 });
+  }
 
   @Post("telegram/test")
   async testTelegramAlert(@Headers() headers: Record<string, string>) {
