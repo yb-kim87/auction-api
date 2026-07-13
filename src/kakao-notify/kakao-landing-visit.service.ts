@@ -161,4 +161,27 @@ export class KakaoLandingVisitService {
       `리드 유입 매칭: ${lead.name || lead.phone} ← ${utmSource}/${utmCampaign} (visitId=${visit.visitId})`,
     );
   }
+
+  /**
+   * 이미 visitId로 매칭됐지만 utmContent(소재ID) 필드가 추가되기 전에
+   * 처리되어 값이 비어있는 기존 리드를 원본 방문 기록 기준으로 채운다.
+   * 1회성 백필용.
+   */
+  async backfillUtmContent(): Promise<{ checked: number; updated: number }> {
+    const leads = await this.leadRepo
+      .createQueryBuilder("l")
+      .where("l.visitId != ''")
+      .andWhere("l.utmContent = ''")
+      .getMany();
+
+    let updated = 0;
+    for (const lead of leads) {
+      const visit = await this.visitRepo.findOne({ where: { visitId: lead.visitId } });
+      if (!visit?.utmContent) continue;
+      lead.utmContent = visit.utmContent;
+      await this.leadRepo.save(lead);
+      updated += 1;
+    }
+    return { checked: leads.length, updated };
+  }
 }

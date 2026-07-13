@@ -23,6 +23,7 @@ import { TelegramAlertService } from "./telegram-alert.service";
 import { KakaoScheduledDispatchService } from "./kakao-scheduled-dispatch.service";
 import { KakaoAdCreativeService } from "./kakao-ad-creative.service";
 import { KakaoLandingVisit } from "./kakao-landing-visit.entity";
+import { KakaoLandingVisitService } from "./kakao-landing-visit.service";
 import type { KakaoLeadSource } from "./kakao-lead.entity";
 
 @Controller("kakao-notify")
@@ -39,6 +40,7 @@ export class KakaoNotifyController {
     private readonly telegramAlert: TelegramAlertService,
     private readonly scheduledDispatchService: KakaoScheduledDispatchService,
     private readonly adCreativeService: KakaoAdCreativeService,
+    private readonly landingVisitService: KakaoLandingVisitService,
     @InjectRepository(KakaoLandingVisit)
     private readonly landingVisitRepo: Repository<KakaoLandingVisit>,
   ) {}
@@ -48,6 +50,13 @@ export class KakaoNotifyController {
   async debugLandingVisits(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
     return this.landingVisitRepo.find({ order: { createdAt: "DESC" }, take: 10 });
+  }
+
+  /** TEMP: utmContent 필드 추가 이전에 매칭된 기존 리드 백필용. 실행 후 제거 예정. */
+  @Post("landing-visits/backfill-utm-content")
+  async backfillUtmContent(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.landingVisitService.backfillUtmContent();
   }
 
   @Post("telegram/test")
