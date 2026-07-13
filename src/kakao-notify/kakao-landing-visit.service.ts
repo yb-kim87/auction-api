@@ -64,6 +64,30 @@ export class KakaoLandingVisitService {
   }
 
   /**
+   * 가입완료 페이지의 "카톡방 참여하기" 버튼 클릭을 기록한다. 클릭 여부만
+   * 확인 가능하고, 실제 오픈채팅 입장 여부는 카카오 쪽 API 미공개로 확인할
+   * 수 없다. 이미 리드로 매칭된 방문(visitId가 리드에 저장됨)이면 리드에도
+   * 바로 반영하고, 아직 매칭 전이면 방문 기록에만 남겨뒀다가
+   * matchLeadToVisit에서 함께 옮긴다.
+   */
+  async recordKakaoRoomClick(visitId: string): Promise<{ ok: boolean }> {
+    if (!visitId?.trim()) throw new BadRequestException("visitId가 필요합니다.");
+    const visit = await this.visitRepo.findOne({ where: { visitId: visitId.trim() } });
+    if (!visit) return { ok: false };
+
+    const clickedAt = new Date();
+    visit.kakaoRoomClickedAt = clickedAt;
+    await this.visitRepo.save(visit);
+
+    const lead = await this.leadRepo.findOne({ where: { visitId: visit.visitId } });
+    if (lead) {
+      lead.kakaoRoomClickedAt = clickedAt;
+      await this.leadRepo.save(lead);
+    }
+    return { ok: true };
+  }
+
+  /**
    * 신규 리드의 가입시각(joinedAt) 기준으로, 가입완료 신호가 온 시각이 가장
    * 가까운 미매칭 방문 기록을 찾아 유입 정보를 채운다.
    */
@@ -96,6 +120,8 @@ export class KakaoLandingVisitService {
     lead.utmSource = visit.utmSource;
     lead.utmCampaign = visit.utmCampaign;
     lead.utmMedium = visit.utmMedium;
+    lead.visitId = visit.visitId;
+    if (visit.kakaoRoomClickedAt) lead.kakaoRoomClickedAt = visit.kakaoRoomClickedAt;
     await this.leadRepo.save(lead);
 
     visit.matched = true;

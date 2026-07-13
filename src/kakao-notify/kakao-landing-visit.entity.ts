@@ -50,6 +50,11 @@ export class KakaoLandingVisit {
   @Column({ type: Date, nullable: true })
   signupConfirmedAt!: Date | null;
 
+  /** 가입완료 페이지의 "카톡방 참여하기" 버튼 클릭 시각(실제 입장 여부는 카카오
+   *  쪽에서 확인 불가 — 클릭까지만 추적 가능한 한계가 있다). */
+  @Column({ type: Date, nullable: true })
+  kakaoRoomClickedAt!: Date | null;
+
   /** 이미 리드 매칭에 사용된 방문 기록인지(중복 매칭 방지) */
   @Index()
   @Column({ type: "boolean", default: false })

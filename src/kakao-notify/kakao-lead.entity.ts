@@ -85,6 +85,17 @@ export class KakaoLead {
   @Column({ type: "text", default: "" })
   utmMedium!: string;
 
+  /** 가입완료 페이지의 "카톡방 참여하기" 버튼을 클릭한 시각(클릭 여부만 확인
+   *  가능 — 카카오 오픈채팅 실제 입장 여부는 API로 확인할 수 없는 한계가 있다). */
+  @Column({ type: Date, nullable: true })
+  kakaoRoomClickedAt!: Date | null;
+
+  /** 이 리드와 매칭된 랜딩 방문의 visitId(정확한 재매칭용, 예: 클릭 이벤트가
+   *  매칭 이후에 도착하는 경우). */
+  @Index()
+  @Column({ type: "text", default: "" })
+  visitId!: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

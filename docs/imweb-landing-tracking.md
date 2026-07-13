@@ -78,6 +78,45 @@
 </script>
 ```
 
+## 3. 가입완료 페이지의 "카톡방 참여하기" 버튼 클릭 추적(선택)
+
+실제 오픈채팅방 입장 여부는 카카오 API가 공개되어 있지 않아 확인할 수
+없지만, "버튼을 눌렀는지"까지는 추적할 수 있습니다. 2번 스크립트와 같은
+가입완료 페이지에 아래를 **추가로** 넣으세요(2번 스크립트는 그대로 두고
+이 스크립트를 이어서 넣으면 됩니다).
+
+카톡방 버튼의 링크 주소(예: `https://open.kakao.com/o/...`)를 알아야
+합니다. 버튼을 우클릭 → "링크 주소 복사"로 확인하세요.
+
+```html
+<script>
+(function () {
+  var API_BASE = "https://auction-production-2c72.up.railway.app";
+  var KAKAO_ROOM_URL_PART = "open.kakao.com"; // 카톡방 링크에 공통으로 포함된 부분
+
+  document.addEventListener("click", function (e) {
+    var link = e.target.closest ? e.target.closest("a") : null;
+    if (!link || !link.href || link.href.indexOf(KAKAO_ROOM_URL_PART) === -1) return;
+
+    var visitId = localStorage.getItem("_akv_visit_id");
+    if (!visitId) return;
+
+    fetch(API_BASE + "/public/kakao-notify/landing-visit/kakao-room-click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitId: visitId }),
+      keepalive: true,
+    }).catch(function () {});
+  });
+})();
+</script>
+```
+
+이 스크립트는 페이지 안의 모든 링크 클릭을 감시하다가, href에
+`open.kakao.com`이 포함된 링크(카톡방 버튼)를 클릭했을 때만 기록을
+남깁니다. 버튼의 실제 링크 형태가 다르면 `KAKAO_ROOM_URL_PART` 값을
+그에 맞게 바꿔주세요.
+
 ## 확인 방법
 
 1. 광고 링크 형태로 `?utm_source=instagram&utm_campaign=테스트` 를 붙여
@@ -89,6 +128,8 @@
 5. 관리자 화면(알림톡 관리)에서 방금 가입한 리드의 상세보기를 열어
    "유입 캠페인(추정)"에 utm_source/utm_campaign 값이 채워졌는지 확인합니다
    (아임웹 API로 회원 정보가 수집되는 다음 자동발송 주기 이후에 반영됩니다).
+6. (3번 스크립트를 넣었다면) 가입완료 페이지에서 카톡방 버튼을 클릭한 뒤,
+   같은 리드 상세보기의 "카톡방 버튼 클릭"에 시각이 채워졌는지 확인합니다.
 
 ## 정확도에 대한 참고
 

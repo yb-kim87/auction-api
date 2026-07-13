@@ -31,4 +31,9 @@ export class KakaoLandingVisitController {
   async confirmSignup(@Body() body: { visitId?: string }) {
     return this.landingVisitService.confirmSignup(body.visitId ?? "");
   }
+
+  @Post("landing-visit/kakao-room-click")
+  async recordKakaoRoomClick(@Body() body: { visitId?: string }) {
+    return this.landingVisitService.recordKakaoRoomClick(body.visitId ?? "");
+  }
 }
