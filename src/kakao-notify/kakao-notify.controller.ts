@@ -112,6 +112,7 @@ export class KakaoNotifyController {
     @Query("group") group?: string,
     @Query("joinedFrom") joinedFrom?: string,
     @Query("joinedTo") joinedTo?: string,
+    @Query("duplicateOnly") duplicateOnly?: string,
     @Query("page") page?: string,
     @Query("pageSize") pageSize?: string,
   ) {
@@ -123,6 +124,7 @@ export class KakaoNotifyController {
       group: group || undefined,
       joinedFrom: joinedFrom || undefined,
       joinedTo: joinedTo || undefined,
+      duplicateOnly: duplicateOnly === "true",
       page: Math.max(1, Number(page) || 1),
       pageSize: Math.min(100, Math.max(1, Number(pageSize) || 20)),
     });
@@ -137,6 +139,7 @@ export class KakaoNotifyController {
     @Query("group") group?: string,
     @Query("joinedFrom") joinedFrom?: string,
     @Query("joinedTo") joinedTo?: string,
+    @Query("duplicateOnly") duplicateOnly?: string,
   ) {
     requireAdmin(getAuthContext(headers));
     return this.kakaoNotifyService.findLeadIds({
@@ -145,6 +148,7 @@ export class KakaoNotifyController {
       search: search || undefined,
       group: group || undefined,
       joinedFrom: joinedFrom || undefined,
+      duplicateOnly: duplicateOnly === "true",
       joinedTo: joinedTo || undefined,
     });
   }

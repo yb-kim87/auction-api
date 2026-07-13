@@ -285,6 +285,7 @@ export class KakaoNotifyService {
     group?: string;
     joinedFrom?: string;
     joinedTo?: string;
+    duplicateOnly?: boolean;
     includeExcluded?: boolean;
   }): Promise<string[]> {
     const qb = this.leadRepo.createQueryBuilder("lead").select("lead.id", "id");
@@ -344,6 +345,7 @@ export class KakaoNotifyService {
       group?: string;
       joinedFrom?: string;
       joinedTo?: string;
+      duplicateOnly?: boolean;
     },
   ): void {
     if (query.source) qb.andWhere("lead.source = :source", { source: query.source });
@@ -354,6 +356,12 @@ export class KakaoNotifyService {
       });
     }
     if (query.group) qb.andWhere("lead.groupLabel = :group", { group: query.group });
+    // 같은 전화번호로 2건 이상(다른 유입경로/재신청 포함) 존재하는 리드만 필터링한다.
+    if (query.duplicateOnly) {
+      qb.andWhere(
+        `lead.phone IN (SELECT phone FROM kakao_leads GROUP BY phone HAVING COUNT(*) > 1)`,
+      );
+    }
     // joinedFrom/joinedTo는 KST 기준 날짜(YYYY-MM-DD) 문자열로 받는다(목록의 가입시각 KST
     // 표시와 동일 기준). DB에는 UTC로 저장되어 있으므로 KST 자정을 UTC로 환산해 비교한다.
     if (query.joinedFrom) {
@@ -448,6 +456,7 @@ export class KakaoNotifyService {
     group?: string;
     joinedFrom?: string;
     joinedTo?: string;
+    duplicateOnly?: boolean;
     page: number;
     pageSize: number;
   }) {
