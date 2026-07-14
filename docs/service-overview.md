@@ -102,3 +102,4 @@ auction/src/app/
 ## 5. 관련 상세 문서
 
 - 대출 계산 로직 상세: [`loan-recommendation-logic.md`](./loan-recommendation-logic.md)
+- 기능별 작업 히스토리: [`history/`](./history/README.md)
