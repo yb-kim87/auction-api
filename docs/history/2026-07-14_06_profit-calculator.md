@@ -1,7 +1,7 @@
 # 물건 상세페이지 수익계산기 추가
 
-날짜: 2026-07-14
-관련 레포: auction
+날짜: 2026-07-14 (목표수익 필터의 서버 이관은 2026-07-15)
+관련 레포: auction, auction-api
 
 ## 배경
 
@@ -194,11 +194,49 @@
   - `matchesRecommendFilters`에 `loanInfo`, `targetReturnWon` 파라미터 추가 — 목표수익이
     설정돼 있으면 `estimateDefaultProfit`으로 계산한 추정 수익이 목표수익 미만인 물건은
     `filteredItems`에서 제외
-  - `favoritesOnly`와 동일하게 **서버 페이지네이션 이후 클라이언트에서 한 번 더 거르는
-    방식**이다. 서버가 내려준 한 페이지(PAGE_SIZE) 중 일부가 필터에 걸려 빠지면, 화면에
-    보이는 개수가 그만큼 줄어들 수 있다(서버 필터가 아니므로 "더 보기"로 채워지지 않음).
-    현재는 이 한계를 감수하고 클라이언트 필터로 구현함 — 추후 체감 문제가 있으면 서버
-    필터(API 파라미터)로 옮기는 것을 검토.
+  - (2026-07-15 서버로 이관됨 — 아래 追記 참고. 최초 구현은 `favoritesOnly`와 동일하게
+    서버 페이지네이션 이후 클라이언트에서 한 번 더 거르는 방식이었으나, "더 보기" 시
+    화면에 보이는 개수가 줄어드는 문제가 있어 서버 필터로 옮겼다)
 
 ### 결과
 - 목표수익을 설정한 회원에게는 그 이상 수익이 예상되는 물건만 추천 목록에 노출됨
+
+## 추가: 목표수익 필터를 서버로 이관 (2026-07-15 追記)
+
+### 배경
+클라이언트 필터 방식은 서버가 내려준 한 페이지(PAGE_SIZE) 중 일부가 걸러지면 화면에
+보이는 카드 수가 페이지 크기보다 적어지고, "더 보기"로도 채워지지 않는 구조적 한계가
+있었음. 페이지네이션 이전, 서버 단계에서 걸러내도록 개선.
+
+### 실행 프롬프트 (요약)
+```
+서버로 필터를 옮기는게 더 좋을꺼같아
+```
+
+### 변경 내용
+- `auction-api/src/recommendation/profit-calculator.util.ts` 신규
+  - 프론트 `auction/src/lib/profit-calculator.ts`와 **완전히 동일한 계산 로직**을
+    백엔드에 복제(`calculateProfit`, `estimateDefaultProfit`, 취득세율/중개수수료율/
+    양도세 구간표 등). **계산식을 고칠 때는 반드시 양쪽 파일을 함께 수정해야 한다.**
+  - 별도 API로 분리하지 않고 파일을 복제한 이유: 이 계산은 순수 함수라 네트워크 호출
+    오버헤드 없이 두 런타임(Node/브라우저)에서 각자 실행하는 편이 간단함
+- `auction-api/src/recommendation/recommendation-engine.service.ts`
+  - `RecommendationCriteria`에 `targetReturnWon: number | null` 추가
+  - `buildCriteriaForUser`가 `user.targetReturn`(금액 문자열)을 `parseMoneyToWon`으로
+    파싱해 채움
+  - `getRecommendations`의 물건 매핑 단계에서 각 물건의 `estimatedProfit`을 계산해두고,
+    필터링 단계에서 `estimatedProfit < targetReturnWon`인 물건을 제외 — **투자가능금액
+    필터와 동일하게 offset/limit 적용 이전**에 걸러지므로 페이지네이션이 정확해짐
+- `auction/src/app/page.tsx`
+  - 이제 서버가 이미 걸러서 내려주므로 클라이언트 측 `matchesRecommendFilters`에서
+    목표수익 관련 계산(`estimateDefaultProfit` 호출, `targetReturnWon` 파라미터)을 제거하고
+    `favoritesOnly` 체크만 남김
+  - 카드에 표시되는 "추정 수익"(`estimateDefaultProfit` 호출)은 그대로 유지 — 이건 표시용이지
+    필터링용이 아니므로 클라이언트에 남아 있어야 함
+
+### 결과
+- 목표수익 필터가 다른 조건(투자가능금액, 지역, 물건종류 등)과 동일하게 서버 단계에서
+  적용되어, "더 보기"를 눌러도 항상 정확한 개수만큼 채워짐
+- 계산 로직이 두 레포에 중복 존재하게 됐으므로, 향후 `profit-calculator` 계산식을 수정할
+  때는 `auction/src/lib/profit-calculator.ts`와 `auction-api/src/recommendation/
+  profit-calculator.util.ts` 둘 다 고쳐야 한다는 점을 반드시 기억할 것
