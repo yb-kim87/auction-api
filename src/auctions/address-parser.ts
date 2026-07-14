@@ -27,6 +27,28 @@ const SIDO_ALIASES: Record<string, string> = {
   전라북도: "전북특별자치도",
 };
 
+// 크롤링 데이터가 "경기도" 대신 "경기"처럼 축약된 시도명으로 들어오는 경우가 있어
+// 정식 명칭 매칭에 실패하면 축약형으로도 시도한다.
+const SIDO_SHORT_NAMES: Record<string, string> = {
+  서울: "서울특별시",
+  부산: "부산광역시",
+  인천: "인천광역시",
+  대구: "대구광역시",
+  대전: "대전광역시",
+  광주: "광주광역시",
+  울산: "울산광역시",
+  세종: "세종특별자치시",
+  경기: "경기도",
+  강원: "강원특별자치도",
+  충북: "충청북도",
+  충남: "충청남도",
+  전북: "전북특별자치도",
+  전남: "전라남도",
+  경북: "경상북도",
+  경남: "경상남도",
+  제주: "제주특별자치도",
+};
+
 export function cleanAddress(address: string): string {
   return address
     .replace(/\u00a0/g, " ")
@@ -140,6 +162,13 @@ export function cleanElevatorAndParking(elevator: string, parking: string) {
   };
 }
 
+function parseDistrict(rest: string): string {
+  // "용인시 기흥구"처럼 일반시+구가 함께 오는 경우까지 district에 포함시킨다.
+  const match = rest.match(/^(\S+?시)\s+(\S+?구)(?=\s|$)|^(\S+?(?:시|군|구))/);
+  if (!match) return "";
+  return match[1] && match[2] ? `${match[1]} ${match[2]}` : match[3];
+}
+
 export function parseAddressMeta(address: string) {
   const trimmed = cleanAddress(address);
   let city = "";
@@ -147,13 +176,23 @@ export function parseAddressMeta(address: string) {
 
   for (const sido of SIDO_NAMES) {
     if (!trimmed.startsWith(sido)) continue;
-
     city = SIDO_ALIASES[sido] ?? sido;
-    const rest = trimmed.slice(sido.length).trim();
-    // "용인시 기흥구"처럼 일반시+구가 함께 오는 경우까지 district에 포함시킨다.
-    const match = rest.match(/^(\S+?시)\s+(\S+?구)(?=\s|$)|^(\S+?(?:시|군|구))/);
-    if (match) district = match[1] && match[2] ? `${match[1]} ${match[2]}` : match[3];
+    district = parseDistrict(trimmed.slice(sido.length).trim());
     break;
+  }
+
+  // 정식 명칭으로 매칭이 안 되면 "경기", "서울"처럼 축약된 시도명으로도 시도한다.
+  if (!city) {
+    for (const [short, full] of Object.entries(SIDO_SHORT_NAMES)) {
+      if (!trimmed.startsWith(short)) continue;
+      const rest = trimmed.slice(short.length);
+      // "경기" 뒤에 "도"가 없고 곧장 공백/시/군 이름이 와야 축약형으로 인정한다
+      // (예: "경기도"의 "경기"만 우연히 겹치는 경우 방지).
+      if (/^[가-힣]/.test(rest) && !rest.startsWith(" ") && !/^(시|군|구)/.test(rest)) continue;
+      city = full;
+      district = parseDistrict(rest.trim());
+      break;
+    }
   }
 
   let propType = "아파트";
