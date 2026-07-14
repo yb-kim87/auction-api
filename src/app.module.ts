@@ -11,6 +11,7 @@ import { UserActionsModule } from "./user-actions/user-actions.module";
 import { AiPlatformModule } from "./ai-platform/ai-platform.module";
 import { RecommendationModule } from "./recommendation/recommendation.module";
 import { KakaoNotifyModule } from "./kakao-notify/kakao-notify.module";
+import { TagsModule } from "./tags/tags.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -27,6 +28,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     AiPlatformModule,
     RecommendationModule,
     KakaoNotifyModule,
+    TagsModule,
   ],
 })
 export class AppModule {}

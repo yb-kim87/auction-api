@@ -11,6 +11,7 @@
 - [2026-07-14_04 물건 카드 썸네일 이미지 교체](./2026-07-14_04_card-thumbnail-images.md)
 - [2026-07-14_05 카카오 알림톡 템플릿 미리보기 변수 표시 버그 수정](./2026-07-14_05_kakao-alimtalk-template-preview.md)
 - [2026-07-14_06 물건 상세페이지 수익계산기 추가](./2026-07-14_06_profit-calculator.md)
+- [2026-07-15_01 Fact/Strategy Tag 자동 태그 시스템 구축](./2026-07-15_01_fact-strategy-tag-system.md)
 
 ## 앞으로의 작업 방식
 

@@ -27,6 +27,7 @@ import {
 import { parseTradingCountFromDetail } from "./trading-count.util";
 import type { AuctionFieldChange } from "./auction-change.entity";
 import { parseUnitFloorFromAddress, selectFloorAwareNaverPrice } from "./naver-floor-price.util";
+import { TagsService } from "../tags/tags.service";
 
 interface WriteMeta {
   status: AuctionStatus;
@@ -42,7 +43,22 @@ export class AuctionsService implements OnModuleInit {
     private readonly auctionRepo: Repository<Auction>,
     @InjectRepository(AuctionChangeLog)
     private readonly changeLogRepo: Repository<AuctionChangeLog>,
+    private readonly tagsService: TagsService,
   ) {}
+
+  /** 물건의 fact 태그를 현재 활성 규칙 기준으로 재계산해 변경이 있으면 저장한다 */
+  private async syncFactTags(item: Auction): Promise<Auction> {
+    const nextTags = await this.tagsService.computeFactTagsFor(item);
+    const nextJson = JSON.stringify(nextTags);
+    if (item.factTags === nextJson) {
+      item.factTagsList = nextTags;
+      return item;
+    }
+    item.factTags = nextJson;
+    const saved = await this.auctionRepo.save(item);
+    saved.factTagsList = nextTags;
+    return saved;
+  }
 
   async onModuleInit() {
     await this.backfillAuctionNoNorm();
@@ -399,7 +415,7 @@ export class AuctionsService implements OnModuleInit {
         propType,
       });
 
-      const item = await this.auctionRepo.save(existing);
+      let item = await this.auctionRepo.save(existing);
       await this.recordChanges(
         item.id,
         before,
@@ -408,11 +424,13 @@ export class AuctionsService implements OnModuleInit {
         meta.changeSource ?? "excel",
         changes,
       );
+      item = await this.syncFactTags(item);
       return { item, created: false };
     }
 
     const entity = buildAuctionEntity(dto, meta);
-    const item = await this.auctionRepo.save(entity);
+    let item = await this.auctionRepo.save(entity);
+    item = await this.syncFactTags(item);
     return { item, created: true };
   }
 

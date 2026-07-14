@@ -150,8 +150,31 @@ export class Auction {
   @Column({ default: "" })
   submittedBy!: string;
 
+  /** 규칙 기반으로 자동 계산되는 객관적 사실 태그(JSON 배열 문자열로 저장). 예: ["85㎡ 초과"] */
+  @Column({ type: "text", default: "[]" })
+  factTags!: string;
+
+  /** AI가 factTags 등을 종합해 생성할 투자 전략 태그(JSON 배열 문자열로 저장). 현재는 항상 빈 배열. */
+  @Column({ type: "text", default: "[]" })
+  strategyTags!: string;
+
+  /** factTags를 파싱한 배열(응답 직렬화용, DB 컬럼 아님) */
+  factTagsList!: string[];
+
+  /** strategyTags를 파싱한 배열(응답 직렬화용, DB 컬럼 아님) */
+  strategyTagsList!: string[];
+
   @CreateDateColumn()
   createdAt!: Date;
+
+  private static parseTagsJson(raw: string): string[] {
+    try {
+      const parsed = JSON.parse(raw ?? "[]");
+      return Array.isArray(parsed) ? parsed.filter((t) => typeof t === "string") : [];
+    } catch {
+      return [];
+    }
+  }
 
   @AfterLoad()
   normalizeDisplayFields(): void {
@@ -162,5 +185,7 @@ export class Auction {
     const { elevator, parking } = cleanElevatorAndParking(this.elevator, this.parking);
     this.elevator = elevator;
     this.parking = parking;
+    this.factTagsList = Auction.parseTagsJson(this.factTags);
+    this.strategyTagsList = Auction.parseTagsJson(this.strategyTags);
   }
 }
