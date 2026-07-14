@@ -16,6 +16,8 @@ import { ItemAiFeature } from "./ai-platform/feature-engine/item-ai-feature.enti
 import { ItemAiTag } from "./ai-platform/tag-engine/item-ai-tag.entity";
 import { AiPlatformHistory } from "./ai-platform/shared/ai-platform-history.entity";
 import { TagRule } from "./tags/tag-rule.entity";
+import { StrategyRule } from "./tags/strategy-rule.entity";
+import { StrategyLabel } from "./tags/strategy-label.entity";
 
 /**
  * TypeORM CLI 전용 (migration:generate / migration:run 등).
@@ -43,6 +45,8 @@ export default new DataSource({
     ItemAiTag,
     AiPlatformHistory,
     TagRule,
+    StrategyRule,
+    StrategyLabel,
   ],
   migrations: ["src/migrations/*.ts"],
   synchronize: false,

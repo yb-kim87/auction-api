@@ -46,17 +46,21 @@ export class AuctionsService implements OnModuleInit {
     private readonly tagsService: TagsService,
   ) {}
 
-  /** 물건의 fact 태그를 현재 활성 규칙 기준으로 재계산해 변경이 있으면 저장한다 */
+  /** 물건의 factTags(내부 코드)/strategyTags(사용자 노출 문구)를 현재 활성 규칙 기준으로 재계산해 저장한다 */
   private async syncFactTags(item: Auction): Promise<Auction> {
-    const nextTags = await this.tagsService.computeFactTagsFor(item);
-    const nextJson = JSON.stringify(nextTags);
-    if (item.factTags === nextJson) {
-      item.factTagsList = nextTags;
+    const { factCodes, strategyItems } = await this.tagsService.computeTagsFor(item);
+    const nextFactJson = JSON.stringify(factCodes);
+    const nextStrategyJson = JSON.stringify(strategyItems);
+    if (item.factTags === nextFactJson && item.strategyTags === nextStrategyJson) {
+      item.factTagsList = factCodes;
+      item.strategyTagsList = strategyItems;
       return item;
     }
-    item.factTags = nextJson;
+    item.factTags = nextFactJson;
+    item.strategyTags = nextStrategyJson;
     const saved = await this.auctionRepo.save(item);
-    saved.factTagsList = nextTags;
+    saved.factTagsList = factCodes;
+    saved.strategyTagsList = strategyItems;
     return saved;
   }
 

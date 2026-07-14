@@ -3,17 +3,26 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 export type TagCategory = "fact" | "strategy";
 
 /**
- * 태그 하나(예: "85㎡ 초과")를 생성하는 단일 조건 규칙.
+ * Fact 태그 하나(예: "85㎡ 초과")를 생성하는 단일 조건 규칙.
  * field/operator/value 조합만으로 Auction 레코드를 평가한다(자유 코드 없음).
- * strategy 카테고리는 현재 UI/엔진에서 생성하지 않고 구조만 열어둔다(AI가 채울 예정).
+ *
+ * Fact 태그는 내부 판단용 코드이며 사용자에게 직접 노출하지 않는다(전용면적>85㎡ 자체가
+ * 아니라, 이를 근거로 한 투자 전략 문구를 사용자에게 보여준다 — strategy-rule.entity.ts,
+ * strategy-label.entity.ts 참고). tagCode는 StrategyRule의 requiredFactCodes에서 참조하는
+ * 안정적인 식별자(예: AREA_OVER_85)이고, tagName은 관리자 화면에 보이는 한글 라벨이다.
  */
 @Entity("tag_rules")
 export class TagRule {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
+  /** 관리자 화면 표시용 한글 라벨(예: "85㎡ 초과") */
   @Column()
   tagName!: string;
+
+  /** StrategyRule이 참조하는 안정적 코드(예: AREA_OVER_85). 미입력 시 서비스가 자동 생성 */
+  @Column({ unique: true })
+  tagCode!: string;
 
   @Column({ default: "fact" })
   category!: TagCategory;

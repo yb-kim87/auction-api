@@ -24,6 +24,8 @@ import { KakaoScheduledDispatch } from "./kakao-notify/kakao-scheduled-dispatch.
 import { KakaoAdCreative } from "./kakao-notify/kakao-ad-creative.entity";
 import { KakaoLandingVisit } from "./kakao-notify/kakao-landing-visit.entity";
 import { TagRule } from "./tags/tag-rule.entity";
+import { StrategyRule } from "./tags/strategy-rule.entity";
+import { StrategyLabel } from "./tags/strategy-label.entity";
 
 const entities = [
   Auction,
@@ -49,6 +51,8 @@ const entities = [
   KakaoAdCreative,
   KakaoLandingVisit,
   TagRule,
+  StrategyRule,
+  StrategyLabel,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

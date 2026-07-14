@@ -9,6 +9,13 @@ import {
 import { AuctionStatus } from "../common/constants";
 import { cleanAddress, cleanEducation, cleanBuildingRegistry, cleanTenantDetail, cleanElevatorAndParking } from "./address-parser";
 
+export interface StrategyTagItem {
+  code: string;
+  label: string;
+  description: string;
+  icon: string;
+}
+
 @Entity("auctions")
 export class Auction {
   @PrimaryGeneratedColumn("uuid")
@@ -150,27 +157,47 @@ export class Auction {
   @Column({ default: "" })
   submittedBy!: string;
 
-  /** 규칙 기반으로 자동 계산되는 객관적 사실 태그(JSON 배열 문자열로 저장). 예: ["85㎡ 초과"] */
+  /**
+   * 규칙 기반으로 자동 계산되는 Fact 코드 배열(JSON 문자열로 저장). 예: ["AREA_OVER_85"].
+   * 내부 판단용 코드일 뿐이며 사용자에게 직접 노출하지 않는다 — 사용자에게는 이 Fact를
+   * 근거로 생성된 strategyTags(투자 전략 문구)를 보여준다.
+   */
   @Column({ type: "text", default: "[]" })
   factTags!: string;
 
-  /** AI가 factTags 등을 종합해 생성할 투자 전략 태그(JSON 배열 문자열로 저장). 현재는 항상 빈 배열. */
+  /**
+   * Fact 코드 조합으로 생성된, 사용자에게 노출할 투자 전략 태그 목록(JSON 문자열로 저장).
+   * 원소 형태: {code, label, description, icon}. label/description이 실제 화면 문구다.
+   */
   @Column({ type: "text", default: "[]" })
   strategyTags!: string;
 
-  /** factTags를 파싱한 배열(응답 직렬화용, DB 컬럼 아님) */
+  /** factTags를 파싱한 배열(내부용, DB 컬럼 아님, 응답에는 내려주지 않는 편이 자연스러움) */
   factTagsList!: string[];
 
-  /** strategyTags를 파싱한 배열(응답 직렬화용, DB 컬럼 아님) */
-  strategyTagsList!: string[];
+  /** strategyTags를 파싱한 배열(응답 직렬화용, DB 컬럼 아님) — 사용자에게 실제로 보여줄 태그 */
+  strategyTagsList!: StrategyTagItem[];
 
   @CreateDateColumn()
   createdAt!: Date;
 
-  private static parseTagsJson(raw: string): string[] {
+  private static parseStringArray(raw: string): string[] {
     try {
       const parsed = JSON.parse(raw ?? "[]");
       return Array.isArray(parsed) ? parsed.filter((t) => typeof t === "string") : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private static parseStrategyItems(raw: string): StrategyTagItem[] {
+    try {
+      const parsed = JSON.parse(raw ?? "[]");
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(
+        (v): v is StrategyTagItem =>
+          v && typeof v === "object" && typeof v.code === "string" && typeof v.label === "string",
+      );
     } catch {
       return [];
     }
@@ -185,7 +212,7 @@ export class Auction {
     const { elevator, parking } = cleanElevatorAndParking(this.elevator, this.parking);
     this.elevator = elevator;
     this.parking = parking;
-    this.factTagsList = Auction.parseTagsJson(this.factTags);
-    this.strategyTagsList = Auction.parseTagsJson(this.strategyTags);
+    this.factTagsList = Auction.parseStringArray(this.factTags);
+    this.strategyTagsList = Auction.parseStrategyItems(this.strategyTags);
   }
 }
