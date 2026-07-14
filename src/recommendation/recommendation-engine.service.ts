@@ -96,7 +96,13 @@ export class RecommendationEngineService {
     loanPolicyLabel: string | null;
     loanInfoByItemId: Record<
       string,
-      { loanRatio: number; appraisalRatio: number; loanPolicyLabel: string; requiredEquity: number }
+      {
+        loanRatio: number;
+        appraisalRatio: number;
+        loanPolicyLabel: string;
+        requiredEquity: number;
+        regulatedArea: boolean;
+      }
     >;
     total: number;
     hasMore: boolean;
@@ -132,7 +138,13 @@ export class RecommendationEngineService {
 
     const loanInfoByItemId: Record<
       string,
-      { loanRatio: number; appraisalRatio: number; loanPolicyLabel: string; requiredEquity: number }
+      {
+        loanRatio: number;
+        appraisalRatio: number;
+        loanPolicyLabel: string;
+        requiredEquity: number;
+        regulatedArea: boolean;
+      }
     > = {};
     const affordable = auctions
       .map((item) => {
@@ -154,6 +166,7 @@ export class RecommendationEngineService {
             appraisalRatio: policy.appraisalRatio,
             loanPolicyLabel: policy.label,
             requiredEquity,
+            regulatedArea: regulated,
           };
         }
         return { item, requiredEquity, policy };
