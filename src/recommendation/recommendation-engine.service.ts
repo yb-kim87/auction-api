@@ -19,6 +19,7 @@ import {
   needsCreditScoreWarning,
   type ProgressStatus,
 } from "./investment-math.util";
+import { estimateDefaultProfit } from "./profit-calculator.util";
 
 const PRICE_MERIT_TAG = "가격메리트검토";
 
@@ -29,6 +30,7 @@ export interface RecommendationCriteria {
   annualIncomeWon: number | null;
   existingLoanWon: number;
   creditScoreWarning: boolean;
+  targetReturnWon: number | null;
 }
 
 export interface RecommendationFilters {
@@ -75,6 +77,7 @@ export class RecommendationEngineService {
       annualIncomeWon: parseIncomeToWon(user.annualNetIncome),
       existingLoanWon: parseMoneyToWon(user.existingLoanAmount ?? "") ?? 0,
       creditScoreWarning: needsCreditScoreWarning(user.creditScore),
+      targetReturnWon: parseMoneyToWon(user.targetReturn ?? ""),
     };
   }
 
@@ -179,7 +182,16 @@ export class RecommendationEngineService {
             existingLoanWon: criteria.existingLoanWon,
           };
         }
-        return { item, requiredEquity, policy };
+        const estimatedProfit = policy
+          ? estimateDefaultProfit({
+              minPrice: item.minPrice,
+              appraisedValue: item.appraisedValue,
+              area: item.area,
+              loanRatioByAppraisal: policy.appraisalRatio,
+              loanRatioByBidPrice: policy.loanRatio,
+            }).finalProfit
+          : null;
+        return { item, requiredEquity, policy, estimatedProfit };
       })
       .filter(
         (row) =>
@@ -188,6 +200,10 @@ export class RecommendationEngineService {
           !row.policy.loanUnavailable &&
           row.requiredEquity <= criteria.investableWon,
       )
+      .filter((row) => {
+        if (criteria.targetReturnWon == null) return true;
+        return row.estimatedProfit != null && row.estimatedProfit >= criteria.targetReturnWon;
+      })
       .filter((row) => {
         if (filters?.city && row.item.city !== filters.city) return false;
         if (filters?.propType && !matchesPropertyType(row.item, filters.propType)) return false;
