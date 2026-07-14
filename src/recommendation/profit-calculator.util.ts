@@ -46,6 +46,13 @@ export function capitalGainsTaxBracket(taxBaseWon: number): { rate: number; dedu
   return { rate: bracket.rate, deduction: bracket.deduction };
 }
 
+/** 과세표준에 대한 누진세액(세율×과세표준-누진공제). 0 이하는 0. */
+export function progressiveTaxAmount(taxBaseWon: number, applyDeduction: boolean): number {
+  if (taxBaseWon <= 0) return 0;
+  const { rate, deduction } = capitalGainsTaxBracket(taxBaseWon);
+  return Math.max(0, taxBaseWon * rate - (applyDeduction ? deduction : 0));
+}
+
 export interface ProfitCalculatorInput {
   minPrice: number;
   appraisedValue: number;
@@ -54,6 +61,8 @@ export interface ProfitCalculatorInput {
   holdingMonths: number;
   loanRatioByAppraisal: number;
   loanRatioByBidPrice: number;
+  incomeLoanLimit: number | null;
+  existingLoanWon: number;
   loanInterestRate: number;
   earlyRepaymentFeeRate: number;
   interiorCost: number;
@@ -63,12 +72,14 @@ export interface ProfitCalculatorInput {
   isOver85sqm: boolean;
   vatAmount: number;
   applyProgressiveDeduction: boolean;
+  existingIncome: number;
 }
 
 export interface ProfitCalculatorResult {
   bidRatio: number;
   loanByAppraisal: number;
   loanByBidPrice: number;
+  loanLimit: number;
   loanAmount: number;
   equity: number;
   acquisitionTaxRate: number;
@@ -95,6 +106,8 @@ export function calculateProfit(input: ProfitCalculatorInput): ProfitCalculatorR
     holdingMonths,
     loanRatioByAppraisal,
     loanRatioByBidPrice,
+    incomeLoanLimit,
+    existingLoanWon,
     loanInterestRate,
     earlyRepaymentFeeRate,
     interiorCost,
@@ -103,13 +116,18 @@ export function calculateProfit(input: ProfitCalculatorInput): ProfitCalculatorR
     extraRealtyFee,
     vatAmount,
     applyProgressiveDeduction,
+    existingIncome,
   } = input;
 
   const bidRatio = minPrice > 0 ? bidPrice / minPrice : 0;
 
   const loanByAppraisal = Math.floor(appraisedValue * loanRatioByAppraisal);
   const loanByBidPrice = Math.floor(bidPrice * loanRatioByBidPrice);
-  const loanAmount = Math.max(0, Math.min(loanByAppraisal, loanByBidPrice));
+  const loanLimit = Math.max(
+    0,
+    Math.min(loanByAppraisal, loanByBidPrice, incomeLoanLimit ?? Infinity),
+  );
+  const loanAmount = Math.max(0, loanLimit - Math.max(0, existingLoanWon));
 
   const taxRate = acquisitionTaxRate(bidPrice);
   const acquisitionTax = Math.round(bidPrice * taxRate);
@@ -133,12 +151,22 @@ export function calculateProfit(input: ProfitCalculatorInput): ProfitCalculatorR
   const equity = Math.max(0, totalAcquisitionCost - loanAmount);
 
   const saleMargin = salePrice - totalAcquisitionCost;
-  const { rate: capitalGainsTaxRate, deduction: bracketDeduction } = capitalGainsTaxBracket(
-    Math.max(0, saleMargin),
-  );
+  const positiveMargin = Math.max(0, saleMargin);
+  const positiveExistingIncome = Math.max(0, existingIncome);
+  const combinedTaxBase = positiveExistingIncome + positiveMargin;
+
+  // 한계세율 방식: 기존소득+매매차익 합산 과세표준의 세액에서, 기존소득만의 세액을
+  // 뺀 나머지를 매매차익에 대한 증분세액으로 본다(종합소득세 실제 계산 방식과 동일).
+  const { rate: capitalGainsTaxRate, deduction: bracketDeduction } =
+    capitalGainsTaxBracket(combinedTaxBase);
   const capitalGainsTaxDeduction = applyProgressiveDeduction ? bracketDeduction : 0;
-  const capitalGainsTax =
-    saleMargin > 0 ? Math.max(0, Math.round(saleMargin * capitalGainsTaxRate - capitalGainsTaxDeduction)) : 0;
+  const combinedTax = applyProgressiveDeduction
+    ? progressiveTaxAmount(combinedTaxBase, true)
+    : combinedTaxBase * capitalGainsTaxRate;
+  const existingIncomeTax = applyProgressiveDeduction
+    ? progressiveTaxAmount(positiveExistingIncome, true)
+    : positiveExistingIncome * capitalGainsTaxBracket(positiveExistingIncome).rate;
+  const capitalGainsTax = saleMargin > 0 ? Math.max(0, Math.round(combinedTax - existingIncomeTax)) : 0;
 
   const finalProfit = saleMargin - capitalGainsTax - extraRealtyFee - vatAmount;
   const profitRate = equity > 0 ? (finalProfit / equity) * 100 : 0;
@@ -147,6 +175,7 @@ export function calculateProfit(input: ProfitCalculatorInput): ProfitCalculatorR
     bidRatio,
     loanByAppraisal,
     loanByBidPrice,
+    loanLimit,
     loanAmount,
     equity,
     acquisitionTaxRate: taxRate,
@@ -174,7 +203,8 @@ export function isOver85Sqm(area: string | null | undefined): boolean {
 /**
  * 프론트 ProfitCalculatorPanel의 초기 입력값(낙찰가=최저가, 매도가=감정가, 보유4개월,
  * 인테리어200만·명도비200만·미납관리비100만, 부가세=매도가×10%×50% 등)을 그대로 재현해
- * "추정 수익"을 계산한다. 대출비율은 이 물건에 적용된 대출정책 값을 그대로 사용한다.
+ * "추정 수익"을 계산한다. 대출한도는 감정가·낙찰가·소득 기준 중 최저값에서 기존대출을
+ * 차감한 값(이 물건에 적용된 대출정책 계산 결과)을 그대로 사용한다.
  */
 export function estimateDefaultProfit(params: {
   minPrice: number;
@@ -182,8 +212,18 @@ export function estimateDefaultProfit(params: {
   area: string | null | undefined;
   loanRatioByAppraisal: number;
   loanRatioByBidPrice: number;
+  incomeLoanLimit?: number | null;
+  existingLoanWon?: number;
 }): ProfitCalculatorResult {
-  const { minPrice, appraisedValue, area, loanRatioByAppraisal, loanRatioByBidPrice } = params;
+  const {
+    minPrice,
+    appraisedValue,
+    area,
+    loanRatioByAppraisal,
+    loanRatioByBidPrice,
+    incomeLoanLimit = null,
+    existingLoanWon = 0,
+  } = params;
   const over85 = isOver85Sqm(area);
   return calculateProfit({
     minPrice,
@@ -193,6 +233,8 @@ export function estimateDefaultProfit(params: {
     holdingMonths: 4,
     loanRatioByAppraisal,
     loanRatioByBidPrice: Math.min(loanRatioByBidPrice, 1),
+    incomeLoanLimit,
+    existingLoanWon,
     loanInterestRate: 0.045,
     earlyRepaymentFeeRate: 0,
     interiorCost: 2_000_000,
@@ -202,5 +244,6 @@ export function estimateDefaultProfit(params: {
     isOver85sqm: over85,
     vatAmount: over85 ? Math.round(appraisedValue * 0.1 * 0.5) : 0,
     applyProgressiveDeduction: true,
+    existingIncome: 0,
   });
 }

@@ -189,6 +189,11 @@ export class RecommendationEngineService {
               area: item.area,
               loanRatioByAppraisal: policy.appraisalRatio,
               loanRatioByBidPrice: policy.loanRatio,
+              incomeLoanLimit:
+                criteria.annualIncomeWon != null
+                  ? Math.max(0, criteria.annualIncomeWon) * incomeLoanMultiplier
+                  : null,
+              existingLoanWon: criteria.existingLoanWon,
             }).finalProfit
           : null;
         return { item, requiredEquity, policy, estimatedProfit };
