@@ -8,6 +8,7 @@ import { AuctionAnalysis } from "./ai/auction-analysis.entity";
 import { AuctionKnowledge } from "./ai/knowledge.entity";
 import { KnowledgeDraft } from "./ai/knowledge-draft.entity";
 import { LoanPolicy } from "./loan-policy/loan-policy.entity";
+import { LoanSettings } from "./loan-policy/loan-settings.entity";
 import { RegulatedRegion } from "./loan-policy/regulated-region.entity";
 import { UserItemAction } from "./user-actions/user-item-action.entity";
 import { ItemNormalizedData } from "./ai-platform/normalizer/item-normalized-data.entity";
@@ -33,6 +34,7 @@ export default new DataSource({
     AuctionKnowledge,
     KnowledgeDraft,
     LoanPolicy,
+    LoanSettings,
     RegulatedRegion,
     UserItemAction,
     ItemNormalizedData,

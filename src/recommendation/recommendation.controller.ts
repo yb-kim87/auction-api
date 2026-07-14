@@ -50,6 +50,7 @@ export class RecommendationController {
       loanInfoByItemId: result.loanInfoByItemId,
       total: result.total,
       hasMore: result.hasMore,
+      creditScoreWarning: result.creditScoreWarning,
     };
   }
 }

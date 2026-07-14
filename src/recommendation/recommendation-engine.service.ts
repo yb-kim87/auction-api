@@ -15,6 +15,7 @@ import {
   matchesProgressStatus,
   matchesFailureRateFilter,
   matchesPropertyType,
+  needsCreditScoreWarning,
   type ProgressStatus,
 } from "./investment-math.util";
 
@@ -24,6 +25,9 @@ export interface RecommendationCriteria {
   investableWon: number;
   housingCount: number;
   firstTimeBuyer: boolean;
+  annualIncomeWon: number | null;
+  existingLoanWon: number;
+  creditScoreWarning: boolean;
 }
 
 export interface RecommendationFilters {
@@ -67,6 +71,9 @@ export class RecommendationEngineService {
       investableWon,
       housingCount: user.housingCount ?? 0,
       firstTimeBuyer: user.firstTimeBuyer ?? false,
+      annualIncomeWon: parseMoneyToWon(user.annualNetIncome ?? ""),
+      existingLoanWon: parseMoneyToWon(user.existingLoanAmount ?? "") ?? 0,
+      creditScoreWarning: needsCreditScoreWarning(user.creditScore),
     };
   }
 
@@ -92,6 +99,7 @@ export class RecommendationEngineService {
     >;
     total: number;
     hasMore: boolean;
+    creditScoreWarning: boolean;
   }> {
     const criteria = await this.buildCriteriaForUser(username, options?.overrideInvestableWon);
     if (!criteria) {
@@ -103,11 +111,13 @@ export class RecommendationEngineService {
         loanInfoByItemId: {},
         total: 0,
         hasMore: false,
+        creditScoreWarning: false,
       };
     }
 
     const policies = await this.loanPolicyService.findAll();
     const regionNames = await this.regulatedRegionService.findAllNames();
+    const incomeLoanMultiplier = await this.loanPolicyService.getIncomeLoanMultiplier();
 
     const filters = options?.filters;
     const favoriteIds =
@@ -128,7 +138,14 @@ export class RecommendationEngineService {
         const regulated = isRegulatedArea(item.city, item.district, regionNames);
         const policy = selectLoanPolicy(criteria, regulated, policies);
         const requiredEquity = policy
-          ? requiredEquityForItem(item.minPrice, item.appraisedValue, policy)
+          ? requiredEquityForItem(
+              item.minPrice,
+              item.appraisedValue,
+              policy,
+              criteria.annualIncomeWon ?? undefined,
+              criteria.existingLoanWon,
+              incomeLoanMultiplier,
+            )
           : item.minPrice;
         if (policy) {
           loanInfoByItemId[item.id] = {
@@ -197,6 +214,7 @@ export class RecommendationEngineService {
       loanInfoByItemId,
       total: affordable.length,
       hasMore: offset + page.length < affordable.length,
+      creditScoreWarning: criteria.creditScoreWarning,
     };
   }
 

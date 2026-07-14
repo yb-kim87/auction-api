@@ -37,4 +37,21 @@ export class LoanPolicyController {
     }
     return this.loanPolicyService.updatePolicy(id, { loanRatio, appraisalRatio });
   }
+
+  @Get("income-multiplier")
+  async getIncomeMultiplier(@Headers() headers: Record<string, string>) {
+    requireAuth(getAuthContext(headers));
+    const value = await this.loanPolicyService.getIncomeLoanMultiplier();
+    return { value };
+  }
+
+  @Patch("income-multiplier")
+  async setIncomeMultiplier(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { value?: number },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    const value = await this.loanPolicyService.setIncomeLoanMultiplier(Number(body.value));
+    return { value };
+  }
 }
