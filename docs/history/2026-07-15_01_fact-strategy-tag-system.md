@@ -74,5 +74,57 @@ DB: 물건에 fact_tags / strategy_tags 컬럼 분리 저장. strategy_tags는 �
 - `src/components/AuctionDetailModal.tsx`: Fact Tag 배지 노출(Strategy Tag 자리는 비워둠,
   빈 배열이면 자연히 안 보임)
 
-## 진행 상황
-(구현 진행되면 이 아래에 追記)
+## 구현 완료 내역
+
+### 백엔드 (auction-api)
+- `src/auctions/auction.entity.ts`: `factTags`/`strategyTags`(JSON 배열 문자열 컬럼) 추가.
+  `@AfterLoad`에서 파싱한 `factTagsList`/`strategyTagsList`(DB 컬럼 아님, 응답 직렬화용)도 함께 노출
+- `src/migrations/1752940000000-AddFactStrategyTags.ts`: 위 컬럼 + `tag_rules` 테이블 생성
+- `src/tags/` 신모듈
+  - `tag-rule.entity.ts`: `id, tagName, category(fact/strategy), field, operator, value, active, sortOrder`
+  - `rule-field-registry.ts`: 화이트리스트 필드(`area_sqm, min_price_ratio, built_year, usage,
+    prop_type, city, district, address, special_note`) + 연산자(`gt/gte/lt/lte/eq/neq/contains`)
+    정의 — 새 필드가 필요하면 이 배열에만 추가
+  - `rule-engine.service.ts`: 활성 fact 규칙을 Auction 1건에 순차 평가해 태그명 배열 생성
+  - `tags.service.ts`: 규칙 CRUD, 전체 물건 일괄 재계산(`backfillFactTags`), 최초 배포 시
+    기본 규칙 5개 자동 시딩(`onModuleInit`, 이미 규칙이 있으면 건너뜀)
+  - `tags.controller.ts`: `GET/POST /tag-rules`, `PATCH/DELETE /tag-rules/:id`,
+    `GET /tag-rules/fields`, `POST /tag-rules/backfill`(모두 관리자 인증)
+- `src/auctions/auctions.service.ts`: 물건 생성/수정의 공통 경로인 `upsertOne`에서 저장 직후
+  `syncFactTags()`를 호출해 factTags를 자동 재계산·저장(크롤러/엑셀업로드/수동등록/수정
+  모두 이 경로를 거치므로 별도 훅 불필요)
+- 순환 의존성 없이 `AuctionsModule`이 `TagsModule`을 import해서 `TagsService`를 주입받는 구조
+
+### 프론트 (auction)
+- `src/lib/api.ts`: `fetchTagRules/fetchTagRuleFields/createTagRule/updateTagRule/
+  removeTagRule/backfillTagRules` 추가
+- `src/app/admin/TagRulesTab.tsx` 신규: 태그명 입력 + 필드/연산자 드롭다운 + 값 입력으로
+  규칙 추가, 목록에서 활성 토글/삭제, "기존 물건 태그 일괄 재계산" 버튼(`LoanPolicyTab.tsx`
+  패턴 참고)
+- 관리자 콘솔 탭에 "태그 관리" 추가(대출정책 탭 옆). 기존 "AI Platform > Tag 관리"(다른
+  시스템, 하드코딩 태그 4종)와 이름 혼동 방지를 위해 별도 탭명 사용
+- `AuctionDetailModal.tsx`의 "기본 물건 정보" 카드 상단에 Fact Tag 배지 노출. Strategy Tag는
+  `strategyTagsList`가 항상 빈 배열이라 지금은 아무것도 안 보이며, AI가 채우기 시작하면
+  같은 자리(또는 별도 섹션)에 자연히 노출 가능한 구조
+
+## 기본 시드 규칙 (최초 배포 시 자동 생성)
+
+| 태그명 | 필드 | 연산자 | 값 |
+|---|---|---|---|
+| 85㎡ 초과 | 전용면적(㎡) | 초과 | 85 |
+| 부가세 검토 필요 | 전용면적(㎡) | 초과 | 85 |
+| 재개발 | 특이사항 | 포함 | 재개발 |
+| 구축 | 사용승인년도 | 미만 | 2006 |
+| 공장 | 물건 용도 | 같음 | 공장 |
+| 저가 낙찰 가능 | 최저가/감정가 비율(%) | 이하 | 70 |
+
+"구축"은 원래 요청("구축빌라")이 propType=빌라 AND 건축연도 조건의 AND 조합이 필요했으나,
+현재 규칙 구조가 단일 조건만 지원해 건축연도 기준으로만 단순화했다(사용자 확인 완료).
+AND/OR 복합 조건과 유찰횟수 기반 규칙은 후속 작업으로 분리.
+
+## 후속 작업 후보 (이번 범위 밖)
+- 유찰횟수 필드 확보(Auction에 전용 컬럼 추가 또는 `bidInfo` 파싱) 후 유찰 관련 규칙 추가
+- 규칙 조건의 AND/OR 복합 조합 지원(현재는 단일 조건만)
+- Strategy Tag를 실제로 채우는 AI 파이프라인(Fact Tag + 등기분석 + 권리분석 + 시세분석 +
+  입찰경쟁률 종합)
+- 상세페이지에 Strategy Tag 표시 UI(Fact Tag와 시각적으로 구분되는 배지 스타일 등)
