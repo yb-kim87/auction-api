@@ -102,6 +102,8 @@ export class RecommendationEngineService {
         loanPolicyLabel: string;
         requiredEquity: number;
         regulatedArea: boolean;
+        incomeLoanLimit: number | null;
+        existingLoanWon: number;
       }
     >;
     total: number;
@@ -144,6 +146,8 @@ export class RecommendationEngineService {
         loanPolicyLabel: string;
         requiredEquity: number;
         regulatedArea: boolean;
+        incomeLoanLimit: number | null;
+        existingLoanWon: number;
       }
     > = {};
     const affordable = auctions
@@ -161,12 +165,18 @@ export class RecommendationEngineService {
             )
           : item.minPrice;
         if (policy) {
+          const incomeLoanLimit =
+            criteria.annualIncomeWon != null
+              ? Math.max(0, criteria.annualIncomeWon) * incomeLoanMultiplier
+              : null;
           loanInfoByItemId[item.id] = {
             loanRatio: policy.loanRatio,
             appraisalRatio: policy.appraisalRatio,
             loanPolicyLabel: policy.label,
             requiredEquity,
             regulatedArea: regulated,
+            incomeLoanLimit,
+            existingLoanWon: criteria.existingLoanWon,
           };
         }
         return { item, requiredEquity, policy };
