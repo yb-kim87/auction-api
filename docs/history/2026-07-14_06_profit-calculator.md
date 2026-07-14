@@ -240,3 +240,9 @@
 - 계산 로직이 두 레포에 중복 존재하게 됐으므로, 향후 `profit-calculator` 계산식을 수정할
   때는 `auction/src/lib/profit-calculator.ts`와 `auction-api/src/recommendation/
   profit-calculator.util.ts` 둘 다 고쳐야 한다는 점을 반드시 기억할 것
+
+## 추가: 카드 "추정 수익" 하단 문구 변경 (2026-07-15 追記)
+
+카드의 "추정 수익" 아래 보조 문구를 "수익계산기 기본값 기준"에서 "최저가 입찰기준"으로
+변경(`src/app/page.tsx`, `RecommendCard`). 계산 자체(추정 수익 = 낙찰가를 최저가로 가정한
+수익계산기 기본값 결과)는 변경 없음, 표시 문구만 더 직관적으로 수정.
