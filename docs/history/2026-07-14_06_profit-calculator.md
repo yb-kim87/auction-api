@@ -246,3 +246,62 @@
 카드의 "추정 수익" 아래 보조 문구를 "수익계산기 기본값 기준"에서 "최저가 입찰기준"으로
 변경(`src/app/page.tsx`, `RecommendCard`). 계산 자체(추정 수익 = 낙찰가를 최저가로 가정한
 수익계산기 기본값 결과)는 변경 없음, 표시 문구만 더 직관적으로 수정.
+
+## 추가: 대출금 계산에 소득한도·기존대출 반영, 기존소득 입력란 추가 (2026-07-15 追記)
+
+### 배경 1 — 대출금 불일치 버그
+상세페이지 우측 "최소 투자금" 카드는 감정가·낙찰가 LTV뿐 아니라 소득기준 대출한도
+(`incomeLoanLimit`)까지 반영하고 기존대출을 차감한 "최종대출금"을 보여주는데, 수익계산기의
+"대출금(LTV)"은 감정가·낙찰가 LTV만 `min()`해서 계산해 두 값이 서로 다르게 나오는 문제가
+있었음(예: 최종대출금 3억 vs 계산기 대출금 5.5억). 스크린샷으로 두 값의 불일치를 지적받아
+발견.
+
+### 실행 프롬프트 (요약)
+```
+그리고 이 빨간네모박스를 보면 수익계산기에서 나온 대출금은 최오른쪽 빨간네모박스
+최종대출금이 적용되지 않았는데 현실적으로 받을 수 있는 대출금액이 적용되게 해줘
+```
+
+### 변경 내용 (배경 1)
+- `auction/src/lib/profit-calculator.ts`, `auction-api/src/recommendation/
+  profit-calculator.util.ts`(양쪽 동일하게)
+  - `ProfitCalculatorInput`에 `incomeLoanLimit: number | null`, `existingLoanWon: number` 추가
+  - `calculateProfit`: `loanLimit = min(감정가LTV, 낙찰가LTV, incomeLoanLimit ?? Infinity)`,
+    `loanAmount = max(0, loanLimit - existingLoanWon)`로 변경(기존에는 `loanAmount`가
+    감정가·낙찰가 LTV의 min()이었음). 결과 타입에 `loanLimit` 필드 추가(차감 전 한도, 표시용)
+  - `estimateDefaultProfit`이 `incomeLoanLimit`/`existingLoanWon`을 선택 인자로 받아
+    `calculateProfit`에 전달
+- `auction/src/app/page.tsx`: 카드 "추정 수익" 계산 시 `loanInfo.incomeLoanLimit`/
+  `loanInfo.existingLoanWon` 전달
+- `auction/src/components/ProfitCalculatorPanel.tsx`: `incomeLoanLimit`/`existingLoanWon`
+  props 추가, `AuctionDetailModal`이 이미 갖고 있는 물건별 값을 그대로 전달
+- `auction-api/src/recommendation/recommendation-engine.service.ts`: `getRecommendations`의
+  추정수익 계산(목표수익 필터용)에도 동일하게 소득한도/기존대출 반영
+
+### 배경 2 — 기존소득 합산 양도세 계산
+양도세 계산이 매매차익만으로 세율 구간을 판정하고 있었는데, 실제로는 종합소득세처럼
+근로소득 등 기존소득과 합산해 누진세율 구간이 정해진다는 요청. 기본값은 0원.
+
+### 실행 프롬프트 (요약)
+```
+그리고 양도세율 계산하는 곳에 기존소득 입력할 수 있게 하나 만들어줘서 기본값은 0원으로
+하고 기존소득에 값을 입력하게 되면 양도세율 적용시 적용되는 소득에 합산시켜서
+양도세율이 그게 맞게 계산되게 만들어줘
+```
+(세금 계산 방식 확인: 한계세율 방식 — (합산과세표준×세율-누진공제) - (기존소득×세율-누진공제) 채택)
+
+### 변경 내용 (배경 2)
+- 계산 로직(양쪽 파일 동일)
+  - `progressiveTaxAmount(taxBaseWon, applyDeduction)` 헬퍼 추가: 과세표준에 대한
+    누진세액(세율×과세표준-누진공제)을 계산
+  - `ProfitCalculatorInput`에 `existingIncome: number`(기본 0) 추가
+  - 양도세 계산을 "매매차익만의 단순 구간세율"에서 **한계세율 방식**으로 변경:
+    `capitalGainsTax = progressiveTaxAmount(기존소득+매매차익) - progressiveTaxAmount(기존소득)`
+    (누진공제 미적용 옵션이면 단순히 구간세율만 곱함)
+- `auction/src/components/ProfitCalculatorPanel.tsx`: "계산 상세" 섹션의 "매매차익" 행과
+  "양도세율" 행 사이에 "기존소득(연간)" 입력란 추가(기본값 0원)
+
+### 결과
+- 수익계산기의 "대출금(LTV)"이 상세페이지 최소투자금 카드의 "최종대출금"과 항상 일치
+- 기존소득이 높은 회원일수록 매매차익에 더 높은 한계세율이 적용되어 실제 세부담에
+  가까운 양도세를 계산할 수 있음
