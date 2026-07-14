@@ -1,7 +1,9 @@
 import { Controller, Get, Headers, Query } from "@nestjs/common";
 import { getAuthContext, requireSearchAccess } from "../common/auth-context";
 import { RecommendationEngineService } from "./recommendation-engine.service";
-import { parseMoneyToWon } from "./investment-math.util";
+import { parseMoneyToWon, type ProgressStatus } from "./investment-math.util";
+
+const VALID_PROGRESS_STATUS = new Set(["all", "active", "ended"]);
 
 @Controller("recommendations")
 export class RecommendationController {
@@ -13,6 +15,12 @@ export class RecommendationController {
     @Query("budget") budget?: string,
     @Query("limit") limit?: string,
     @Query("offset") offset?: string,
+    @Query("city") city?: string,
+    @Query("propType") propType?: string,
+    @Query("maxFailureRate") maxFailureRate?: string,
+    @Query("favoritesOnly") favoritesOnly?: string,
+    @Query("progressStatus") progressStatus?: string,
+    @Query("search") search?: string,
   ) {
     const ctx = getAuthContext(headers);
     requireSearchAccess(ctx);
@@ -22,6 +30,16 @@ export class RecommendationController {
       overrideInvestableWon,
       limit: limit ? Math.min(100, Math.max(1, Number(limit) || 30)) : undefined,
       offset: offset ? Math.max(0, Number(offset) || 0) : undefined,
+      filters: {
+        city: city || undefined,
+        propType: propType || undefined,
+        maxFailureRate: maxFailureRate || undefined,
+        favoritesOnly: favoritesOnly === "true",
+        progressStatus: VALID_PROGRESS_STATUS.has(progressStatus ?? "")
+          ? (progressStatus as ProgressStatus)
+          : undefined,
+        search: search || undefined,
+      },
     });
 
     return {

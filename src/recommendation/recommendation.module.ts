@@ -4,6 +4,7 @@ import { Auction } from "../auctions/auction.entity";
 import { ItemAiTag } from "../ai-platform/tag-engine/item-ai-tag.entity";
 import { UsersModule } from "../users/users.module";
 import { LoanPolicyModule } from "../loan-policy/loan-policy.module";
+import { FavoritesModule } from "../favorites/favorites.module";
 import { RecommendationEngineService } from "./recommendation-engine.service";
 import { RecommendationController } from "./recommendation.controller";
 
@@ -12,6 +13,7 @@ import { RecommendationController } from "./recommendation.controller";
     TypeOrmModule.forFeature([Auction, ItemAiTag]),
     UsersModule,
     LoanPolicyModule,
+    FavoritesModule,
   ],
   controllers: [RecommendationController],
   providers: [RecommendationEngineService],

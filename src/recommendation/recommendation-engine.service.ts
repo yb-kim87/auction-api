@@ -6,11 +6,16 @@ import { AuctionStatus } from "../common/constants";
 import { UsersService } from "../users/users.service";
 import { LoanPolicyService } from "../loan-policy/loan-policy.service";
 import { RegulatedRegionService, isRegulatedArea } from "../loan-policy/regulated-region.service";
+import { FavoritesService } from "../favorites/favorites.service";
 import { ItemAiTag } from "../ai-platform/tag-engine/item-ai-tag.entity";
 import {
   parseMoneyToWon,
   requiredEquityForItem,
   selectLoanPolicy,
+  matchesProgressStatus,
+  matchesFailureRateFilter,
+  matchesPropertyType,
+  type ProgressStatus,
 } from "./investment-math.util";
 
 const PRICE_MERIT_TAG = "가격메리트검토";
@@ -19,6 +24,15 @@ export interface RecommendationCriteria {
   investableWon: number;
   housingCount: number;
   firstTimeBuyer: boolean;
+}
+
+export interface RecommendationFilters {
+  city?: string;
+  propType?: string;
+  maxFailureRate?: string;
+  favoritesOnly?: boolean;
+  progressStatus?: ProgressStatus;
+  search?: string;
 }
 
 @Injectable()
@@ -31,6 +45,7 @@ export class RecommendationEngineService {
     private readonly usersService: UsersService,
     private readonly loanPolicyService: LoanPolicyService,
     private readonly regulatedRegionService: RegulatedRegionService,
+    private readonly favoritesService: FavoritesService,
   ) {}
 
   /**
@@ -57,7 +72,12 @@ export class RecommendationEngineService {
 
   async getRecommendations(
     username: string,
-    options?: { overrideInvestableWon?: number; limit?: number; offset?: number },
+    options?: {
+      overrideInvestableWon?: number;
+      limit?: number;
+      offset?: number;
+      filters?: RecommendationFilters;
+    },
   ): Promise<{
     items: Auction[];
     criteria: RecommendationCriteria | null;
@@ -88,6 +108,11 @@ export class RecommendationEngineService {
 
     const policies = await this.loanPolicyService.findAll();
     const regionNames = await this.regulatedRegionService.findAllNames();
+
+    const filters = options?.filters;
+    const favoriteIds =
+      filters?.favoritesOnly ? new Set(await this.favoritesService.listAuctionIds(username)) : null;
+    const searchQuery = filters?.search?.trim().toLowerCase() || "";
 
     const auctions = await this.auctionRepo.find({
       where: { status: AuctionStatus.APPROVED },
@@ -121,7 +146,31 @@ export class RecommendationEngineService {
           row.policy &&
           !row.policy.loanUnavailable &&
           row.requiredEquity <= criteria.investableWon,
-      );
+      )
+      .filter((row) => {
+        if (filters?.city && row.item.city !== filters.city) return false;
+        if (filters?.propType && !matchesPropertyType(row.item, filters.propType)) return false;
+        if (
+          filters?.maxFailureRate &&
+          !matchesFailureRateFilter(row.item.minPrice, row.item.appraisedValue, filters.maxFailureRate)
+        ) {
+          return false;
+        }
+        if (favoriteIds && !favoriteIds.has(row.item.id)) return false;
+        if (
+          filters?.progressStatus &&
+          !matchesProgressStatus(row.item.bidDate, filters.progressStatus)
+        ) {
+          return false;
+        }
+        if (searchQuery) {
+          const matchesText =
+            row.item.address?.toLowerCase().includes(searchQuery) ||
+            row.item.auctionNo?.toLowerCase().includes(searchQuery);
+          if (!matchesText) return false;
+        }
+        return true;
+      });
 
     const priceMeritIds = await this.findPriceMeritItemIds(affordable.map((row) => row.item.id));
 

@@ -105,3 +105,55 @@ export function requiredEquityForItem(
   if (!minPrice || minPrice <= 0) return 0;
   return Math.max(0, minPrice - maxLoanAmount(minPrice, appraisedValue, policy));
 }
+
+export type ProgressStatus = "all" | "active" | "ended";
+
+/** 프런트 lib/progress-status-filter.ts의 parseBidDate와 동일 규칙 */
+function parseBidDate(value: string): Date | null {
+  if (!value?.trim()) return null;
+  const normalized = value.trim().replace(/\./g, "-").replace(/\//g, "-");
+  const match = normalized.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (match) {
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  const parsed = new Date(normalized);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** 프런트 lib/progress-status-filter.ts의 matchesProgressStatus와 동일 규칙 */
+export function matchesProgressStatus(bidDate: string, status: ProgressStatus): boolean {
+  if (status === "all") return true;
+  const parsed = parseBidDate(bidDate);
+  if (!parsed) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const bidDay = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  if (status === "active") return bidDay >= today;
+  return bidDay < today;
+}
+
+/** 프런트 lib/failure-rate.ts의 matchesFailureRateFilter와 동일 규칙 */
+export function matchesFailureRateFilter(
+  minPrice: number,
+  appraisedValue: number,
+  selectedRate: string,
+): boolean {
+  if (!selectedRate) return true;
+  if (!minPrice || !appraisedValue || appraisedValue <= 0) return false;
+  const ratio = Math.round((minPrice / appraisedValue) * 100);
+  return ratio === Number(selectedRate);
+}
+
+const VILLA_USAGE_TYPES = new Set(["다세대주택", "도시형생활주택", "연립주택"]);
+
+/** 프런트 data/property-type-options.ts의 matchesPropertyType과 동일 규칙 */
+export function matchesPropertyType(
+  item: { usage: string; propType: string },
+  selected: string,
+): boolean {
+  if (!selected) return true;
+  if (selected === "아파트") return item.usage === "아파트";
+  if (selected === "빌라") return VILLA_USAGE_TYPES.has(item.usage) || item.propType === "빌라";
+  return item.usage === selected;
+}
