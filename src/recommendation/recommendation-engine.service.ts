@@ -57,7 +57,7 @@ export class RecommendationEngineService {
 
   async getRecommendations(
     username: string,
-    options?: { overrideInvestableWon?: number; limit?: number },
+    options?: { overrideInvestableWon?: number; limit?: number; offset?: number },
   ): Promise<{
     items: Auction[];
     criteria: RecommendationCriteria | null;
@@ -70,10 +70,20 @@ export class RecommendationEngineService {
       string,
       { loanRatio: number; appraisalRatio: number; loanPolicyLabel: string; requiredEquity: number }
     >;
+    total: number;
+    hasMore: boolean;
   }> {
     const criteria = await this.buildCriteriaForUser(username, options?.overrideInvestableWon);
     if (!criteria) {
-      return { items: [], criteria: null, loanRatio: null, loanPolicyLabel: null, loanInfoByItemId: {} };
+      return {
+        items: [],
+        criteria: null,
+        loanRatio: null,
+        loanPolicyLabel: null,
+        loanInfoByItemId: {},
+        total: 0,
+        hasMore: false,
+      };
     }
 
     const policies = await this.loanPolicyService.findAll();
@@ -125,15 +135,19 @@ export class RecommendationEngineService {
       return b.item.createdAt.getTime() - a.item.createdAt.getTime();
     });
 
-    const limited = options?.limit != null ? affordable.slice(0, options.limit) : affordable;
+    const offset = options?.offset ?? 0;
+    const page =
+      options?.limit != null ? affordable.slice(offset, offset + options.limit) : affordable.slice(offset);
     // 대표 정책(무주택 기준)은 헤더 요약 문구 등 물건과 무관한 표시에만 사용한다.
     const fallbackPolicy = selectLoanPolicy(criteria, false, policies);
     return {
-      items: limited.map((row) => row.item),
+      items: page.map((row) => row.item),
       criteria,
       loanRatio: fallbackPolicy?.loanRatio ?? null,
       loanPolicyLabel: fallbackPolicy?.label ?? null,
       loanInfoByItemId,
+      total: affordable.length,
+      hasMore: offset + page.length < affordable.length,
     };
   }
 

@@ -11,6 +11,8 @@ export class RecommendationController {
   async getRecommendations(
     @Headers() headers: Record<string, string>,
     @Query("budget") budget?: string,
+    @Query("limit") limit?: string,
+    @Query("offset") offset?: string,
   ) {
     const ctx = getAuthContext(headers);
     requireSearchAccess(ctx);
@@ -18,6 +20,8 @@ export class RecommendationController {
     const overrideInvestableWon = budget ? parseMoneyToWon(budget) ?? undefined : undefined;
     const result = await this.recommendationEngine.getRecommendations(ctx.username, {
       overrideInvestableWon,
+      limit: limit ? Math.min(100, Math.max(1, Number(limit) || 30)) : undefined,
+      offset: offset ? Math.max(0, Number(offset) || 0) : undefined,
     });
 
     return {
@@ -26,6 +30,8 @@ export class RecommendationController {
       loanRatio: result.loanRatio,
       loanPolicyLabel: result.loanPolicyLabel,
       loanInfoByItemId: result.loanInfoByItemId,
+      total: result.total,
+      hasMore: result.hasMore,
     };
   }
 }
