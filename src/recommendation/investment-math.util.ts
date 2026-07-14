@@ -74,7 +74,7 @@ export interface LoanPolicyLike {
 
 /**
  * 회원정보(주택수·생애최초 여부)와 물건의 규제지역 여부로 적용할 대출 정책을 선택한다.
- * - 규제지역: 무주택(생애최초 포함)만 대출 가능(감정가 비율만 적용), 1주택 이상은 불가.
+ * - 규제지역: 무주택만 대출 가능(감정가 비율만 적용, 생애최초/일반 구분), 1주택 이상은 불가.
  * - 비규제지역: 무주택 일반/생애최초/1주택 이상(사업자대출)로 구분.
  */
 export function selectLoanPolicy(
@@ -84,7 +84,8 @@ export function selectLoanPolicy(
 ): LoanPolicyLike | null {
   const byId = (id: string) => policies.find((p) => p.id === id) ?? null;
   if (regulatedArea) {
-    return criteria.housingCount <= 0 ? byId("regulated_no_house") : byId("regulated_owner");
+    if (criteria.housingCount > 0) return byId("regulated_owner");
+    return criteria.firstTimeBuyer ? byId("regulated_first_time") : byId("regulated_no_house");
   }
   if (criteria.housingCount <= 0) {
     return criteria.firstTimeBuyer ? byId("unregulated_first_time") : byId("unregulated_no_house");

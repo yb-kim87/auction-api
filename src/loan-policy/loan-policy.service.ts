@@ -13,14 +13,24 @@ const DEFAULT_INCOME_MULTIPLIER = 7;
 
 export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string }> = [
   {
-    id: "regulated_no_house",
-    label: "규제지역 · 무주택(생애최초 포함)",
+    id: "regulated_first_time",
+    label: "규제지역 · 생애최초",
     loanRatio: UNLIMITED_RATIO,
     appraisalRatio: 0.4,
     regulatedArea: true,
     loanUnavailable: false,
     businessLoanOnly: false,
     sortOrder: 0,
+  },
+  {
+    id: "regulated_no_house",
+    label: "규제지역 · 무주택 일반",
+    loanRatio: UNLIMITED_RATIO,
+    appraisalRatio: 0.4,
+    regulatedArea: true,
+    loanUnavailable: false,
+    businessLoanOnly: false,
+    sortOrder: 1,
   },
   {
     id: "regulated_owner",
@@ -30,7 +40,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: true,
     loanUnavailable: true,
     businessLoanOnly: false,
-    sortOrder: 1,
+    sortOrder: 2,
   },
   {
     id: "unregulated_first_time",
@@ -40,7 +50,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: false,
     loanUnavailable: false,
     businessLoanOnly: false,
-    sortOrder: 2,
+    sortOrder: 3,
   },
   {
     id: "unregulated_no_house",
@@ -50,7 +60,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: false,
     loanUnavailable: false,
     businessLoanOnly: false,
-    sortOrder: 3,
+    sortOrder: 4,
   },
   {
     id: "unregulated_owner",
@@ -60,7 +70,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: false,
     loanUnavailable: false,
     businessLoanOnly: true,
-    sortOrder: 4,
+    sortOrder: 5,
   },
 ];
 
