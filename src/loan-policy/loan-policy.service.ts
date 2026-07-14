@@ -24,7 +24,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
   },
   {
     id: "regulated_no_house",
-    label: "규제지역 · 무주택 일반",
+    label: "규제지역 · 무주택",
     loanRatio: UNLIMITED_RATIO,
     appraisalRatio: 0.4,
     regulatedArea: true,
@@ -54,7 +54,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
   },
   {
     id: "unregulated_no_house",
-    label: "비규제지역 · 무주택 일반",
+    label: "비규제지역 · 무주택",
     loanRatio: 0.8,
     appraisalRatio: 0.7,
     regulatedArea: false,
@@ -88,6 +88,23 @@ export class LoanPolicyService implements OnModuleInit {
       const exists = await this.loanPolicyRepo.findOne({ where: { id: defaults.id } });
       if (!exists) {
         await this.loanPolicyRepo.save(this.loanPolicyRepo.create(defaults));
+        continue;
+      }
+      // 관리자가 조정하는 loanRatio/appraisalRatio는 보존하고, 코드로 관리하는
+      // 라벨·정렬순서 등 메타데이터만 최신 정의로 동기화한다.
+      if (
+        exists.label !== defaults.label ||
+        exists.sortOrder !== defaults.sortOrder ||
+        exists.regulatedArea !== defaults.regulatedArea ||
+        exists.loanUnavailable !== defaults.loanUnavailable ||
+        exists.businessLoanOnly !== defaults.businessLoanOnly
+      ) {
+        exists.label = defaults.label;
+        exists.sortOrder = defaults.sortOrder;
+        exists.regulatedArea = defaults.regulatedArea;
+        exists.loanUnavailable = defaults.loanUnavailable;
+        exists.businessLoanOnly = defaults.businessLoanOnly;
+        await this.loanPolicyRepo.save(exists);
       }
     }
   }
