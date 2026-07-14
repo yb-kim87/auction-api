@@ -15,6 +15,7 @@ import { ItemNormalizedData } from "./ai-platform/normalizer/item-normalized-dat
 import { ItemAiFeature } from "./ai-platform/feature-engine/item-ai-feature.entity";
 import { ItemAiTag } from "./ai-platform/tag-engine/item-ai-tag.entity";
 import { AiPlatformHistory } from "./ai-platform/shared/ai-platform-history.entity";
+import { TagRule } from "./tags/tag-rule.entity";
 
 /**
  * TypeORM CLI 전용 (migration:generate / migration:run 등).
@@ -41,6 +42,7 @@ export default new DataSource({
     ItemAiFeature,
     ItemAiTag,
     AiPlatformHistory,
+    TagRule,
   ],
   migrations: ["src/migrations/*.ts"],
   synchronize: false,
