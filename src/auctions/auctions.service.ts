@@ -569,6 +569,31 @@ export class AuctionsService implements OnModuleInit {
   }
 
   /**
+   * 주소 파싱 로직(district에 "시+구" 포함) 변경 반영용: 기존 물건의
+   * city/district를 address 기준으로 다시 계산해 저장한다.
+   */
+  async backfillCityDistrict() {
+    const rows = await this.auctionRepo.find();
+
+    let updated = 0;
+    let unchanged = 0;
+
+    for (const item of rows) {
+      const { city, district } = parseAddressMeta(item.address ?? "");
+      if (item.city === city && item.district === district) {
+        unchanged += 1;
+        continue;
+      }
+      item.city = city;
+      item.district = district;
+      await this.auctionRepo.save(item);
+      updated += 1;
+    }
+
+    return { total: rows.length, updated, unchanged };
+  }
+
+  /**
    * 용도가 "아파트"이고 priceDetail(호가 상세)이 있는 기존 물건에 대해,
    * 재크롤링 없이 저장된 priceDetail을 다시 파싱해 층수 기준 네이버 호가로 갱신한다.
    * 물건 자신이 1·2층이면 1·2층 매물 중 최저가, 그 외에는 3층 이상 매물 중 최저가를 적용한다.

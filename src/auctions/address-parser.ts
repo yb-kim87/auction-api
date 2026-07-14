@@ -150,8 +150,9 @@ export function parseAddressMeta(address: string) {
 
     city = SIDO_ALIASES[sido] ?? sido;
     const rest = trimmed.slice(sido.length).trim();
-    const match = rest.match(/^(\S+?(?:시|군|구))/);
-    if (match) district = match[1];
+    // "용인시 기흥구"처럼 일반시+구가 함께 오는 경우까지 district에 포함시킨다.
+    const match = rest.match(/^(\S+?시)\s+(\S+?구)(?=\s|$)|^(\S+?(?:시|군|구))/);
+    if (match) district = match[1] && match[2] ? `${match[1]} ${match[2]}` : match[3];
     break;
   }
 

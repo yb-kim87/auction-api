@@ -252,6 +252,12 @@ export class AuctionsController {
     return this.auctionsService.backfillNaverFloorPrice(ctx.username);
   }
 
+  @Post("backfill-city-district")
+  backfillCityDistrict(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.auctionsService.backfillCityDistrict();
+  }
+
   @Delete(":id")
   removeOne(
     @Headers() headers: Record<string, string>,
