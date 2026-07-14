@@ -51,6 +51,17 @@ export function parseMoneyToWon(raw: string): number | null {
   return null;
 }
 
+/**
+ * 연소득 전용 파싱. parseMoneyToWon과 달리 "0"(소득없음)을 유효한 값으로
+ * 인정한다 — 투자가능자금 등 "0이면 무의미"인 필드와 달리, 소득은 0원이
+ * 실제로 "대출 전혀 불가"를 뜻하는 유의미한 입력이기 때문이다.
+ */
+export function parseIncomeToWon(raw: string | undefined): number | null {
+  const trimmed = raw?.trim();
+  if (trimmed === "0") return 0;
+  return parseMoneyToWon(raw ?? "");
+}
+
 export interface LoanPolicyLike {
   id: string;
   label: string;
@@ -97,10 +108,10 @@ export function maxLoanAmount(
   if (!minPrice || minPrice <= 0) return 0;
   const byMinPrice = minPrice * policy.loanRatio;
   const byAppraisal = appraisedValue > 0 ? appraisedValue * policy.appraisalRatio : Infinity;
+  // 0원(소득없음)도 유효한 입력이라 그대로 반영한다. 소득 정보 자체가 없을
+  // 때(undefined/null)만 소득 기준을 적용하지 않는다.
   const byIncome =
-    annualIncomeWon != null && annualIncomeWon > 0
-      ? annualIncomeWon * (incomeLoanMultiplier ?? 7)
-      : Infinity;
+    annualIncomeWon != null ? Math.max(0, annualIncomeWon) * (incomeLoanMultiplier ?? 7) : Infinity;
   return Math.max(0, Math.floor(Math.min(byMinPrice, byAppraisal, byIncome)));
 }
 

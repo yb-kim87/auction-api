@@ -10,6 +10,7 @@ import { FavoritesService } from "../favorites/favorites.service";
 import { ItemAiTag } from "../ai-platform/tag-engine/item-ai-tag.entity";
 import {
   parseMoneyToWon,
+  parseIncomeToWon,
   requiredEquityForItem,
   selectLoanPolicy,
   matchesProgressStatus,
@@ -71,7 +72,7 @@ export class RecommendationEngineService {
       investableWon,
       housingCount: user.housingCount ?? 0,
       firstTimeBuyer: user.firstTimeBuyer ?? false,
-      annualIncomeWon: parseMoneyToWon(user.annualNetIncome ?? ""),
+      annualIncomeWon: parseIncomeToWon(user.annualNetIncome),
       existingLoanWon: parseMoneyToWon(user.existingLoanAmount ?? "") ?? 0,
       creditScoreWarning: needsCreditScoreWarning(user.creditScore),
     };
