@@ -77,11 +77,41 @@ export class KakaoLandingVisitService {
 
     const clickedAt = new Date();
     visit.kakaoRoomClickedAt = clickedAt;
+    visit.kakaoRoomClickCount = (visit.kakaoRoomClickCount ?? 0) + 1;
     await this.visitRepo.save(visit);
 
-    const lead = await this.leadRepo.findOne({ where: { visitId: visit.visitId } });
+    // 1) 이 방문(visitId)으로 이미 매칭된 리드가 있으면 바로 갱신(신규가입 플로우의 정상 경로)
+    let lead = await this.leadRepo.findOne({ where: { visitId: visit.visitId } });
+
+    // 2) 기존 회원이 재방문해 클릭한 경우 등, visitId로 아직 매칭된 리드가 없을 수 있다.
+    //    이 방문이 가입완료 신호(signupConfirmedAt)를 보낸 적 있다면, 그 시각과 가장
+    //    가까운 joinedAt을 가진 리드를 찾아 클릭만 반영한다(유입 정보는 덮어쓰지 않음 —
+    //    이 리드의 원래 유입 경로를 그대로 유지하기 위해 visitId/UTM은 건드리지 않는다).
+    if (!lead && visit.signupConfirmedAt) {
+      const windowMs = MATCH_WINDOW_MINUTES * 60_000;
+      const from = new Date(visit.signupConfirmedAt.getTime() - windowMs);
+      const to = new Date(visit.signupConfirmedAt.getTime() + windowMs);
+      const candidates = await this.leadRepo
+        .createQueryBuilder("l")
+        .where("l.joinedAt IS NOT NULL")
+        .andWhere("l.joinedAt >= :from", { from })
+        .andWhere("l.joinedAt <= :to", { to })
+        .getMany();
+      if (candidates.length > 0) {
+        const targetMs = visit.signupConfirmedAt.getTime();
+        lead = candidates.reduce((closest, cur) =>
+          Math.abs((cur.joinedAt?.getTime() ?? 0) - targetMs) <
+          Math.abs((closest.joinedAt?.getTime() ?? 0) - targetMs)
+            ? cur
+            : closest,
+        );
+      }
+    }
+
     if (lead) {
       lead.kakaoRoomClickedAt = clickedAt;
+      lead.kakaoRoomClickCount = (lead.kakaoRoomClickCount ?? 0) + 1;
+      if (!lead.firstKakaoRoomClickedAt) lead.firstKakaoRoomClickedAt = clickedAt;
       await this.leadRepo.save(lead);
     }
     return { ok: true };
@@ -151,7 +181,11 @@ export class KakaoLandingVisitService {
     lead.utmMedium = utmMedium;
     lead.utmContent = utmContent;
     lead.visitId = visit.visitId;
-    if (visit.kakaoRoomClickedAt) lead.kakaoRoomClickedAt = visit.kakaoRoomClickedAt;
+    if (visit.kakaoRoomClickedAt) {
+      lead.kakaoRoomClickedAt = visit.kakaoRoomClickedAt;
+      lead.kakaoRoomClickCount = visit.kakaoRoomClickCount;
+      if (!lead.firstKakaoRoomClickedAt) lead.firstKakaoRoomClickedAt = visit.kakaoRoomClickedAt;
+    }
     await this.leadRepo.save(lead);
 
     visit.matched = true;

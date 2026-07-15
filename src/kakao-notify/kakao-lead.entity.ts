@@ -90,10 +90,19 @@ export class KakaoLead {
   @Column({ type: "text", default: "" })
   utmContent!: string;
 
-  /** 가입완료 페이지의 "카톡방 참여하기" 버튼을 클릭한 시각(클릭 여부만 확인
-   *  가능 — 카카오 오픈채팅 실제 입장 여부는 API로 확인할 수 없는 한계가 있다). */
+  /** 가입완료 페이지의 "카톡방 참여하기" 버튼을 가장 최근에 클릭한 시각(클릭
+   *  여부만 확인 가능 — 카카오 오픈채팅 실제 입장 여부는 API로 확인할 수 없는
+   *  한계가 있다). 기존 회원이 재방문해 여러 번 클릭하면 매번 갱신된다. */
   @Column({ type: Date, nullable: true })
   kakaoRoomClickedAt!: Date | null;
+
+  /** 카톡방 버튼을 처음 클릭한 시각(최초 1회만 기록, 이후 재클릭에도 변하지 않음) */
+  @Column({ type: Date, nullable: true })
+  firstKakaoRoomClickedAt!: Date | null;
+
+  /** 카톡방 버튼을 클릭한 총 횟수(재방문 재클릭 포함) */
+  @Column({ type: "integer", default: 0 })
+  kakaoRoomClickCount!: number;
 
   /** 이 리드와 매칭된 랜딩 방문의 visitId(정확한 재매칭용, 예: 클릭 이벤트가
    *  매칭 이후에 도착하는 경우). */
