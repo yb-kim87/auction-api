@@ -127,4 +127,83 @@ AND/OR 복합 조건과 유찰횟수 기반 규칙은 후속 작업으로 분리
 - 규칙 조건의 AND/OR 복합 조합 지원(현재는 단일 조건만)
 - Strategy Tag를 실제로 채우는 AI 파이프라인(Fact Tag + 등기분석 + 권리분석 + 시세분석 +
   입찰경쟁률 종합)
-- 상세페이지에 Strategy Tag 표시 UI(Fact Tag와 시각적으로 구분되는 배지 스타일 등)
+
+## 추가: 3계층 구조로 재설계 — Fact는 비노출, Strategy만 사용자 노출 (2026-07-15 追記)
+
+### 배경
+최초 구현은 Fact Tag(예: "85㎡ 초과")를 상세페이지에 배지로 직접 노출했다. 사용자가
+"85㎡ 초과"는 사용자에게 보여주기 위한 태그가 아니라 내부 Rule 판단용 Fact 데이터이고,
+사용자에게는 그 Fact를 근거로 한 투자 전략/추천 이유("경쟁이 적은 물건" 등)만 노출되어야
+한다고 정정. 구조를 다음처럼 3계층으로 재설계:
+
+```
+전용면적 > 85㎡  (원본 데이터)
+  ↓
+Fact 코드: AREA_OVER_85  (내부 판단용, 비노출)
+  ↓
+Rule(Strategy 규칙): AREA_OVER_85 + USAGE_APARTMENT → COMPETITION_LOW_POSSIBLE
+  ↓
+사용자 노출 문구: "경쟁이 적은 투자" + 설명  (StrategyLabel)
+```
+
+### 사용자가 설명해준 도메인 지식(예시 Strategy 문구에 반영)
+"85㎡ 초과 아파트는 매도할 때 부가세 부담이 있어서 입찰경쟁이 낮고, 부가세 계산이
+어려워서 실제로 안전마진을 많이 확보(=저렴하게 낙찰받을 가능성이 높음)해 단기 투자에도
+좋고 중장기 투자에도 좋은 물건"이라는 설명을 그대로 `COMPETITION_LOW_POSSIBLE`의
+description에 반영했다.
+
+### 변경 내용 (auction-api)
+- `TagRule`에 `tagCode` 추가(StrategyRule이 참조하는 안정적 코드, 예: `AREA_OVER_85`).
+  `tagName`은 관리자 화면 표시용 한글 라벨로만 남김
+- `StrategyRule` 엔티티 신규: `requiredFactCodes`(JSON 배열, AND 조건) 모두 만족 시
+  `strategyCode` 부여
+- `StrategyLabel` 엔티티 신규: `strategyCode` → `label`/`description`/`icon`(사용자 노출
+  문구). 코드와 문구를 분리해 향후 AI가 strategyCode만 채우면 되고 문구는 관리자가
+  자유롭게 다듬을 수 있게 함
+- `RuleEngineService`: `computeFactCodes`(Fact 판정) + `computeStrategyCodes`(Fact 조합
+  → Strategy) 로 분리
+- `Auction.strategyTags`를 코드 배열이 아니라 `{code,label,description,icon}[]` 객체
+  배열로 저장(프론트가 그대로 렌더링 가능한 형태)
+- 기본 시드: `85㎡ 초과 + 아파트` → `COMPETITION_LOW_POSSIBLE` → "경쟁이 적은 투자"
+- 마이그레이션 `1752950000000-AddStrategyTagTables`: `tag_rules.tagCode` 컬럼 추가,
+  `strategy_rules`/`strategy_labels` 테이블 신설
+
+### 배포 중 발생한 문제와 교훈
+1. **엔티티 등록 누락으로 서버 크래시**: `TagRule`을 `TypeOrmModule.forFeature()`에는
+   등록했지만 전역 `typeorm.config.ts`/`data-source.ts`의 `entities` 배열에 추가하는 걸
+   빠뜨려 `EntityMetadataNotFoundError`로 배포 직후 크래시(`railway logs`로 확인, 재배포로
+   복구). **엔티티를 새로 만들 때는 반드시 3곳(엔티티 파일, 모듈의 forFeature, 전역
+   typeorm.config.ts + data-source.ts)을 모두 등록해야 한다** — 이번에 `StrategyRule`/
+   `StrategyLabel` 추가 시에는 이 체크리스트를 지켜 재발하지 않았다.
+2. **크래시 이전에 이미 생성된 Fact 규칙과 코드 불일치**: 첫 배포(크래시 버전)에서 Fact
+   규칙 6개가 이미 DB에 저장됐고, 이후 마이그레이션이 그 기존 행들에 `tagCode`를 임의
+   슬러그(예: `85_초과_ea36d2b1`)로 채웠다. 반면 `onModuleInit`은 `count > 0`이면 시딩을
+   건너뛰므로, 의도했던 `AREA_OVER_85` 같은 표준 코드로 재시딩되지 않았다. 결과적으로
+   Strategy 규칙(`requiredFactCodes: ["AREA_OVER_85","USAGE_APARTMENT"]`)이 실제 Fact
+   코드와 전혀 매칭되지 않아 어떤 물건에도 Strategy 배지가 뜨지 않는 문제가 발생. 관리자
+   화면에서 "85㎡ 초과" Fact 규칙을 삭제 후 재생성(신규 생성 시엔 코드가 정확히
+   `AREA_OVER_85`로 슬러그화됨)하고 "아파트" Fact 규칙을 추가, Strategy 규칙의 필요
+   Fact 태그를 다시 체크해 저장하는 방식으로 관리자가 직접 복구.
+   → **배포 순서가 꼬여 시드 데이터가 일부만 만들어진 경우, `onModuleInit`의 "이미 있으면
+   건너뛴다" 로직만으로는 복구되지 않는다는 점**을 기억해둘 것. 필요시 코드값을 검증하는
+   별도 정합성 체크나 관리자 화면에서 "코드 재동기화" 기능을 추가하는 것도 고려할 만하다.
+
+### 변경 내용 (auction)
+- `AuctionDetailModal.tsx`: Fact 배지 제거, `strategyTagsList`를 카드 형태(💎 아이콘 +
+  라벨 + 설명, 보라색 톤)로 표시
+- `StrategyTagsTab.tsx` 신규: 1단계(Fact 태그 체크박스 조합 → Strategy 규칙 생성),
+  2단계(Strategy 코드 → 노출 라벨/설명 입력) 2단 관리 UI. 관리자 콘솔에 "Strategy 태그"
+  탭으로 추가
+- `TagRulesTab.tsx`: Fact 태그가 비노출 내부 코드라는 안내 문구로 수정, 목록에 `tagCode`
+  함께 표시(Strategy 규칙 작성 시 참조용)
+
+### 추가: 홈 화면 리스트에도 Strategy 배지 노출
+상세페이지에만 있던 Strategy 배지를 추천물건 목록(그리드 카드/리스트뷰)에도 추가.
+- 그리드 카드: 주소/면적 정보와 최소투자금 박스 사이
+- 리스트뷰: 주소 하단(면적·입찰일 아래) 작은 배지
+- 둘 다 `title` 속성으로 hover 시 설명 문구 노출, 상세페이지와 동일한 보라색 톤 사용
+
+### 결과
+- 관리자가 화면에서 직접 값을 확인·복구할 수 있음(브라우저 쿠키의 JWT로 API를 조회해
+  Fact/Strategy 규칙의 실제 코드값을 대조하는 방식으로 원인 진단)
+- "85㎡ 초과 + 아파트" 물건이 목록/상세 양쪽에서 "경쟁이 적은 투자" 배지로 정상 노출됨
