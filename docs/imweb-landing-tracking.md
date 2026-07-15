@@ -85,14 +85,16 @@
 가입완료 페이지에 아래를 **추가로** 넣으세요(2번 스크립트는 그대로 두고
 이 스크립트를 이어서 넣으면 됩니다).
 
-카톡방 버튼의 링크 주소(예: `https://open.kakao.com/o/...`)를 알아야
-합니다. 버튼을 우클릭 → "링크 주소 복사"로 확인하세요.
+카톡방 버튼의 링크 주소를 알아야 합니다. 버튼을 우클릭 → "검사(Inspect)"로 실제
+`href` 값을 확인하세요. **오픈채팅 주소(`open.kakao.com/o/...`)가 아니라
+`bit.ly`처럼 단축 URL로 걸려있는 경우가 많으니, 반드시 실제 href 값을 확인하고
+그에 맞는 공통 부분을 아래 `KAKAO_ROOM_URL_PART`에 넣어야 합니다.**
 
 ```html
 <script>
 (function () {
   var API_BASE = "https://auction-production-2c72.up.railway.app";
-  var KAKAO_ROOM_URL_PART = "open.kakao.com"; // 카톡방 링크에 공통으로 포함된 부분
+  var KAKAO_ROOM_URL_PART = "bit.ly/couchEnd"; // 카톡방 버튼의 실제 href(단축 URL)에 맞춘 값
 
   document.addEventListener("click", function (e) {
     var link = e.target.closest ? e.target.closest("a") : null;
@@ -113,9 +115,15 @@
 ```
 
 이 스크립트는 페이지 안의 모든 링크 클릭을 감시하다가, href에
-`open.kakao.com`이 포함된 링크(카톡방 버튼)를 클릭했을 때만 기록을
-남깁니다. 버튼의 실제 링크 형태가 다르면 `KAKAO_ROOM_URL_PART` 값을
-그에 맞게 바꿔주세요.
+`KAKAO_ROOM_URL_PART` 문자열이 포함된 링크(카톡방 버튼)를 클릭했을 때만
+기록을 남깁니다. 버튼의 실제 링크 형태가 다르면 이 값을 그에 맞게 바꿔주세요.
+
+> **실제 사례**: 아임웹에서 버튼을 `open.kakao.com`으로 바로 연결하지 않고
+> `bit.ly/xxxxx` 같은 단축 URL로 걸어두는 경우가 있습니다. 이 경우
+> `KAKAO_ROOM_URL_PART`를 `"open.kakao.com"`으로 두면 조건이 절대 만족되지
+> 않아 클릭이 하나도 기록되지 않습니다(전부 "클릭 안 함"으로 표시됨). 반드시
+> 버튼을 우클릭 → 검사(Inspect)로 실제 `href` 값을 확인한 뒤 그 값에 맞게
+> 설정하세요.
 
 ## 확인 방법
 
