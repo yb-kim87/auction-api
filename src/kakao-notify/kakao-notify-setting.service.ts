@@ -59,8 +59,10 @@ export class KakaoNotifySettingService {
 
   /**
    * 리드 자동발송용: 저장된 변수 설정(고정값 또는 "$field:필드명" 참조)을
-   * 실제 리드 데이터로 치환해 최종 변수 맵을 만든다. 이름 변수(nameVar)는
-   * 항상 리드의 실제 이름으로 강제 대체된다.
+   * 실제 리드 데이터로 치환해 최종 변수 맵을 만든다. 이름 변수(nameVar)를
+   * 포함해 모든 변수는 관리자가 설정한 값/필드 참조를 그대로 따른다 — 기본값은
+   * "$field:name"으로 세팅되어 있어 평소엔 리드 이름이 발송되지만, 관리자가
+   * 다른 필드나 직접입력 값으로 바꾸면 그 값이 그대로 발송된다.
    */
   async resolveVariables(lead: Pick<KakaoLead, keyof KakaoLead> | { name: string }): Promise<{
     templateCode: string;
@@ -81,8 +83,10 @@ export class KakaoNotifySettingService {
 
   /**
    * 관리자가 목록에서 골라 즉석으로 선택한 템플릿으로 일괄발송할 때 사용.
-   * 저장된 기본 설정과 무관하게, 넘겨준 variables/nameVar 기준으로
-   * "$field:필드명" 참조를 리드 데이터로 치환한다.
+   * 저장된 기본 설정과 무관하게, 넘겨준 variables 기준으로 "$field:필드명"
+   * 참조를 리드 데이터로 치환한다. nameVar 자체는 강제 대체하지 않고, 관리자가
+   * 설정해둔 값(고정값 또는 필드 참조)을 그대로 사용한다. nameVar가 variables에
+   * 아예 없을 때만(설정 누락 등 예외적 상황) 리드 이름으로 안전하게 채운다.
    */
   resolveVariablesFor(
     lead: Pick<KakaoLead, keyof KakaoLead> | { name: string },
@@ -99,6 +103,9 @@ export class KakaoNotifySettingService {
         resolved[key] = value;
       }
     }
-    return { ...resolved, [nameVar]: lead.name || "고객" };
+    if (!(nameVar in resolved)) {
+      resolved[nameVar] = lead.name || "고객";
+    }
+    return resolved;
   }
 }
