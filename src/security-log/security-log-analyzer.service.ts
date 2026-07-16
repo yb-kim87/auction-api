@@ -27,7 +27,21 @@ const SEED_EXCLUDED_IPS: Array<{ ip: string; note: string }> = [
   { ip: "35.243.23.39", note: "구글 서비스 계정(Sheets API) 추정 - 2026-07-16" },
   { ip: "35.187.134.139", note: "Google Apps Script 추정 - 2026-07-17" },
   { ip: "35.187.143.69", note: "Google Apps Script 추정 - 2026-07-17" },
+  { ip: "35.243.23.38", note: "Google Apps Script 추정 - 2026-07-17" },
+  { ip: "34.116.21.34", note: "Google Apps Script 추정 - 2026-07-17" },
 ];
+
+/**
+ * Google Apps Script(인스타그램 인스턴트 구글시트 연동)는 GCP 임대 IP를
+ * 매번 다르게 써서 IP 단위 화이트리스트를 계속 추가해야 하는 문제가 있었음
+ * (2026-07-17). IP 대신 User-Agent로 걸러낸다 — Apps Script의 User-Agent는
+ * "Google-Apps-Script"를 포함하는 고정된 값이라 IP보다 안정적인 식별자.
+ */
+const EXCLUDED_USER_AGENT_SUBSTRINGS = ["Google-Apps-Script"];
+
+function isExcludedUserAgent(userAgent: string): boolean {
+  return EXCLUDED_USER_AGENT_SUBSTRINGS.some((needle) => userAgent.includes(needle));
+}
 
 interface IpStat {
   ip: string;
@@ -154,7 +168,10 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
       );
       const cutoff = Date.now() - WINDOW_MINUTES * 60_000;
       const recent = allEntries.filter(
-        (e) => new Date(e.ts).getTime() >= cutoff && !excluded.has(e.ip),
+        (e) =>
+          new Date(e.ts).getTime() >= cutoff &&
+          !excluded.has(e.ip) &&
+          !isExcludedUserAgent(e.userAgent ?? ""),
       );
       if (recent.length === 0) return;
 
