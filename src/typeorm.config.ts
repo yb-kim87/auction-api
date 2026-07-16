@@ -26,6 +26,7 @@ import { KakaoLandingVisit } from "./kakao-notify/kakao-landing-visit.entity";
 import { TagRule } from "./tags/tag-rule.entity";
 import { StrategyRule } from "./tags/strategy-rule.entity";
 import { StrategyLabel } from "./tags/strategy-label.entity";
+import { SecurityLogIpExclusion } from "./security-log/security-log-ip-exclusion.entity";
 
 const entities = [
   Auction,
@@ -53,6 +54,7 @@ const entities = [
   TagRule,
   StrategyRule,
   StrategyLabel,
+  SecurityLogIpExclusion,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

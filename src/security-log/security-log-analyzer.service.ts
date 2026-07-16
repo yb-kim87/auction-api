@@ -1,5 +1,8 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 import { RequestLogWriterService, type RequestLogEntry } from "./request-log-writer.service";
+import { SecurityLogIpExclusion } from "./security-log-ip-exclusion.entity";
 import { OpenAiService } from "../ai/openai.service";
 import { TelegramAlertService } from "../kakao-notify/telegram-alert.service";
 
@@ -10,25 +13,21 @@ const WINDOW_MINUTES = 10;
 const TOP_N = 20;
 
 /**
- * 정상적인 외부 연동으로 확인된 IP는 분석 대상에서 제외한다.
- * 구글 서비스 계정(Sheets API 등 GCP 인프라) 관련 트래픽으로 보이는 IP가
- * 10분 간격으로 반복 감지되어 오탐 알림이 발생함을 확인(2026-07-16).
- * 대역 전체가 아니라 실제로 알림에 등장한 IP만 정확히 화이트리스트한다 —
- * 대역 전체를 제외하면 같은 GCP 대역에서 오는 다른(실제) 위협 트래픽까지
- * 감지하지 못하게 되므로 범위를 넓히지 않는다.
+ * 정상적인 외부 연동(구글 서비스 계정 Sheets API 등)에서 반복 오탐이
+ * 확인된 초기 IP 목록(2026-07-16/17). 최초 기동 시 DB(security_log_ip_exclusions)에
+ * 시드로 넣어두고, 이후로는 관리자가 화면에서 직접 추가/삭제한다.
+ * 대역 전체가 아니라 IP 단위로만 등록해 감지 범위 축소를 최소화한다.
  */
-const EXCLUDED_IPS = new Set([
-  "34.116.22.6",
-  "35.187.134.140",
-  "35.243.23.37",
-  "35.187.134.141",
-  "34.116.21.33",
-  "35.243.23.39",
-]);
-
-function isExcludedIp(ip: string): boolean {
-  return EXCLUDED_IPS.has(ip);
-}
+const SEED_EXCLUDED_IPS: Array<{ ip: string; note: string }> = [
+  { ip: "34.116.22.6", note: "구글 서비스 계정(Sheets API) 추정 - 2026-07-16" },
+  { ip: "35.187.134.140", note: "구글 서비스 계정(Sheets API) 추정 - 2026-07-16" },
+  { ip: "35.243.23.37", note: "구글 서비스 계정(Sheets API) 추정 - 2026-07-16" },
+  { ip: "35.187.134.141", note: "구글 서비스 계정(Sheets API) 추정 - 2026-07-16" },
+  { ip: "34.116.21.33", note: "구글 서비스 계정(Sheets API) 추정 - 2026-07-16" },
+  { ip: "35.243.23.39", note: "구글 서비스 계정(Sheets API) 추정 - 2026-07-16" },
+  { ip: "35.187.134.139", note: "Google Apps Script 추정 - 2026-07-17" },
+  { ip: "35.187.143.69", note: "Google Apps Script 추정 - 2026-07-17" },
+];
 
 interface IpStat {
   ip: string;
@@ -114,9 +113,12 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
     private readonly logWriter: RequestLogWriterService,
     private readonly openAi: OpenAiService,
     private readonly telegramAlert: TelegramAlertService,
+    @InjectRepository(SecurityLogIpExclusion)
+    private readonly ipExclusionRepo: Repository<SecurityLogIpExclusion>,
   ) {}
 
-  onModuleInit() {
+  async onModuleInit() {
+    await this.seedInitialExclusions();
     if (!this.openAi.isConfigured() || !this.telegramAlert.isConfigured()) {
       this.logger.log(
         "보안 로그 분석 스케줄러 비활성화(OPENAI_API_KEY 또는 TELEGRAM 설정 없음)",
@@ -125,6 +127,16 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
     }
     this.timer = setInterval(() => void this.runOnce(), ANALYZE_INTERVAL_MINUTES * 60_000);
     this.logger.log(`보안 로그 분석 스케줄러 시작(${ANALYZE_INTERVAL_MINUTES}분 간격)`);
+  }
+
+  /** 최초 기동 시에만 초기 화이트리스트를 심는다(이미 있으면 건드리지 않음). */
+  private async seedInitialExclusions(): Promise<void> {
+    for (const seed of SEED_EXCLUDED_IPS) {
+      const exists = await this.ipExclusionRepo.findOne({ where: { ip: seed.ip } });
+      if (!exists) {
+        await this.ipExclusionRepo.save(this.ipExclusionRepo.create(seed));
+      }
+    }
   }
 
   onModuleDestroy() {
@@ -137,9 +149,12 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
     try {
       const raw = await this.logWriter.readAll();
       const allEntries = parseLogLines(raw);
+      const excluded = new Set(
+        (await this.ipExclusionRepo.find()).map((row) => row.ip),
+      );
       const cutoff = Date.now() - WINDOW_MINUTES * 60_000;
       const recent = allEntries.filter(
-        (e) => new Date(e.ts).getTime() >= cutoff && !isExcludedIp(e.ip),
+        (e) => new Date(e.ts).getTime() >= cutoff && !excluded.has(e.ip),
       );
       if (recent.length === 0) return;
 
@@ -209,5 +224,25 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
     if (!this.openAi.isConfigured()) return { ran: false, reason: "OPENAI_API_KEY 미설정" };
     await this.runOnce();
     return { ran: true };
+  }
+
+  async listExclusions(): Promise<SecurityLogIpExclusion[]> {
+    return this.ipExclusionRepo.find({ order: { createdAt: "DESC" } });
+  }
+
+  async addExclusion(ip: string, note: string): Promise<SecurityLogIpExclusion> {
+    const trimmed = ip.trim();
+    if (!trimmed) {
+      throw new Error("IP를 입력해 주세요.");
+    }
+    const existing = await this.ipExclusionRepo.findOne({ where: { ip: trimmed } });
+    if (existing) return existing;
+    return this.ipExclusionRepo.save(
+      this.ipExclusionRepo.create({ ip: trimmed, note: note?.trim() ?? "" }),
+    );
+  }
+
+  async removeExclusion(id: string): Promise<void> {
+    await this.ipExclusionRepo.delete({ id });
   }
 }

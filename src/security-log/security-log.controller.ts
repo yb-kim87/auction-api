@@ -1,4 +1,4 @@
-import { Controller, Get, Headers, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Headers, Param, Post } from "@nestjs/common";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { SecurityLogAnalyzerService } from "./security-log-analyzer.service";
 import { RequestLogWriterService } from "./request-log-writer.service";
@@ -24,5 +24,33 @@ export class SecurityLogController {
     const raw = await this.logWriter.readAll();
     const lines = raw.split("\n").filter((l) => l.trim());
     return { lines: lines.slice(-200) };
+  }
+
+  /** 분석 대상에서 제외할 IP 목록(화이트리스트) 조회 */
+  @Get("ip-exclusions")
+  async listIpExclusions(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.analyzer.listExclusions();
+  }
+
+  /** IP를 화이트리스트에 추가 — 관리자가 직접 등록(대역이 아니라 정확한 IP 단위) */
+  @Post("ip-exclusions")
+  async addIpExclusion(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { ip: string; note?: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.analyzer.addExclusion(body.ip, body.note ?? "");
+  }
+
+  /** 화이트리스트에서 IP 제거 */
+  @Delete("ip-exclusions/:id")
+  async removeIpExclusion(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    await this.analyzer.removeExclusion(id);
+    return { removed: true };
   }
 }
