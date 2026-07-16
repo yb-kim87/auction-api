@@ -3,7 +3,7 @@ import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import {
   AUTH_TOKEN_COOKIE,
   parseCookieValue,
-  verifyAuthToken,
+  verifyAccessToken,
 } from "../auth/jwt.util";
 import { UserRole } from "./constants";
 
@@ -16,7 +16,7 @@ export function getAuthContext(headers: IncomingHttpHeaders): AuthContext {
   const cookieHeader = String(headers.cookie ?? headers.Cookie ?? "");
   const token = parseCookieValue(cookieHeader, AUTH_TOKEN_COOKIE);
   if (token) {
-    const payload = verifyAuthToken(token);
+    const payload = verifyAccessToken(token);
     if (payload?.sub) {
       return {
         username: payload.sub,
