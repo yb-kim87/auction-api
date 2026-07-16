@@ -9,6 +9,27 @@ const WINDOW_MINUTES = 10;
 /** 로그 라인이 너무 많으면 AI 프롬프트가 비대해지므로 통계로 압축해서 넘긴다 */
 const TOP_N = 20;
 
+/**
+ * 정상적인 외부 연동으로 확인된 IP는 분석 대상에서 제외한다.
+ * 구글 서비스 계정(Sheets API 등 GCP 인프라) 관련 트래픽으로 보이는 IP가
+ * 10분 간격으로 반복 감지되어 오탐 알림이 발생함을 확인(2026-07-16).
+ * 대역 전체가 아니라 실제로 알림에 등장한 IP만 정확히 화이트리스트한다 —
+ * 대역 전체를 제외하면 같은 GCP 대역에서 오는 다른(실제) 위협 트래픽까지
+ * 감지하지 못하게 되므로 범위를 넓히지 않는다.
+ */
+const EXCLUDED_IPS = new Set([
+  "34.116.22.6",
+  "35.187.134.140",
+  "35.243.23.37",
+  "35.187.134.141",
+  "34.116.21.33",
+  "35.243.23.39",
+]);
+
+function isExcludedIp(ip: string): boolean {
+  return EXCLUDED_IPS.has(ip);
+}
+
 interface IpStat {
   ip: string;
   count: number;
@@ -117,7 +138,9 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
       const raw = await this.logWriter.readAll();
       const allEntries = parseLogLines(raw);
       const cutoff = Date.now() - WINDOW_MINUTES * 60_000;
-      const recent = allEntries.filter((e) => new Date(e.ts).getTime() >= cutoff);
+      const recent = allEntries.filter(
+        (e) => new Date(e.ts).getTime() >= cutoff && !isExcludedIp(e.ip),
+      );
       if (recent.length === 0) return;
 
       const stats = buildIpStats(recent);
