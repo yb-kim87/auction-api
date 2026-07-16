@@ -7,7 +7,7 @@
 set -e
 
 echo "[start] launching crawler v3 worker (python, no selenium)..."
-python3 crawler/server_v3.py &
+/opt/venv-v3/bin/python3 crawler/server_v3.py &
 CRAWLER_PID=$!
 
 echo "[start] launching NestJS API..."
