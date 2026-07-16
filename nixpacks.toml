@@ -3,11 +3,12 @@
 # 단계를 추가한다. Selenium/Chrome은 설치하지 않는다(v3는 브라우저가 필요 없음).
 
 [phases.setup]
-nixPkgs = ["nodejs_20", "python311", "python311Packages.pip"]
+nixPkgs = ["nodejs_20", "python311"]
 
 [phases.install]
 cmds = [
   "npm ci",
+  "python3 -m ensurepip --upgrade",
   "python3 -m pip install --break-system-packages -r crawler/requirements-v3.txt"
 ]
 
