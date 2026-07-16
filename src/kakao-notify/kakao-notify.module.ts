@@ -51,6 +51,6 @@ import { KakaoLandingVisitController } from "./kakao-landing-visit.controller";
     KakaoLandingVisitService,
   ],
   controllers: [KakaoNotifyController, KakaoLandingVisitController],
-  exports: [KakaoNotifyService, SolapiService],
+  exports: [KakaoNotifyService, SolapiService, TelegramAlertService],
 })
 export class KakaoNotifyModule {}

@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AuctionsModule } from "./auctions/auctions.module";
 import { AuthModule } from "./auth/auth.module";
@@ -12,6 +12,8 @@ import { AiPlatformModule } from "./ai-platform/ai-platform.module";
 import { RecommendationModule } from "./recommendation/recommendation.module";
 import { KakaoNotifyModule } from "./kakao-notify/kakao-notify.module";
 import { TagsModule } from "./tags/tags.module";
+import { SecurityLogModule } from "./security-log/security-log.module";
+import { RequestLogMiddleware } from "./security-log/request-log.middleware";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -29,6 +31,11 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     RecommendationModule,
     KakaoNotifyModule,
     TagsModule,
+    SecurityLogModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestLogMiddleware).forRoutes("*");
+  }
+}

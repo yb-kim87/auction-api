@@ -32,6 +32,6 @@ import { RecommendationModule } from "../recommendation/recommendation.module";
     CafeKnowledgeService,
     OpenAiService,
   ],
-  exports: [CafeKnowledgeService, KnowledgeService],
+  exports: [CafeKnowledgeService, KnowledgeService, OpenAiService],
 })
 export class AiModule {}
