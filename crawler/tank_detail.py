@@ -6,7 +6,10 @@ import json
 import re
 import time
 
-from selenium.webdriver.common.by import By
+# selenium 은 DOM 조작 함수(read_dom_base_info 등)에서만 필요하다. 이 파일은
+# HTTPX 전용 경량 워커(full_httpx_worker.py 등, selenium 미설치 환경 배포용)
+# 에서도 import 되므로, 모듈 최상단에서 selenium을 강제하지 않고 실제로
+# 필요한 함수 내부에서만 지연 import 한다.
 
 AUCTION_NO_PATTERN = re.compile(r"(\d{4})타경(\d+)(?:\((\d+)\))?")
 
@@ -316,6 +319,8 @@ def extract_building_area_from_detail(detail: dict | None) -> str:
 
 def read_dom_base_info(driver) -> dict:
     """client-top-summary data-base-info-text / data-base-info-value."""
+    from selenium.webdriver.common.by import By
+
     out: dict = {}
 
     text_bindings = {
@@ -585,15 +590,19 @@ def _normalize_build_year_text(text: str) -> str:
 def normalize_build_year_value(raw: str) -> str:
     """사용승인·준공 날짜 문자열 → YYYY.MM.DD 또는 연도."""
     text = _normalize_build_year_text(raw).strip()
-    if not text or text in ("-", "0", "없음", "null", "값없음"):
+    if not text or text in ("-", "0", "0000-00-00", "없음", "null", "값없음"):
         return ""
     inline = _USE_APPROVAL_INLINE_RE.search(text)
     if inline:
         y, m, d = inline.groups()
+        if y == "0000":
+            return ""
         return f"{y}.{int(m):02d}.{int(d):02d}"
     match = re.search(r"(\d{4})[-./](\d{1,2})[-./](\d{1,2})", text)
     if match:
         y, m, d = match.groups()
+        if y == "0000":
+            return ""
         return f"{y}.{int(m):02d}.{int(d):02d}"
     year_match = re.search(r"(19|20)\d{2}", text)
     return year_match.group(0) if year_match else ""
@@ -653,7 +662,7 @@ def parse_build_year_from_detail(detail: dict | None) -> str:
     if not isinstance(detail, dict):
         return ""
 
-    key_hints = ("use_apr", "useapr", "apr_day", "승인", "준공")
+    key_hints = ("use_apr", "useapr", "apr_day", "aprv_dt", "승인", "준공")
 
     def walk(node) -> str:
         if isinstance(node, dict):
@@ -735,6 +744,9 @@ def parse_apt_meta_from_env_payload(payload: dict | None) -> dict:
 
     apt_row = dt_dj.get("aptRow") if isinstance(dt_dj.get("aptRow"), dict) else {}
     apt_info = dt_dj.get("aptInfo") if isinstance(dt_dj.get("aptInfo"), dict) else {}
+    # 일부 응답은 aptRow/aptInfo로 감싸지 않고 dtDj 최상위에 바로
+    # cnt_sedae/build_date 등을 담아 내려줌 — 이 형태도 폴백으로 지원.
+    apt_flat = dt_dj
 
     use_apr = (
         _pick_apt_field(
@@ -749,6 +761,9 @@ def parse_apt_meta_from_env_payload(payload: dict | None) -> dict:
             "사용승인일",
             "사용승인일자",
         )
+        or _pick_apt_field(
+            apt_flat, "build_date", "use_apr_day", "useAprDay", "use_apr_dt", "useAprDt"
+        )
         or _find_use_apr_in_dict(apt_row)
         or _find_use_apr_in_dict(apt_info)
     )
@@ -757,9 +772,11 @@ def parse_apt_meta_from_env_payload(payload: dict | None) -> dict:
         if normalized:
             out["build_year"] = normalized
 
-    units_raw = _pick_apt_field(
-        apt_row, "cnt_sedae", "hhldCnt", "totHhldCnt", "sedae_cnt"
-    ) or _pick_apt_field(apt_info, "cnt_sedae", "hhldCnt", "세대수", "totHhldCnt")
+    units_raw = (
+        _pick_apt_field(apt_row, "cnt_sedae", "hhldCnt", "totHhldCnt", "sedae_cnt")
+        or _pick_apt_field(apt_info, "cnt_sedae", "hhldCnt", "세대수", "totHhldCnt")
+        or _pick_apt_field(apt_flat, "cnt_sedae", "hhldCnt", "totHhldCnt", "sedae_cnt")
+    )
     units = _safe_int(units_raw)
     if units and units > 0:
         out["total_units"] = units
@@ -1162,6 +1179,8 @@ return { version: 1, rows, miscNotes };
 
 
 def extract_lease_status_from_dom(driver) -> dict | None:
+    from selenium.webdriver.common.by import By
+
     try:
         payload = driver.execute_script(f"return ({EXTRACT_LEASE_STATUS_JS});")
         if isinstance(payload, dict):
@@ -1481,6 +1500,8 @@ APPRAISER_DOM_BINDINGS = (
 
 def extract_appraiser_from_dom(driver) -> str:
     """data-base-info 바인딩·spanBox·본문에서 감정원(약칭 포함) 추출."""
+    from selenium.webdriver.common.by import By
+
     for binding in APPRAISER_DOM_BINDINGS:
         for attr in ("data-base-info-text", "data-base-info-value"):
             for element in driver.find_elements(
@@ -1543,12 +1564,12 @@ def parse_appraiser_from_detail(detail: dict | None) -> str:
         return ""
     for key, raw in base.items():
         key_lower = str(key).lower()
-        if "amt" in key_lower:
+        if "amt" in key_lower or "dt" in key_lower:
             continue
         if not any(token in key_lower for token in ("apsl", "juteuk", "appr")):
             continue
         text = str(raw).strip()
-        if text and text not in ("-", "0", "없음", "null"):
+        if text and text not in ("-", "0", "없음", "null", "0000-00-00"):
             return text
     return ""
 
@@ -1601,9 +1622,42 @@ def parse_bid_info_from_detail(detail: dict | None) -> str:
     return ""
 
 
+def _format_rg_info_items(section) -> str:
+    """rgBldgInfo/rgLandInfo.items[] — 이미 정제된 필드(sectRank/rcDt/rcNo/
+    rgNm/prsn/note)만 사용해 간결한 한 줄씩 요약. rawRow(원본 dict)는 제외."""
+    if not isinstance(section, dict):
+        return ""
+    items = section.get("items")
+    if not isinstance(items, list) or not items:
+        return ""
+    lines: list[str] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        parts = [
+            str(item.get("sectRank") or "").strip(),
+            str(item.get("rcDt") or "").strip(),
+            str(item.get("rgNm") or "").strip(),
+            str(item.get("prsn") or "").strip(),
+        ]
+        note = str(item.get("note") or "").strip()
+        line = " ".join(p for p in parts if p)
+        if note:
+            line = f"{line} ({note})" if line else note
+        if line:
+            lines.append(line)
+    return "\n".join(lines)
+
+
 def parse_deunggi_from_detail(detail: dict | None) -> str:
     if not isinstance(detail, dict):
         return ""
+
+    for section_key in ("rgBldgInfo", "rgLandInfo"):
+        text = _format_rg_info_items(detail.get(section_key))
+        if text:
+            return text
+
     for section_key in (
         "rgstInfo",
         "registInfo",
@@ -1639,12 +1693,16 @@ def parse_bldg_meta_from_detail(detail: dict | None) -> dict:
                 if not text:
                     walk(val)
                     continue
-                if not out["elevator"] and (
-                    "elev" in key_l or "승강" in text or "elv" in key_l
+                if (
+                    not out["elevator"]
+                    and ("elev" in key_l or "승강" in text or "elv" in key_l)
+                    and not text.isdigit()
                 ):
                     out["elevator"] = text
-                if not out["parking"] and (
-                    "park" in key_l or "주차" in text
+                if (
+                    not out["parking"]
+                    and ("park" in key_l or "주차" in text)
+                    and not text.isdigit()
                 ):
                     out["parking"] = text
                 walk(val)

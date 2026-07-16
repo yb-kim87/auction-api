@@ -26,6 +26,8 @@ export type CrawlerScheduleConfig = {
   excludeDuplicates: boolean;
   repeatDaily: boolean;
   oneTimeCompleted?: boolean;
+  /** 자동 스케줄 실행 시 사용할 크롤러 경로. 미지정 시 v1(기존 Selenium, 회귀 없음). */
+  crawlerVersion?: CrawlerVersion;
 };
 
 export type CrawlerCredentialsConfig = {
@@ -85,9 +87,18 @@ export type CollectUrlsDto = {
   search?: Partial<CrawlerSearchConfig>;
 };
 
+/**
+ * v1: 기존 Selenium 전체 경로 (/crawl/start)
+ * v2: HTTPX(목록/상세) + Selenium(네이버부동산) 하이브리드 (/crawl/start-v2)
+ * v3: 완전 HTTPX(브라우저 없음, curl_cffi 기반 네이버 조회 포함) (/crawl/start-v3)
+ * 미지정 시 v1(기존 동작, 회귀 없음).
+ */
+export type CrawlerVersion = "v1" | "v2" | "v3";
+
 export type StartCrawlDto = {
   urls?: string[];
   repeatAfterCollect?: boolean;
+  crawlerVersion?: CrawlerVersion;
 };
 
 export type CrawlerLoginDto = {

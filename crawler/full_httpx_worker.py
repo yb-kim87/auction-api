@@ -1,0 +1,225 @@
+"""완전 HTTPX 경로: 목록/상세/네이버부동산 전부 브라우저 없이 처리.
+
+hybrid_worker.py(HTTPX + Selenium 네이버)와 별개로 존재하는 실험적 버전.
+naver_httpx.py(curl_cffi 기반 네이버 정적 조회)가 실제로 Selenium과 동일한
+품질을 내는지 검증하기 위해 신설(2026-07-17).
+
+이 파일은 selenium을 전혀 import하지 않는다(item_crawl 대신
+item_validation을 사용) — Chrome/selenium 설치 없이 순수 Python 환경(예:
+Railway 컨테이너)에 v3 전용 경량 워커로 배포하기 위한 전제 조건이다.
+"""
+
+from __future__ import annotations
+
+import asyncio
+
+import httpx
+
+from crawl_abort import check_stop
+from http_client import fetch_detail, fetch_env_view_data, login, make_client
+from item_validation import validate_crawl_item_reason
+from naver_httpx import extract_naver_prices_httpx
+from parsers import parse_detail_page
+from repository import post_item_to_api
+from tank_detail import extract_complex_id_from_env_payload
+
+
+def _is_apartment_usage(usage: str) -> bool:
+    normalized = (usage or "").strip()
+    return normalized == "아파트" or normalized.startswith("아파트")
+
+
+def _apply_naver_part_httpx(item: dict, naver_complex_id: str | None) -> dict:
+    usage = item.get("usage") or "없음"
+    building_area = item.get("area") or "0"
+
+    naver = {
+        "naver_price_detail": "",
+        "naver_lowest_price": None,
+        "gap_margin": None,
+        "gap_margin_sold_price": None,
+        "new_case_gap_margin": None,
+        "transaction_prices": "",
+        "real_trade_count": "",
+        "complex_id": None,
+    }
+    if _is_apartment_usage(usage) and building_area not in ("0", "없음"):
+        naver = extract_naver_prices_httpx(
+            building_area, complex_id=naver_complex_id
+        )
+        min_price = item.get("min_price") or 0
+        sale_price = item.get("sale_price")
+        appraisal_price = item.get("appraisal_price") or 0
+        if naver.get("naver_lowest_price") and min_price:
+            naver["gap_margin"] = naver["naver_lowest_price"] - min_price
+        if naver.get("naver_lowest_price") and sale_price:
+            naver["gap_margin_sold_price"] = naver["naver_lowest_price"] - sale_price
+        if naver.get("naver_lowest_price") and appraisal_price:
+            naver["new_case_gap_margin"] = naver["naver_lowest_price"] - appraisal_price
+
+    item["naver_lowest_price"] = naver.get("naver_lowest_price") or 0
+    item["gap_margin_sold_price"] = naver.get("gap_margin_sold_price")
+    item["gap_margin"] = naver.get("gap_margin")
+    item["new_case_gap_margin"] = naver.get("new_case_gap_margin")
+    item["real_trade_count"] = naver.get("real_trade_count") or ""
+    item["naver_price_detail"] = naver.get("naver_price_detail") or ""
+    item["transaction_prices"] = naver.get("transaction_prices") or ""
+    item["naver_id"] = str(naver.get("complex_id") or naver_complex_id or "").strip()
+    return item
+
+
+async def crawl_one_item_full_httpx(client: httpx.AsyncClient, tid: str) -> dict:
+    """목록/상세/네이버 전부 브라우저 없이 처리한 완성 결과 하나를 반환."""
+    detail = await fetch_detail(client, tid)
+    env_payload = await fetch_env_view_data(client, tid)
+    item = parse_detail_page(detail, env_payload)
+    naver_complex_id = extract_complex_id_from_env_payload(env_payload)
+    check_stop(None)
+    item = _apply_naver_part_httpx(item, naver_complex_id)
+    return item
+
+
+async def run_full_httpx(
+    tids: list[str], *, save_to_db: bool = False
+) -> list[dict]:
+    results: list[dict] = []
+    async with make_client() as client:
+        await login(client)
+        for tid in tids:
+            item = await crawl_one_item_full_httpx(client, tid)
+            if save_to_db:
+                valid, _ = validate_crawl_item_reason(item)
+                if valid:
+                    await post_item_to_api(client, item)
+            results.append(item)
+    return results
+
+
+async def _run_full_httpx_with_state(
+    tids: list[str],
+    *,
+    callback_url: str | None,
+    callback_secret: str | None,
+    state,
+    should_stop,
+) -> None:
+    async with make_client() as client:
+        await login(client)
+        for index, tid in enumerate(tids):
+            pos = index + 1
+            check_stop(should_stop)
+            with state.lock:
+                if state.stop_requested:
+                    state.phase = "stopped"
+                    state.last_message = "사용자 요청으로 조회가 중단되었습니다."
+                    return
+                state.last_message = f"[{pos}/{len(tids)}] tid={tid} 조회 중 (완전 HTTPX)..."
+
+            try:
+                item = await crawl_one_item_full_httpx(client, tid)
+            except Exception as exc:
+                with state.lock:
+                    state.completed = pos
+                    state.last_message = f"[{pos}/{len(tids)}] tid={tid} 실패: {exc}"
+                    state.events.append(state.last_message)
+                continue
+
+            valid, skip_reason = validate_crawl_item_reason(item)
+            if not valid:
+                with state.lock:
+                    state.completed = pos
+                    state.last_message = f"[{pos}/{len(tids)}] 저장 스킵 ({skip_reason})"
+                    state.events.append(state.last_message)
+                continue
+
+            try:
+                await post_item_to_api(
+                    client, item, callback_url=callback_url, callback_secret=callback_secret
+                )
+                with state.lock:
+                    state.completed = pos
+                    state.updated += 1
+                    state.last_message = f"[{pos}/{len(tids)}] {item.get('auctionNo')} 저장 완료"
+                    state.events.append(state.last_message)
+            except httpx.HTTPError as exc:
+                with state.lock:
+                    state.completed = pos
+                    state.last_message = f"[{pos}/{len(tids)}] {item.get('auctionNo')} 저장 실패: {exc}"
+                    state.events.append(state.last_message)
+
+    with state.lock:
+        state.phase = "done"
+        state.last_message = f"완전 HTTPX 조회 완료 ({state.completed}/{len(tids)})"
+        state.events.append(state.last_message)
+
+
+def full_httpx_crawl_worker(
+    tids: list[str],
+    *,
+    callback_url: str | None = None,
+    callback_secret: str | None = None,
+    state,
+    should_stop=None,
+) -> None:
+    """threading.Thread target — hybrid_worker.hybrid_crawl_worker와 동일한
+    관례. 브라우저를 전혀 띄우지 않는 것이 이 워커의 유일한 차이."""
+    with state.lock:
+        state.phase = "crawling"
+        state.completed = 0
+        state.total = len(tids)
+        state.created = 0
+        state.updated = 0
+        state.stop_requested = False
+        state.error = None
+        state.events.clear()
+
+    try:
+        asyncio.run(
+            _run_full_httpx_with_state(
+                tids,
+                callback_url=callback_url,
+                callback_secret=callback_secret,
+                state=state,
+                should_stop=should_stop,
+            )
+        )
+    except Exception as exc:
+        with state.lock:
+            state.phase = "error"
+            state.error = str(exc)
+            state.last_message = f"완전 HTTPX 조회 실패: {exc}"
+
+
+if __name__ == "__main__":
+    import json
+    import os
+    import sys
+    from pathlib import Path
+
+    def _load_dotenv() -> None:
+        env_path = Path(__file__).resolve().parent.parent / ".env"
+        if not env_path.is_file():
+            return
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key, value = key.strip(), value.strip()
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+    _load_dotenv()
+
+    tid = sys.argv[1] if len(sys.argv) > 1 else "13564"
+
+    async def _main() -> None:
+        results = await run_full_httpx([tid], save_to_db=False)
+        out_dir = Path(__file__).resolve().parent.parent / "tests" / "crawler" / "fixtures"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "full_httpx_sample.json").write_text(
+            json.dumps(results, ensure_ascii=False, indent=2, default=str), encoding="utf-8"
+        )
+        print(f"saved {len(results)} result(s)")
+
+    asyncio.run(_main())

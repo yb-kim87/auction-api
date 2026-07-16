@@ -131,5 +131,22 @@ export function mapCrawledItem(raw: Record<string, unknown>): Partial<UpdateAuct
     priceDetail,
     tradingDetail: str(raw.tradingDetail ?? raw.transaction_prices),
     recordTime: str(raw.recordTime ?? raw.record_time),
+    extraData: extractExtraData(raw),
   };
+}
+
+/**
+ * 아직 정식 컬럼이 아닌 신규 발견 필드만 모아 JSONB로 저장.
+ * 기존 정식 컬럼 대상 필드는 여기 포함하지 않는다(중복 저장 방지).
+ */
+function extractExtraData(raw: Record<string, unknown>): Record<string, unknown> | null {
+  const candidates: Record<string, unknown> = {};
+  const keys = ["img", "rThings", "fileInfo", "rcaseInfo", "hit", "x", "y", "histCnt"];
+  for (const key of keys) {
+    const value = raw[key];
+    if (value !== undefined && value !== null && value !== "") {
+      candidates[key] = value;
+    }
+  }
+  return Object.keys(candidates).length > 0 ? candidates : null;
 }

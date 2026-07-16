@@ -1104,7 +1104,14 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async startCrawl(dto: StartCrawlDto, submittedBy: string) {
-    await this.ensureCrawlerLoggedIn(submittedBy);
+    const version = dto.crawlerVersion ?? "v1";
+    // v3(완전 HTTPX)는 브라우저(Selenium 워커)를 전혀 쓰지 않으므로
+    // 관리자 PC의 Chrome 워커 연결·로그인 상태를 확인할 필요가 없다.
+    // 워커 프로세스(runner.py serve) 자체는 여전히 필요하므로 ensureWorker는
+    // 유지하되, 브라우저 준비 여부를 요구하는 로그인 확인만 건너뛴다.
+    if (version !== "v3") {
+      await this.ensureCrawlerLoggedIn(submittedBy);
+    }
     await this.ensureWorker();
     const urls =
       dto.urls ??
@@ -1144,18 +1151,39 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         }
       }
 
+      const version = dto.crawlerVersion ?? "v1";
+      const path =
+        version === "v3"
+          ? "/crawl/start-v3"
+          : version === "v2"
+            ? "/crawl/start-v2"
+            : "/crawl/start";
+      if (version !== "v1") {
+        this.appendLog(
+          "info",
+          `실행 경로: ${version === "v3" ? "완전 HTTPX(브라우저 없음)" : "하이브리드(HTTPX+Selenium 네이버)"}`,
+        );
+      }
+
+      // v2/v3(HTTPX 기반 경로)는 자체 세션으로 로그인하므로 Selenium
+      // 자격증명(userId/password)을 보내지 않는다. mirror 콜백은 세 경로 모두 동일하게 지원.
+      const body =
+        version === "v1"
+          ? {
+              urls,
+              callbackUrl,
+              callbackSecret,
+              mirrorCallbackUrl,
+              mirrorCallbackSecret,
+              ...this.crawlerCredentialBody(),
+            }
+          : { urls, callbackUrl, callbackSecret };
+
       const result = await this.workerFetch<{ ok: boolean; message?: string }>(
-        "/crawl/start",
+        path,
         {
           method: "POST",
-          body: JSON.stringify({
-            urls,
-            callbackUrl,
-            callbackSecret,
-            mirrorCallbackUrl,
-            mirrorCallbackSecret,
-            ...this.crawlerCredentialBody(),
-          }),
+          body: JSON.stringify(body),
         },
       );
       if (result.message) this.appendLog("info", result.message);
@@ -1403,7 +1431,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
       if (schedule.repeatAfterCollect && this.localStatus.urls.length > 0) {
         await this.startCrawl(
-          { repeatAfterCollect: true },
+          {
+            repeatAfterCollect: true,
+            crawlerVersion: schedule.crawlerVersion,
+          },
           "scheduler",
         );
       }

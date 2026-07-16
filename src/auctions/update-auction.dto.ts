@@ -35,4 +35,6 @@ export type UpdateAuctionDto = {
   priceDetail: string;
   tradingDetail: string;
   recordTime: string;
+  /** 아직 정식 컬럼으로 승격하지 않은 크롤러 부가 데이터(선택). */
+  extraData?: Record<string, unknown> | null;
 };

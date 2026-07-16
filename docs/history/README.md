@@ -14,6 +14,7 @@
 - [2026-07-15_01 Fact/Strategy Tag 자동 태그 시스템 구축](./2026-07-15_01_fact-strategy-tag-system.md)
 - [2026-07-16_01 JWT access/refresh 토큰 이중화](./2026-07-16_01_jwt-access-refresh-token.md)
 - [2026-07-16_02 로그 감지 시스템 — 이상행위 알림](./2026-07-16_02_security-log-detection.md)
+- [2026-07-16_03 크롤러 Selenium → HTTPX 정적 방식 전환 (1단계 분석)](./2026-07-16_03_crawler-httpx-migration.md)
 
 ## 앞으로의 작업 방식
 

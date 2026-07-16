@@ -253,6 +253,10 @@ export function mergeAuctionFromSource(
     priceDetail: pickStr(source.priceDetail, existing.priceDetail),
     tradingDetail: pickStr(source.tradingDetail, existing.tradingDetail),
     recordTime: pickStr(source.recordTime, existing.recordTime),
+    extraData:
+      (source as Partial<UpdateAuctionDto>).extraData !== undefined
+        ? (source as Partial<UpdateAuctionDto>).extraData
+        : existing.extraData,
   };
 
   if (
@@ -320,6 +324,7 @@ export function buildAuctionEntity(
     priceDetail: parsed.priceDetail ?? "",
     tradingDetail: parsed.tradingDetail ?? "",
     recordTime: parsed.recordTime ?? "",
+    extraData: (parsed as Partial<UpdateAuctionDto>).extraData ?? null,
     city,
     district,
     propType,

@@ -1,0 +1,15 @@
+# NestJS(Node) + Python v3(HTTPX 전용, selenium 없음) 워커를 같은 컨테이너에서
+# 함께 빌드/실행하기 위한 Nixpacks 설정. 기본 Node 자동 감지에 Python 설치
+# 단계를 추가한다. Selenium/Chrome은 설치하지 않는다(v3는 브라우저가 필요 없음).
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "python311"]
+
+[phases.install]
+cmds = [
+  "npm ci",
+  "python3 -m pip install --break-system-packages -r crawler/requirements-v3.txt"
+]
+
+[phases.build]
+cmds = ["npm run build"]

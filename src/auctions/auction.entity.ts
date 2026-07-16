@@ -178,6 +178,14 @@ export class Auction {
   /** strategyTags를 파싱한 배열(응답 직렬화용, DB 컬럼 아님) — 사용자에게 실제로 보여줄 태그 */
   strategyTagsList!: StrategyTagItem[];
 
+  /**
+   * 크롤러가 수집했지만 아직 정식 컬럼으로 승격하지 않은 부가 데이터
+   * (예: 이미지 경로, 관련사건 목록, 좌표 등). 검색/정렬/추천에 자주
+   * 쓰이는 게 확인되면 그때 정식 컬럼으로 승격한다.
+   */
+  @Column({ type: "simple-json", nullable: true })
+  extraData!: Record<string, unknown> | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

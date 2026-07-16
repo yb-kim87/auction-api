@@ -24,6 +24,9 @@ import item_crawl
 from crawl_abort import CrawlStoppedError
 from tank_login import ensure_login, is_logged_in, login, _is_logged_in_unlocked
 from url_collect import apply_preset, collect_urls
+from hybrid_worker import hybrid_crawl_worker
+from full_httpx_worker import full_httpx_crawl_worker
+from tank_detail import tid_from_url
 
 CRAWLER_SERVER_REVISION = "2026-07-01-tank-baseinfo"
 
@@ -1473,6 +1476,110 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(
                     200,
                     {"ok": True, "message": f"조회를 시작합니다 ({len(urls)}건)."},
+                )
+                return
+
+            if path == "/crawl/start-v2":
+                # 10단계: HTTPX(목록/상세) + Selenium(네이버부동산) 하이브리드 경로.
+                # 기존 /crawl/start(전부 Selenium)는 그대로 두고 별도 엔드포인트로만
+                # 제공 — 운영 스케줄러/기존 버튼에는 아직 연결하지 않는다.
+                urls = body.get("urls") or [
+                    entry["url"] if isinstance(entry, dict) else entry
+                    for entry in STATE.urls
+                ]
+                if not urls:
+                    self._send_json(400, {"error": "조회할 URL이 없습니다."})
+                    return
+
+                if STATE.crawl_thread and STATE.crawl_thread.is_alive():
+                    self._send_json(409, {"error": "이미 조회가 진행 중입니다."})
+                    return
+
+                tids: list[str] = []
+                for entry in urls:
+                    url = entry.split("_", 1)[-1] if isinstance(entry, str) and "_" in entry else entry
+                    tid = tid_from_url(url)
+                    if tid:
+                        tids.append(tid)
+                if not tids:
+                    self._send_json(400, {"error": "URL에서 tid를 추출하지 못했습니다."})
+                    return
+
+                cfg = _resolve_callback(
+                    body.get("callbackUrl") or body.get("callback_url"),
+                    body.get("callbackSecret") or body.get("callback_secret"),
+                )
+                user_id = body.get("userId") or body.get("user_id")
+                password = body.get("password")
+
+                STATE.crawl_thread = threading.Thread(
+                    target=hybrid_crawl_worker,
+                    kwargs=dict(
+                        tids=tids,
+                        user_id=user_id,
+                        password=password,
+                        callback_url=cfg["url"],
+                        callback_secret=cfg["secret"],
+                        state=STATE,
+                        should_stop=_crawl_should_stop,
+                    ),
+                    daemon=True,
+                )
+                STATE.crawl_thread.start()
+                self._send_json(
+                    200,
+                    {"ok": True, "message": f"하이브리드 조회를 시작합니다 ({len(tids)}건)."},
+                )
+                return
+
+            if path == "/crawl/start-v3":
+                # 10단계 2차: 목록/상세/네이버부동산 전부 브라우저 없이 처리하는
+                # 완전 HTTPX 경로(curl_cffi 기반 네이버 조회 포함). 아파트 50건
+                # 표본에서 Selenium과 네이버 핵심지표 100% 일치를 확인한 뒤 연결
+                # (2026-07-17). 기존 /crawl/start, /crawl/start-v2 는 그대로 유지 —
+                # 이 엔드포인트도 아직 운영 버튼/스케줄러에는 연결하지 않는다.
+                urls = body.get("urls") or [
+                    entry["url"] if isinstance(entry, dict) else entry
+                    for entry in STATE.urls
+                ]
+                if not urls:
+                    self._send_json(400, {"error": "조회할 URL이 없습니다."})
+                    return
+
+                if STATE.crawl_thread and STATE.crawl_thread.is_alive():
+                    self._send_json(409, {"error": "이미 조회가 진행 중입니다."})
+                    return
+
+                tids: list[str] = []
+                for entry in urls:
+                    url = entry.split("_", 1)[-1] if isinstance(entry, str) and "_" in entry else entry
+                    tid = tid_from_url(url)
+                    if tid:
+                        tids.append(tid)
+                if not tids:
+                    self._send_json(400, {"error": "URL에서 tid를 추출하지 못했습니다."})
+                    return
+
+                cfg = _resolve_callback(
+                    body.get("callbackUrl") or body.get("callback_url"),
+                    body.get("callbackSecret") or body.get("callback_secret"),
+                )
+
+                STATE.crawl_thread = threading.Thread(
+                    target=full_httpx_crawl_worker,
+                    kwargs=dict(
+                        tids=tids,
+                        callback_url=cfg["url"],
+                        callback_secret=cfg["secret"],
+                        state=STATE,
+                        should_stop=_crawl_should_stop,
+                    ),
+                    daemon=True,
+                )
+                STATE.crawl_thread.start()
+                self._send_json(
+                    200,
+                    {"ok": True, "message": f"완전 HTTPX 조회를 시작합니다 ({len(tids)}건)."},
                 )
                 return
 
