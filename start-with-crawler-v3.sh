@@ -9,12 +9,15 @@ set -e
 # curl_cffi(네이티브 확장, naver_httpx.py 가 사용)가 libstdc++.so.6 을 찾도록
 # Nix store 에서 stdenv.cc.cc.lib 경로를 동적으로 찾아 LD_LIBRARY_PATH 에 추가.
 # nixpacks.toml 의 [phases.setup] nixPkgs 에 "stdenv.cc.cc.lib" 를 포함해야 함.
-STDCXX_LIB_DIR=$(dirname "$(find /nix/store -maxdepth 2 -name 'libstdc++.so.6' 2>/dev/null | head -n 1)")
-if [ -n "$STDCXX_LIB_DIR" ] && [ "$STDCXX_LIB_DIR" != "." ]; then
+FOUND_LIB=$(find /nix/store -maxdepth 4 -name 'libstdc++.so.6' 2>/dev/null | head -n 1)
+if [ -n "$FOUND_LIB" ]; then
+  STDCXX_LIB_DIR=$(dirname "$FOUND_LIB")
   export LD_LIBRARY_PATH="$STDCXX_LIB_DIR:$LD_LIBRARY_PATH"
-  echo "[start] LD_LIBRARY_PATH set to include $STDCXX_LIB_DIR"
+  echo "[start] LD_LIBRARY_PATH set to include $STDCXX_LIB_DIR (found: $FOUND_LIB)"
 else
-  echo "[start] WARNING: libstdc++.so.6 not found under /nix/store — curl_cffi may fail"
+  echo "[start] WARNING: libstdc++.so.6 not found under /nix/store (maxdepth 4) — curl_cffi may fail"
+  echo "[start] debug: listing /nix/store top-level entries containing 'gcc' or 'stdenv'"
+  ls /nix/store 2>/dev/null | grep -iE 'gcc|stdenv' | head -20
 fi
 
 echo "[start] launching crawler v3 worker (python, no selenium)..."
