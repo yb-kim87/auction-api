@@ -201,11 +201,12 @@ export class RecommendationEngineService {
         return { item, requiredEquity, policy, estimatedProfit };
       })
       .filter(
+        // 대출 불가 정책(예: 규제지역·1주택 이상)이어도 목록에서 완전히 제외하지
+        // 않는다. requiredEquity가 대출한도 0으로 계산돼 필요자금=낙찰가 전액이
+        // 되고, 그 값이 투자가능자금 이하일 때만(현금 전액 매수 가능할 때만)
+        // 매칭된다.
         (row) =>
-          row.item.minPrice > 0 &&
-          row.policy &&
-          !row.policy.loanUnavailable &&
-          row.requiredEquity <= criteria.investableWon,
+          row.item.minPrice > 0 && row.policy && row.requiredEquity <= criteria.investableWon,
       )
       .filter((row) => {
         if (criteria.targetReturnWon == null) return true;
