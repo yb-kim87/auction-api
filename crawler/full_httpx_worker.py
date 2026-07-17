@@ -47,6 +47,18 @@ def _apply_naver_part_httpx(item: dict, naver_complex_id: str | None) -> dict:
         naver = extract_naver_prices_httpx(
             building_area, complex_id=naver_complex_id
         )
+        print(
+            f"[DEBUG naver] tid={item.get('tid')} area={building_area!r} "
+            f"complex_id={naver_complex_id!r} lowest={naver.get('naver_lowest_price')!r} "
+            f"detail_len={len(naver.get('naver_price_detail') or '')} "
+            f"detail_head={(naver.get('naver_price_detail') or '')[:60]!r}",
+            flush=True,
+        )
+    else:
+        print(
+            f"[DEBUG naver] tid={item.get('tid')} skipped: usage={usage!r} area={building_area!r}",
+            flush=True,
+        )
         min_price = item.get("min_price") or 0
         sale_price = item.get("sale_price")
         appraisal_price = item.get("appraisal_price") or 0
