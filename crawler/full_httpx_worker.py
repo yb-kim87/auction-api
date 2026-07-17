@@ -113,7 +113,7 @@ async def _run_full_httpx_with_state(
                     state.phase = "stopped"
                     state.last_message = "사용자 요청으로 조회가 중단되었습니다."
                     return
-                state.last_message = f"[{pos}/{len(tids)}] tid={tid} 조회 중 (완전 HTTPX)..."
+                state.last_message = f"[{pos}/{len(tids)}] tid={tid} 조회 중..."
 
             try:
                 item = await crawl_one_item_full_httpx(client, tid)
@@ -149,7 +149,7 @@ async def _run_full_httpx_with_state(
 
     with state.lock:
         state.phase = "done"
-        state.last_message = f"완전 HTTPX 조회 완료 ({state.completed}/{len(tids)})"
+        state.last_message = f"조회 완료 ({state.completed}/{len(tids)})"
         state.events.append(state.last_message)
 
 
@@ -187,7 +187,7 @@ def full_httpx_crawl_worker(
         with state.lock:
             state.phase = "error"
             state.error = str(exc)
-            state.last_message = f"완전 HTTPX 조회 실패: {exc}"
+            state.last_message = f"조회 실패: {exc}"
 
 
 if __name__ == "__main__":

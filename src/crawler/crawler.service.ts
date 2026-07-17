@@ -1359,11 +1359,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
           : version === "v2"
             ? "/crawl/start-v2"
             : "/crawl/start";
-      if (version !== "v1") {
-        this.appendLog(
-          "info",
-          `실행 경로: ${version === "v3" ? "완전 HTTPX(브라우저 없음)" : "하이브리드(HTTPX+Selenium 네이버)"}`,
-        );
+      // v3(HTTPX)가 기본 경로이므로 평소에는 굳이 표시하지 않고, 예전
+      // Selenium 경로(v1)를 쓸 때만 눈에 띄게 알린다.
+      if (version === "v1") {
+        this.appendLog("info", "실행 경로: Selenium(브라우저 사용)");
       }
 
       // v2/v3(HTTPX 기반 경로)는 자체 세션으로 로그인하므로 Selenium

@@ -402,7 +402,7 @@ class Handler(BaseHTTPRequestHandler):
             STATE.crawl_thread.start()
             self._send_json(
                 200,
-                {"ok": True, "message": f"완전 HTTPX 조회를 시작합니다 ({len(tids)}건)."},
+                {"ok": True, "message": f"조회를 시작합니다 ({len(tids)}건)."},
             )
             return
 
