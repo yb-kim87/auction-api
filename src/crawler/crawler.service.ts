@@ -714,10 +714,22 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const { created: _c, updated: _u, ...rest } = remote;
+    // created/updated 뿐 아니라 total 도 워커(server_v3.py) 응답을
+    // 그대로 신뢰하면 안 된다 — v3 워커는 목록 수집(/collect-urls-v3)
+    // 단계에서는 STATE.total 을 전혀 갱신하지 않고 조회 시작
+    // (/crawl/start-v3) 단계에서만 값을 채우므로, collectUrls() 가
+    // 방금 세팅한 정확한 total(수집된 URL 개수)을 다음 /status 폴링이
+    // 곧바로 0으로 덮어써 "총 작업 개수"가 사라지는 버그가 있었다
+    // (2026-07-17 실측). phase가 collecting/idle 일 때는 로컬 total을
+    // 유지하고, crawling 단계에서만 워커의 total(진행 중 조회 대상
+    // 개수)을 신뢰한다.
+    const { created: _c, updated: _u, total: remoteTotal, ...rest } = remote;
+    const shouldTrustRemoteTotal =
+      remote.phase === "crawling" || remote.phase === "stopped";
     this.localStatus = {
       ...this.localStatus,
       ...rest,
+      total: shouldTrustRemoteTotal ? (remoteTotal ?? this.localStatus.total) : this.localStatus.total,
       workerRunning: true,
     };
   }
