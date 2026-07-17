@@ -122,7 +122,13 @@ def _fetch_articles(
         "pyeongTypes": pyeong_numbers,
         "dongNumbers": [],
         "userChannelType": "PC",
-        "articleSortType": "RANKING_DESC",
+        # v1(naver_crawl.py)은 URL에 sortingType=낮은가격순 을 명시하고
+        # (line 20) articles.sort(price_min) 으로 재정렬까지 이중 보장한다
+        # (line 788). v3는 정렬 없이 추천순(RANKING_DESC)을 그대로 썼던
+        # 게 "호가 낮은순 정렬이 안 된다"는 원인이었다(실측 확인,
+        # 2026-07-17) — API 정렬도 낮은가격순으로 바꾸고, 아래에서
+        # 한 번 더 명시적으로 정렬한다.
+        "articleSortType": "PRICE_ASC",
         "lastInfo": [],
     }
     resp = session.post(
@@ -142,7 +148,7 @@ def _fetch_articles(
 
     rows = (data.get("result") or {}).get("list") or []
     prices: list[int] = []
-    lines: list[str] = []
+    lines_with_price: list[tuple[int, str]] = []
     seen: set[str] = set()
     for row in rows:
         info = row.get("representativeArticleInfo") or {}
@@ -195,10 +201,17 @@ def _fetch_articles(
         if line in seen:
             continue
         seen.add(line)
-        lines.append(line)
+        lines_with_price.append((deal_price, line))
 
     if not prices:
         return None, ""
+
+    # v1(naver_crawl.py: articles.sort(key=lambda a: (a.price_min, ...)))
+    # 과 동일하게 낮은 가격순으로 명시적으로 재정렬한다 — API의
+    # articleSortType=PRICE_ASC 하나만 믿지 않고 이중으로 보장한다
+    # (여러 평형(pyeong_number)의 응답을 합칠 때 순서가 섞일 수 있음).
+    lines_with_price.sort(key=lambda pair: pair[0])
+    lines = [line for _, line in lines_with_price]
     return min(prices), "\n\n".join(lines)
 
 
