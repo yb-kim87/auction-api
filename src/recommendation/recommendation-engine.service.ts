@@ -194,6 +194,8 @@ export class RecommendationEngineService {
                   ? Math.max(0, criteria.annualIncomeWon) * incomeLoanMultiplier
                   : null,
               existingLoanWon: criteria.existingLoanWon,
+              housingCount: criteria.housingCount,
+              regulatedArea: regulated,
             }).finalProfit
           : null;
         return { item, requiredEquity, policy, estimatedProfit };

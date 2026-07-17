@@ -4,8 +4,9 @@
  * 처리하기 위해 백엔드에도 동일하게 복제해둔다. 계산식을 고칠 때는 양쪽을 함께 수정해야 한다.
  */
 
-/** 낙찰가(취득세 과세표준) 구간별 취득세율(지방교육세 등 포함) */
-export function acquisitionTaxRate(minPriceWon: number): number {
+/** 무주택자/1주택자·비규제지역 적용, 낙찰가(취득세 과세표준) 구간별 1~3% 누진 취득세율
+ * (지방교육세 등 포함) */
+function baseAcquisitionTaxRate(minPriceWon: number): number {
   let base: number;
   if (minPriceWon <= 600_000_000) base = 0.01;
   else if (minPriceWon <= 650_000_000) base = 0.0133;
@@ -15,6 +16,33 @@ export function acquisitionTaxRate(minPriceWon: number): number {
   else if (minPriceWon <= 850_000_000) base = 0.0267;
   else base = 0.03;
   return base * 1.1 + 0.007;
+}
+
+/**
+ * 회원의 주택수(housingCount)·물건 소재지의 조정대상지역 여부(regulatedArea)에 따른
+ * 취득세율. 다주택자 중과세율 표(사용자 제공, 2026-07-18)를 그대로 반영한다.
+ *
+ * - 무주택자: 주택가액에 따른 1~3% 누진 구간 그대로 적용
+ * - 1주택자 + 비규제지역: 위와 동일한 1~3% 누진 구간
+ * - 1주택자 + 규제지역: 고정 8.8%
+ * - 2주택자 + 규제지역: 고정 12%
+ * - 2주택자 + 비규제지역: 고정 8%
+ * - 3주택 이상: 지역과 무관하게 고정 12%
+ *
+ * housingCount/regulatedArea가 없으면(회원정보 미입력 등) 기존과 동일하게 무주택자
+ * 기준 1~3% 누진 구간만 적용한다.
+ */
+export function acquisitionTaxRate(
+  minPriceWon: number,
+  housingCount?: number | null,
+  regulatedArea?: boolean | null,
+): number {
+  const count = housingCount ?? 0;
+
+  if (count >= 3) return 0.12;
+  if (count === 2) return regulatedArea ? 0.12 : 0.08;
+  if (count === 1) return regulatedArea ? 0.088 : baseAcquisitionTaxRate(minPriceWon);
+  return baseAcquisitionTaxRate(minPriceWon);
 }
 
 /** 매도가 구간별 매도 중개수수료율 */
@@ -73,6 +101,8 @@ export interface ProfitCalculatorInput {
   vatAmount: number;
   applyProgressiveDeduction: boolean;
   existingIncome: number;
+  housingCount?: number | null;
+  regulatedArea?: boolean | null;
 }
 
 export interface ProfitCalculatorResult {
@@ -117,6 +147,8 @@ export function calculateProfit(input: ProfitCalculatorInput): ProfitCalculatorR
     vatAmount,
     applyProgressiveDeduction,
     existingIncome,
+    housingCount,
+    regulatedArea,
   } = input;
 
   const bidRatio = minPrice > 0 ? bidPrice / minPrice : 0;
@@ -129,7 +161,7 @@ export function calculateProfit(input: ProfitCalculatorInput): ProfitCalculatorR
   );
   const loanAmount = Math.max(0, loanLimit - Math.max(0, existingLoanWon));
 
-  const taxRate = acquisitionTaxRate(bidPrice);
+  const taxRate = acquisitionTaxRate(bidPrice, housingCount, regulatedArea);
   const acquisitionTax = Math.round(bidPrice * taxRate);
 
   const loanInterest = Math.round((loanAmount * loanInterestRate) / 12 * holdingMonths);
@@ -214,6 +246,8 @@ export function estimateDefaultProfit(params: {
   loanRatioByBidPrice: number;
   incomeLoanLimit?: number | null;
   existingLoanWon?: number;
+  housingCount?: number | null;
+  regulatedArea?: boolean | null;
 }): ProfitCalculatorResult {
   const {
     minPrice,
@@ -223,6 +257,8 @@ export function estimateDefaultProfit(params: {
     loanRatioByBidPrice,
     incomeLoanLimit = null,
     existingLoanWon = 0,
+    housingCount = null,
+    regulatedArea = null,
   } = params;
   const over85 = isOver85Sqm(area);
   return calculateProfit({
@@ -245,5 +281,7 @@ export function estimateDefaultProfit(params: {
     vatAmount: over85 ? Math.round(appraisedValue * 0.1 * 0.5) : 0,
     applyProgressiveDeduction: true,
     existingIncome: 0,
+    housingCount,
+    regulatedArea,
   });
 }
