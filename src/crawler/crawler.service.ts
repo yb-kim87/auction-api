@@ -1057,6 +1057,23 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async countSearchResultsV3(dto: CollectUrlsDto) {
+    await this.ensureWorker();
+    const savedPreset = this.listSavedSearches().find(
+      (item) => item.name === dto.preset,
+    );
+    const search = savedPreset
+      ? { ...savedPreset.search, ...dto.search }
+      : this.resolveSearchConfig(dto.preset, dto.search);
+    return this.workerFetch<{ ok: boolean; total: number }>(
+      "/count-search-v3",
+      {
+        method: "POST",
+        body: JSON.stringify({ preset: dto.preset, search }),
+      },
+    );
+  }
+
   async collectUrls(dto: CollectUrlsDto, submittedBy: string) {
     const version = dto.crawlerVersion ?? "v1";
 

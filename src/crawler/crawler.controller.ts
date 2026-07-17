@@ -110,6 +110,18 @@ export class CrawlerController {
     return this.crawlerService.login(ctx.username, body);
   }
 
+  @Post("count-search-v3")
+  async countSearchResultsV3(
+    @Headers() headers: Record<string, string>,
+    @Body() body: CollectUrlsDto,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.crawlerService.countSearchResultsV3({
+      preset: body.preset ?? "현재",
+      search: body.search,
+    });
+  }
+
   @Post("collect-urls")
   async collectUrls(
     @Headers() headers: Record<string, string>,

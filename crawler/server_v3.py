@@ -111,6 +111,25 @@ async def _check_tank_login_v3() -> bool:
     return True
 
 
+async def _count_search_results_v3(api_path: str, params: dict) -> int:
+    """주소 추가 실행 없이 조건에 맞는 물건이 몇 건인지만 확인.
+
+    관심조건/즐겨찾기 선택 직후 "이 조건으로 몇 건 나오는지" 미리
+    보여주기 위한 용도 — dataSize=1로 최소한만 조회해 totalCount 만
+    읽는다(전체 목록을 긁지 않아 가볍다).
+    """
+    async with make_client() as client:
+        await login(client)
+        data = await fetch_list_page_with_preset(
+            client, api_path, params, page_no=1, data_size=1
+        )
+    total_count = data.get("totalCount") or data.get("total") or 0
+    try:
+        return int(total_count)
+    except (TypeError, ValueError):
+        return 0
+
+
 async def _fetch_favorite_searches_v3() -> list[dict]:
     """로그인 후 탱크옥션 "즐겨쓰는 검색" 목록을 조회해 관리자 화면에서
     바로 쓸 수 있는 형태({id, title, search}) 로 변환."""
@@ -276,6 +295,34 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(502, {"error": f"탱크옥션 로그인 확인 실패: {exc}"})
                 return
             self._send_json(200, {"ok": True})
+            return
+
+        if path == "/count-search-v3":
+            preset = body.get("preset") or "현재"
+            search = body.get("search")
+
+            try:
+                if preset in ("아파트", "다가구", "빌라", "공매"):
+                    api_path, params = resolve_preset_request(preset)
+                elif search:
+                    api_path, params = build_query_from_search_config(search)
+                else:
+                    self._send_json(400, {"error": f"'{preset}' 프리셋은 지원하지 않습니다."})
+                    return
+            except UnsupportedPresetError as exc:
+                self._send_json(400, {"error": str(exc)})
+                return
+
+            try:
+                total = asyncio.run(_count_search_results_v3(api_path, params))
+            except LoginCredentialsMissing as exc:
+                self._send_json(400, {"error": str(exc)})
+                return
+            except Exception as exc:  # noqa: BLE001
+                self._send_json(502, {"error": f"건수 조회 실패: {exc}"})
+                return
+
+            self._send_json(200, {"ok": True, "total": total})
             return
 
         if path == "/collect-urls-v3":
