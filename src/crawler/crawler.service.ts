@@ -138,6 +138,34 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       mkdirSync(dataDir, { recursive: true });
     }
     this.applyScheduleToStatus();
+    this.migrateLegacyPresetsToSavedSearches();
+  }
+
+  // 기존 고정 프리셋(아파트/다가구/빌라/공매)을 없애고 전부 "관심조건"
+  // (SavedSearchPreset)으로 통합하면서, 이미 이 이름을 참조하고 있을 수
+  // 있는 예약 스케줄러(schedule.preset)가 계속 동작하도록 서버 기동 시
+  // 1회 자동 등록한다. 이미 등록되어 있으면(재기동 등) 건드리지 않는다.
+  private migrateLegacyPresetsToSavedSearches() {
+    const existingNames = new Set(
+      (this.config.savedSearches ?? []).map((item) => item.name),
+    );
+    const legacyPresets = ["아파트", "다가구", "빌라", "공매"];
+    const missing = legacyPresets.filter((name) => !existingNames.has(name));
+    if (missing.length === 0) return;
+
+    const now = new Date().toISOString();
+    const created = missing.map((name) => ({
+      id: randomUUID(),
+      name,
+      search: this.resolveSearchConfig(name),
+      createdAt: now,
+      updatedAt: now,
+    }));
+    this.config = {
+      ...this.config,
+      savedSearches: [...(this.config.savedSearches ?? []), ...created],
+    };
+    saveCrawlerConfig(this.config);
   }
 
   onModuleInit() {

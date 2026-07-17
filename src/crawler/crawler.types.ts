@@ -49,9 +49,9 @@ export type CrawlerSearchConfig = {
   bidDateFrom?: string;
   /** 매각기일 종료일(YYYY-MM-DD, 탱크옥션 endDt). */
   bidDateTo?: string;
-  /** 경매구분(탱크옥션 auctType: 0=전체, 1=강제경매, 2=임의경매 추정 — 실측 필요). */
+  /** 경매구분(탱크옥션 auctType: 0=전체, 1=임의경매, 2=강제경매 — 검색 폼 select 실측). */
   auctionType?: string;
-  /** 매각/공고 구분(탱크옥션 dpslDvsn 코드). */
+  /** 매각/공고 구분(탱크옥션 dpslDvsn 코드 — 검색 폼 select 실측, 0=전체). */
   saleDivision?: string;
 };
 
