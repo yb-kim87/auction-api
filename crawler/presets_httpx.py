@@ -147,36 +147,91 @@ def resolve_preset_request(preset: str) -> tuple[str, dict]:
 
 
 # 관리자 화면 "검색조건" 탭의 용도(propertyTypes) 라벨 → chkCtgrsCd[] 코드.
-# ca/caList.php 검색 폼 HTML의 #ctgr select 옵션 전체를 직접 파싱해 실측
-# 완료(2026-07-17). 관리자 화면(auction/src/app/admin/CrawlerSearchTab.tsx:
-# PROPERTY_OPTIONS)의 라벨과 정확히 일치해야 한다 — 라벨이 바뀌면 이 표도
-# 함께 갱신할 것.
+# ca/caList.php 검색 폼 HTML의 #ctgr select 옵션 전체(75개, 대분류 6종 +
+# 하위 물건종류 전부)를 직접 파싱해 실측 완료(2026-07-17). 관리자 화면
+# (auction/src/app/admin/CrawlerSearchPanel.tsx: PROPERTY_OPTIONS)의
+# 라벨과 정확히 일치해야 한다 — 라벨이 바뀌면 이 표도 함께 갱신할 것.
 #
-# "오피스텔"은 select에 주거용(201020)/상업용(201111,201019) 두 항목이
-# 있어 둘 다 포함. "토지"는 select의 대분류값(30) 자체로는 검색이 걸리지
-# 않아(실측: totalCount=0) select 하위의 개별 지목 코드 28개를 모두
-# 콤마로 묶어서 사용(실측: 이 묶음으로 검색 시 totalCount=5624로 정상
-# 동작 확인, 2026-07-17).
-_LAND_CATEGORY_CODES = ",".join(
-    [
-        "101010", "101011", "101012", "101014", "101017", "101037",
-        "101023", "101020", "101031", "101033", "101035", "101036",
-        "101013", "101018", "101019", "101021", "101022", "101024",
-        "101030", "101032", "101034", "101025", "101026", "101027",
-        "101015", "101016", "101028", "101029",
-    ]
-)
-
+# 대분류(주거용/상업 및 산업용/토지/차량 및 중장비/기타)는 select 값
+# 그대로는 검색이 걸리지 않아(토지 실측: totalCount=0) 각 대분류에 속한
+# 하위 코드를 모두 콤마로 묶어서 사용한다.
 PROPERTY_TYPE_CODES: dict[str, list[str]] = {
+    # 주거용
     "아파트": ["201013"],
-    "다가구주택": ["201011,201012"],
-    "상가주택": ["201018"],
-    "오피스텔": ["201020", "201111,201019"],
     "연립주택": ["201014"],
     "다세대주택": ["201015,201017,201021"],
+    "오피스텔(주거)": ["201020"],
+    "단독주택": ["201010"],
+    "다가구주택": ["201011,201012"],
     "도시형생활주택": ["201022"],
+    "기숙사": ["201016"],
+    "상가주택": ["201018"],
+    # 상업 및 산업용
+    "근린생활시설": ["201110,201120,201124"],
+    "오피스텔(상업)": ["201111,201019"],
     "근린상가": ["201130"],
-    "토지": [_LAND_CATEGORY_CODES],
+    "숙박시설": ["201122"],
+    "숙박(콘도등)": ["201123"],
+    "목욕탕": ["201131"],
+    "업무시설": ["201121"],
+    "노유자시설": ["201118"],
+    "문화및집회시설": ["201112"],
+    "종교시설": ["201113"],
+    "의료시설": ["201116"],
+    "교육연구시설": ["201117"],
+    "묘지관련시설": ["201128"],
+    "기타시설": [
+        "201132,201115,201119,201125,201126,201127,201129,201310,201311,201312,201114"
+    ],
+    "공장": ["201210"],
+    "지식산업센터": ["201216"],
+    "창고시설": ["201211"],
+    "위험물저장및처리": ["201212"],
+    "자동차관련": ["201213"],
+    "동물및식물관련": ["201214"],
+    "분뇨및쓰레기처리": ["201215"],
+    # 토지
+    "전": ["101010"],
+    "답": ["101011"],
+    "과수원": ["101012"],
+    "임야": ["101014"],
+    "대지": ["101017"],
+    "잡종지": ["101037"],
+    "도로": ["101023"],
+    "주차장": ["101020"],
+    "공원": ["101031"],
+    "유원지": ["101033"],
+    "사적지": ["101035"],
+    "묘지": ["101036"],
+    "목장용지": ["101013"],
+    "공장용지": ["101018"],
+    "학교용지": ["101019"],
+    "주유소용지": ["101021"],
+    "창고용지": ["101022"],
+    "철도용지": ["101024"],
+    "수도용지": ["101030"],
+    "체육용지": ["101032"],
+    "종교용지": ["101034"],
+    "제방": ["101025"],
+    "하천": ["101026"],
+    "구거": ["101027"],
+    "광천지": ["101015"],
+    "염전": ["101016"],
+    "유지": ["101028"],
+    "양어장": ["101029"],
+    # 차량 및 중장비
+    "승용차": ["301010"],
+    "승합차": ["301011"],
+    "버스": ["301012"],
+    "화물차": ["301013"],
+    "기타차량": ["301014"],
+    "덤프트럭": ["301110"],
+    "기타중기": ["301113,301111,301112"],
+    # 기타
+    "선박": ["301210"],
+    "어업권": ["401010"],
+    "광업권": ["401011"],
+    "기타권리": ["401110,301310,301410,401012"],
 }
 
 # 관리자 화면 STATUS_OPTIONS 라벨 → stat 코드(select option 값 실측, 2026-07-17).
@@ -189,17 +244,73 @@ STATUS_CODES: dict[str, str] = {
     "유찰": "1111",
 }
 
-# 관리자 화면 SPECIAL_EXCLUDE 라벨 → chkSplCdtn[] 코드.
-# splSrchType=4(제외 모드)와 함께 사용. ca/caList.php 검색 폼 HTML의
-# input[name=chkSpl] 체크박스 전체(46개)를 직접 파싱해 실측 완료
-# (2026-07-17). "선순위임차"는 화면 문구가 축약형이라 특수조건 목록의
-# "선순위 임차권 설정"(17)에 대응시켰다 — "대항력 있는 임차인"(19)과
-# 혼동하지 않도록 주의.
+# 관리자 화면 특수조건 라벨 → chkSplCdtn[] 코드. splSrchType(0=적용안함/
+# 1=1개이상포함/2=모두포함/4=제외)과 함께 사용. ca/caList.php 검색 폼
+# HTML의 input[name=chkSpl] 체크박스 전체(46개, 6개 그룹)를 직접 파싱해
+# 실측 완료(2026-07-17). 그룹 순서/라벨은 탱크옥션 화면과 동일.
+SPECIAL_CONDITION_GROUPS: list[tuple[str, dict[str, str]]] = [
+    ("권리", {
+        "유치권": "1",
+        "유치권 배제": "2",
+        "법정지상권": "3",
+        "분묘기지권": "4",
+        "선순위 가등기": "14",
+        "선순위 가처분": "15",
+        "지분입찰 물건": "121",
+    }),
+    ("임차인", {
+        "임차인우선매수신고": "13",
+        "선순위 전세권 설정": "16",
+        "선순위 임차권 설정": "17",
+        "임차권 등기": "18",
+        "대항력 있는 임차인": "19",
+        "전세권만 매각": "112",
+        "HUG 임차권 인수조건변경": "31",
+        "HF 임차권 인수조건변경": "32",
+    }),
+    ("물건현황", {
+        "맹지": "8",
+        "위반건축물": "11",
+        "오늘 공고된 신건": "101",
+        "재매각 물건": "102",
+        "반값 경매물건": "103",
+        "토지건물 일괄매각": "105",
+        "대지권미등기": "116",
+        "토지별도등기 있는 물건": "117",
+        "토지별도등기인수조건": "118",
+        "건물만 입찰 물건": "119",
+        "토지만 입찰 물건": "120",
+        "감정시점 1년 지난 물건": "130",
+        "경매/공매 동시 (진행/과거)": "131",
+        "최근 2주 주요변동 물건": "132",
+        "NPL 물건": "21",
+        "공고보다 빠른 신건": "133",
+        "공고임박 예정물건(주소만 검색)": "134",
+    }),
+    ("자격", {
+        "공유자우선매수": "5",
+        "농지취득자격증명": "6",
+        "채권자매수청구": "7",
+        "대위변제": "9",
+        "항고사건": "10",
+        "임금채권자": "12",
+    }),
+    ("형식적경매", {
+        "유치권에 의한 형식적경매": "122",
+        "공유물분할을 위한 형식적경매": "123",
+        "청산을 위한 형식적경매": "124",
+        "기타 형식적경매": "125",
+    }),
+    ("공시가격(주거용)", {
+        "공시가 1억 이하": "20",
+        "공시가 1~2억 이하": "22",
+        "공시가 2~3억 이하": "23",
+        "공시가 3~4억 이하": "24",
+    }),
+]
+
 SPECIAL_CONDITION_CODES: dict[str, str] = {
-    "위반건축물": "11",
-    "법정지상권": "3",
-    "선순위임차": "17",
-    "대지권미등기": "116",
+    label: code for _, group in SPECIAL_CONDITION_GROUPS for label, code in group.items()
 }
 
 
@@ -293,11 +404,13 @@ def build_query_from_search_config(config: dict) -> tuple[str, dict]:
     if codes:
         params["chkCtgrsCd[]"] = codes
 
-    exclude = config.get("excludeSpecialConditions") or []
-    excl_codes = [SPECIAL_CONDITION_CODES[label] for label in exclude if label in SPECIAL_CONDITION_CODES]
-    if excl_codes:
-        params["splSrchType"] = "4"
-        params["chkSplCdtn[]"] = excl_codes
+    selected = config.get("excludeSpecialConditions") or []
+    sel_codes = [SPECIAL_CONDITION_CODES[label] for label in selected if label in SPECIAL_CONDITION_CODES]
+    mode_to_spl_srch_type = {"include-any": "1", "include-all": "2", "exclude": "4"}
+    if sel_codes:
+        mode = config.get("specialConditionMode") or "exclude"
+        params["splSrchType"] = mode_to_spl_srch_type.get(mode, "4")
+        params["chkSplCdtn[]"] = sel_codes
     else:
         params["splSrchType"] = "0"
         params.pop("chkSplCdtn[]", None)
@@ -405,13 +518,16 @@ def parse_favorite_search_param(param_json: dict) -> dict:
 
     chk_spl = str(param_json.get("chkSplCdtn", "")).strip()
     if chk_spl:
-        exclude_labels = [
+        selected_labels = [
             _SPECIAL_CODE_TO_LABEL[code]
             for code in chk_spl.split(",")
             if code in _SPECIAL_CODE_TO_LABEL
         ]
-        if exclude_labels:
-            config["excludeSpecialConditions"] = exclude_labels
+        if selected_labels:
+            config["excludeSpecialConditions"] = selected_labels
+            spl_srch_type = str(param_json.get("splSrchType", "")).strip()
+            mode_by_spl_srch_type = {"1": "include-any", "2": "include-all", "4": "exclude"}
+            config["specialConditionMode"] = mode_by_spl_srch_type.get(spl_srch_type, "exclude")
 
     if param_json.get("dataSize") is not None:
         config["pageSize"] = str(param_json["dataSize"])

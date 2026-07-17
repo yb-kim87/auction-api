@@ -487,10 +487,19 @@ def apply_search_config(driver, config: dict | None, *, skip_navigation: bool = 
             select = Select(_wait_visible(driver, By.NAME, "prsvBgn"))
             select.select_by_visible_text(str(preserve))
 
-        exclude_conditions = config.get("excludeSpecialConditions") or []
-        if exclude_conditions:
-            _safe_click(driver, _wait_clickable(driver, By.ID, "splSrchType4"))
-            for keyword in exclude_conditions:
+        special_conditions = config.get("excludeSpecialConditions") or []
+        if special_conditions:
+            mode = config.get("specialConditionMode") or "exclude"
+            radio_id_by_mode = {
+                "include-any": "splSrchType1",
+                "include-all": "splSrchType2",
+                "exclude": "splSrchType4",
+            }
+            _safe_click(
+                driver,
+                _wait_clickable(driver, By.ID, radio_id_by_mode.get(mode, "splSrchType4")),
+            )
+            for keyword in special_conditions:
                 _click_chk_ment(driver, keyword)
 
         if list_type == "public":
