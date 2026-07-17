@@ -21,13 +21,15 @@ function baseAcquisitionTaxRate(minPriceWon: number): number {
 /**
  * 회원의 주택수(housingCount)·물건 소재지의 조정대상지역 여부(regulatedArea)에 따른
  * 취득세율. 다주택자 중과세율 표(사용자 제공, 2026-07-18)를 그대로 반영한다.
+ * 본세(8%/12%)에 지방교육세 등을 포함한 실부담세율(×1.1)을 적용한다 — 무주택자
+ * 1~3% 구간 계산(baseAcquisitionTaxRate)과 동일한 방식.
  *
  * - 무주택자: 주택가액에 따른 1~3% 누진 구간 그대로 적용
  * - 1주택자 + 비규제지역: 위와 동일한 1~3% 누진 구간
- * - 1주택자 + 규제지역: 고정 8.8%
- * - 2주택자 + 규제지역: 고정 12%
- * - 2주택자 + 비규제지역: 고정 8%
- * - 3주택 이상: 지역과 무관하게 고정 12%
+ * - 1주택자 + 규제지역: 본세 8% → 실부담 8.8%
+ * - 2주택자 + 규제지역: 본세 12% → 실부담 13.2%
+ * - 2주택자 + 비규제지역: 본세 8% → 실부담 8.8%
+ * - 3주택 이상: 지역과 무관하게 본세 12% → 실부담 13.2%
  *
  * housingCount/regulatedArea가 없으면(회원정보 미입력 등) 기존과 동일하게 무주택자
  * 기준 1~3% 누진 구간만 적용한다.
@@ -39,10 +41,23 @@ export function acquisitionTaxRate(
 ): number {
   const count = housingCount ?? 0;
 
-  if (count >= 3) return 0.12;
-  if (count === 2) return regulatedArea ? 0.12 : 0.08;
-  if (count === 1) return regulatedArea ? 0.088 : baseAcquisitionTaxRate(minPriceWon);
+  if (count >= 3) return 0.12 * 1.1;
+  if (count === 2) return (regulatedArea ? 0.12 : 0.08) * 1.1;
+  if (count === 1) return regulatedArea ? 0.08 * 1.1 : baseAcquisitionTaxRate(minPriceWon);
   return baseAcquisitionTaxRate(minPriceWon);
+}
+
+/** acquisitionTaxRate가 어떤 구간을 적용했는지 나타내는 라벨(프론트와 동일 로직). */
+export function acquisitionTaxBracketLabel(
+  housingCount?: number | null,
+  regulatedArea?: boolean | null,
+): string {
+  const count = housingCount ?? 0;
+
+  if (count >= 3) return "3주택 이상";
+  if (count === 2) return regulatedArea ? "2주택 규제" : "2주택 비규제";
+  if (count === 1) return regulatedArea ? "1주택 규제" : "1주택 비규제";
+  return "무주택";
 }
 
 /** 매도가 구간별 매도 중개수수료율 */
