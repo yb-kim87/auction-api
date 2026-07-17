@@ -49,13 +49,13 @@ export function validateInvestmentSignupFields(input: InvestmentSignupInput): {
       ? input.housingCount
       : Number.parseInt(String(input.housingCount ?? ""), 10);
 
+  // 목표 수익은 선택 항목 — 비워두면 목표수익 필터 없이 추천된다.
   if (
     !investableFunds ||
     !existingLoanAmount ||
     !creditScore ||
     !annualNetIncome ||
     !investmentGoal ||
-    !targetReturn ||
     Number.isNaN(housingCount)
   ) {
     throw new ConflictException("모든 항목을 입력해 주세요.");
@@ -89,7 +89,7 @@ export function validateInvestmentSignupFields(input: InvestmentSignupInput): {
     throw new BadRequestException("투자목표를 선택하거나 5자 이상 입력해 주세요.");
   }
 
-  if (targetReturn.length < MIN_TEXT_LENGTH) {
+  if (targetReturn && targetReturn.length < MIN_TEXT_LENGTH) {
     throw new BadRequestException("목표 수익을 선택해 주세요.");
   }
 

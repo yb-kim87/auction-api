@@ -155,10 +155,9 @@ export class UsersService implements OnModuleInit {
     }
 
     if (dto.targetReturn !== undefined) {
+      // 목표 수익은 선택 항목 — 빈 값으로 저장하면 목표수익 필터 없이
+      // 추천된다(recommendation-engine.service.ts: targetReturnWon==null 처리).
       const next = dto.targetReturn.trim();
-      if (!next) {
-        throw new BadRequestException("목표 수익을 입력해 주세요.");
-      }
       if (user.targetReturn !== next) {
         user.targetReturn = next;
         changed = true;
