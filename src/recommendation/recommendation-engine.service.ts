@@ -107,6 +107,7 @@ export class RecommendationEngineService {
         regulatedArea: boolean;
         incomeLoanLimit: number | null;
         existingLoanWon: number;
+        loanUnavailable: boolean;
       }
     >;
     total: number;
@@ -151,6 +152,7 @@ export class RecommendationEngineService {
         regulatedArea: boolean;
         incomeLoanLimit: number | null;
         existingLoanWon: number;
+        loanUnavailable: boolean;
       }
     > = {};
     const affordable = auctions
@@ -180,6 +182,7 @@ export class RecommendationEngineService {
             regulatedArea: regulated,
             incomeLoanLimit,
             existingLoanWon: criteria.existingLoanWon,
+            loanUnavailable: policy.loanUnavailable,
           };
         }
         const estimatedProfit = policy
