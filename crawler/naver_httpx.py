@@ -49,8 +49,16 @@ def empty_naver_result(naver_price_detail: str = "", **overrides) -> dict:
     return payload
 
 
+NAVER_TIMEOUT_SEC = 10
+
+
 def _make_session() -> curl_requests.Session:
-    session = curl_requests.Session(impersonate="chrome124")
+    # 기본 타임아웃(30초)이 너무 길다 — Railway 컨테이너에서 네이버로의
+    # 아웃바운드 연결이 로컬보다 느리거나 일시적으로 막힐 때, 실패할
+    # 물건마다 30초씩 허비해 전체 조회가 눈에 띄게 느려지는 문제가 있었다
+    # (실측 확인: "Operation timed out after 30002 milliseconds",
+    # 2026-07-17). 10초로 줄이고 호출부에서 1회 재시도한다.
+    session = curl_requests.Session(impersonate="chrome124", timeout=NAVER_TIMEOUT_SEC)
     return session
 
 
@@ -284,10 +292,16 @@ def extract_naver_prices_httpx(
 
     referer = f"{BASE_URL}/complexes/{complex_id}"
     session = _make_session()
-    try:
-        session.get(f"{BASE_URL}/complexes/{complex_id}")
-    except Exception as exc:
-        return empty_naver_result(f"네이버 접속 실패: {exc}", complex_id=complex_id)
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            session.get(f"{BASE_URL}/complexes/{complex_id}")
+            last_exc = None
+            break
+        except Exception as exc:  # noqa: BLE001 — 타임아웃/네트워크 오류 1회 재시도
+            last_exc = exc
+    if last_exc is not None:
+        return empty_naver_result(f"네이버 접속 실패: {last_exc}", complex_id=complex_id)
 
     pyeong_numbers, matched_label, pyeong_labels = _resolve_pyeong_numbers(
         session, complex_id, target_m2, referer
