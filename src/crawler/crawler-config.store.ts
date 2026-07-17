@@ -37,6 +37,7 @@ export function loadCrawlerConfig(): CrawlerConfig {
         ...DEFAULT_CRAWLER_CONFIG.naverCredentials,
         ...parsed.naverCredentials,
       },
+      savedSearches: parsed.savedSearches ?? DEFAULT_CRAWLER_CONFIG.savedSearches,
     };
   } catch {
     return structuredClone(DEFAULT_CRAWLER_CONFIG);

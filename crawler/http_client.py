@@ -137,6 +137,39 @@ async def fetch_list_page(
         raise NonRetryableError(f"목록 API 응답 파싱 실패: {exc}") from exc
 
 
+async def fetch_list_page_with_preset(
+    client: httpx.AsyncClient,
+    path: str,
+    preset_params: dict,
+    *,
+    page_no: int = 1,
+    data_size: int = 100,
+) -> dict:
+    """presets_httpx.resolve_preset_request() 결과로 목록 API를 호출.
+
+    fetch_list_page() 와 별개 함수인 이유: 프리셋 검색은 경로가
+    ca/AuctList.php 뿐 아니라 pa/PubAuctList.php(공매)로도 갈 수 있고,
+    파라미터 이름 자체도 완전히 다르므로 고정 경로를 쓰는 fetch_list_page
+    로는 표현할 수 없다.
+    """
+    params = {**preset_params, "dataSize": data_size, "pageNo": page_no, "ck_photo": 0}
+    try:
+        resp = await client.get(path, params=params)
+    except httpx.TimeoutException as exc:
+        raise RetryableError(f"목록(프리셋) API 타임아웃: {exc}") from exc
+    if resp.status_code >= 400:
+        _classify_and_raise(resp, context="목록(프리셋) API")
+    if _looks_like_login_redirect(resp):
+        raise SessionExpiredError(
+            f"목록(프리셋) API가 JSON이 아닌 응답을 반환했습니다 (content-type="
+            f"{resp.headers.get('content-type')!r})."
+        )
+    try:
+        return resp.json()
+    except ValueError as exc:
+        raise NonRetryableError(f"목록(프리셋) API 응답 파싱 실패: {exc}") from exc
+
+
 async def fetch_detail(client: httpx.AsyncClient, tid: str) -> dict:
     try:
         resp = await client.get(DETAIL_PATH, params={"tid": tid})

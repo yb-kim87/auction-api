@@ -7,6 +7,62 @@ export type CrawlerSearchConfig = {
   preserveRegistryFrom: string;
   excludeSpecialConditions: string[];
   pageSize: string;
+  /** 사건번호 연도(탱크옥션 sn1, 예: "2024"). 빈 값이면 전체 연도. */
+  caseYear?: string;
+  /** 사건번호 일련번호(탱크옥션 sn2, 정확히 일치). 빈 값이면 무시. */
+  caseSerial?: string;
+  /** 물건번호(탱크옥션 pn). 빈 값이면 무시. */
+  itemNumber?: string;
+  /** 시/도 코드(탱크옥션 siCd, 예: 서울=11). 빈 값이면 전국. */
+  regionSiCd?: string;
+  /** 시/군/구 코드(탱크옥션 guCd). regionSiCd 선택 후에만 의미 있음. */
+  regionGuCd?: string;
+  /** 읍/면/동 코드(탱크옥션 dnCd). regionGuCd 선택 후에만 의미 있음. */
+  regionDnCd?: string;
+  /** 세부주소/건물명 검색어(자유 텍스트, 탱크옥션 adrsEtc). */
+  addressKeyword?: string;
+  /** 최저가 하한(원 단위 문자열, 탱크옥션 minbAmtBgn). */
+  minPriceMin?: string;
+  /** 최저가 상한(원 단위 문자열, 탱크옥션 minbAmtEnd). */
+  minPriceMax?: string;
+  /** 최저가율 하한(0~1 소수 문자열, 탱크옥션 minbPctBgn, 예: "0.5" = 50%). */
+  minPricePctMin?: string;
+  /** 최저가율 상한(0~1 소수 문자열, 탱크옥션 minbPctEnd). */
+  minPricePctMax?: string;
+  /** 대지면적 하한(㎡, 탱크옥션 landSqmBgn). */
+  landAreaMin?: string;
+  /** 대지면적 상한(㎡, 탱크옥션 landSqmEnd). */
+  landAreaMax?: string;
+  /** 건물면적 하한(㎡, 탱크옥션 bldgSqmBgn). */
+  buildingAreaMin?: string;
+  /** 건물면적 상한(㎡, 탱크옥션 bldgSqmEnd). */
+  buildingAreaMax?: string;
+  /** 총 층수 하한(탱크옥션 totFlrBgn). */
+  totalFloorMin?: string;
+  /** 총 층수 상한(탱크옥션 totFlrEnd). */
+  totalFloorMax?: string;
+  /** 유찰 횟수 하한(탱크옥션 fbCntBgn). */
+  failCountMin?: string;
+  /** 유찰 횟수 상한(탱크옥션 fbCntEnd). */
+  failCountMax?: string;
+  /** 매각기일 시작일(YYYY-MM-DD, 탱크옥션 bgnDt). */
+  bidDateFrom?: string;
+  /** 매각기일 종료일(YYYY-MM-DD, 탱크옥션 endDt). */
+  bidDateTo?: string;
+  /** 경매구분(탱크옥션 auctType: 0=전체, 1=강제경매, 2=임의경매 추정 — 실측 필요). */
+  auctionType?: string;
+  /** 매각/공고 구분(탱크옥션 dpslDvsn 코드). */
+  saleDivision?: string;
+};
+
+/** 관리자가 이름 붙여 저장한 검색조건("즐겨찾기") — 아파트/빌라 같은 고정
+ * 프리셋 버튼처럼 목록에서 눌러 즉시 적용/조회할 수 있다. */
+export type SavedSearchPreset = {
+  id: string;
+  name: string;
+  search: CrawlerSearchConfig;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type CrawlerAlgorithmConfig = {
@@ -41,6 +97,7 @@ export type CrawlerConfig = {
   schedule: CrawlerScheduleConfig;
   credentials: CrawlerCredentialsConfig;
   naverCredentials: CrawlerCredentialsConfig;
+  savedSearches: SavedSearchPreset[];
 };
 
 export const DEFAULT_CRAWLER_CONFIG: CrawlerConfig = {
@@ -79,12 +136,14 @@ export const DEFAULT_CRAWLER_CONFIG: CrawlerConfig = {
     userId: "",
     password: "",
   },
+  savedSearches: [],
 };
 
 export type CollectUrlsDto = {
   preset: string;
   clear?: boolean;
   search?: Partial<CrawlerSearchConfig>;
+  crawlerVersion?: CrawlerVersion;
 };
 
 /**
@@ -104,6 +163,12 @@ export type StartCrawlDto = {
 export type CrawlerLoginDto = {
   userId?: string;
   password?: string;
+};
+
+export type SaveSearchPresetDto = {
+  id?: string;
+  name: string;
+  search: CrawlerSearchConfig;
 };
 
 export type ManageUrlsDto = {

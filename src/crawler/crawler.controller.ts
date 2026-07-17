@@ -21,6 +21,7 @@ import type {
   CrawlerConfig,
   CrawlerLoginDto,
   ManageUrlsDto,
+  SaveSearchPresetDto,
   StartCrawlDto,
 } from "./crawler.types";
 
@@ -107,9 +108,37 @@ export class CrawlerController {
         preset: body.preset ?? "현재",
         clear: body.clear ?? true,
         search: body.search,
+        crawlerVersion: body.crawlerVersion,
       },
       ctx.username,
     );
+  }
+
+  @Get("saved-searches")
+  listSavedSearches(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.crawlerService.listSavedSearches();
+  }
+
+  @Post("saved-searches")
+  saveSavedSearch(
+    @Headers() headers: Record<string, string>,
+    @Body() body: SaveSearchPresetDto,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    if (!body.name?.trim()) {
+      throw new BadRequestException("이름을 입력해 주세요.");
+    }
+    return this.crawlerService.saveSavedSearch(body);
+  }
+
+  @Post("saved-searches/delete")
+  deleteSavedSearch(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { id: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.crawlerService.deleteSavedSearch(body.id);
   }
 
   @Post("load-excel")

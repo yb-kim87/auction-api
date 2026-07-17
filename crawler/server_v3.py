@@ -42,8 +42,57 @@ def _load_dotenv() -> None:
 
 _load_dotenv()
 
+import asyncio
+
 from full_httpx_worker import full_httpx_crawl_worker
+from http_client import LoginCredentialsMissing, login, make_client
+from http_client import fetch_list_page_with_preset
+from presets_httpx import (
+    UnsupportedPresetError,
+    build_query_from_search_config,
+    list_response_to_url_entries,
+    resolve_preset_request,
+    PA_LIST_PATH,
+)
 from tank_detail import tid_from_url
+
+
+async def _collect_urls_v3(
+    api_path: str, params: dict, *, is_public: bool, data_size: int
+) -> list[dict]:
+    """로그인 후 목록 API를 (필요하면 여러 페이지) 조회해 URL 엔트리로 변환.
+
+    url_collect.py: collect_urls() 의 HTTPX 버전 — 단, 브라우저 화면
+    페이지네이션이 없으므로 totalCount 를 보고 필요한 페이지 수만큼 반복
+    호출한다. 무한 루프 방지를 위해 최대 50페이지(=5,000건)로 상한을 둔다.
+    """
+    async with make_client() as client:
+        await login(client)
+
+        entries: list[dict] = []
+        page_no = 1
+        max_pages = 50
+        while page_no <= max_pages:
+            data = await fetch_list_page_with_preset(
+                client, api_path, params, page_no=page_no, data_size=data_size
+            )
+            page_entries = list_response_to_url_entries(data, is_public=is_public)
+            if not page_entries:
+                break
+            entries.extend(page_entries)
+
+            total_count = data.get("totalCount") or data.get("total") or 0
+            try:
+                total_count = int(total_count)
+            except (TypeError, ValueError):
+                total_count = 0
+            if total_count and len(entries) >= total_count:
+                break
+            if len(page_entries) < data_size:
+                break
+            page_no += 1
+
+        return entries
 
 
 class CrawlerStateV3:
@@ -160,6 +209,53 @@ class Handler(BaseHTTPRequestHandler):
             return
         path = urlparse(self.path).path
         body = self._read_json()
+
+        if path == "/collect-urls-v3":
+            preset = body.get("preset") or "현재"
+            search = body.get("search")
+
+            try:
+                if preset in ("아파트", "다가구", "빌라", "공매"):
+                    api_path, params = resolve_preset_request(preset)
+                elif search:
+                    api_path, params = build_query_from_search_config(search)
+                else:
+                    self._send_json(
+                        400,
+                        {
+                            "error": (
+                                f"'{preset}' 프리셋은 v3(완전 HTTPX)에서 지원하지 "
+                                "않습니다. 검색조건 탭에서 조건을 저장한 뒤 다시 "
+                                "시도해 주세요."
+                            ),
+                        },
+                    )
+                    return
+            except UnsupportedPresetError as exc:
+                self._send_json(400, {"error": str(exc)})
+                return
+
+            try:
+                data_size = int(search.get("pageSize")) if search and search.get("pageSize") else 100
+            except (TypeError, ValueError):
+                data_size = 100
+
+            try:
+                urls = asyncio.run(
+                    _collect_urls_v3(api_path, params, is_public=api_path == PA_LIST_PATH, data_size=data_size)
+                )
+            except LoginCredentialsMissing as exc:
+                self._send_json(400, {"error": str(exc)})
+                return
+            except Exception as exc:  # noqa: BLE001 — 워커 API는 원인 메시지를 그대로 전달
+                self._send_json(502, {"error": f"목록 조회 실패: {exc}"})
+                return
+
+            self._send_json(
+                200,
+                {"ok": True, "urls": urls, "message": f"탱크옥션에서 {len(urls)}건을 찾았습니다."},
+            )
+            return
 
         if path == "/crawl/start-v3":
             urls = body.get("urls") or []

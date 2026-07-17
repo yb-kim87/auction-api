@@ -25,6 +25,7 @@ import {
 } from "./crawler-algorithm.service";
 import { mapCrawledItem } from "./crawler-item.mapper";
 import { filterCollectedUrls } from "./crawler-url.util";
+import { randomUUID } from "crypto";
 import type {
   CollectUrlsDto,
   CrawlerConfig,
@@ -33,6 +34,8 @@ import type {
   CrawlerStatus,
   CrawlerUrlEntry,
   ManageUrlsDto,
+  SavedSearchPreset,
+  SaveSearchPresetDto,
   StartCrawlDto,
 } from "./crawler.types";
 
@@ -184,6 +187,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         ...this.config.naverCredentials,
         ...partial.naverCredentials,
       },
+      savedSearches: partial.savedSearches ?? this.config.savedSearches,
     };
     saveCrawlerConfig(this.config);
     this.applyScheduleToStatus();
@@ -726,6 +730,55 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  listSavedSearches(): SavedSearchPreset[] {
+    this.config = loadCrawlerConfig();
+    return this.config.savedSearches ?? [];
+  }
+
+  saveSavedSearch(dto: SaveSearchPresetDto): SavedSearchPreset {
+    this.config = loadCrawlerConfig();
+    const now = new Date().toISOString();
+    const list = [...(this.config.savedSearches ?? [])];
+
+    if (dto.id) {
+      const index = list.findIndex((item) => item.id === dto.id);
+      if (index >= 0) {
+        const updated: SavedSearchPreset = {
+          ...list[index],
+          name: dto.name,
+          search: dto.search,
+          updatedAt: now,
+        };
+        list[index] = updated;
+        this.config = { ...this.config, savedSearches: list };
+        saveCrawlerConfig(this.config);
+        return updated;
+      }
+    }
+
+    const created: SavedSearchPreset = {
+      id: randomUUID(),
+      name: dto.name,
+      search: dto.search,
+      createdAt: now,
+      updatedAt: now,
+    };
+    list.push(created);
+    this.config = { ...this.config, savedSearches: list };
+    saveCrawlerConfig(this.config);
+    return created;
+  }
+
+  deleteSavedSearch(id: string): { ok: boolean } {
+    this.config = loadCrawlerConfig();
+    const list = (this.config.savedSearches ?? []).filter(
+      (item) => item.id !== id,
+    );
+    this.config = { ...this.config, savedSearches: list };
+    saveCrawlerConfig(this.config);
+    return { ok: true };
+  }
+
   private resolveSearchConfig(preset: string, override?: CollectUrlsDto["search"]) {
     this.config = loadCrawlerConfig();
     const base = { ...this.config.search, ...override };
@@ -931,16 +984,30 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async collectUrls(dto: CollectUrlsDto, submittedBy: string) {
-    await this.ensureCrawlerLoggedIn(submittedBy);
+    const version = dto.crawlerVersion ?? "v1";
+
+    // v3(브라우저 없음)는 "현재 화면 상태"라는 개념이 없다 — 대신 관리자가
+    // "검색조건" 탭에 저장해둔 값을 "현재"의 대체로 사용한다. v1/v2는 기존
+    // 그대로(브라우저에 남아있는 화면 상태를 그대로 사용) 동작을 유지한다.
+    if (version !== "v3") {
+      await this.ensureCrawlerLoggedIn(submittedBy);
+    }
 
     this.appendLog(
       "info",
       `${submittedBy}님이 주소 수집을 시작합니다 (프리셋: ${dto.preset}).`,
     );
 
-    const searchConfig =
-      dto.preset === "현재"
-        ? undefined
+    const savedPreset = this.listSavedSearches().find(
+      (item) => item.name === dto.preset,
+    );
+
+    const searchConfig = savedPreset
+      ? { ...savedPreset.search, ...dto.search }
+      : dto.preset === "현재"
+        ? version === "v3"
+          ? this.resolveSearchConfig(dto.preset, dto.search)
+          : undefined
         : this.resolveSearchConfig(dto.preset, dto.search);
 
     const linkExistingMap =
@@ -948,6 +1015,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
     this.jobRunning = true;
     this.localStatus.phase = "collecting";
+
+    const path = version === "v3" ? "/collect-urls-v3" : "/collect-urls";
 
     let result: {
       ok: boolean;
@@ -959,14 +1028,18 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         ok: boolean;
         urls: CrawlerUrlEntry[];
         message?: string;
-      }>("/collect-urls", {
+      }>(path, {
         method: "POST",
-        body: JSON.stringify({
-          preset: dto.preset,
-          clear: dto.clear ?? true,
-          search: searchConfig,
-          ...this.crawlerCredentialBody(),
-        }),
+        body: JSON.stringify(
+          version === "v3"
+            ? { preset: dto.preset, clear: dto.clear ?? true, search: searchConfig }
+            : {
+                preset: dto.preset,
+                clear: dto.clear ?? true,
+                search: searchConfig,
+                ...this.crawlerCredentialBody(),
+              },
+        ),
         signal: abortTimeoutSignal(600_000),
       });
     } catch (error) {
