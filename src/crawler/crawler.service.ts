@@ -1592,6 +1592,36 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return { ...result, total: items.length };
   }
 
+  // v3(HTTPX) 네이버 호가/실거래 상세 포맷 수정(2026-07-17) 이후, 그 전에
+  // 이미 v3로 수집돼 옛 포맷으로 저장된 물건들을 새 포맷으로 재수집하는
+  // 1회성 백필. sinceHours 시간 내 생성/갱신된 물건만 대상으로 한다 —
+  // DB에 크롤러 버전을 구분하는 컬럼이 없어 정확히 v3만 골라낼 수는
+  // 없으므로(v1으로 방금 수집된 물건도 섞일 수 있음), 범위를 좁게
+  // 잡는다. v1 물건이 섞여도 재조회 자체는 안전(콜백이 기존 레코드를
+  // 갱신할 뿐 새로 만들지 않음).
+  async backfillTodayNaverFormat(submittedBy: string, sinceHours = 24) {
+    await this.checkTankLoginV3(submittedBy);
+    await this.ensureWorker();
+
+    const items = await this.auctionsService.listRecentlyUpdatedLinks(sinceHours);
+    if (items.length === 0) {
+      return { ok: true, message: "최근 수집된 물건이 없습니다.", total: 0 };
+    }
+
+    this.appendLog(
+      "info",
+      `${submittedBy}님이 최근 ${sinceHours}시간 내 물건 ${items.length}건을 새 네이버 포맷으로 재수집합니다.`,
+    );
+
+    return this.startCrawl(
+      {
+        urls: items.map((item) => item.link),
+        crawlerVersion: "v3",
+      },
+      submittedBy,
+    );
+  }
+
   private async tickScheduler() {
     this.config = loadCrawlerConfig();
     const schedule = this.config.schedule;

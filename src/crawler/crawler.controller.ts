@@ -247,6 +247,19 @@ export class CrawlerController {
     return this.crawlerService.backfillNaverIds(ctx.username);
   }
 
+  @Post("backfill-today-naver-format")
+  async backfillTodayNaverFormat(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { sinceHours?: number },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.backfillTodayNaverFormat(
+      ctx.username,
+      body.sinceHours,
+    );
+  }
+
   @Get("cafe/status")
   async cafeStatus(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));

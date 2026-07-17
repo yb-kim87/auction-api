@@ -474,6 +474,33 @@ export class AuctionsService implements OnModuleInit {
     return { skipped: false as const, unchanged: false as const, created, item };
   }
 
+  /** 오늘(자정 이후) 생성되거나 갱신된 물건의 링크 목록.
+   * v3(HTTPX) 네이버 호가/실거래 상세 포맷 수정 이후, 오늘 이미 수집돼
+   * 옛 포맷으로 저장된 물건을 새 포맷으로 재수집(재크롤링)하기 위한
+   * 1회성 백필 용도 — listMissingNaverId() 와 동일한 쿼리 패턴. */
+  async listRecentlyUpdatedLinks(
+    sinceHours = 24,
+  ): Promise<{ auctionNo: string; link: string }[]> {
+    const since = new Date(Date.now() - sinceHours * 60 * 60 * 1000);
+    const rows = await this.auctionRepo
+      .createQueryBuilder("a")
+      .select("a.auctionNo", "auctionNo")
+      .addSelect("a.link", "link")
+      .where("a.link != :emptyLink", { emptyLink: "" })
+      .andWhere(
+        "(a.createdAt >= :since OR a.updatedAt >= :since)",
+        { since },
+      )
+      .getRawMany<{ auctionNo: string; link: string }>();
+
+    return rows
+      .filter((row) => row.auctionNo?.trim() && row.link?.trim())
+      .map((row) => ({
+        auctionNo: row.auctionNo.trim(),
+        link: row.link.trim(),
+      }));
+  }
+
   async listMissingNaverId(): Promise<{ auctionNo: string; link: string }[]> {
     const rows = await this.auctionRepo
       .createQueryBuilder("a")
