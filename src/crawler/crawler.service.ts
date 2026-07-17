@@ -1143,6 +1143,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
     this.jobRunning = true;
     this.localStatus.phase = "collecting";
+    // 주소 추가는 새로운 작업 목록을 만드는 시작점이므로, 이전 조회의
+    // 완료 개수/DB 등록/DB 갱신 수치가 화면에 남아있으면 진행률이
+    // 100%를 넘거나 방금 시작한 작업인데도 이전 결과가 섞여 보이는
+    // 혼란이 있었다(실측 확인, 2026-07-17). 여기서 초기화한다.
+    this.localStatus.completed = 0;
+    this.localStatus.created = 0;
+    this.localStatus.updated = 0;
 
     const path = version === "v3" ? "/collect-urls-v3" : "/collect-urls";
 

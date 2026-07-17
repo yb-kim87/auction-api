@@ -153,17 +153,38 @@ def _fetch_articles(
         prices.append(deal_price)
 
         dong = str(info.get("dongName") or "").strip()
-        space = (info.get("spaceInfo") or {}).get("supplySpaceName") or ""
-        exclusive = (info.get("spaceInfo") or {}).get("exclusiveSpaceName") or ""
+        # supplySpaceName/exclusiveSpaceName은 "164B"처럼 평형 타입 접미사가
+        # 붙은 표시용 라벨이라 프론트(AuctionDetailModal.tsx) 정규식의
+        # "[\d.]+㎡" (순수 숫자)와 매치되지 않는다(실측 확인, 2026-07-17).
+        # supplySpace/exclusiveSpace(접미사 없는 숫자 필드)를 대신 쓴다.
+        space_info = info.get("spaceInfo") or {}
+        supply_space = space_info.get("supplySpace")
+        exclusive_space = space_info.get("exclusiveSpace")
+        space = f"{supply_space:g}" if supply_space is not None else ""
+        exclusive = f"{exclusive_space:g}" if exclusive_space is not None else ""
         floor_info = (info.get("articleDetail") or {}).get("floorInfo") or ""
-        exposure_date = (info.get("verificationInfo") or {}).get("exposureStartDate") or ""
+        # exposureStartDate는 "2026-07-17"(하이픈) — 프론트 정규식은
+        # "2026.07.16"(점) 8~10자리를 기대하므로 구분자를 맞춘다.
+        exposure_date_raw = (info.get("verificationInfo") or {}).get("exposureStartDate") or ""
+        exposure_date = exposure_date_raw.replace("-", ".")
         broker = (info.get("brokerInfo") or {}).get("brokerageName") or ""
         description = (info.get("articleDetail") or {}).get("articleFeatureDescription") or ""
+
+        # v1(_parse_article_area_label)과 동일하게, supplySpace가 없어도
+        # exclusiveSpace만 있으면 "(전용X)" 형태로라도 면적 칼럼을 채운다
+        # — 아예 빈 문자열이 되면 프론트 행 정규식이 라인 전체를 매치
+        # 못 해 해당 매물이 통째로 누락된다.
+        if space:
+            area_label = f"{space}㎡ (전용{exclusive})"
+        elif exclusive:
+            area_label = f"(전용{exclusive})"
+        else:
+            area_label = ""
 
         parts = [
             f"{dong}동" if dong else "",
             f"매매{_format_won(deal_price)}",
-            f"{space}㎡ (전용{exclusive})" if space else "",
+            area_label,
             floor_info,
             exposure_date,
             broker,
@@ -206,15 +227,19 @@ def _fetch_real_price(
     parseTransactionGroup)가 "[면적라벨]\\n연도년 계약\\n계약일\\t등기일\\t층\\t가격\\n행..."
     구조에 "\\n\\n---\\n\\n" 로 평형 블록을 구분한 텍스트를 기대한다
     (실측 확인: 이 구조가 아니면 테이블 대신 원문 그대로 표시됨, 2026-07-17).
-    네이버 API 응답에는 등기일 필드 자체가 없어(row 전체를 확인해도
-    tradeDate/floor/dealPrice 뿐) "-"로 채운다 — v1도 브라우저 DOM에서
-    네이버가 렌더링한 등기일 텍스트를 그대로 긁은 것이라 API로는 재현
-    불가능한 값이며, 프론트 파서는 등기일 컬럼 값 자체를 사용하지 않고
-    위치만 맞으면 되므로 動작에는 영향 없다.
+    등기일 필드는 API 응답에 있는 경우도 있지만(registrationDate, 최근
+    미등기 거래는 비어있음) 프론트는 이 컬럼의 실제 값을 쓰지 않고
+    위치만 맞으면 되므로 "-"로 채운다.
+
+    real_trade_count 는 v1(_parse_real_trade_count)과 동일하게
+    "{연도} {건수}건" 을 콤마로 이어붙인 문자열(연도 내림차순)로 만든다
+    — 예: "2026 5건, 2025 12건". 단순 총건수 숫자만 반환하면 프론트
+    "실거래 건수" 배지에 연도별 구분 없이 맨 숫자만 표시되어 v1과
+    달라 보이는 문제가 있었다(실측 확인, 2026-07-17).
     """
     header = "계약일\t등기일\t층\t가격"
     blocks: list[str] = []
-    total_rows = 0
+    year_counts: dict[str, int] = {}
 
     for pyeong_number in pyeong_numbers:
         resp = session.get(
@@ -254,7 +279,7 @@ def _fetch_real_price(
             rows_by_year[year_label].append(
                 f"{date}\t-\t{floor}층\t{_format_won(price)}"
             )
-            total_rows += 1
+            year_counts[year] = year_counts.get(year, 0) + 1
 
         if not year_order:
             continue
@@ -267,7 +292,11 @@ def _fetch_real_price(
         block_body = "\n\n".join(sections)
         blocks.append(f"[{area_label}]\n{block_body}" if area_label else block_body)
 
-    return "\n\n---\n\n".join(blocks), str(total_rows)
+    real_trade_count = ", ".join(
+        f"{year} {count}건"
+        for year, count in sorted(year_counts.items(), key=lambda item: item[0], reverse=True)
+    )
+    return "\n\n---\n\n".join(blocks), real_trade_count
 
 
 def extract_naver_prices_httpx(
