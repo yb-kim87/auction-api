@@ -123,7 +123,7 @@ export const DEFAULT_CRAWLER_CONFIG: CrawlerConfig = {
     enabled: false,
     time: "00:00",
     preset: "현재",
-    repeatAfterCollect: true,
+    repeatAfterCollect: false,
     excludeDuplicates: true,
     repeatDaily: true,
     oneTimeCompleted: false,
