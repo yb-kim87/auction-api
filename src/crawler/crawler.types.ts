@@ -165,6 +165,14 @@ export type CrawlerLoginDto = {
   password?: string;
 };
 
+/** 탱크옥션 "즐겨쓰는 검색" 항목(server_v3.py: _fetch_favorite_searches_v3). */
+export type TankFavoriteSearch = {
+  id: string;
+  title: string;
+  count?: number;
+  search: Partial<CrawlerSearchConfig>;
+};
+
 export type SaveSearchPresetDto = {
   id?: string;
   name: string;

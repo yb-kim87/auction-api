@@ -1011,6 +1011,52 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  // v3(완전 HTTPX)는 요청마다 자체적으로 로그인하고 세션을 남기지 않는
+  // 무상태 구조라, v1처럼 "로그인 상태 유지"라는 개념이 없다. 대신 관리자
+  // 화면에서 미리 자격증명이 유효한지 1회 확인시켜 즐겨찾기 조회·주소
+  // 추가 버튼을 활성화하는 게이트로 쓴다.
+  async checkTankLoginV3(submittedBy: string) {
+    await this.ensureWorker();
+    this.appendLog("info", `${submittedBy}님이 탱크옥션 로그인을 확인합니다.`);
+    try {
+      await this.workerFetch<{ ok: boolean }>("/tank-login-check", {
+        method: "POST",
+        body: "{}",
+      });
+      this.appendLog("info", "탱크옥션 로그인 확인 완료.");
+      return { ok: true };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "로그인 확인 실패";
+      this.appendLog("error", `탱크옥션 로그인 확인 실패: ${message}`);
+      throw error;
+    }
+  }
+
+  async listTankFavoriteSearches(submittedBy: string) {
+    await this.ensureWorker();
+    this.appendLog(
+      "info",
+      `${submittedBy}님이 탱크옥션 즐겨쓰는 검색 목록을 불러옵니다.`,
+    );
+    try {
+      const result = await this.workerFetch<{
+        ok: boolean;
+        items: unknown[];
+      }>("/tank-favorite-searches", { method: "GET" });
+      this.appendLog(
+        "info",
+        `탱크옥션 즐겨쓰는 검색 ${result.items?.length ?? 0}건을 불러왔습니다.`,
+      );
+      return result;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "즐겨쓰는 검색 조회 실패";
+      this.appendLog("error", `즐겨쓰는 검색 조회 실패: ${message}`);
+      throw error;
+    }
+  }
+
   async collectUrls(dto: CollectUrlsDto, submittedBy: string) {
     const version = dto.crawlerVersion ?? "v1";
 
@@ -1019,6 +1065,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // 그대로(브라우저에 남아있는 화면 상태를 그대로 사용) 동작을 유지한다.
     if (version !== "v3") {
       await this.ensureCrawlerLoggedIn(submittedBy);
+    } else {
+      await this.checkTankLoginV3(submittedBy);
     }
 
     this.appendLog(

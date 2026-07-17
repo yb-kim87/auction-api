@@ -43,14 +43,16 @@ def _load_dotenv() -> None:
 _load_dotenv()
 
 import asyncio
+import json as json_module
 
 from full_httpx_worker import full_httpx_crawl_worker
 from http_client import LoginCredentialsMissing, login, make_client
-from http_client import fetch_list_page_with_preset
+from http_client import fetch_favorite_searches, fetch_list_page_with_preset
 from presets_httpx import (
     UnsupportedPresetError,
     build_query_from_search_config,
     list_response_to_url_entries,
+    parse_favorite_search_param,
     resolve_preset_request,
     PA_LIST_PATH,
 )
@@ -93,6 +95,49 @@ async def _collect_urls_v3(
             page_no += 1
 
         return entries
+
+
+async def _check_tank_login_v3() -> bool:
+    """자격증명(TANKAUCTION_ID/PW)으로 실제 로그인이 되는지 1회 확인.
+
+    v3는 요청마다 자체 로그인하는 무상태(stateless) 구조라 "로그인 상태
+    유지"라는 개념 자체가 없다 — 이 함수는 세션을 남기지 않고 자격증명이
+    유효한지만 검증한다. 관리자 화면에서 "탱크옥션 로그인 확인" 버튼을
+    눌러 즐겨찾기 조회/주소추가를 활성화하기 전에 먼저 통과시키는 게이트
+    로 사용한다.
+    """
+    async with make_client() as client:
+        await login(client)
+    return True
+
+
+async def _fetch_favorite_searches_v3() -> list[dict]:
+    """로그인 후 탱크옥션 "즐겨쓰는 검색" 목록을 조회해 관리자 화면에서
+    바로 쓸 수 있는 형태({id, title, search}) 로 변환."""
+    async with make_client() as client:
+        await login(client)
+        raw_items = await fetch_favorite_searches(client)
+
+    results: list[dict] = []
+    for item in raw_items:
+        param_raw = item.get("param")
+        if not param_raw:
+            continue
+        try:
+            param_json = json_module.loads(param_raw)
+        except (TypeError, ValueError):
+            continue
+        search_config = parse_favorite_search_param(param_json)
+        title = item.get("user_title") or item.get("srch_tt") or f"즐겨찾기 {item.get('idx')}"
+        results.append(
+            {
+                "id": str(item.get("idx")),
+                "title": title,
+                "count": item.get("srch_cnt"),
+                "search": search_config,
+            }
+        )
+    return results
 
 
 class CrawlerStateV3:
@@ -202,6 +247,17 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/status":
             self._send_json(200, STATE.snapshot())
             return
+        if path == "/tank-favorite-searches":
+            try:
+                items = asyncio.run(_fetch_favorite_searches_v3())
+            except LoginCredentialsMissing as exc:
+                self._send_json(400, {"error": str(exc)})
+                return
+            except Exception as exc:  # noqa: BLE001
+                self._send_json(502, {"error": f"즐겨쓰는 검색 조회 실패: {exc}"})
+                return
+            self._send_json(200, {"ok": True, "items": items})
+            return
         self._send_json(404, {"error": "not found"})
 
     def do_POST(self):
@@ -209,6 +265,18 @@ class Handler(BaseHTTPRequestHandler):
             return
         path = urlparse(self.path).path
         body = self._read_json()
+
+        if path == "/tank-login-check":
+            try:
+                asyncio.run(_check_tank_login_v3())
+            except LoginCredentialsMissing as exc:
+                self._send_json(400, {"error": str(exc)})
+                return
+            except Exception as exc:  # noqa: BLE001
+                self._send_json(502, {"error": f"탱크옥션 로그인 확인 실패: {exc}"})
+                return
+            self._send_json(200, {"ok": True})
+            return
 
         if path == "/collect-urls-v3":
             preset = body.get("preset") or "현재"

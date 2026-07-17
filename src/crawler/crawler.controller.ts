@@ -86,6 +86,20 @@ export class CrawlerController {
     return { ok: true };
   }
 
+  @Post("tank-login-check")
+  async checkTankLoginV3(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.checkTankLoginV3(ctx.username);
+  }
+
+  @Get("tank-favorite-searches")
+  async listTankFavoriteSearches(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.crawlerService.listTankFavoriteSearches(ctx.username);
+  }
+
   @Post("login")
   async login(
     @Headers() headers: Record<string, string>,

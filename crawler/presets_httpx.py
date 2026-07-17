@@ -290,6 +290,118 @@ def build_query_from_search_config(config: dict) -> tuple[str, dict]:
     return CA_LIST_PATH, params
 
 
+FAVORITE_SEARCH_LIST_PATH = "/ca/res/mySearchCase.php"
+
+_STATUS_CODE_TO_LABEL = {v: k for k, v in STATUS_CODES.items()}
+_SPECIAL_CODE_TO_LABEL = {v: k for k, v in SPECIAL_CONDITION_CODES.items()}
+_PROPERTY_CODE_GROUP_TO_LABEL = {
+    ",".join(codes): label for label, codes in PROPERTY_TYPE_CODES.items()
+}
+
+
+def parse_favorite_search_param(param_json: dict) -> dict:
+    """탱크옥션 "즐겨쓰는 검색" 항목의 param(JSON 문자열을 파싱한 dict) →
+    CrawlerSearchConfig(Partial) 역매핑.
+
+    getFavoriteSearch API(POST /ca/res/mySearchCase.php,
+    mode=getFavoriteSearch) 응답의 item[].param 이 그대로 탱크옥션 검색
+    폼(#siCd, #ctgr, #stat 등)의 필드명과 값을 담고 있어, 여기 있는
+    코드→라벨 역매핑 테이블(PROPERTY_TYPE_CODES/STATUS_CODES/
+    SPECIAL_CONDITION_CODES)로 CrawlerSearchConfig 필드를 복원한다.
+    실측(2026-07-17)한 실제 사용자 즐겨찾기 데이터로 필드 이름을 확인함.
+    """
+    config: dict = {"listType": "auction"}
+
+    stat = str(param_json.get("stat", "")).strip()
+    if stat in _STATUS_CODE_TO_LABEL:
+        config["status"] = _STATUS_CODE_TO_LABEL[stat]
+
+    # ctgr(단일 코드) 또는 chkCtgrsCd("201014|201015,201017,201021|201022"
+    # 형태로 '|' 구분) 둘 다 관측됨 — 둘 다 처리.
+    property_types: list[str] = []
+    ctgr = str(param_json.get("ctgr", "")).strip()
+    if ctgr:
+        for label, codes in PROPERTY_TYPE_CODES.items():
+            if ctgr in codes:
+                property_types.append(label)
+    chk_ctgrs = str(param_json.get("chkCtgrsCd", "")).strip()
+    if chk_ctgrs:
+        for group in chk_ctgrs.split("|"):
+            label = _PROPERTY_CODE_GROUP_TO_LABEL.get(group)
+            if label and label not in property_types:
+                property_types.append(label)
+    if property_types:
+        config["propertyTypes"] = property_types
+
+    if param_json.get("apslAmtBgn") is not None:
+        config["appraisalMin"] = str(param_json["apslAmtBgn"])
+    if param_json.get("apslAmtEnd") is not None:
+        config["appraisalMax"] = str(param_json["apslAmtEnd"])
+    if param_json.get("minbAmtBgn") is not None:
+        config["minPriceMin"] = str(param_json["minbAmtBgn"])
+    if param_json.get("minbAmtEnd") is not None:
+        config["minPriceMax"] = str(param_json["minbAmtEnd"])
+    if param_json.get("minbPctBgn") is not None:
+        config["minPricePctMin"] = str(param_json["minbPctBgn"])
+    if param_json.get("minbPctEnd") is not None:
+        config["minPricePctMax"] = str(param_json["minbPctEnd"])
+    if param_json.get("bldgSqmBgn") is not None:
+        config["buildingAreaMin"] = str(param_json["bldgSqmBgn"])
+    if param_json.get("bldgSqmEnd") is not None:
+        config["buildingAreaMax"] = str(param_json["bldgSqmEnd"])
+    if param_json.get("landSqmBgn") is not None:
+        config["landAreaMin"] = str(param_json["landSqmBgn"])
+    if param_json.get("landSqmEnd") is not None:
+        config["landAreaMax"] = str(param_json["landSqmEnd"])
+    if param_json.get("totFlrBgn") is not None:
+        config["totalFloorMin"] = str(param_json["totFlrBgn"])
+    if param_json.get("totFlrEnd") is not None:
+        config["totalFloorMax"] = str(param_json["totFlrEnd"])
+    if param_json.get("fbCntBgn") is not None:
+        config["failCountMin"] = str(param_json["fbCntBgn"])
+    if param_json.get("fbCntEnd") is not None:
+        config["failCountMax"] = str(param_json["fbCntEnd"])
+    if param_json.get("prsvBgn") is not None:
+        config["preserveRegistryFrom"] = str(param_json["prsvBgn"])
+    if param_json.get("sn1") is not None:
+        config["caseYear"] = str(param_json["sn1"])
+    if param_json.get("sn2") is not None:
+        config["caseSerial"] = str(param_json["sn2"])
+    if param_json.get("pn") is not None:
+        config["itemNumber"] = str(param_json["pn"])
+    if param_json.get("siCd") is not None:
+        config["regionSiCd"] = str(param_json["siCd"])
+    if param_json.get("guCd") is not None:
+        config["regionGuCd"] = str(param_json["guCd"])
+    if param_json.get("dnCd") is not None:
+        config["regionDnCd"] = str(param_json["dnCd"])
+    if param_json.get("adrsEtc"):
+        config["addressKeyword"] = str(param_json["adrsEtc"])
+    if param_json.get("bgnDt"):
+        config["bidDateFrom"] = str(param_json["bgnDt"])
+    if param_json.get("endDt"):
+        config["bidDateTo"] = str(param_json["endDt"])
+    if param_json.get("auctType") is not None:
+        config["auctionType"] = str(param_json["auctType"])
+    if param_json.get("dpslDvsn") is not None:
+        config["saleDivision"] = str(param_json["dpslDvsn"])
+
+    chk_spl = str(param_json.get("chkSplCdtn", "")).strip()
+    if chk_spl:
+        exclude_labels = [
+            _SPECIAL_CODE_TO_LABEL[code]
+            for code in chk_spl.split(",")
+            if code in _SPECIAL_CODE_TO_LABEL
+        ]
+        if exclude_labels:
+            config["excludeSpecialConditions"] = exclude_labels
+
+    if param_json.get("dataSize") is not None:
+        config["pageSize"] = str(param_json["dataSize"])
+
+    return config
+
+
 _AMOUNT_UNIT_MAP = {"억": 100_000_000, "천만": 10_000_000, "백만": 1_000_000}
 
 

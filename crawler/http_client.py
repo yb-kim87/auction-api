@@ -188,6 +188,33 @@ async def fetch_detail(client: httpx.AsyncClient, tid: str) -> dict:
         raise NonRetryableError(f"상세 API 응답 파싱 실패(tid={tid}): {exc}") from exc
 
 
+async def fetch_favorite_searches(client: httpx.AsyncClient) -> list[dict]:
+    """탱크옥션 "즐겨쓰는 검색열기" 목록 — POST /ca/res/mySearchCase.php,
+    mode=getFavoriteSearch. 실측(2026-07-17)으로 확인한 비공개 API로,
+    로그인 세션이 있어야 자신의 목록을 받는다(유료회원 전용 기능).
+    응답 형식이 바뀌면 이 파서도 함께 갱신해야 한다.
+    """
+    try:
+        resp = await client.post(
+            "/ca/res/mySearchCase.php",
+            data={"mode": "getFavoriteSearch", "domain": "ca"},
+        )
+    except httpx.TimeoutException as exc:
+        raise RetryableError(f"즐겨쓰는 검색 조회 타임아웃: {exc}") from exc
+    if resp.status_code >= 400:
+        _classify_and_raise(resp, context="즐겨쓰는 검색 조회")
+    if _looks_like_login_redirect(resp):
+        raise SessionExpiredError(
+            "즐겨쓰는 검색 조회가 JSON이 아닌 응답을 반환했습니다."
+        )
+    try:
+        data = resp.json()
+    except ValueError as exc:
+        raise NonRetryableError(f"즐겨쓰는 검색 조회 응답 파싱 실패: {exc}") from exc
+    items = data.get("item")
+    return items if isinstance(items, list) else []
+
+
 async def fetch_env_view_data(client: httpx.AsyncClient, tid: str) -> dict | None:
     """탱크 /molit/res/EnvViewData.php — envInfo.envData(교육·주변), dtDj(단지) 등.
 
