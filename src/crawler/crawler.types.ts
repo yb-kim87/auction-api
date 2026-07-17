@@ -19,6 +19,13 @@ export type CrawlerSearchConfig = {
   regionGuCd?: string;
   /** 읍/면/동 코드(탱크옥션 dnCd). regionGuCd 선택 후에만 의미 있음. */
   regionDnCd?: string;
+  /** 여러 지역을 동시 선택했을 때의 법정동 코드 목록(탱크옥션 adrPlural,
+   * 콤마 구분 문자열, 예: "4128000000,4131000000"). 탱크옥션 즐겨찾기
+   * 항목을 불러올 때만 채워지며, 관리자 화면에는 지역 코드 UI가 없어
+   * 직접 편집할 수 없다 — 값이 있으면 검색 시 regionGuCd 단일값보다
+   * 우선한다(실측: guCd 단일값만 쓰면 검색이 지나치게 좁아져 0건이
+   * 나옴, 2026-07-17). */
+  regionAdrPlural?: string;
   /** 세부주소/건물명 검색어(자유 텍스트, 탱크옥션 adrsEtc). */
   addressKeyword?: string;
   /** 최저가 하한(원 단위 문자열, 탱크옥션 minbAmtBgn). */

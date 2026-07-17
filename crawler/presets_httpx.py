@@ -227,7 +227,13 @@ def build_query_from_search_config(config: dict) -> tuple[str, dict]:
         params["minbAmtBgn"] = config.get("minPriceMin") or "0"
         params["minbAmtEnd"] = config.get("minPriceMax") or "0"
         params["siCd"] = config.get("regionSiCd") or "0"
-        params["guCd"] = config.get("regionGuCd") or "0"
+        adr_plural = config.get("regionAdrPlural")
+        if adr_plural:
+            params["adrPlural"] = adr_plural
+            params["adrPlural_cnt"] = str(len(adr_plural.split(",")))
+            params["guCd"] = "0"
+        else:
+            params["guCd"] = config.get("regionGuCd") or "0"
         params["dnCd"] = config.get("regionDnCd") or "0"
         property_types = config.get("propertyTypes") or []
         codes: list[str] = []
@@ -259,7 +265,16 @@ def build_query_from_search_config(config: dict) -> tuple[str, dict]:
     params["sn2"] = config.get("caseSerial") or "0"
     params["pn"] = config.get("itemNumber") or "0"
     params["siCd"] = config.get("regionSiCd") or "0"
-    params["guCd"] = config.get("regionGuCd") or "0"
+    adr_plural = config.get("regionAdrPlural")
+    if adr_plural:
+        # 즐겨찾기가 여러 지역을 동시 선택한 조건인 경우(탱크옥션
+        # adrPlural) — guCd 단일값보다 우선한다. 실측(2026-07-17): guCd
+        # 단일값만 쓰면 검색이 지나치게 좁아져 0건이 나옴.
+        params["adrPlural"] = adr_plural
+        params["adrPlural_cnt"] = str(len(adr_plural.split(",")))
+        params["guCd"] = "0"
+    else:
+        params["guCd"] = config.get("regionGuCd") or "0"
     params["dnCd"] = config.get("regionDnCd") or "0"
     params["auctType"] = config.get("auctionType") or "0"
     params["dpslDvsn"] = config.get("saleDivision") or "0"
@@ -375,6 +390,8 @@ def parse_favorite_search_param(param_json: dict) -> dict:
         config["regionGuCd"] = str(param_json["guCd"])
     if param_json.get("dnCd") is not None:
         config["regionDnCd"] = str(param_json["dnCd"])
+    if param_json.get("adrPlural"):
+        config["regionAdrPlural"] = str(param_json["adrPlural"])
     if param_json.get("adrsEtc"):
         config["addressKeyword"] = str(param_json["adrsEtc"])
     if param_json.get("bgnDt"):
