@@ -53,7 +53,6 @@ from presets_httpx import (
     build_query_from_search_config,
     list_response_to_url_entries,
     parse_favorite_search_param,
-    resolve_preset_request,
     PA_LIST_PATH,
 )
 from tank_detail import tid_from_url
@@ -298,17 +297,14 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path == "/count-search-v3":
-            preset = body.get("preset") or "현재"
+            # v3는 "현재" 프리셋 개념이 없다 — 관리자 화면이 항상 완전한
+            # search(CrawlerSearchConfig)를 보낸다.
             search = body.get("search")
-
+            if not search:
+                self._send_json(400, {"error": "검색조건(search)이 없습니다."})
+                return
             try:
-                if preset in ("아파트", "다가구", "빌라", "공매"):
-                    api_path, params = resolve_preset_request(preset)
-                elif search:
-                    api_path, params = build_query_from_search_config(search)
-                else:
-                    self._send_json(400, {"error": f"'{preset}' 프리셋은 지원하지 않습니다."})
-                    return
+                api_path, params = build_query_from_search_config(search)
             except UnsupportedPresetError as exc:
                 self._send_json(400, {"error": str(exc)})
                 return
@@ -326,26 +322,17 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path == "/collect-urls-v3":
-            preset = body.get("preset") or "현재"
+            # v3는 "현재" 프리셋 개념이 없다 — 관리자 화면이 항상 완전한
+            # search(CrawlerSearchConfig, 관심조건/즐겨찾기를 선택했거나
+            # 직접 채운 값)를 보낸다. 고정 프리셋 이름(아파트/다가구/빌라/
+            # 공매)은 이제 그 자체가 관심조건의 하나로 취급되어 search로
+            # 채워져 오므로 별도 분기가 필요 없다.
             search = body.get("search")
-
+            if not search:
+                self._send_json(400, {"error": "검색조건(search)이 없습니다."})
+                return
             try:
-                if preset in ("아파트", "다가구", "빌라", "공매"):
-                    api_path, params = resolve_preset_request(preset)
-                elif search:
-                    api_path, params = build_query_from_search_config(search)
-                else:
-                    self._send_json(
-                        400,
-                        {
-                            "error": (
-                                f"'{preset}' 프리셋은 v3(완전 HTTPX)에서 지원하지 "
-                                "않습니다. 검색조건 탭에서 조건을 저장한 뒤 다시 "
-                                "시도해 주세요."
-                            ),
-                        },
-                    )
-                    return
+                api_path, params = build_query_from_search_config(search)
             except UnsupportedPresetError as exc:
                 self._send_json(400, {"error": str(exc)})
                 return

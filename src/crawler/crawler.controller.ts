@@ -20,6 +20,7 @@ import type {
   CollectUrlsDto,
   CrawlerConfig,
   CrawlerLoginDto,
+  CrawlerSearchConfig,
   ManageUrlsDto,
   SaveSearchPresetDto,
   StartCrawlDto,
@@ -113,13 +114,10 @@ export class CrawlerController {
   @Post("count-search-v3")
   async countSearchResultsV3(
     @Headers() headers: Record<string, string>,
-    @Body() body: CollectUrlsDto,
+    @Body() body: { search?: CrawlerSearchConfig },
   ) {
     requireAdmin(getAuthContext(headers));
-    return this.crawlerService.countSearchResultsV3({
-      preset: body.preset ?? "현재",
-      search: body.search,
-    });
+    return this.crawlerService.countSearchResultsV3(body.search);
   }
 
   @Post("collect-urls")

@@ -31,6 +31,7 @@ import type {
   CrawlerConfig,
   CrawlerLogEntry,
   CrawlerLoginDto,
+  CrawlerSearchConfig,
   CrawlerStatus,
   CrawlerUrlEntry,
   ManageUrlsDto,
@@ -1057,22 +1058,27 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async countSearchResultsV3(dto: CollectUrlsDto) {
+  // v3(완전 HTTPX)는 브라우저 화면이 없어 "현재 화면 상태"라는 개념
+  // 자체가 성립하지 않는다 — 관리자 화면(CrawlerSearchPanel)이 필드별로
+  // 빈 값(조건 없음)이거나 채운 값인 완전한 CrawlerSearchConfig 를 항상
+  // dto.search로 보낸다. v1의 "현재" 프리셋(관리자 기본 검색조건과
+  // 병합)과는 절대 섞지 않는다 — 섞으면 즐겨찾기 원본에 없던 필드에
+  // 관리자 기본값이 끼어들어 검색 조건이 의도치 않게 좁아진다(실측:
+  // 32건→1건, 2026-07-17). 빈 값인 필드는 build_query_from_search_config
+  // (Python)가 "조건 없음"으로 처리하므로, dto.search 자체가 없을 때만
+  // (관리자 화면 버그 등 비정상 호출) 방어적으로 막는다.
+  async countSearchResultsV3(search?: CrawlerSearchConfig) {
+    if (!search) {
+      throw new ServiceUnavailableException(
+        "건수를 확인할 검색조건이 없습니다.",
+      );
+    }
     await this.ensureWorker();
-    // dto.search 가 이미 완전한 CrawlerSearchConfig(즐겨찾기/관심조건을
-    // 화면에서 선택해 채운 값)라면 관리자 기본 검색조건과 병합하지 않고
-    // 그대로 사용한다 — 병합하면 즐겨찾기 원본에 없던 필드(감정가 범위
-    // 등)에 관리자 기본값이 끼어들어 검색 조건이 의도치 않게 좁아진다
-    // (실측 확인: 32건이 나와야 할 조건이 관리자 기본 감정가 8~30억이
-    // 섞여 1건으로 줄어듦, 2026-07-17).
-    const search = dto.search?.listType
-      ? dto.search
-      : this.resolveSearchConfig(dto.preset, dto.search);
     return this.workerFetch<{ ok: boolean; total: number }>(
       "/count-search-v3",
       {
         method: "POST",
-        body: JSON.stringify({ preset: dto.preset, search }),
+        body: JSON.stringify({ search }),
       },
     );
   }
@@ -1094,24 +1100,31 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       `${submittedBy}님이 주소 수집을 시작합니다 (프리셋: ${dto.preset}).`,
     );
 
-    const savedPreset = this.listSavedSearches().find(
-      (item) => item.name === dto.preset,
-    );
-
-    // dto.search 가 이미 완전한 CrawlerSearchConfig(관리자 화면에서
-    // 즐겨찾기/관심조건을 선택했거나 직접 채운 값)라면 관리자 기본
-    // 검색조건과 병합하지 않고 그대로 사용한다 — countSearchResultsV3 와
-    // 동일한 이유(2026-07-17 실측: 관리자 기본 감정가 범위가 끼어들어
-    // 검색이 의도치 않게 좁아짐).
-    const searchConfig = savedPreset
-      ? { ...savedPreset.search, ...dto.search }
-      : dto.search?.listType
-        ? dto.search
+    let searchConfig: CollectUrlsDto["search"];
+    if (version === "v3") {
+      // v3는 "현재" 프리셋 개념이 없다 — 관리자 화면(CrawlerSearchPanel)이
+      // 필드별로 빈 값(=조건 없음, 전체 조회)이거나 채운 값인 완전한
+      // CrawlerSearchConfig를 항상 dto.search로 보낸다. 관심조건/즐겨찾기를
+      // 선택하면 그 값 그대로, 아무것도 선택하지 않으면 빈 값 그대로
+      // 사용한다 — 관리자 기본 검색조건과는 절대 병합하지 않는다(이유는
+      // countSearchResultsV3 주석 참고). dto.search 자체가 없을 때만
+      // (관리자 화면 버그 등 비정상 호출) 방어적으로 막는다.
+      if (!dto.search) {
+        throw new ServiceUnavailableException(
+          "검색조건 데이터가 전달되지 않았습니다. 관리자 화면을 새로고침한 뒤 다시 시도해 주세요.",
+        );
+      }
+      searchConfig = dto.search;
+    } else {
+      const savedPreset = this.listSavedSearches().find(
+        (item) => item.name === dto.preset,
+      );
+      searchConfig = savedPreset
+        ? { ...savedPreset.search, ...dto.search }
         : dto.preset === "현재"
-          ? version === "v3"
-            ? this.resolveSearchConfig(dto.preset, dto.search)
-            : undefined
+          ? undefined
           : this.resolveSearchConfig(dto.preset, dto.search);
+    }
 
     const linkExistingMap =
       await this.auctionsService.getLinkCollectFilterMap();
