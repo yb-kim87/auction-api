@@ -54,11 +54,6 @@ def _apply_naver_part_httpx(item: dict, naver_complex_id: str | None) -> dict:
             f"detail_head={(naver.get('naver_price_detail') or '')[:60]!r}",
             flush=True,
         )
-    else:
-        print(
-            f"[DEBUG naver] tid={item.get('tid')} skipped: usage={usage!r} area={building_area!r}",
-            flush=True,
-        )
         min_price = item.get("min_price") or 0
         sale_price = item.get("sale_price")
         appraisal_price = item.get("appraisal_price") or 0
@@ -68,6 +63,11 @@ def _apply_naver_part_httpx(item: dict, naver_complex_id: str | None) -> dict:
             naver["gap_margin_sold_price"] = naver["naver_lowest_price"] - sale_price
         if naver.get("naver_lowest_price") and appraisal_price:
             naver["new_case_gap_margin"] = naver["naver_lowest_price"] - appraisal_price
+    else:
+        print(
+            f"[DEBUG naver] tid={item.get('tid')} skipped: usage={usage!r} area={building_area!r}",
+            flush=True,
+        )
 
     item["naver_lowest_price"] = naver.get("naver_lowest_price") or 0
     item["gap_margin_sold_price"] = naver.get("gap_margin_sold_price")
