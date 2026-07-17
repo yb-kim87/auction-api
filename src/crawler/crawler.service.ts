@@ -1073,6 +1073,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         "건수를 확인할 검색조건이 없습니다.",
       );
     }
+    this.appendLog("info", `[디버그] countSearchResultsV3 수신: ${JSON.stringify(search)}`);
     await this.ensureWorker();
     return this.workerFetch<{ ok: boolean; total: number }>(
       "/count-search-v3",
