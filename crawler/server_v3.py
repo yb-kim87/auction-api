@@ -300,14 +300,12 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/count-search-v3":
             preset = body.get("preset") or "현재"
             search = body.get("search")
-            print(f"[DEBUG count-search-v3] preset={preset!r} search={search!r}", flush=True)
 
             try:
                 if preset in ("아파트", "다가구", "빌라", "공매"):
                     api_path, params = resolve_preset_request(preset)
                 elif search:
                     api_path, params = build_query_from_search_config(search)
-                    print(f"[DEBUG count-search-v3] params={params!r}", flush=True)
                 else:
                     self._send_json(400, {"error": f"'{preset}' 프리셋은 지원하지 않습니다."})
                     return

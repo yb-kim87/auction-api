@@ -1059,28 +1059,22 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
   async countSearchResultsV3(dto: CollectUrlsDto) {
     await this.ensureWorker();
-    const savedPreset = this.listSavedSearches().find(
-      (item) => item.name === dto.preset,
-    );
-    const search = savedPreset
-      ? { ...savedPreset.search, ...dto.search }
+    // dto.search 가 이미 완전한 CrawlerSearchConfig(즐겨찾기/관심조건을
+    // 화면에서 선택해 채운 값)라면 관리자 기본 검색조건과 병합하지 않고
+    // 그대로 사용한다 — 병합하면 즐겨찾기 원본에 없던 필드(감정가 범위
+    // 등)에 관리자 기본값이 끼어들어 검색 조건이 의도치 않게 좁아진다
+    // (실측 확인: 32건이 나와야 할 조건이 관리자 기본 감정가 8~30억이
+    // 섞여 1건으로 줄어듦, 2026-07-17).
+    const search = dto.search?.listType
+      ? dto.search
       : this.resolveSearchConfig(dto.preset, dto.search);
-    this.appendLog(
-      "info",
-      `[디버그] 건수 확인 요청 search: ${JSON.stringify(search)}`,
-    );
-    const result = await this.workerFetch<{ ok: boolean; total: number }>(
+    return this.workerFetch<{ ok: boolean; total: number }>(
       "/count-search-v3",
       {
         method: "POST",
         body: JSON.stringify({ preset: dto.preset, search }),
       },
     );
-    this.appendLog(
-      "info",
-      `[디버그] 건수 확인 결과: ${JSON.stringify(result)}`,
-    );
-    return result;
   }
 
   async collectUrls(dto: CollectUrlsDto, submittedBy: string) {
@@ -1104,13 +1098,20 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       (item) => item.name === dto.preset,
     );
 
+    // dto.search 가 이미 완전한 CrawlerSearchConfig(관리자 화면에서
+    // 즐겨찾기/관심조건을 선택했거나 직접 채운 값)라면 관리자 기본
+    // 검색조건과 병합하지 않고 그대로 사용한다 — countSearchResultsV3 와
+    // 동일한 이유(2026-07-17 실측: 관리자 기본 감정가 범위가 끼어들어
+    // 검색이 의도치 않게 좁아짐).
     const searchConfig = savedPreset
       ? { ...savedPreset.search, ...dto.search }
-      : dto.preset === "현재"
-        ? version === "v3"
-          ? this.resolveSearchConfig(dto.preset, dto.search)
-          : undefined
-        : this.resolveSearchConfig(dto.preset, dto.search);
+      : dto.search?.listType
+        ? dto.search
+        : dto.preset === "현재"
+          ? version === "v3"
+            ? this.resolveSearchConfig(dto.preset, dto.search)
+            : undefined
+          : this.resolveSearchConfig(dto.preset, dto.search);
 
     const linkExistingMap =
       await this.auctionsService.getLinkCollectFilterMap();
