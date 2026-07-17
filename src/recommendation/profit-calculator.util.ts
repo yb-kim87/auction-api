@@ -47,17 +47,19 @@ export function acquisitionTaxRate(
   return baseAcquisitionTaxRate(minPriceWon);
 }
 
-/** acquisitionTaxRate가 어떤 구간을 적용했는지 나타내는 라벨(프론트와 동일 로직). */
+/** acquisitionTaxRate가 어떤 구간을 적용했는지 나타내는 라벨(프론트와 동일 로직).
+ * 3주택 이상은 지역과 무관하게 세율이 동일해 규제/비규제를 구분하지 않는다. */
 export function acquisitionTaxBracketLabel(
   housingCount?: number | null,
   regulatedArea?: boolean | null,
 ): string {
   const count = housingCount ?? 0;
+  const regionLabel = regulatedArea ? "규제" : "비규제";
 
   if (count >= 3) return "3주택 이상";
-  if (count === 2) return regulatedArea ? "2주택 규제" : "2주택 비규제";
-  if (count === 1) return regulatedArea ? "1주택 규제" : "1주택 비규제";
-  return "무주택";
+  if (count === 2) return `2주택 ${regionLabel}`;
+  if (count === 1) return `1주택 ${regionLabel}`;
+  return `무주택 ${regionLabel}`;
 }
 
 /** 매도가 구간별 매도 중개수수료율 */
