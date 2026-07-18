@@ -1,6 +1,9 @@
 import { Auction } from "../auctions/auction.entity";
+import { parseUnitFloorFromAddress } from "../auctions/naver-floor-price.util";
 
 export type RuleFieldType = "number" | "string" | "boolean";
+
+const METROPOLITAN_CITIES = new Set(["서울특별시", "인천광역시", "경기도"]);
 
 export interface RuleFieldDef {
   key: string;
@@ -74,6 +77,24 @@ export const RULE_FIELDS: RuleFieldDef[] = [
     label: "특이사항",
     type: "string",
     extract: (item) => item.specialNote ?? "",
+  },
+  {
+    key: "official_land_price",
+    label: "공시가격(원)",
+    type: "number",
+    extract: (item) => (item.officialLandPrice > 0 ? item.officialLandPrice : null),
+  },
+  {
+    key: "is_metropolitan",
+    label: "수도권 여부(서울·경기·인천, 아니면 지방)",
+    type: "boolean",
+    extract: (item) => METROPOLITAN_CITIES.has(item.city ?? ""),
+  },
+  {
+    key: "unit_floor",
+    label: "층수(주소 호수 기반 추정)",
+    type: "number",
+    extract: (item) => parseUnitFloorFromAddress(item.address ?? ""),
   },
 ];
 
