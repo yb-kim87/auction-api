@@ -97,8 +97,9 @@ export class ManualLeadSyncService {
     let created = 0;
 
     for (const row of dataRows) {
-      const phone = row[phoneIdx];
-      if (!phone?.trim()) continue;
+      const rawPhone = row[phoneIdx];
+      if (!rawPhone?.trim()) continue;
+      const phone = fixLeadingZeroPhone(rawPhone);
 
       processed += 1;
       const name = nameIdx !== -1 ? row[nameIdx] ?? "" : "";
@@ -132,6 +133,16 @@ export class ManualLeadSyncService {
     this.logger.log(`수동 리드 시트 적용 완료: ${processed}건 확인, ${created}건 신규`);
     return { processed, created };
   }
+}
+
+/** 구글시트가 연락처를 숫자로 인식해 앞자리 0이 잘린 경우("1012345678" 등
+ *  10자리, 01[0-9]로 시작해야 할 자리가 1[0-9]로 시작)를 보정한다. 이미
+ *  0으로 시작하거나 형식이 다르면 원본 그대로 반환(normalizePhone이
+ *  최종 검증). */
+function fixLeadingZeroPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (/^1[0-9]\d{8}$/.test(digits)) return `0${digits}`;
+  return raw;
 }
 
 /** 응답일시 컬럼 형식 파싱. "2025-10-09 14:46" 같은 공백구분 형식은 KST로
