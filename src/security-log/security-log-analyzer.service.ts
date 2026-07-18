@@ -49,7 +49,7 @@ const EXCLUDED_USER_AGENT_SUBSTRINGS = ["Google-Apps-Script"];
  * (2026-07-18, 개발자 본인 테스트 요청 오탐 다수 발생).
  */
 const EXCLUDED_USER_AGENT_EXACT = ["node"];
-const EXCLUDED_UA_REQUIRES_ADMIN_USERNAMES = ["admin", "young", "ui"];
+const EXCLUDED_UA_REQUIRES_ADMIN_USERNAMES = ["admin"];
 
 function isExcludedUserAgent(userAgent: string, username?: string): boolean {
   if (EXCLUDED_USER_AGENT_SUBSTRINGS.some((needle) => userAgent.includes(needle))) return true;
