@@ -28,7 +28,11 @@ from parsers import parse_detail_page
 from repository import post_item_to_api
 
 CRAWL_CONCURRENCY = int(os.environ.get("CRAWL_CONCURRENCY", "5"))
-CRAWL_REQUEST_DELAY = float(os.environ.get("CRAWL_REQUEST_DELAY", "0.2"))
+# 요청 간 딜레이는 고정값이 아니라 [MIN, MAX] 범위에서 매번 랜덤하게 고른다.
+# 고정 간격은 트래픽 패턴 분석(요청 간격의 분산이 0에 가까움)으로 봇 탐지에
+# 취약하므로, 사람이 클릭하듯 간격을 흔들어준다.
+CRAWL_REQUEST_DELAY_MIN = float(os.environ.get("CRAWL_REQUEST_DELAY_MIN", "0.2"))
+CRAWL_REQUEST_DELAY_MAX = float(os.environ.get("CRAWL_REQUEST_DELAY_MAX", "0.8"))
 CRAWL_TIMEOUT = float(os.environ.get("CRAWL_TIMEOUT", "20"))
 CRAWL_MAX_RETRIES = int(os.environ.get("CRAWL_MAX_RETRIES", "3"))
 
@@ -147,7 +151,8 @@ async def _worker(
     results_lock: asyncio.Lock,
     *,
     max_retries: int,
-    request_delay: float,
+    request_delay_min: float,
+    request_delay_max: float,
     relogin_state: dict,
     save_to_db: bool,
 ) -> None:
@@ -165,8 +170,8 @@ async def _worker(
                     relogin_state=relogin_state,
                     save_to_db=save_to_db,
                 )
-                if request_delay > 0:
-                    await asyncio.sleep(request_delay)
+                if request_delay_max > 0:
+                    await asyncio.sleep(random.uniform(request_delay_min, request_delay_max))
             async with results_lock:
                 results.append(result)
         except Exception as exc:  # 예상 못한 예외도 worker를 죽이지 않음
@@ -182,7 +187,8 @@ async def run_detail_tasks(
     concurrency: int = CRAWL_CONCURRENCY,
     worker_count: int = 5,
     max_retries: int = CRAWL_MAX_RETRIES,
-    request_delay: float = CRAWL_REQUEST_DELAY,
+    request_delay_min: float = CRAWL_REQUEST_DELAY_MIN,
+    request_delay_max: float = CRAWL_REQUEST_DELAY_MAX,
     save_to_db: bool = False,
 ) -> list[CrawlResult]:
     queue: asyncio.Queue[CrawlTask | None] = asyncio.Queue()
@@ -206,7 +212,8 @@ async def run_detail_tasks(
                     results,
                     results_lock,
                     max_retries=max_retries,
-                    request_delay=request_delay,
+                    request_delay_min=request_delay_min,
+                    request_delay_max=request_delay_max,
                     relogin_state=relogin_state,
                     save_to_db=save_to_db,
                 )
