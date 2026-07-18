@@ -9,6 +9,9 @@ const NAME_HEADERS = ["이름", "성명", "name"];
 const PHONE_HEADERS = ["연락처(휴대폰번호)", "연락처", "휴대폰번호", "전화번호", "phone"];
 const RESPONDED_AT_HEADERS = ["응답일시", "가입일시", "등록일시", "일시"];
 const SOURCE_MEDIUM_HEADERS = ["저장매체", "유입경로", "폼종류"];
+/** 값이 채워져 있으면(무엇이든) 이미 수강 중/수강 이력이 있는 회원으로 보고
+ *  일괄발송(알림톡) 대상에서 자동 제외한다. 리드 자체는 그대로 목록에 저장된다. */
+const ENROLLED_HEADERS = ["수강생여부", "수강여부", "수강생"];
 
 function matchesHeader(header: string, candidates: string[]): boolean {
   const normalized = header.trim();
@@ -86,6 +89,7 @@ export class ManualLeadSyncService {
     const phoneIdx = columns.findIndex((h) => matchesHeader(h, PHONE_HEADERS));
     const respondedAtIdx = columns.findIndex((h) => matchesHeader(h, RESPONDED_AT_HEADERS));
     const sourceMediumIdx = columns.findIndex((h) => matchesHeader(h, SOURCE_MEDIUM_HEADERS));
+    const enrolledIdx = columns.findIndex((h) => matchesHeader(h, ENROLLED_HEADERS));
 
     if (phoneIdx === -1) {
       throw new Error(
@@ -106,11 +110,19 @@ export class ManualLeadSyncService {
       const respondedAtRaw = respondedAtIdx !== -1 ? row[respondedAtIdx] : undefined;
       const sourceMedium = sourceMediumIdx !== -1 ? row[sourceMediumIdx] ?? "" : "";
       const joinedAt = respondedAtRaw ? parseManualSheetDate(respondedAtRaw) : null;
+      const isEnrolled = enrolledIdx !== -1 && Boolean(row[enrolledIdx]?.trim());
 
       const surveyAnswers: Record<string, string> = {};
       columns.forEach((header, idx) => {
         if (!header) return;
-        if (idx === nameIdx || idx === phoneIdx || idx === respondedAtIdx || idx === sourceMediumIdx) return;
+        if (
+          idx === nameIdx ||
+          idx === phoneIdx ||
+          idx === respondedAtIdx ||
+          idx === sourceMediumIdx ||
+          idx === enrolledIdx
+        )
+          return;
         const value = row[idx];
         if (value?.trim()) surveyAnswers[header] = value.trim();
       });
@@ -122,6 +134,7 @@ export class ManualLeadSyncService {
         rawPhone: phone,
         channel: sourceMedium,
         surveyAnswers,
+        excludedFromBulk: isEnrolled,
         joinedAt,
         rawPayload: row,
       });

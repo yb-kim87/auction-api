@@ -55,6 +55,9 @@ export class KakaoNotifyService {
     channel?: string;
     /** 질문명→응답 객체(예: {"나이대":"40대"}). 저장 시 JSON 문자열로 직렬화한다. */
     surveyAnswers?: Record<string, string>;
+    /** true면 리드는 저장하되 일괄발송 대상에서 자동 제외한다(예: 이미
+     *  수강 중인 회원). 개별 발송·자동발송에는 영향 없음. */
+    excludedFromBulk?: boolean;
     joinedAt?: Date | null;
     rawPayload: unknown;
   }): Promise<IngestResult> {
@@ -79,6 +82,7 @@ export class KakaoNotifyService {
       samePhone.adName = input.adName?.trim() ?? "";
       samePhone.channel = input.channel?.trim() ?? samePhone.channel;
       if (input.surveyAnswers) samePhone.surveyAnswers = JSON.stringify(input.surveyAnswers);
+      if (input.excludedFromBulk !== undefined) samePhone.excludedFromBulk = input.excludedFromBulk;
       samePhone.joinedAt = input.joinedAt ?? samePhone.joinedAt;
       samePhone.rawPayload = JSON.stringify(input.rawPayload ?? {});
       samePhone.status = "pending";
@@ -100,6 +104,7 @@ export class KakaoNotifyService {
           adName: input.adName?.trim() ?? "",
           channel: input.channel?.trim() ?? "",
           surveyAnswers: input.surveyAnswers ? JSON.stringify(input.surveyAnswers) : "",
+          excludedFromBulk: input.excludedFromBulk ?? false,
           joinedAt: input.joinedAt ?? null,
           rawPayload: JSON.stringify(input.rawPayload ?? {}),
           status: "pending",
