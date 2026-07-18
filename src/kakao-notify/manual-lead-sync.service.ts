@@ -71,7 +71,12 @@ export class ManualLeadSyncService {
   }
 
   /** "적용" 버튼을 눌렀을 때 1회 실행. 시트 전체(헤더 포함)를 읽어 신규 행만 리드로 저장한다. */
-  async applyNow(): Promise<{ processed: number; created: number }> {
+  async applyNow(): Promise<{
+    processed: number;
+    created: number;
+    duplicate: number;
+    invalidPhone: number;
+  }> {
     if (!(await this.isConfigured())) {
       throw new Error(
         "수동 리드(구글시트) 연동이 설정되지 않았습니다. 구글시트 ID를 입력하고 구글 서비스 계정 환경변수를 확인해 주세요.",
@@ -80,7 +85,7 @@ export class ManualLeadSyncService {
 
     const { spreadsheetId, sheetRange } = await this.getSheetConfig();
     const rows = await this.sheets.readRange(spreadsheetId, sheetRange);
-    if (rows.length === 0) return { processed: 0, created: 0 };
+    if (rows.length === 0) return { processed: 0, created: 0, duplicate: 0, invalidPhone: 0 };
 
     const [headerRow, ...dataRows] = rows;
     const columns = headerRow.map((h) => (h ?? "").trim());
@@ -99,6 +104,9 @@ export class ManualLeadSyncService {
 
     let processed = 0;
     let created = 0;
+    let duplicate = 0;
+    let invalidPhone = 0;
+    const invalidRows: string[] = [];
 
     for (const row of dataRows) {
       const rawPhone = row[phoneIdx];
@@ -139,12 +147,21 @@ export class ManualLeadSyncService {
         rawPayload: row,
       });
       if (result.outcome === "created" || result.outcome === "resubmitted") created += 1;
+      else if (result.outcome === "duplicate") duplicate += 1;
+      else if (result.outcome === "invalid_phone") {
+        invalidPhone += 1;
+        invalidRows.push(`${name || "(이름없음)"}(${rawPhone})`);
+      }
     }
 
     await this.syncStateService.recordRunResult("manual_sheet", { status: "ok" });
 
-    this.logger.log(`수동 리드 시트 적용 완료: ${processed}건 확인, ${created}건 신규`);
-    return { processed, created };
+    this.logger.log(
+      `수동 리드 시트 적용 완료: ${processed}건 확인, ${created}건 신규, ` +
+        `${duplicate}건 중복, ${invalidPhone}건 전화번호 형식오류` +
+        (invalidRows.length > 0 ? ` [${invalidRows.join(", ")}]` : ""),
+    );
+    return { processed, created, duplicate, invalidPhone };
   }
 }
 
