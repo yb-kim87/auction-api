@@ -21,6 +21,10 @@ export class StrategyRule {
   @Column({ type: "text" })
   requiredFactCodes!: string;
 
+  /** 사용자 노출용 설명 문구(전략마다 다르므로 라벨이 아니라 여기에 속함) */
+  @Column({ type: "text", default: "" })
+  description!: string;
+
   @Column({ default: true })
   active!: boolean;
 

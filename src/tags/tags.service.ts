@@ -23,6 +23,8 @@ export interface StrategyRuleInput {
   requiredFactCodes: string[];
   /** 이 전략에 연결할 기존 라벨 마스터의 id(관리자가 드롭박스에서 선택) */
   labelId?: string;
+  /** 사용자 노출용 설명 문구(전략마다 다르게 작성) */
+  description?: string;
   active?: boolean;
   sortOrder?: number;
 }
@@ -30,14 +32,12 @@ export interface StrategyRuleInput {
 export interface StrategyLabelInput {
   strategyCode: string;
   label: string;
-  description?: string;
   icon?: string;
 }
 
 /** 관리자가 재사용 가능한 라벨 문구를 미리 등록/수정하는 마스터 CRUD 입력 */
 export interface StrategyLabelMasterInput {
   label: string;
-  description?: string;
   icon?: string;
 }
 
@@ -98,6 +98,9 @@ const DEFAULT_STRATEGY_RULES: StrategyRuleInput[] = [
   {
     strategyCode: "COMPETITION_LOW_POSSIBLE",
     requiredFactCodes: ["AREA_OVER_85", "USAGE_APARTMENT"],
+    description:
+      "세금 계산을 어려워하는 입찰자가 적지 않아 경쟁이 낮아질 수 있는 물건입니다. " +
+      "그만큼 안전마진을 확보한 채 낙찰받을 가능성이 있어 단기·중장기 투자 모두에 유리합니다.",
     sortOrder: 0,
   },
 ];
@@ -106,9 +109,6 @@ const DEFAULT_STRATEGY_LABELS: StrategyLabelInput[] = [
   {
     strategyCode: "COMPETITION_LOW_POSSIBLE",
     label: "경쟁이 적은 투자",
-    description:
-      "세금 계산을 어려워하는 입찰자가 적지 않아 경쟁이 낮아질 수 있는 물건입니다. " +
-      "그만큼 안전마진을 확보한 채 낙찰받을 가능성이 있어 단기·중장기 투자 모두에 유리합니다.",
     icon: "gem",
   },
 ];
@@ -141,6 +141,7 @@ export class TagsService implements OnModuleInit {
           this.strategyRuleRepo.create({
             strategyCode: rule.strategyCode,
             requiredFactCodes: JSON.stringify(rule.requiredFactCodes),
+            description: rule.description ?? "",
             active: rule.active ?? true,
             sortOrder: rule.sortOrder ?? 0,
           }),
@@ -260,6 +261,7 @@ export class TagsService implements OnModuleInit {
     const rule = this.strategyRuleRepo.create({
       strategyCode,
       requiredFactCodes: JSON.stringify(input.requiredFactCodes),
+      description: input.description?.trim() ?? "",
       active: input.active ?? true,
       sortOrder: input.sortOrder ?? 0,
     });
@@ -277,6 +279,7 @@ export class TagsService implements OnModuleInit {
     const prevCode = rule.strategyCode;
     if (input.strategyCode?.trim()) rule.strategyCode = slugifyToCode(input.strategyCode);
     if (input.requiredFactCodes) rule.requiredFactCodes = JSON.stringify(input.requiredFactCodes);
+    if (input.description !== undefined) rule.description = input.description.trim();
     if (input.active != null) rule.active = input.active;
     if (input.sortOrder != null) rule.sortOrder = input.sortOrder;
     const saved = await this.strategyRuleRepo.save(rule);
@@ -319,7 +322,6 @@ export class TagsService implements OnModuleInit {
       this.strategyLabelRepo.create({
         strategyCode: "",
         label: input.label.trim(),
-        description: input.description?.trim() ?? "",
         icon: input.icon?.trim() ?? "",
       }),
     );
@@ -335,7 +337,6 @@ export class TagsService implements OnModuleInit {
       if (!input.label.trim()) throw new BadRequestException("노출 문구(라벨)를 입력해 주세요.");
       label.label = input.label.trim();
     }
-    if (input.description !== undefined) label.description = input.description.trim();
     if (input.icon !== undefined) label.icon = input.icon.trim();
     return this.strategyLabelRepo.save(label);
   }
@@ -363,11 +364,12 @@ export class TagsService implements OnModuleInit {
     const factCodes = this.ruleEngine.computeFactCodes(item, factRules);
     const strategyCodes = this.ruleEngine.computeStrategyCodes(factCodes, strategyRules);
     const labelMap = new Map(labels.map((l) => [l.strategyCode, l]));
+    const ruleMap = new Map(strategyRules.map((r) => [r.strategyCode, r]));
     const strategyItems = strategyCodes
       .map((code) => {
         const label = labelMap.get(code);
         if (!label) return null;
-        return { code, label: label.label, description: label.description, icon: label.icon };
+        return { code, label: label.label, description: ruleMap.get(code)?.description ?? "", icon: label.icon };
       })
       .filter((v): v is { code: string; label: string; description: string; icon: string } => v != null);
     return { factCodes, strategyItems };
@@ -381,6 +383,7 @@ export class TagsService implements OnModuleInit {
       this.findAllStrategyLabels(),
     ]);
     const labelMap = new Map(labels.map((l) => [l.strategyCode, l]));
+    const ruleMap = new Map(strategyRules.map((r) => [r.strategyCode, r]));
     const items = await this.auctionRepo.find();
 
     let updated = 0;
@@ -391,7 +394,7 @@ export class TagsService implements OnModuleInit {
         .map((code) => {
           const label = labelMap.get(code);
           if (!label) return null;
-          return { code, label: label.label, description: label.description, icon: label.icon };
+          return { code, label: label.label, description: ruleMap.get(code)?.description ?? "", icon: label.icon };
         })
         .filter((v): v is { code: string; label: string; description: string; icon: string } => v != null);
 
