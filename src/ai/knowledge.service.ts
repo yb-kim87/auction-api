@@ -83,11 +83,10 @@ export class KnowledgeService {
       }
     }
 
-    // "공통"은 물건 특성과 무관하게 항상 참고할 만한 지식이라 매 검색에 포함하고,
-    // "물건추천"(구 대출/가격분석/투자전략)도 대출·시세·투자 판단에 두루 쓰이는
-    // 성격이라 기본 후보로 둔다. "권리분석"은 실제로 임차·대항력 등 권리관계
-    // 정보가 있는 물건에서만 관련도가 높아 조건부로 추가한다.
-    const categories = new Set<string>(["공통", "물건추천"]);
+    // "물건추천"(구 대출/가격분석/투자전략)은 대출·시세·투자 판단에 두루
+    // 쓰이는 성격이라 기본 후보로 둔다. "권리분석"은 실제로 임차·대항력 등
+    // 권리관계 정보가 있는 물건에서만 관련도가 높아 조건부로 추가한다.
+    const categories = new Set<string>(["물건추천"]);
     if (
       auction.buildingRegistry?.trim() ||
       auction.tenantInfo?.trim() ||
@@ -103,9 +102,10 @@ export class KnowledgeService {
 
   /**
    * 키워드·분류 기반 RAG 검색 (embedding 전 1단계).
-   * category를 지정하면 그 분류(및 "공통")의 지식으로만 검색 범위를 제한한다
-   * — 예: 물건 상세의 "AI에게 물어보기"는 "권리분석"만 참고하도록 좁혀,
-   * 물건추천 전용 AI(추후 별도 파이프라인)와 지식 영역을 분리한다.
+   * category를 지정하면 정확히 그 분류의 지식으로만 검색 범위를 제한한다
+   * (다른 분류는 전혀 섞이지 않음) — 예: 물건 상세의 "AI에게 물어보기"는
+   * "권리분석"만, 물건추천 전용 AI는 "물건추천"만 보도록 완전히 분리한다.
+   * 분류명은 관리자가 자유롭게 추가할 수 있는 임의 문자열이다.
    */
   async searchForAuction(
     auction: Auction,
@@ -117,9 +117,7 @@ export class KnowledgeService {
       where: { active: true },
       order: { updatedAt: "DESC" },
     });
-    const items = category
-      ? allItems.filter((i) => i.category.trim() === category || i.category.trim() === "공통")
-      : allItems;
+    const items = category ? allItems.filter((i) => i.category.trim() === category) : allItems;
     if (items.length === 0) return [];
 
     const { keywords, categories } = this.buildSearchContext(auction);
