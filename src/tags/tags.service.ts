@@ -251,11 +251,24 @@ export class TagsService implements OnModuleInit {
   async updateStrategyRule(id: string, input: Partial<StrategyRuleInput>): Promise<StrategyRule> {
     const rule = await this.strategyRuleRepo.findOne({ where: { id } });
     if (!rule) throw new NotFoundException("Strategy 규칙을 찾을 수 없습니다.");
+
+    const prevCode = rule.strategyCode;
     if (input.strategyCode?.trim()) rule.strategyCode = slugifyToCode(input.strategyCode);
     if (input.requiredFactCodes) rule.requiredFactCodes = JSON.stringify(input.requiredFactCodes);
     if (input.active != null) rule.active = input.active;
     if (input.sortOrder != null) rule.sortOrder = input.sortOrder;
-    return this.strategyRuleRepo.save(rule);
+    const saved = await this.strategyRuleRepo.save(rule);
+
+    // 전략 코드가 바뀌면, 이 코드로 사용자 노출 문구를 연결해둔 StrategyLabel도
+    // 같이 옮겨줘야 라벨 연결이 끊기지 않는다(안 그러면 화면에 문구가 사라짐).
+    if (prevCode !== saved.strategyCode) {
+      await this.strategyLabelRepo.update(
+        { strategyCode: prevCode },
+        { strategyCode: saved.strategyCode },
+      );
+    }
+
+    return saved;
   }
 
   async removeStrategyRule(id: string): Promise<{ ok: boolean }> {
