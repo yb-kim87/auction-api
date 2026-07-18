@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -24,6 +25,7 @@ import {
 } from "./cafe-knowledge.service";
 import { KnowledgeService, type UpsertKnowledgeInput } from "./knowledge.service";
 import { KnowledgeCategoryService } from "./knowledge-category.service";
+import { OpenAiService } from "./openai.service";
 import type { KnowledgeDraftStatus } from "./knowledge-draft.entity";
 
 @Controller("ai")
@@ -34,6 +36,7 @@ export class AiController {
     private readonly knowledgeService: KnowledgeService,
     private readonly knowledgeCategoryService: KnowledgeCategoryService,
     private readonly cafeKnowledgeService: CafeKnowledgeService,
+    private readonly openAiService: OpenAiService,
   ) {}
 
   @Post("ask")
@@ -103,6 +106,24 @@ export class AiController {
   ) {
     requireAdmin(getAuthContext(headers));
     return this.knowledgeService.create(body);
+  }
+
+  /** 관리자가 카테고리+원본 메모를 입력하면 AI가 제목/태그/내용으로 정리해
+   *  반환한다(저장은 하지 않음 — 결과를 확인·수정한 뒤 POST /knowledge로
+   *  직접 승인·저장). */
+  @Post("knowledge/structure")
+  structureKnowledge(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { category?: string; rawText?: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    if (!body.rawText?.trim()) {
+      throw new BadRequestException("정리할 내용을 입력해 주세요.");
+    }
+    return this.openAiService.structureKnowledgeInput({
+      category: body.category ?? "",
+      rawText: body.rawText,
+    });
   }
 
   @Patch("knowledge/:id")

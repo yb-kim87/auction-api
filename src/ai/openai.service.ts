@@ -119,6 +119,82 @@ ${input.rawContent.slice(0, 6000)}`;
     };
   }
 
+  /**
+   * 관리자가 카테고리+원본 메모를 입력하면, 지식 등록 폼(제목/태그/내용)
+   * 형식에 맞게 AI가 다듬어 반환한다(저장은 하지 않음 — 관리자가 결과를
+   * 확인·수정한 뒤 기존 저장 버튼으로 최종 승인).
+   */
+  async structureKnowledgeInput(input: {
+    category: string;
+    rawText: string;
+  }): Promise<{ title: string; tags: string; content: string }> {
+    if (!this.apiKey) {
+      throw new ServiceUnavailableException(
+        "경매코치 AI를 사용할 수 없습니다. OPENAI_API_KEY를 확인해 주세요.",
+      );
+    }
+
+    const systemPrompt = `당신은 경매 투자 플랫폼 "경매코치"의 내부 지식 편집자입니다.
+관리자가 입력한 메모를 경매 분석 AI(RAG)가 참고할 **내부 경매지식** 항목으로 다듬습니다.
+
+규칙:
+- 법률 자문이 아닌 "입찰 전 확인 포인트·내부 가이드" 톤으로 작성
+- 원문의 의미를 바꾸지 말고, 체크리스트·원칙·주의사항 중심으로 정리
+- tags는 쉼표 구분 핵심 키워드 3~6개 (예: 대항력,임차,LTV)
+- content는 800자 이내, 마크다운 없이 일반 텍스트로 작성
+- 개인정보(이름, 연락처, 주민번호)는 제거
+
+JSON 형식으로만 응답:
+{
+  "title": "지식 제목",
+  "tags": "대항력,임차",
+  "content": "정리된 본문"
+}`;
+
+    const userPrompt = `[분류] ${input.category}
+
+[원본 메모]
+${input.rawText.slice(0, 6000)}`;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: this.model,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new InternalServerErrorException(
+        `경매코치 AI 정리 요청에 실패했습니다. (${response.status})`,
+      );
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = data.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+    }
+
+    const parsed = JSON.parse(content) as Record<string, unknown>;
+    return {
+      title: String(parsed.title ?? ""),
+      tags: String(parsed.tags ?? ""),
+      content: String(parsed.content ?? input.rawText),
+    };
+  }
+
   async answerFreeform(systemPrompt: string, userPrompt: string): Promise<string> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException(
