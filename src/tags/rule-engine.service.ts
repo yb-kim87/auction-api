@@ -27,6 +27,15 @@ function evaluateRule(item: Auction, rule: TagRule): boolean {
       return String(actual) !== rule.value;
     case "contains":
       return typeof actual === "string" && actual.includes(rule.value);
+    case "in":
+      return (
+        typeof actual === "string" &&
+        rule.value
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean)
+          .includes(actual)
+      );
     default:
       return false;
   }

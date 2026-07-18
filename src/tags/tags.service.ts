@@ -6,7 +6,7 @@ import { StrategyRule } from "./strategy-rule.entity";
 import { StrategyLabel } from "./strategy-label.entity";
 import { Auction } from "../auctions/auction.entity";
 import { RuleEngineService } from "./rule-engine.service";
-import { RULE_FIELD_MAP, RULE_OPERATORS } from "./rule-field-registry";
+import { RULE_FIELD_MAP, RULE_OPERATORS, RULE_VALUE_OPTIONS_FIELDS } from "./rule-field-registry";
 
 export interface TagRuleInput {
   tagName: string;
@@ -412,8 +412,30 @@ export class TagsService implements OnModuleInit {
 
   getFieldRegistry() {
     return {
-      fields: [...RULE_FIELD_MAP.values()].map((f) => ({ key: f.key, label: f.label, type: f.type })),
+      fields: [...RULE_FIELD_MAP.values()].map((f) => ({
+        key: f.key,
+        label: f.label,
+        type: f.type,
+        hasValueOptions: RULE_VALUE_OPTIONS_FIELDS.has(f.key),
+      })),
       operators: RULE_OPERATORS,
     };
+  }
+
+  /** usage처럼 실제 DB에 어떤 값이 있는지 미리 알 수 없는 필드의 드롭박스용 후보 목록. */
+  async getFieldValueOptions(fieldKey: string): Promise<string[]> {
+    if (!RULE_VALUE_OPTIONS_FIELDS.has(fieldKey)) {
+      throw new BadRequestException("이 필드는 값 목록을 지원하지 않습니다.");
+    }
+    if (fieldKey === "usage") {
+      const rows = await this.auctionRepo
+        .createQueryBuilder("a")
+        .select("DISTINCT a.usage", "usage")
+        .where("a.usage IS NOT NULL AND a.usage != ''")
+        .orderBy("a.usage", "ASC")
+        .getRawMany<{ usage: string }>();
+      return rows.map((r) => r.usage).filter(Boolean);
+    }
+    return [];
   }
 }

@@ -106,7 +106,7 @@ export const RULE_FIELDS: RuleFieldDef[] = [
 
 export const RULE_FIELD_MAP = new Map(RULE_FIELDS.map((f) => [f.key, f]));
 
-export type RuleOperator = "gt" | "gte" | "lt" | "lte" | "eq" | "neq" | "contains";
+export type RuleOperator = "gt" | "gte" | "lt" | "lte" | "eq" | "neq" | "contains" | "in";
 
 export const RULE_OPERATORS: Array<{ key: RuleOperator; label: string; types: RuleFieldType[] }> = [
   { key: "gt", label: "초과 (>)", types: ["number"] },
@@ -116,4 +116,11 @@ export const RULE_OPERATORS: Array<{ key: RuleOperator; label: string; types: Ru
   { key: "eq", label: "같음 (=)", types: ["number", "string", "boolean"] },
   { key: "neq", label: "다름 (!=)", types: ["number", "string", "boolean"] },
   { key: "contains", label: "포함", types: ["string"] },
+  { key: "in", label: "다음 중 하나와 일치", types: ["string"] },
 ];
+
+/** 관리자 화면에서 값 입력을 텍스트 대신 실제 존재하는 값 목록의 드롭박스(다중선택)로
+ *  보여줄 필드. usage처럼 DB에 실제로 어떤 값이 있는지 미리 알 수 없는 자유 텍스트
+ *  필드에서, "빌라" 조건을 만들 때 다세대주택·연립주택·도시형생활주택 등을 한 번에
+ *  고를 수 있게 하기 위함(2026-07-19). */
+export const RULE_VALUE_OPTIONS_FIELDS = new Set(["usage"]);

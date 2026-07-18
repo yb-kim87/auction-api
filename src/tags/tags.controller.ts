@@ -25,6 +25,15 @@ export class TagsController {
     return this.tagsService.getFieldRegistry();
   }
 
+  @Get("fields/:key/value-options")
+  async fieldValueOptions(
+    @Headers() headers: Record<string, string>,
+    @Param("key") key: string,
+  ) {
+    requireAuth(getAuthContext(headers));
+    return this.tagsService.getFieldValueOptions(key);
+  }
+
   @Post()
   async create(@Headers() headers: Record<string, string>, @Body() body: TagRuleInput) {
     requireAdmin(getAuthContext(headers));
