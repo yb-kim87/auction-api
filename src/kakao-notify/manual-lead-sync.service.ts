@@ -175,8 +175,12 @@ function fixLeadingZeroPhone(raw: string): string {
   return raw;
 }
 
-/** 응답일시 컬럼 형식 파싱. "2025-10-09 14:46" 같은 공백구분 형식은 KST로
- *  간주하고, 이미 타임존 오프셋/Z가 포함된 ISO 형식이면 그대로 파싱한다. */
+/** 응답일시 컬럼 형식 파싱. "2025-10-09 14:46", "2026-07-16 8:58:32"처럼
+ *  시/분/초가 한 자리인 경우도 지원한다(구글시트 기본 서식이 자릿수를
+ *  0으로 채우지 않고 그대로 내보내는 경우가 있음 — Date 생성자는 이런
+ *  형식을 ISO 8601로 인정하지 않아 조용히 파싱 실패(null)한다). 공백구분
+ *  형식은 KST로 간주하고, 이미 타임존 오프셋/Z가 포함된 ISO 형식이면
+ *  그대로 파싱한다. */
 export function parseManualSheetDate(raw: string): Date | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -184,7 +188,17 @@ export function parseManualSheetDate(raw: string): Date | null {
     const parsed = new Date(trimmed);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
-  const isoLike = trimmed.replace(" ", "T") + "+09:00";
-  const parsed = new Date(isoLike);
+  const match = trimmed.match(
+    /^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/,
+  );
+  if (match) {
+    const [, y, mo, d, h, mi, s] = match;
+    const isoLike =
+      `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}` +
+      `T${h.padStart(2, "0")}:${mi.padStart(2, "0")}:${(s ?? "0").padStart(2, "0")}+09:00`;
+    const parsed = new Date(isoLike);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  const parsed = new Date(trimmed);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
