@@ -51,6 +51,8 @@ export class KakaoNotifyService {
     birthDate?: string;
     address?: string;
     adName?: string;
+    /** source를 세분화하는 채널명(예: "naver폼"). 유입경로 필터에 사용. */
+    channel?: string;
     /** 질문명→응답 객체(예: {"나이대":"40대"}). 저장 시 JSON 문자열로 직렬화한다. */
     surveyAnswers?: Record<string, string>;
     joinedAt?: Date | null;
@@ -75,6 +77,7 @@ export class KakaoNotifyService {
       samePhone.birthDate = input.birthDate?.trim() ?? "";
       samePhone.address = input.address?.trim() ?? "";
       samePhone.adName = input.adName?.trim() ?? "";
+      samePhone.channel = input.channel?.trim() ?? samePhone.channel;
       if (input.surveyAnswers) samePhone.surveyAnswers = JSON.stringify(input.surveyAnswers);
       samePhone.joinedAt = input.joinedAt ?? samePhone.joinedAt;
       samePhone.rawPayload = JSON.stringify(input.rawPayload ?? {});
@@ -95,6 +98,7 @@ export class KakaoNotifyService {
           birthDate: input.birthDate?.trim() ?? "",
           address: input.address?.trim() ?? "",
           adName: input.adName?.trim() ?? "",
+          channel: input.channel?.trim() ?? "",
           surveyAnswers: input.surveyAnswers ? JSON.stringify(input.surveyAnswers) : "",
           joinedAt: input.joinedAt ?? null,
           rawPayload: JSON.stringify(input.rawPayload ?? {}),
@@ -284,6 +288,7 @@ export class KakaoNotifyService {
    *  "알림톡 제외" 처리된 리드는 선택 발송 대상이 아니므로 기본적으로 제외한다. */
   async findLeadIds(query: {
     source?: KakaoLeadSource;
+    channel?: string;
     status?: string;
     search?: string;
     group?: string;
@@ -340,10 +345,23 @@ export class KakaoNotifyService {
     return rows.map((r) => r.groupLabel);
   }
 
+  /** 수동 리드 시트 등에서 채워진 channel(세부 유입매체명) 목록. 유입경로 필터의
+   *  세부 옵션으로 사용한다. */
+  async findDistinctChannels(): Promise<string[]> {
+    const rows = await this.leadRepo
+      .createQueryBuilder("lead")
+      .select("DISTINCT lead.channel", "channel")
+      .where("lead.channel != :empty", { empty: "" })
+      .orderBy("lead.channel", "ASC")
+      .getRawMany<{ channel: string }>();
+    return rows.map((r) => r.channel);
+  }
+
   private applyLeadFilters(
     qb: ReturnType<Repository<KakaoLead>["createQueryBuilder"]>,
     query: {
       source?: KakaoLeadSource;
+      channel?: string;
       status?: string;
       search?: string;
       group?: string;
@@ -353,6 +371,7 @@ export class KakaoNotifyService {
     },
   ): void {
     if (query.source) qb.andWhere("lead.source = :source", { source: query.source });
+    if (query.channel) qb.andWhere("lead.channel = :channel", { channel: query.channel });
     if (query.status) qb.andWhere("lead.status = :status", { status: query.status });
     if (query.search) {
       qb.andWhere("(lead.name LIKE :search OR lead.phone LIKE :search)", {
@@ -465,6 +484,7 @@ export class KakaoNotifyService {
 
   async findLeads(query: {
     source?: KakaoLeadSource;
+    channel?: string;
     status?: string;
     search?: string;
     group?: string;

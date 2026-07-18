@@ -119,7 +119,7 @@ export class ManualLeadSyncService {
         sourceRefId: phone.trim(),
         name,
         rawPhone: phone,
-        adName: sourceMedium,
+        channel: sourceMedium,
         surveyAnswers,
         joinedAt,
         rawPayload: row,

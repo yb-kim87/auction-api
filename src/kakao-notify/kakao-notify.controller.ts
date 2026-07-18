@@ -109,6 +109,7 @@ export class KakaoNotifyController {
   async findLeads(
     @Headers() headers: Record<string, string>,
     @Query("source") source?: string,
+    @Query("channel") channel?: string,
     @Query("status") status?: string,
     @Query("search") search?: string,
     @Query("group") group?: string,
@@ -121,6 +122,7 @@ export class KakaoNotifyController {
     requireAdmin(getAuthContext(headers));
     return this.kakaoNotifyService.findLeads({
       source: (source as KakaoLeadSource) || undefined,
+      channel: channel || undefined,
       status: status || undefined,
       search: search || undefined,
       group: group || undefined,
@@ -136,6 +138,7 @@ export class KakaoNotifyController {
   async findLeadIds(
     @Headers() headers: Record<string, string>,
     @Query("source") source?: string,
+    @Query("channel") channel?: string,
     @Query("status") status?: string,
     @Query("search") search?: string,
     @Query("group") group?: string,
@@ -146,6 +149,7 @@ export class KakaoNotifyController {
     requireAdmin(getAuthContext(headers));
     return this.kakaoNotifyService.findLeadIds({
       source: (source as KakaoLeadSource) || undefined,
+      channel: channel || undefined,
       status: status || undefined,
       search: search || undefined,
       group: group || undefined,
@@ -153,6 +157,12 @@ export class KakaoNotifyController {
       duplicateOnly: duplicateOnly === "true",
       joinedTo: joinedTo || undefined,
     });
+  }
+
+  @Get("leads/channels")
+  async findChannels(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.kakaoNotifyService.findDistinctChannels();
   }
 
   @Get("leads/groups")

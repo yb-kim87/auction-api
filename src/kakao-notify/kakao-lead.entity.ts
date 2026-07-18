@@ -51,6 +51,16 @@ export class KakaoLead {
   @Column({ type: "text", default: "" })
   adName!: string;
 
+  /** source를 더 세분화하는 채널명(수동 리드 시트 전용, 예: "naver폼",
+   *  "카카오폼"). 시트의 "저장매체" 컬럼값을 그대로 담는다 — source 자체를
+   *  이 값으로 바꾸면 기존 아임웹/인스타 전용 자동발송·설정 로직이 source를
+   *  "imweb"|"instagram"으로 가정하는 곳들과 충돌할 위험이 있어, 별도
+   *  필드로 분리해 유입경로 필터를 source(대분류)+channel(세부매체)
+   *  2단계로 걸 수 있게 한다. */
+  @Index()
+  @Column({ type: "text", default: "" })
+  channel!: string;
+
   /** 네이버폼 등 설문형 유입 소스(수동 리드 시트 전용)의 질문-응답 전체를
    *  JSON 객체 문자열로 담는다(예: {"나이대":"40대","직업":"자영업", ...}).
    *  질문 구성이 바뀔 수 있어 고정 컬럼 대신 시트 헤더 행을 그대로
