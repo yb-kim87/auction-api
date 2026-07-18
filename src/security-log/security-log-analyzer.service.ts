@@ -39,8 +39,24 @@ const SEED_EXCLUDED_IPS: Array<{ ip: string; note: string }> = [
  */
 const EXCLUDED_USER_AGENT_SUBSTRINGS = ["Google-Apps-Script"];
 
-function isExcludedUserAgent(userAgent: string): boolean {
-  return EXCLUDED_USER_AGENT_SUBSTRINGS.some((needle) => userAgent.includes(needle));
+/**
+ * 개발 중 로컬/서버에서 돌리는 node 스크립트(curl 테스트, 마이그레이션 확인 등)는
+ * 매번 다른 임대 IP로 나가는 경우가 많아 IP 화이트리스트로는 못 걸러낸다.
+ * Node의 기본 User-Agent(예: "node")는 사람이 아니라는 신호이지만, 동시에
+ * 해커도 그대로 흉내 낼 수 있는 값이라 User-Agent만으로 전역 예외하면
+ * 탐지를 무력화하는 구멍이 생긴다. 그래서 "node UA + 관리자 계정으로 로그인된
+ * 요청"일 때만 예외로 두어, 로그인 없이 접근하는 외부 공격은 그대로 잡히게 한다
+ * (2026-07-18, 개발자 본인 테스트 요청 오탐 다수 발생).
+ */
+const EXCLUDED_USER_AGENT_EXACT = ["node"];
+const EXCLUDED_UA_REQUIRES_ADMIN_USERNAMES = ["admin", "young", "ui"];
+
+function isExcludedUserAgent(userAgent: string, username?: string): boolean {
+  if (EXCLUDED_USER_AGENT_SUBSTRINGS.some((needle) => userAgent.includes(needle))) return true;
+  if (EXCLUDED_USER_AGENT_EXACT.includes(userAgent.trim())) {
+    return Boolean(username && EXCLUDED_UA_REQUIRES_ADMIN_USERNAMES.includes(username));
+  }
+  return false;
 }
 
 interface IpStat {
@@ -171,7 +187,7 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
         (e) =>
           new Date(e.ts).getTime() >= cutoff &&
           !excluded.has(e.ip) &&
-          !isExcludedUserAgent(e.userAgent ?? ""),
+          !isExcludedUserAgent(e.userAgent ?? "", e.username),
       );
       if (recent.length === 0) return;
 
