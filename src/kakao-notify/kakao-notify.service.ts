@@ -67,7 +67,16 @@ export class KakaoNotifyService {
     const sameRef = await this.leadRepo.findOne({
       where: { source: input.source, sourceRefId: input.sourceRefId },
     });
-    if (sameRef) return { outcome: "duplicate", lead: sameRef };
+    if (sameRef) {
+      // 재실행 시 새 정보로 덮어쓰지는 않되(중복 재발송 방지), 파싱 실패 등으로
+      // 비어있던 가입시각만 보정해 채운다(데이터 누락 복구용, 예: 응답일시
+      // 파싱 버그로 joinedAt이 null이었던 기존 리드).
+      if (!sameRef.joinedAt && input.joinedAt) {
+        sameRef.joinedAt = input.joinedAt;
+        await this.leadRepo.save(sameRef);
+      }
+      return { outcome: "duplicate", lead: sameRef };
+    }
 
     const samePhone = await this.leadRepo.findOne({
       where: { source: input.source, phone },
