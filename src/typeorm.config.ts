@@ -7,6 +7,7 @@ import { AuctionFavorite } from "./favorites/auction-favorite.entity";
 import { User } from "./users/user.entity";
 import { AuctionAnalysis } from "./ai/auction-analysis.entity";
 import { AuctionKnowledge } from "./ai/knowledge.entity";
+import { KnowledgeCategory } from "./ai/knowledge-category.entity";
 import { KnowledgeDraft } from "./ai/knowledge-draft.entity";
 import { LoanPolicy } from "./loan-policy/loan-policy.entity";
 import { LoanSettings } from "./loan-policy/loan-settings.entity";
@@ -35,6 +36,7 @@ const entities = [
   User,
   AuctionAnalysis,
   AuctionKnowledge,
+  KnowledgeCategory,
   KnowledgeDraft,
   LoanPolicy,
   LoanSettings,
