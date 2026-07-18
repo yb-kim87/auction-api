@@ -83,7 +83,11 @@ export class KnowledgeService {
       }
     }
 
-    const categories = new Set<string>(["대출", "가격분석"]);
+    // "공통"은 물건 특성과 무관하게 항상 참고할 만한 지식이라 매 검색에 포함하고,
+    // "물건추천"(구 대출/가격분석/투자전략)도 대출·시세·투자 판단에 두루 쓰이는
+    // 성격이라 기본 후보로 둔다. "권리분석"은 실제로 임차·대항력 등 권리관계
+    // 정보가 있는 물건에서만 관련도가 높아 조건부로 추가한다.
+    const categories = new Set<string>(["공통", "물건추천"]);
     if (
       auction.buildingRegistry?.trim() ||
       auction.tenantInfo?.trim() ||
@@ -92,9 +96,6 @@ export class KnowledgeService {
       blob.includes("대항")
     ) {
       categories.add("권리분석");
-    }
-    if (blob.includes("갭")) {
-      categories.add("투자전략");
     }
 
     return { keywords: [...keywords], categories: [...categories], blob };
