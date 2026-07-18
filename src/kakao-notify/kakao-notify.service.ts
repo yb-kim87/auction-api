@@ -442,6 +442,9 @@ export class KakaoNotifyService {
     const dateExpr = isPostgres
       ? "COALESCE(DATE(lead.joinedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'), DATE(lead.createdAt AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'))"
       : "COALESCE(DATE(lead.joinedAt, '+9 hours'), DATE(lead.createdAt, '+9 hours'))";
+    // 수동 리드 시트(manual_sheet)는 실제 유입일이 아니라 "적용" 버튼을 누른 시점에
+    // 과거 응답들이 한꺼번에 들어와, 그날 그래프가 비정상적으로 튀어 보인다. 이
+    // 그래프는 실시간 자동 유입(아임웹/인스타)만 다루므로 집계에서 제외한다.
     const rows = await this.leadRepo
       .createQueryBuilder("lead")
       .select(dateExpr, "date")
@@ -449,40 +452,31 @@ export class KakaoNotifyService {
       .addSelect("COUNT(*)", "count")
       .where(`${dateExpr} >= :since`, { since: sinceKstStr })
       .andWhere(`${dateExpr} <= :until`, { until: untilKstStr })
+      .andWhere("lead.source IN (:...sources)", { sources: ["imweb", "instagram"] })
       .groupBy(dateExpr)
       .addGroupBy("lead.source")
       .orderBy(dateExpr, "ASC")
       .getRawMany<{ date: string | Date; source: KakaoLeadSource; count: string }>();
 
-    const byDate = new Map<string, { imweb: number; instagram: number; manual_sheet: number }>();
+    const byDate = new Map<string, { imweb: number; instagram: number }>();
     for (const row of rows) {
       // Postgres는 DATE()가 Date 객체로, sql.js(SQLite)는 문자열로 온다.
       const dateKey =
         row.date instanceof Date
           ? row.date.toISOString().slice(0, 10)
           : String(row.date).slice(0, 10);
-      const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0, manual_sheet: 0 };
-      entry[row.source] = Number(row.count);
+      const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0 };
+      entry[row.source as "imweb" | "instagram"] = Number(row.count);
       byDate.set(dateKey, entry);
     }
 
-    const result: Array<{
-      date: string;
-      imweb: number;
-      instagram: number;
-      manual_sheet: number;
-      total: number;
-    }> = [];
+    const result: Array<{ date: string; imweb: number; instagram: number; total: number }> = [];
     for (let i = 0; i < totalDays; i += 1) {
       const d = new Date(`${sinceKstStr}T00:00:00Z`);
       d.setUTCDate(d.getUTCDate() + i);
       const dateKey = d.toISOString().slice(0, 10);
-      const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0, manual_sheet: 0 };
-      result.push({
-        date: dateKey,
-        ...entry,
-        total: entry.imweb + entry.instagram + entry.manual_sheet,
-      });
+      const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0 };
+      result.push({ date: dateKey, ...entry, total: entry.imweb + entry.instagram });
     }
     return result;
   }
