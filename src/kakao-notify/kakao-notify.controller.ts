@@ -17,6 +17,7 @@ import { KakaoNotifySettingService, LEAD_FIELD_OPTIONS } from "./kakao-notify-se
 import { SolapiService } from "./solapi.service";
 import { ImwebSyncService } from "./imweb-sync.service";
 import { InstagramSyncService } from "./instagram-sync.service";
+import { ManualLeadSyncService } from "./manual-lead-sync.service";
 import { KakaoSyncRunnerService } from "./kakao-sync-runner.service";
 import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
 import { TelegramAlertService } from "./telegram-alert.service";
@@ -35,6 +36,7 @@ export class KakaoNotifyController {
     private readonly solapi: SolapiService,
     private readonly imwebSync: ImwebSyncService,
     private readonly instagramSync: InstagramSyncService,
+    private readonly manualLeadSync: ManualLeadSyncService,
     private readonly syncRunner: KakaoSyncRunnerService,
     private readonly scheduler: KakaoNotifyScheduler,
     private readonly telegramAlert: TelegramAlertService,
@@ -437,7 +439,7 @@ export class KakaoNotifyController {
     @Param("source") source: string,
   ) {
     requireAdmin(getAuthContext(headers));
-    if (source !== "imweb" && source !== "instagram") {
+    if (source !== "imweb" && source !== "instagram" && source !== "manual_sheet") {
       throw new BadRequestException("알 수 없는 유입경로입니다.");
     }
     return this.kakaoNotifyService.deleteLeadsBySource(source as KakaoLeadSource);
@@ -549,5 +551,33 @@ export class KakaoNotifyController {
       body.sheetRange ?? "시트1!A2:I",
     );
     return this.instagramSync.getSheetConfig();
+  }
+
+  @Get("manual-sheet/config")
+  async getManualSheetConfig(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.manualLeadSync.getSheetConfig();
+  }
+
+  @Post("manual-sheet/config")
+  async setManualSheetConfig(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { spreadsheetId?: string; sheetRange?: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    if (!body.spreadsheetId?.trim()) {
+      throw new BadRequestException("구글시트 ID를 입력해 주세요.");
+    }
+    await this.manualLeadSync.setSheetConfig(
+      body.spreadsheetId,
+      body.sheetRange ?? "시트1!A1:Z",
+    );
+    return this.manualLeadSync.getSheetConfig();
+  }
+
+  @Post("manual-sheet/apply")
+  async applyManualSheet(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.manualLeadSync.applyNow();
   }
 }

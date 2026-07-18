@@ -51,6 +51,8 @@ export class KakaoNotifyService {
     birthDate?: string;
     address?: string;
     adName?: string;
+    /** 질문명→응답 객체(예: {"나이대":"40대"}). 저장 시 JSON 문자열로 직렬화한다. */
+    surveyAnswers?: Record<string, string>;
     joinedAt?: Date | null;
     rawPayload: unknown;
   }): Promise<IngestResult> {
@@ -73,6 +75,7 @@ export class KakaoNotifyService {
       samePhone.birthDate = input.birthDate?.trim() ?? "";
       samePhone.address = input.address?.trim() ?? "";
       samePhone.adName = input.adName?.trim() ?? "";
+      if (input.surveyAnswers) samePhone.surveyAnswers = JSON.stringify(input.surveyAnswers);
       samePhone.joinedAt = input.joinedAt ?? samePhone.joinedAt;
       samePhone.rawPayload = JSON.stringify(input.rawPayload ?? {});
       samePhone.status = "pending";
@@ -92,6 +95,7 @@ export class KakaoNotifyService {
           birthDate: input.birthDate?.trim() ?? "",
           address: input.address?.trim() ?? "",
           adName: input.adName?.trim() ?? "",
+          surveyAnswers: input.surveyAnswers ? JSON.stringify(input.surveyAnswers) : "",
           joinedAt: input.joinedAt ?? null,
           rawPayload: JSON.stringify(input.rawPayload ?? {}),
           status: "pending",
@@ -426,25 +430,35 @@ export class KakaoNotifyService {
       .orderBy(dateExpr, "ASC")
       .getRawMany<{ date: string | Date; source: KakaoLeadSource; count: string }>();
 
-    const byDate = new Map<string, { imweb: number; instagram: number }>();
+    const byDate = new Map<string, { imweb: number; instagram: number; manual_sheet: number }>();
     for (const row of rows) {
       // Postgres는 DATE()가 Date 객체로, sql.js(SQLite)는 문자열로 온다.
       const dateKey =
         row.date instanceof Date
           ? row.date.toISOString().slice(0, 10)
           : String(row.date).slice(0, 10);
-      const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0 };
+      const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0, manual_sheet: 0 };
       entry[row.source] = Number(row.count);
       byDate.set(dateKey, entry);
     }
 
-    const result: Array<{ date: string; imweb: number; instagram: number; total: number }> = [];
+    const result: Array<{
+      date: string;
+      imweb: number;
+      instagram: number;
+      manual_sheet: number;
+      total: number;
+    }> = [];
     for (let i = 0; i < totalDays; i += 1) {
       const d = new Date(`${sinceKstStr}T00:00:00Z`);
       d.setUTCDate(d.getUTCDate() + i);
       const dateKey = d.toISOString().slice(0, 10);
-      const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0 };
-      result.push({ date: dateKey, ...entry, total: entry.imweb + entry.instagram });
+      const entry = byDate.get(dateKey) ?? { imweb: 0, instagram: 0, manual_sheet: 0 };
+      result.push({
+        date: dateKey,
+        ...entry,
+        total: entry.imweb + entry.instagram + entry.manual_sheet,
+      });
     }
     return result;
   }

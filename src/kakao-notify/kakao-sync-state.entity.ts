@@ -1,6 +1,6 @@
 import { Entity, PrimaryColumn, Column } from "typeorm";
 
-export type KakaoSyncSource = "imweb" | "instagram" | "scheduler";
+export type KakaoSyncSource = "imweb" | "instagram" | "manual_sheet" | "scheduler";
 export type KakaoSyncRunStatus = "ok" | "error" | "never_run";
 
 @Entity("kakao_sync_state")

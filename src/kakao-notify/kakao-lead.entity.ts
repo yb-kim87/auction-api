@@ -8,7 +8,7 @@ import {
   Unique,
 } from "typeorm";
 
-export type KakaoLeadSource = "imweb" | "instagram";
+export type KakaoLeadSource = "imweb" | "instagram" | "manual_sheet";
 export type KakaoLeadStatus =
   | "pending"
   | "sent"
@@ -50,6 +50,13 @@ export class KakaoLead {
   /** 인스타그램 인스턴트 폼의 유입소재(광고명) */
   @Column({ type: "text", default: "" })
   adName!: string;
+
+  /** 네이버폼 등 설문형 유입 소스(수동 리드 시트 전용)의 질문-응답 전체를
+   *  JSON 객체 문자열로 담는다(예: {"나이대":"40대","직업":"자영업", ...}).
+   *  질문 구성이 바뀔 수 있어 고정 컬럼 대신 시트 헤더 행을 그대로
+   *  키로 사용해, 질문이 추가/삭제돼도 코드 수정 없이 저장할 수 있다. */
+  @Column({ type: "text", default: "" })
+  surveyAnswers!: string;
 
   /** 원본 시스템에서의 가입/신청 시각(가입시간 컬럼) */
   @Column({ type: Date, nullable: true })

@@ -14,6 +14,7 @@ import { KakaoNotifySettingService } from "./kakao-notify-setting.service";
 import { GoogleSheetsService } from "./google-sheets.service";
 import { ImwebSyncService } from "./imweb-sync.service";
 import { InstagramSyncService } from "./instagram-sync.service";
+import { ManualLeadSyncService } from "./manual-lead-sync.service";
 import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
 import { KakaoSyncRunnerService } from "./kakao-sync-runner.service";
 import { TelegramAlertService } from "./telegram-alert.service";
@@ -43,6 +44,7 @@ import { KakaoLandingVisitController } from "./kakao-landing-visit.controller";
     GoogleSheetsService,
     ImwebSyncService,
     InstagramSyncService,
+    ManualLeadSyncService,
     KakaoNotifyScheduler,
     KakaoSyncRunnerService,
     TelegramAlertService,
