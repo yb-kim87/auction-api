@@ -96,6 +96,12 @@ export const RULE_FIELDS: RuleFieldDef[] = [
     type: "number",
     extract: (item) => parseUnitFloorFromAddress(item.address ?? ""),
   },
+  {
+    key: "is_redevelopment",
+    label: "재개발 여부(관리자 직접 표시)",
+    type: "boolean",
+    extract: (item) => Boolean(item.isRedevelopment),
+  },
 ];
 
 export const RULE_FIELD_MAP = new Map(RULE_FIELDS.map((f) => [f.key, f]));

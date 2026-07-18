@@ -157,6 +157,10 @@ export class Auction {
   @Column({ default: "" })
   submittedBy!: string;
 
+  /** 크롤링/특이사항 텍스트로 자동 판별되지 않아 관리자가 직접 표시하는 재개발 여부 */
+  @Column({ default: false })
+  isRedevelopment!: boolean;
+
   /**
    * 규칙 기반으로 자동 계산되는 Fact 코드 배열(JSON 문자열로 저장). 예: ["AREA_OVER_85"].
    * 내부 판단용 코드일 뿐이며 사용자에게 직접 노출하지 않는다 — 사용자에게는 이 Fact를

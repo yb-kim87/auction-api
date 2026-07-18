@@ -35,6 +35,8 @@ export type UpdateAuctionDto = {
   priceDetail: string;
   tradingDetail: string;
   recordTime: string;
+  /** 관리자가 직접 표시하는 재개발 여부(자동 판별 불가). */
+  isRedevelopment?: boolean;
   /** 아직 정식 컬럼으로 승격하지 않은 크롤러 부가 데이터(선택). */
   extraData?: Record<string, unknown> | null;
 };
