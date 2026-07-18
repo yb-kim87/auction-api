@@ -3,7 +3,7 @@ import {
   TagsService,
   type TagRuleInput,
   type StrategyRuleInput,
-  type StrategyLabelInput,
+  type StrategyLabelMasterInput,
 } from "./tags.service";
 import { getAuthContext, requireAdmin, requireAuth } from "../common/auth-context";
 
@@ -90,12 +90,22 @@ export class TagsController {
   }
 
   @Post("strategy-labels")
-  async upsertStrategyLabel(
+  async createStrategyLabel(
     @Headers() headers: Record<string, string>,
-    @Body() body: StrategyLabelInput,
+    @Body() body: StrategyLabelMasterInput,
   ) {
     requireAdmin(getAuthContext(headers));
-    return this.tagsService.upsertStrategyLabel(body);
+    return this.tagsService.createStrategyLabel(body);
+  }
+
+  @Patch("strategy-labels/:id")
+  async updateStrategyLabel(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+    @Body() body: Partial<StrategyLabelMasterInput>,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.tagsService.updateStrategyLabelMaster(id, body);
   }
 
   @Delete("strategy-labels/:id")

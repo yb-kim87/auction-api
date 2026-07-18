@@ -21,12 +21,21 @@ export interface TagRuleInput {
 export interface StrategyRuleInput {
   strategyCode: string;
   requiredFactCodes: string[];
+  /** 이 전략에 연결할 기존 라벨 마스터의 id(관리자가 드롭박스에서 선택) */
+  labelId?: string;
   active?: boolean;
   sortOrder?: number;
 }
 
 export interface StrategyLabelInput {
   strategyCode: string;
+  label: string;
+  description?: string;
+  icon?: string;
+}
+
+/** 관리자가 재사용 가능한 라벨 문구를 미리 등록/수정하는 마스터 CRUD 입력 */
+export interface StrategyLabelMasterInput {
   label: string;
   description?: string;
   icon?: string;
@@ -232,6 +241,14 @@ export class TagsService implements OnModuleInit {
     return this.strategyRuleRepo.find({ order: { sortOrder: "ASC", createdAt: "ASC" } });
   }
 
+  /** 선택된 라벨 마스터(labelId)를 이 전략 코드에 연결한다(다른 전략에 붙어있던 연결은 해제). */
+  private async assignLabelToStrategyCode(labelId: string, strategyCode: string): Promise<void> {
+    const label = await this.strategyLabelRepo.findOne({ where: { id: labelId } });
+    if (!label) throw new BadRequestException("선택한 라벨을 찾을 수 없습니다.");
+    label.strategyCode = strategyCode;
+    await this.strategyLabelRepo.save(label);
+  }
+
   async createStrategyRule(input: StrategyRuleInput): Promise<StrategyRule> {
     if (!input.strategyCode?.trim()) {
       throw new BadRequestException("Strategy 코드를 입력해 주세요.");
@@ -239,13 +256,18 @@ export class TagsService implements OnModuleInit {
     if (!input.requiredFactCodes || input.requiredFactCodes.length === 0) {
       throw new BadRequestException("조건이 될 Fact 태그를 하나 이상 선택해 주세요.");
     }
+    const strategyCode = slugifyToCode(input.strategyCode);
     const rule = this.strategyRuleRepo.create({
-      strategyCode: slugifyToCode(input.strategyCode),
+      strategyCode,
       requiredFactCodes: JSON.stringify(input.requiredFactCodes),
       active: input.active ?? true,
       sortOrder: input.sortOrder ?? 0,
     });
-    return this.strategyRuleRepo.save(rule);
+    const saved = await this.strategyRuleRepo.save(rule);
+    if (input.labelId) {
+      await this.assignLabelToStrategyCode(input.labelId, strategyCode);
+    }
+    return saved;
   }
 
   async updateStrategyRule(id: string, input: Partial<StrategyRuleInput>): Promise<StrategyRule> {
@@ -268,6 +290,10 @@ export class TagsService implements OnModuleInit {
       );
     }
 
+    if (input.labelId) {
+      await this.assignLabelToStrategyCode(input.labelId, saved.strategyCode);
+    }
+
     return saved;
   }
 
@@ -277,27 +303,21 @@ export class TagsService implements OnModuleInit {
     return { ok: true };
   }
 
-  // ---------- Strategy 표시 문구 (strategy_labels) ----------
+  // ---------- 라벨 마스터 (strategy_labels) ----------
+  // 관리자가 재사용 가능한 노출 문구를 미리 등록해두고, 전략 규칙 생성 시
+  // 이 목록에서 드롭박스로 골라 strategyCode에 연결한다.
 
   findAllStrategyLabels(): Promise<StrategyLabel[]> {
     return this.strategyLabelRepo.find({ order: { createdAt: "ASC" } });
   }
 
-  async upsertStrategyLabel(input: StrategyLabelInput): Promise<StrategyLabel> {
-    if (!input.strategyCode?.trim() || !input.label?.trim()) {
-      throw new BadRequestException("Strategy 코드와 노출 문구를 입력해 주세요.");
-    }
-    const code = slugifyToCode(input.strategyCode);
-    const existing = await this.strategyLabelRepo.findOne({ where: { strategyCode: code } });
-    if (existing) {
-      existing.label = input.label.trim();
-      existing.description = input.description?.trim() ?? "";
-      existing.icon = input.icon?.trim() ?? "";
-      return this.strategyLabelRepo.save(existing);
+  async createStrategyLabel(input: StrategyLabelMasterInput): Promise<StrategyLabel> {
+    if (!input.label?.trim()) {
+      throw new BadRequestException("노출 문구(라벨)를 입력해 주세요.");
     }
     return this.strategyLabelRepo.save(
       this.strategyLabelRepo.create({
-        strategyCode: code,
+        strategyCode: "",
         label: input.label.trim(),
         description: input.description?.trim() ?? "",
         icon: input.icon?.trim() ?? "",
@@ -305,9 +325,24 @@ export class TagsService implements OnModuleInit {
     );
   }
 
+  async updateStrategyLabelMaster(
+    id: string,
+    input: Partial<StrategyLabelMasterInput>,
+  ): Promise<StrategyLabel> {
+    const label = await this.strategyLabelRepo.findOne({ where: { id } });
+    if (!label) throw new NotFoundException("라벨을 찾을 수 없습니다.");
+    if (input.label !== undefined) {
+      if (!input.label.trim()) throw new BadRequestException("노출 문구(라벨)를 입력해 주세요.");
+      label.label = input.label.trim();
+    }
+    if (input.description !== undefined) label.description = input.description.trim();
+    if (input.icon !== undefined) label.icon = input.icon.trim();
+    return this.strategyLabelRepo.save(label);
+  }
+
   async removeStrategyLabel(id: string): Promise<{ ok: boolean }> {
     const result = await this.strategyLabelRepo.delete({ id });
-    if (!result.affected) throw new NotFoundException("Strategy 문구를 찾을 수 없습니다.");
+    if (!result.affected) throw new NotFoundException("라벨을 찾을 수 없습니다.");
     return { ok: true };
   }
 
