@@ -13,6 +13,8 @@ export type UpsertKnowledgeInput = {
   category?: string;
   tags?: string;
   content: string;
+  /** 중요도 등급. 1이 가장 중요, 숫자가 클수록 낮음. 기본값 3. */
+  grade?: number;
   active?: boolean;
 };
 
@@ -190,6 +192,7 @@ ${blocks.join("\n\n---\n\n")}`;
         category: input.category?.trim() ?? "",
         tags: input.tags?.trim() ?? "",
         content,
+        grade: input.grade && input.grade >= 1 && input.grade <= 3 ? input.grade : 3,
         active: input.active ?? true,
       }),
     );
@@ -212,6 +215,9 @@ ${blocks.join("\n\n---\n\n")}`;
       const content = input.content.trim();
       if (!content) throw new BadRequestException("내용을 입력해 주세요.");
       item.content = content;
+    }
+    if (input.grade !== undefined && input.grade >= 1 && input.grade <= 3) {
+      item.grade = input.grade;
     }
     if (input.active !== undefined) item.active = input.active;
 
