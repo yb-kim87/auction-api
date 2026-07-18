@@ -101,13 +101,25 @@ export class KnowledgeService {
     return { keywords: [...keywords], categories: [...categories], blob };
   }
 
-  /** 키워드·분류 기반 RAG 검색 (embedding 전 1단계) */
-  async searchForAuction(auction: Auction, limit = 5): Promise<AuctionKnowledge[]> {
+  /**
+   * 키워드·분류 기반 RAG 검색 (embedding 전 1단계).
+   * category를 지정하면 그 분류(및 "공통")의 지식으로만 검색 범위를 제한한다
+   * — 예: 물건 상세의 "AI에게 물어보기"는 "권리분석"만 참고하도록 좁혀,
+   * 물건추천 전용 AI(추후 별도 파이프라인)와 지식 영역을 분리한다.
+   */
+  async searchForAuction(
+    auction: Auction,
+    limit = 5,
+    category?: string,
+  ): Promise<AuctionKnowledge[]> {
     const take = Number(process.env.RAG_TOP_K ?? limit) || limit;
-    const items = await this.knowledgeRepo.find({
+    const allItems = await this.knowledgeRepo.find({
       where: { active: true },
       order: { updatedAt: "DESC" },
     });
+    const items = category
+      ? allItems.filter((i) => i.category.trim() === category || i.category.trim() === "공통")
+      : allItems;
     if (items.length === 0) return [];
 
     const { keywords, categories } = this.buildSearchContext(auction);

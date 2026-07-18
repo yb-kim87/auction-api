@@ -208,7 +208,9 @@ ${profileBlock}
       }
     }
 
-    const knowledgeItems = await this.knowledgeService.searchForAuction(auction);
+    // 물건 상세 "AI에게 물어보기"는 권리분석 전용 AI로 운영한다(물건추천 지식은
+    // 별도 파이프라인에서 다룰 예정 — 두 AI가 같은 컨텍스트를 함께 보지 않도록 분리).
+    const knowledgeItems = await this.knowledgeService.searchForAuction(auction, 5, "권리분석");
     const knowledgeBlock = this.knowledgeService.formatForPrompt(knowledgeItems);
     const citations = knowledgeItems.map((k) =>
       k.category ? `[${k.category}] ${k.title}` : k.title,
