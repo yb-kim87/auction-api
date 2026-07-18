@@ -23,6 +23,7 @@ import {
   type UpdateKnowledgeDraftInput,
 } from "./cafe-knowledge.service";
 import { KnowledgeService, type UpsertKnowledgeInput } from "./knowledge.service";
+import { KnowledgeCategoryService } from "./knowledge-category.service";
 import type { KnowledgeDraftStatus } from "./knowledge-draft.entity";
 
 @Controller("ai")
@@ -31,6 +32,7 @@ export class AiController {
     private readonly aiAnalysisService: AiAnalysisService,
     private readonly aiAssistantService: AiAssistantService,
     private readonly knowledgeService: KnowledgeService,
+    private readonly knowledgeCategoryService: KnowledgeCategoryService,
     private readonly cafeKnowledgeService: CafeKnowledgeService,
   ) {}
 
@@ -120,6 +122,30 @@ export class AiController {
   ) {
     requireAdmin(getAuthContext(headers));
     return this.knowledgeService.remove(id);
+  }
+
+  @Get("knowledge-categories")
+  listKnowledgeCategories(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.knowledgeCategoryService.findAll();
+  }
+
+  @Post("knowledge-categories")
+  createKnowledgeCategory(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { name?: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.knowledgeCategoryService.create(body.name ?? "");
+  }
+
+  @Delete("knowledge-categories/:id")
+  removeKnowledgeCategory(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.knowledgeCategoryService.remove(id);
   }
 
   @Get("knowledge-drafts")

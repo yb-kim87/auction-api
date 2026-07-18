@@ -4,12 +4,14 @@ import { Auction } from "../auctions/auction.entity";
 import { UsersModule } from "../users/users.module";
 import { AuctionAnalysis } from "./auction-analysis.entity";
 import { AuctionKnowledge } from "./knowledge.entity";
+import { KnowledgeCategory } from "./knowledge-category.entity";
 import { KnowledgeDraft } from "./knowledge-draft.entity";
 import { AiAnalysisService } from "./ai-analysis.service";
 import { AiAssistantService } from "./ai-assistant.service";
 import { AiController } from "./ai.controller";
 import { CafeKnowledgeService } from "./cafe-knowledge.service";
 import { KnowledgeService } from "./knowledge.service";
+import { KnowledgeCategoryService } from "./knowledge-category.service";
 import { OpenAiService } from "./openai.service";
 import { RecommendationModule } from "../recommendation/recommendation.module";
 
@@ -19,6 +21,7 @@ import { RecommendationModule } from "../recommendation/recommendation.module";
       Auction,
       AuctionAnalysis,
       AuctionKnowledge,
+      KnowledgeCategory,
       KnowledgeDraft,
     ]),
     UsersModule,
@@ -29,6 +32,7 @@ import { RecommendationModule } from "../recommendation/recommendation.module";
     AiAnalysisService,
     AiAssistantService,
     KnowledgeService,
+    KnowledgeCategoryService,
     CafeKnowledgeService,
     OpenAiService,
   ],
