@@ -484,6 +484,9 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        this.logger.warn(
+          `[workerFetch] ${init?.method ?? "GET"} ${path} -> ${res.status} ${JSON.stringify(data)}`,
+        );
         if (res.status === 401) {
           throw new Error("크롤러 워커 인증 실패 (CRAWLER_WORKER_SECRET 확인)");
         }
@@ -1784,6 +1787,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
           this.appendLog(
             "error",
             `[관심조건] ${preset} 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
+          );
+          this.logger.error(
+            `[tickScheduler] ${preset} 실패 상세`,
+            error instanceof Error ? error.stack : String(error),
           );
         }
       }
