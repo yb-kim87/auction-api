@@ -33,6 +33,7 @@ from tank_detail import (
     parse_owner_from_detail,
     normalize_build_year_value,
     is_valid_build_year,
+    _state_name_from_detail,
 )
 
 
@@ -125,6 +126,7 @@ def parse_detail_page(detail_response: dict, env_payload: dict | None = None) ->
         build_year = "값없음"
 
     bid_info = parse_bid_info_from_detail(detail_response) or "없음"
+    case_state = _state_name_from_detail(detail_response)
     owner = parse_owner_from_detail(detail_response) or "값없음"
     appraiser = parse_appraiser_from_detail(detail_response) or "값없음"
     deunggi_info = parse_deunggi_from_detail(detail_response) or "값없음"
@@ -148,6 +150,7 @@ def parse_detail_page(detail_response: dict, env_payload: dict | None = None) ->
         "views": int(base.get("hit") or 0),
         "auctionNo": auction_no,
         "court": tank_fields.get("court") or "",
+        "caseState": case_state,
         "address": address,
         "totalUnits": total_units,
         "usage": usage,

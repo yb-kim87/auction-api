@@ -48,6 +48,13 @@ export class Auction {
   @Column({ default: "" })
   court!: string;
 
+  /** 탱크옥션 baseInfo.stateNm 원문(예: "진행", "변경", "취하", "매각").
+   * 취하·매각(낙찰허가 확정)은 사건이 종결되어 더 이상 입찰기일이 다시
+   * 잡히지 않으므로 "당일물건 조회"(재크롤링) 대상에서 제외하는 데 쓴다.
+   * "변경"은 다음 매각기일이 다시 잡힐 수 있어 계속 재확인 대상이다. */
+  @Column({ default: "" })
+  caseState!: string;
+
   @Index({ unique: true })
   @Column({ type: "text", nullable: true })
   auctionNoNorm!: string | null;

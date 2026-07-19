@@ -7,6 +7,8 @@ export type UpdateAuctionDto = {
    * 채번되어 겹칠 수 있어, 물건 식별 고유 키를 만들 때 사건번호와 함께
    * 반드시 같이 쓴다(auction-no.util.ts normalizeAuctionNo 참고). */
   court?: string;
+  /** 탱크옥션 baseInfo.stateNm 원문(진행/변경/취하/매각 등). */
+  caseState?: string;
   address: string;
   totalUnits: number;
   usage: string;

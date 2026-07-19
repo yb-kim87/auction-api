@@ -1601,7 +1601,41 @@ _BID_HIST_STATE_LABELS: dict[int, str] = {
     1212: "차순위매수신고",
     1230: "대금지급기한",
     1211: "매각허가결정",
+    1310: "변경",
+    1415: "취하",
 }
+
+# baseInfo.stateNm 실측값(2026-07-20). 취하/매각(낙찰허가 확정)은 사건이
+# 종결되어 더 이상 입찰기일이 잡히지 않으므로 당일물건 조회(재크롤링) 대상에서
+# 제외한다. 변경은 다음 매각기일이 다시 잡힐 수 있어 계속 재확인 대상이다.
+#   - 2024타경550599(tid=2322645): 취하
+#   - 2025타경72096(tid=2432276): 변경
+#   - 2025타경35392(tid=2482618): 매각 → 매각허가결정
+WITHDRAWN_STATE_NAME = "취하"
+CHANGED_STATE_NAME = "변경"
+_CLOSED_STATE_NAMES = {"취하", "매각", "기각", "각하", "취소"}
+
+
+def is_withdrawn_from_detail(detail: dict | None) -> bool:
+    return _state_name_from_detail(detail) == WITHDRAWN_STATE_NAME
+
+
+def is_changed_from_detail(detail: dict | None) -> bool:
+    return _state_name_from_detail(detail) == CHANGED_STATE_NAME
+
+
+def is_closed_from_detail(detail: dict | None) -> bool:
+    """더 이상 입찰기일이 다시 잡히지 않는(재조회가 무의미한) 종결 상태인지."""
+    return _state_name_from_detail(detail) in _CLOSED_STATE_NAMES
+
+
+def _state_name_from_detail(detail: dict | None) -> str:
+    if not isinstance(detail, dict):
+        return ""
+    base = detail.get("baseInfo") or {}
+    if not isinstance(base, dict):
+        return ""
+    return _pick_str(base, "stateNm")
 
 
 def _fmt_bid_amount(amt) -> str:

@@ -542,21 +542,34 @@ export class AuctionsService implements OnModuleInit {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
+  /** 더 이상 입찰기일이 다시 잡히지 않는(재조회가 무의미한) 종결 상태.
+   * 탱크옥션 baseInfo.stateNm 원문 기준(실측, 2026-07-20) — "변경"은
+   * 다음 매각기일이 다시 잡힐 수 있어 제외 대상이 아니다. */
+  private static readonly CLOSED_CASE_STATES = new Set([
+    "취하",
+    "매각",
+    "기각",
+    "각하",
+    "취소",
+  ]);
+
   /** 입찰기일이 오늘인 승인 물건의 링크 목록 — "당일물건 조회" 예약 작업이
    * 이 링크들을 재크롤링해서 낙찰 여부/변경사항을 갱신하는 데 쓴다.
    * 탱크옥션은 낙찰 결과를 입찰 당일 오후 5시 이후에나 반영하므로, 그
    * 전에는 오늘 날짜 물건을 목록에서 제외한다(재조회해도 아직 변경 전
-   * 상태라 의미가 없음). */
+   * 상태라 의미가 없음). 이미 취하·매각 확정된 사건도 더 이상 입찰기일이
+   * 갱신되지 않으므로 함께 제외한다. */
   async listTodayBidDateLinks(): Promise<{ auctionNo: string; link: string }[]> {
     const rows = await this.auctionRepo
       .createQueryBuilder("a")
       .select("a.auctionNo", "auctionNo")
       .addSelect("a.link", "link")
       .addSelect("a.bidDate", "bidDate")
+      .addSelect("a.caseState", "caseState")
       .where("a.status = :status", { status: AuctionStatus.APPROVED })
       .andWhere("a.link != :emptyLink", { emptyLink: "" })
       .andWhere("a.bidDate != :emptyBidDate", { emptyBidDate: "" })
-      .getRawMany<{ auctionNo: string; link: string; bidDate: string }>();
+      .getRawMany<{ auctionNo: string; link: string; bidDate: string; caseState: string }>();
 
     // 서버(Railway)는 UTC로 동작해 new Date()의 시/분/날짜가 KST와 어긋난다
     // (예: KST 7/20 00:34 = UTC 7/19 15:34) — 반드시 KST 기준으로 계산해야
@@ -567,6 +580,7 @@ export class AuctionsService implements OnModuleInit {
 
     return rows
       .filter((row) => row.auctionNo?.trim() && row.link?.trim())
+      .filter((row) => !AuctionsService.CLOSED_CASE_STATES.has((row.caseState ?? "").trim()))
       .filter((row) => {
         const parsed = this.parseBidDate(row.bidDate);
         if (!parsed) return false;

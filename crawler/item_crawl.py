@@ -660,11 +660,13 @@ def _collect_tank_page_fields(
             build_year = "값없음"
 
     bid_info = ""
+    case_state = ""
     if raw_detail:
         try:
-            from tank_detail import parse_bid_info_from_detail
+            from tank_detail import parse_bid_info_from_detail, _state_name_from_detail
 
             bid_info = parse_bid_info_from_detail(raw_detail)
+            case_state = _state_name_from_detail(raw_detail)
         except Exception:
             pass
     if not bid_info or bid_info.strip() in ("", "없음"):
@@ -1080,6 +1082,7 @@ def crawl_item(driver, raw_entry: str, should_stop: ShouldStop = None) -> dict:
         "views": _safe_int(tank_snapshot["views"]) or 0,
         "auctionNo": tank_snapshot["auction_no"],
         "court": tank_snapshot.get("court") or "",
+        "caseState": case_state,
         "address": tank_snapshot["address"],
         "totalUnits": tank_snapshot["total_units"],
         "usage": usage,

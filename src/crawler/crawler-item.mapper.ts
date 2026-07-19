@@ -98,6 +98,7 @@ export function mapCrawledItem(raw: Record<string, unknown>): Partial<UpdateAuct
     views: num(raw.views),
     auctionNo: auctionNo,
     court: str(raw.court),
+    caseState: str(raw.caseState),
     address,
     totalUnits: num(raw.totalUnits ?? raw.total_units),
     usage,

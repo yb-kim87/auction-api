@@ -174,6 +174,10 @@ export function mergeAuctionFromSource(
       "court" in source ? source.court : undefined,
       existing.court,
     ),
+    caseState: pickStr(
+      "caseState" in source ? source.caseState : undefined,
+      existing.caseState,
+    ),
     address: cleanAddress(
       pickStr(source.address, existing.address) || existing.address,
     ),
@@ -302,6 +306,7 @@ export function buildAuctionEntity(
     views: parsed.views ?? 0,
     auctionNo: parsed.auctionNo ?? "",
     court: ("court" in parsed ? parsed.court : "") ?? "",
+    caseState: ("caseState" in parsed ? parsed.caseState : "") ?? "",
     auctionNoNorm: normalizeAuctionNo(
       parsed.auctionNo ?? "",
       "court" in parsed ? parsed.court : "",

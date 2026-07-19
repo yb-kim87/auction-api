@@ -24,6 +24,7 @@ export const AUCTION_FIELD_LABELS: Record<string, string> = {
   views: "조회수",
   auctionNo: "경매번호",
   court: "담당법원",
+  caseState: "사건상태",
   address: "물건주소",
   city: "시/도",
   district: "군/구",
