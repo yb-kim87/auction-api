@@ -195,6 +195,77 @@ ${input.rawText.slice(0, 6000)}`;
     };
   }
 
+  /** 관리자가 입력한 전략 설명 초안을 사용자 노출용 문구로 다듬는다.
+   * 물건추천 화면에 그대로 보여줄 문장이라 AI지식 정리(structureKnowledgeInput)와
+   * 달리 존댓말·완결된 문장·과장 없는 톤을 강제한다. */
+  async refineStrategyDescription(input: {
+    label: string;
+    rawText: string;
+  }): Promise<{ description: string }> {
+    if (!this.apiKey) {
+      throw new ServiceUnavailableException(
+        "경매코치 AI를 사용할 수 없습니다. OPENAI_API_KEY를 확인해 주세요.",
+      );
+    }
+
+    const systemPrompt = `당신은 경매 투자 플랫폼 "경매코치"의 사용자 노출 문구 편집자입니다.
+관리자가 입력한 초안을, 물건 상세페이지에 배지와 함께 보여줄 "전략 설명"
+문구로 다듬습니다.
+
+규칙:
+- 사용자가 읽는 화면 문구이므로 정중하고 명확한 존댓말로 작성
+- 원문의 의미·판단 근거를 바꾸지 말고 문장만 다듬기(과장, 확정적 수익 보장 표현 금지)
+- 2~4문장, 200자 이내
+- 마크다운 없이 일반 텍스트로 작성
+- 개인정보(이름, 연락처, 주민번호)는 제거
+
+JSON 형식으로만 응답:
+{
+  "description": "다듬어진 설명 문구"
+}`;
+
+    const userPrompt = `[전략 라벨] ${input.label}
+
+[관리자가 입력한 원본 설명]
+${input.rawText.slice(0, 2000)}`;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: this.model,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new InternalServerErrorException(
+        `경매코치 AI 정리 요청에 실패했습니다. (${response.status})`,
+      );
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = data.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+    }
+
+    const parsed = JSON.parse(content) as Record<string, unknown>;
+    return {
+      description: String(parsed.description ?? input.rawText),
+    };
+  }
+
   async answerFreeform(systemPrompt: string, userPrompt: string): Promise<string> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException(

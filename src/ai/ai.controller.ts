@@ -126,6 +126,23 @@ export class AiController {
     });
   }
 
+  /** 관리자가 입력한 전략 설명 초안을 AI가 사용자 노출 문구로 다듬어 반환한다
+   *  (저장은 하지 않음 — 결과를 확인한 뒤 기존 "전략 추가/저장"으로 직접 승인). */
+  @Post("strategy/refine-description")
+  refineStrategyDescription(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { label?: string; rawText?: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    if (!body.rawText?.trim()) {
+      throw new BadRequestException("정리할 설명을 입력해 주세요.");
+    }
+    return this.openAiService.refineStrategyDescription({
+      label: body.label ?? "",
+      rawText: body.rawText,
+    });
+  }
+
   @Patch("knowledge/:id")
   updateKnowledge(
     @Headers() headers: Record<string, string>,
