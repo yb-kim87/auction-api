@@ -7,6 +7,18 @@ import {
 } from "./tags.service";
 import { getAuthContext, requireAdmin, requireAuth } from "../common/auth-context";
 
+/** StrategyRule.labelIds는 DB에 JSON 배열 문자열로 저장돼 있어(requiredFactCodes와
+ * 같은 패턴), 응답으로 내려주기 전에 실제 배열로 파싱한다. null/빈 값/파싱 실패는
+ * 빈 배열로 취급한다(nullable 컬럼이라 마이그레이션 직후 값이 없을 수 있음). */
+function parseLabelIds(raw: string | null): string[] {
+  try {
+    const parsed = JSON.parse(raw || "[]");
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 @Controller("tag-rules")
 export class TagsController {
   constructor(private readonly tagsService: TagsService) {}
@@ -62,7 +74,11 @@ export class TagsController {
   async findAllStrategyRules(@Headers() headers: Record<string, string>) {
     requireAuth(getAuthContext(headers));
     const rules = await this.tagsService.findAllStrategyRules();
-    return rules.map((r) => ({ ...r, requiredFactCodes: JSON.parse(r.requiredFactCodes || "[]") }));
+    return rules.map((r) => ({
+      ...r,
+      requiredFactCodes: JSON.parse(r.requiredFactCodes || "[]"),
+      labelIds: parseLabelIds(r.labelIds),
+    }));
   }
 
   @Post("strategy-rules")
