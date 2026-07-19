@@ -250,4 +250,9 @@ export type CrawlerLogEntry = {
   at: string;
   level: "info" | "warn" | "error";
   message: string;
+  /** 매일 예약 작업(스케줄러)이 실행되는 동안 남겨진 로그인지. 개별 로그
+   * 메시지마다 태그 문자열을 붙이는 방식은 collectUrls/startCrawl 안에서
+   * 나오는 세부 로그(수집 건수, 중복 제외 등)를 빠짐없이 커버하기
+   * 어려워, appendLog 호출 시점의 실행 컨텍스트를 그대로 기록한다. */
+  scheduler?: boolean;
 };

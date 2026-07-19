@@ -275,6 +275,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       at: new Date().toISOString(),
       level,
       message,
+      // 이 로그가 스케줄러 실행 도중(collectUrls/startCrawl 내부에서 남는
+      // 세부 로그 포함) 남겨졌는지 그대로 기록 — 관리자 화면의 "매일 작업
+      // 실행 로그"가 메시지 텍스트 태그에 의존하지 않고 이 플래그만으로
+      // 정확히 걸러낼 수 있게 한다.
+      scheduler: this.schedulerRunning,
     });
     if (this.logs.length > this.maxLogs) {
       this.logs.splice(0, this.logs.length - this.maxLogs);
@@ -1722,6 +1727,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         ? schedule.presets
         : [schedule.preset];
     const repeatLabel = schedule.repeatDaily ? "매일" : "1회";
+
+    // appendLog가 이 로그부터 scheduler=true로 남기도록, 실행 로직보다
+    // 먼저 스케줄러 실행 중 플래그를 세운다 — "예약 작업 시작" 로그도
+    // 매일 작업 실행 로그 패널에 반드시 포함되어야 한다.
+    this.schedulerRunning = true;
     this.appendLog(
       "info",
       `예약 작업 시작 (${repeatLabel} ${schedule.time}, 관심조건 ${presetList.length}건: ${presetList.join(", ")})`,
@@ -1735,7 +1745,6 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // (실측, 2026-07-19).
     const scheduleCrawlerVersion = schedule.crawlerVersion ?? "v3";
 
-    this.schedulerRunning = true;
     try {
       if (scheduleCrawlerVersion !== "v3") {
         await this.ensureCrawlerLoggedIn("scheduler");
