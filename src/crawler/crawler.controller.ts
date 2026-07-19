@@ -36,6 +36,13 @@ export class CrawlerController {
     return this.crawlerService.getStatus();
   }
 
+  /** 임시 진단용 — 매일 작업 v3 not found 원인 확인 후 제거 예정. */
+  @Get("debug-worker-probe")
+  async debugWorkerProbe(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.crawlerService.debugWorkerProbe();
+  }
+
   @Get("config")
   getConfig(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
