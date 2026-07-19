@@ -19,6 +19,7 @@ import { AiPlatformHistory } from "./ai-platform/shared/ai-platform-history.enti
 import { TagRule } from "./tags/tag-rule.entity";
 import { StrategyRule } from "./tags/strategy-rule.entity";
 import { StrategyLabel } from "./tags/strategy-label.entity";
+import { CrawlerConfigRow } from "./crawler/crawler-config.entity";
 
 /**
  * TypeORM CLI 전용 (migration:generate / migration:run 등).
@@ -49,6 +50,7 @@ export default new DataSource({
     TagRule,
     StrategyRule,
     StrategyLabel,
+    CrawlerConfigRow,
   ],
   migrations: ["src/migrations/*.ts"],
   synchronize: false,

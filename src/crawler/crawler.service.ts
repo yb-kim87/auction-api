@@ -14,7 +14,11 @@ import { AuctionsService } from "../auctions/auctions.service";
 import { CafeKnowledgeService } from "../ai/cafe-knowledge.service";
 import type { KnowledgeDraftStatus } from "../ai/knowledge-draft.entity";
 import { KnowledgeService } from "../ai/knowledge.service";
+import { InjectRepository } from "@nestjs/typeorm";
+import type { Repository } from "typeorm";
+import { CrawlerConfigRow } from "./crawler-config.entity";
 import {
+  initCrawlerConfigStore,
   loadCrawlerConfig,
   saveCrawlerConfig,
 } from "./crawler-config.store";
@@ -134,13 +138,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     private readonly telegramService: CrawlerTelegramService,
     private readonly cafeKnowledgeService: CafeKnowledgeService,
     private readonly knowledgeService: KnowledgeService,
+    @InjectRepository(CrawlerConfigRow)
+    private readonly configRepo: Repository<CrawlerConfigRow>,
   ) {
     const dataDir = join(process.cwd(), "data", "crawler");
     if (!existsSync(dataDir)) {
       mkdirSync(dataDir, { recursive: true });
     }
-    this.applyScheduleToStatus();
-    this.migrateLegacyPresetsToSavedSearches();
   }
 
   // 기존 고정 프리셋(아파트/다가구/빌라/공매)을 없애고 전부 "관심조건"
@@ -170,7 +174,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     saveCrawlerConfig(this.config);
   }
 
-  onModuleInit() {
+  async onModuleInit() {
+    this.config = await initCrawlerConfigStore(this.configRepo);
+    this.applyScheduleToStatus();
+    this.migrateLegacyPresetsToSavedSearches();
+
     this.schedulerTimer = setInterval(() => {
       void this.tickScheduler();
     }, 60_000);
