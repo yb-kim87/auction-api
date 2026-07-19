@@ -182,6 +182,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     this.schedulerTimer = setInterval(() => {
       void this.tickScheduler();
     }, 60_000);
+
+    // 임시 진단 — 워커 부팅 안정화 대기 후 자동 프로브(2026-07-20, 제거 예정).
+    setTimeout(() => {
+      void this.debugWorkerProbe();
+    }, 15_000);
   }
 
   onModuleDestroy() {
@@ -1065,6 +1070,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         };
       }
     }
+    this.logger.log(`[debugWorkerProbe] ${JSON.stringify(results)}`);
     return results;
   }
 
