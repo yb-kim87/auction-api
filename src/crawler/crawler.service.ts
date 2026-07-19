@@ -1639,6 +1639,32 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
   private schedulerRunning = false;
 
+  /** 서버(Railway 컨테이너)는 기본 UTC로 동작하지만, 관리자 화면에서 입력하는
+   * 예약 시간은 항상 한국시간(KST, UTC+9) 기준이다. Date.getHours() 등은
+   * 실행 환경(서버는 UTC, 로컬 개발 PC는 보통 KST)의 로컬 시간대를 그대로
+   * 반환해 환경마다 결과가 달라지므로, Intl.DateTimeFormat으로 Asia/Seoul을
+   * 명시해 항상 같은 값을 얻는다. */
+  private nowPartsInKst(): { year: number; month: number; date: number; hour: number; minute: number } {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date());
+    const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? "0");
+    return {
+      year: get("year"),
+      month: get("month"),
+      date: get("day"),
+      // 자정(00시)을 Intl이 "24"로 표기하는 로케일 이슈 방어
+      hour: get("hour") % 24,
+      minute: get("minute"),
+    };
+  }
+
   private async tickScheduler() {
     this.config = loadCrawlerConfig();
     const schedule = this.config.schedule;
@@ -1646,16 +1672,16 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
     if (!schedule.repeatDaily && schedule.oneTimeCompleted) return;
 
-    const now = new Date();
+    const now = this.nowPartsInKst();
     const [hour, minute] = schedule.time.split(":");
     if (
-      now.getHours() !== parseInt(hour ?? "0", 10) ||
-      now.getMinutes() !== parseInt(minute ?? "0", 10)
+      now.hour !== parseInt(hour ?? "0", 10) ||
+      now.minute !== parseInt(minute ?? "0", 10)
     ) {
       return;
     }
 
-    const dateKey = now.toISOString().slice(0, 10);
+    const dateKey = `${now.year}-${String(now.month).padStart(2, "0")}-${String(now.date).padStart(2, "0")}`;
     if (schedule.repeatDaily && this.lastScheduledDate === dateKey) return;
     this.lastScheduledDate = dateKey;
 
