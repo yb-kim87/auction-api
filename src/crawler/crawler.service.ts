@@ -1703,11 +1703,17 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       `예약 작업 시작 (${repeatLabel} ${schedule.time}, 관심조건 ${presetList.length}건: ${presetList.join(", ")})`,
     );
 
+    // 매일 예약 작업은 항상 v3(HTTPX, 브라우저 없음·서버 자체 실행)로 돈다.
+    // v1/v2는 관리자 PC의 Chrome 워커가 켜져 있어야 동작하는데, 새벽·야간
+    // 자동 실행 시점엔 그걸 보장할 수 없다. schedule.crawlerVersion이
+    // undefined(과거 설정)여도 v1으로 폴백하지 않고 v3로 강제한다 — v1
+    // 폴백 시 v3 전용 워커엔 없는 /session 호출로 즉시 실패했었다
+    // (실측, 2026-07-19).
+    const scheduleCrawlerVersion = schedule.crawlerVersion ?? "v3";
+
     this.schedulerRunning = true;
     try {
-      // v3(HTTPX)는 브라우저 세션이 없는 stateless 구조라 /session 자체가
-      // 없다 — v1/v2 전용 로그인 확인은 v1/v2로 실행할 때만 필요하다.
-      if ((schedule.crawlerVersion ?? "v1") !== "v3") {
+      if (scheduleCrawlerVersion !== "v3") {
         await this.ensureCrawlerLoggedIn("scheduler");
       }
 
@@ -1722,7 +1728,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
               await this.startCrawl(
                 {
                   urls: links.map((item) => item.link),
-                  crawlerVersion: schedule.crawlerVersion ?? "v3",
+                  crawlerVersion: scheduleCrawlerVersion,
                 },
                 "scheduler",
               );
@@ -1742,10 +1748,24 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
         this.appendLog("info", `[관심조건] ${preset} 수집 시작`);
         try {
+          // v3는 collectUrls가 "현재 화면 상태"를 대신할 개념이 없어
+          // dto.search가 반드시 있어야 한다(없으면 예외) — 저장된 관심조건
+          // (SavedSearchPreset)의 search 값을 직접 채워 넘긴다.
+          const searchOverride =
+            scheduleCrawlerVersion === "v3"
+              ? this.listSavedSearches().find((item) => item.name === preset)?.search
+              : undefined;
+          if (scheduleCrawlerVersion === "v3" && !searchOverride) {
+            throw new ServiceUnavailableException(
+              `저장된 관심조건 "${preset}"을 찾을 수 없습니다. 삭제되었거나 이름이 바뀌었을 수 있습니다.`,
+            );
+          }
           await this.collectUrls(
             {
               preset,
               clear: true,
+              crawlerVersion: scheduleCrawlerVersion,
+              search: searchOverride,
             },
             "scheduler",
           );
@@ -1754,7 +1774,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
             await this.startCrawl(
               {
                 repeatAfterCollect: true,
-                crawlerVersion: schedule.crawlerVersion,
+                crawlerVersion: scheduleCrawlerVersion,
               },
               "scheduler",
             );
