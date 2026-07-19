@@ -436,6 +436,36 @@ _PROPERTY_CODE_GROUP_TO_LABEL = {
 }
 
 
+def _normalize_favorite_param(param_json: dict) -> dict:
+    """탱크옥션이 2026-07-19 무렵부터 즐겨찾기를 새 스키마
+    ("schema":"tankSearchCondition.v1")로 저장하기 시작한 게 확인됐다 —
+    실제 검색조건이 최상위가 아니라 srchData 하위 객체에 들어있고, 몇몇
+    필드 타입도 구형과 다르다(adrPlural: 객체 {코드:이름} vs 콤마 문자열,
+    chkSplCdtn: 숫자 배열 vs 콤마 문자열, chkCtgrsCd: 배열 vs 파이프 구분
+    문자열). 이 차이를 흡수해 기존 파싱 로직이 구형/신형 둘 다 그대로
+    처리할 수 있는 평탄한 dict로 정규화한다.
+    """
+    if param_json.get("schema") != "tankSearchCondition.v1":
+        return param_json
+
+    src = param_json.get("srchData") or {}
+    normalized = dict(src)
+
+    adr_plural = src.get("adrPlural")
+    if isinstance(adr_plural, dict):
+        normalized["adrPlural"] = ",".join(str(code) for code in adr_plural.keys())
+
+    chk_spl = src.get("chkSplCdtn")
+    if isinstance(chk_spl, list):
+        normalized["chkSplCdtn"] = ",".join(str(v) for v in chk_spl)
+
+    chk_ctgrs = src.get("chkCtgrsCd")
+    if isinstance(chk_ctgrs, list):
+        normalized["chkCtgrsCd"] = "|".join(str(v) for v in chk_ctgrs)
+
+    return normalized
+
+
 def parse_favorite_search_param(param_json: dict) -> dict:
     """탱크옥션 "즐겨쓰는 검색" 항목의 param(JSON 문자열을 파싱한 dict) →
     CrawlerSearchConfig(Partial) 역매핑.
@@ -446,7 +476,10 @@ def parse_favorite_search_param(param_json: dict) -> dict:
     코드→라벨 역매핑 테이블(PROPERTY_TYPE_CODES/STATUS_CODES/
     SPECIAL_CONDITION_CODES)로 CrawlerSearchConfig 필드를 복원한다.
     실측(2026-07-17)한 실제 사용자 즐겨찾기 데이터로 필드 이름을 확인함.
+    신형 스키마(tankSearchCondition.v1)는 _normalize_favorite_param()이
+    먼저 구형과 같은 평탄한 형태로 바꿔준다.
     """
+    param_json = _normalize_favorite_param(param_json)
     config: dict = {"listType": "auction"}
 
     stat = str(param_json.get("stat", "")).strip()
@@ -502,15 +535,18 @@ def parse_favorite_search_param(param_json: dict) -> dict:
         config["preserveRegistryFrom"] = str(param_json["prsvBgn"])
     if param_json.get("prsvEnd") is not None:
         config["preserveRegistryTo"] = str(param_json["prsvEnd"])
-    # flrBgn/flrEnd는 100+층수 코드(101=1층)이므로 화면에는 순수 층수로 역변환.
+    # flrBgn/flrEnd는 100+층수 코드(101=1층)이므로 화면에는 순수 층수로
+    # 역변환한다. 0은 "조건 없음"을 뜻하므로(신형 스키마는 이걸 명시적
+    # 정수 0으로 보내 int(0)-100=-100이 되는 버그가 있었다, 2026-07-19)
+    # 0/빈값일 때는 건너뛴다.
     flr_bgn = param_json.get("flrBgn")
-    if flr_bgn is not None:
+    if flr_bgn not in (None, "", 0, "0"):
         try:
             config["objectFloorMin"] = str(int(flr_bgn) - 100)
         except (TypeError, ValueError):
             pass
     flr_end = param_json.get("flrEnd")
-    if flr_end is not None:
+    if flr_end not in (None, "", 0, "0"):
         try:
             config["objectFloorMax"] = str(int(flr_end) - 100)
         except (TypeError, ValueError):
