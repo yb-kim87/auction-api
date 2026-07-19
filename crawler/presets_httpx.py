@@ -399,10 +399,12 @@ def build_query_from_search_config(config: dict) -> tuple[str, dict]:
     preserve_to = config.get("preserveRegistryTo")
     params["prsvEnd"] = preserve_to if preserve_to else "0"
 
+    # 탱크옥션 "해당층" API 코드는 100+층수(예: 1층→101, 3층→103) 형식이지만,
+    # 관리자 화면/설정에는 사람이 읽는 순수 층수("1", "3")로 저장한다.
     floor_min = config.get("objectFloorMin")
-    params["flrBgn"] = floor_min if floor_min else "0"
+    params["flrBgn"] = str(int(floor_min) + 100) if floor_min else "0"
     floor_max = config.get("objectFloorMax")
-    params["flrEnd"] = floor_max if floor_max else "0"
+    params["flrEnd"] = str(int(floor_max) + 100) if floor_max else "0"
 
     property_types = config.get("propertyTypes") or []
     codes = []
@@ -500,10 +502,19 @@ def parse_favorite_search_param(param_json: dict) -> dict:
         config["preserveRegistryFrom"] = str(param_json["prsvBgn"])
     if param_json.get("prsvEnd") is not None:
         config["preserveRegistryTo"] = str(param_json["prsvEnd"])
-    if param_json.get("flrBgn") is not None:
-        config["objectFloorMin"] = str(param_json["flrBgn"])
-    if param_json.get("flrEnd") is not None:
-        config["objectFloorMax"] = str(param_json["flrEnd"])
+    # flrBgn/flrEnd는 100+층수 코드(101=1층)이므로 화면에는 순수 층수로 역변환.
+    flr_bgn = param_json.get("flrBgn")
+    if flr_bgn is not None:
+        try:
+            config["objectFloorMin"] = str(int(flr_bgn) - 100)
+        except (TypeError, ValueError):
+            pass
+    flr_end = param_json.get("flrEnd")
+    if flr_end is not None:
+        try:
+            config["objectFloorMax"] = str(int(flr_end) - 100)
+        except (TypeError, ValueError):
+            pass
     if param_json.get("sn1") is not None:
         config["caseYear"] = str(param_json["sn1"])
     if param_json.get("sn2") is not None:

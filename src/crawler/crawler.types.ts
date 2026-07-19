@@ -7,9 +7,10 @@ export type CrawlerSearchConfig = {
   preserveRegistryFrom: string;
   /** 보존등기 상한 연도(탱크옥션 prsvEnd, 예: "2005" = ~2005년, "구축" 조건의 핵심). */
   preserveRegistryTo?: string;
-  /** 해당층(물건이 위치한 층, 총 층수와 다름) 하한(탱크옥션 flrBgn, 101=1층). */
+  /** 해당층(물건이 위치한 층, 총 층수와 다름) 하한 — 순수 층수(예: "1").
+   * 탱크옥션 API는 100+층수 코드(flrBgn=101)를 쓰지만 여기는 사람이 읽는 값. */
   objectFloorMin?: string;
-  /** 해당층 상한(탱크옥션 flrEnd, 103=3층). "저층 단타" 같은 조건의 핵심. */
+  /** 해당층 상한(순수 층수, 예: "3"). "저층 단타" 같은 조건의 핵심. */
   objectFloorMax?: string;
   excludeSpecialConditions: string[];
   pageSize: string;
