@@ -1259,7 +1259,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     this.localStatus.completed = 0;
     this.localStatus.preset = dto.preset;
 
-    if (await this.isWorkerHealthy()) {
+    // /urls는 v1(Selenium) 워커가 자기 프로세스 안에 조회 대상 URL 목록을
+    // 들고 있기 위한 엔드포인트다. v3(server_v3.py, 무상태 HTTPX)는 이
+    // 라우트 자체가 없다 — startCrawl이 URL 목록을 NestJS(localStatus.urls)
+    // 에서 직접 받아 워커에 넘기므로 v3에서는 애초에 필요 없다. v3에서
+    // 이 호출을 그대로 보내면 워커가 404("not found")를 반환해 collectUrls
+    // 전체가 실패로 처리되고 있었다(실측, 2026-07-20).
+    if (version !== "v3" && (await this.isWorkerHealthy())) {
       await this.workerFetch("/urls", {
         method: "POST",
         body: JSON.stringify({ urls: finalUrls }),
