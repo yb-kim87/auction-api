@@ -182,11 +182,6 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     this.schedulerTimer = setInterval(() => {
       void this.tickScheduler();
     }, 60_000);
-
-    // 임시 진단 — 워커 부팅 안정화 대기 후 자동 프로브(2026-07-20, 제거 예정).
-    setTimeout(() => {
-      void this.debugWorkerProbe();
-    }, 15_000);
   }
 
   onModuleDestroy() {
@@ -1042,54 +1037,6 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   // 무상태 구조라, v1처럼 "로그인 상태 유지"라는 개념이 없다. 대신 관리자
   // 화면에서 미리 자격증명이 유효한지 1회 확인시켜 즐겨찾기 조회·주소
   // 추가 버튼을 활성화하는 게이트로 쓴다.
-  /** 임시 진단용 — 워커에 직접 요청을 보내 raw 응답을 그대로 반환한다.
-   * 매일 작업의 v3 관심조건 수집이 "not found"로 계속 실패하는 원인을
-   * 서버 프로세스 내부에서 직접 확인하기 위해 추가(2026-07-20). */
-  async debugWorkerProbe(): Promise<Record<string, unknown>> {
-    const base = this.workerBaseUrl();
-    const headers = this.workerAuthHeaders();
-    const results: Record<string, unknown> = { workerBaseUrl: base };
-
-    const testSearch = JSON.stringify({
-      preset: "테스트",
-      clear: true,
-      search: {
-        listType: "auction",
-        propertyTypes: ["아파트"],
-        status: "진행물건",
-        appraisalMin: "",
-        appraisalMax: "",
-        preserveRegistryFrom: "",
-        excludeSpecialConditions: [],
-        pageSize: "5",
-      },
-    });
-
-    for (const [name, path, method, body] of [
-      ["health", "/health", "GET", undefined],
-      ["status", "/status", "GET", undefined],
-      ["tankLoginCheck", "/tank-login-check", "POST", "{}"],
-      ["collectUrlsV3", "/collect-urls-v3", "POST", testSearch],
-    ] as const) {
-      try {
-        const res = await nodeHttpFetch(`${base}${path}`, {
-          method,
-          headers: { "Content-Type": "application/json", ...headers },
-          body,
-          signal: abortTimeoutSignal(8000),
-        });
-        const data = await res.json().catch(() => null);
-        results[name] = { status: res.status, body: JSON.stringify(data).slice(0, 500) };
-      } catch (error) {
-        results[name] = {
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
-    }
-    this.logger.log(`[debugWorkerProbe] ${JSON.stringify(results)}`);
-    return results;
-  }
-
   async checkTankLoginV3(submittedBy: string) {
     await this.ensureWorker();
     this.appendLog("info", `${submittedBy}님이 탱크옥션 로그인을 확인합니다.`);
