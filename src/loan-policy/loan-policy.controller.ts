@@ -24,9 +24,17 @@ export class LoanPolicyController {
   async updatePolicy(
     @Headers() headers: Record<string, string>,
     @Param("id") id: string,
-    @Body() body: { loanRatio?: number; appraisalRatio?: number },
+    @Body() body: { loanRatio?: number; appraisalRatio?: number; loanUnavailable?: boolean },
   ) {
     requireAdmin(getAuthContext(headers));
+    const loanUnavailable = Boolean(body.loanUnavailable);
+    if (loanUnavailable) {
+      return this.loanPolicyService.updatePolicy(id, {
+        loanRatio: 0,
+        appraisalRatio: 0,
+        loanUnavailable: true,
+      });
+    }
     const loanRatio = Number(body.loanRatio);
     const appraisalRatio = Number(body.appraisalRatio);
     if (!Number.isFinite(loanRatio) || loanRatio <= 0 || loanRatio > 1) {
@@ -35,7 +43,11 @@ export class LoanPolicyController {
     if (!Number.isFinite(appraisalRatio) || appraisalRatio <= 0 || appraisalRatio > 1) {
       throw new BadRequestException("감정가 대출 비율은 0~1 사이 값으로 입력해 주세요.");
     }
-    return this.loanPolicyService.updatePolicy(id, { loanRatio, appraisalRatio });
+    return this.loanPolicyService.updatePolicy(id, {
+      loanRatio,
+      appraisalRatio,
+      loanUnavailable: false,
+    });
   }
 
   @Get("income-multiplier")

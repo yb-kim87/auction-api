@@ -72,6 +72,16 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     businessLoanOnly: true,
     sortOrder: 5,
   },
+  {
+    id: "officetel_or_low_price_nonmetro",
+    label: "오피스텔 · 비수도권 공시가 2억 이하(주택수 무관)",
+    loanRatio: 0.9,
+    appraisalRatio: 0.8,
+    regulatedArea: false,
+    loanUnavailable: false,
+    businessLoanOnly: false,
+    sortOrder: 6,
+  },
 ];
 
 @Injectable()
@@ -90,19 +100,17 @@ export class LoanPolicyService implements OnModuleInit {
         await this.loanPolicyRepo.save(this.loanPolicyRepo.create(defaults));
         continue;
       }
-      // 관리자가 조정하는 loanRatio/appraisalRatio는 보존하고, 코드로 관리하는
-      // 라벨·정렬순서 등 메타데이터만 최신 정의로 동기화한다.
+      // 관리자가 조정하는 loanRatio/appraisalRatio/loanUnavailable은 보존하고,
+      // 코드로 관리하는 라벨·정렬순서 등 메타데이터만 최신 정의로 동기화한다.
       if (
         exists.label !== defaults.label ||
         exists.sortOrder !== defaults.sortOrder ||
         exists.regulatedArea !== defaults.regulatedArea ||
-        exists.loanUnavailable !== defaults.loanUnavailable ||
         exists.businessLoanOnly !== defaults.businessLoanOnly
       ) {
         exists.label = defaults.label;
         exists.sortOrder = defaults.sortOrder;
         exists.regulatedArea = defaults.regulatedArea;
-        exists.loanUnavailable = defaults.loanUnavailable;
         exists.businessLoanOnly = defaults.businessLoanOnly;
         await this.loanPolicyRepo.save(exists);
       }
@@ -115,17 +123,15 @@ export class LoanPolicyService implements OnModuleInit {
 
   async updatePolicy(
     id: string,
-    input: { loanRatio: number; appraisalRatio: number },
+    input: { loanRatio: number; appraisalRatio: number; loanUnavailable: boolean },
   ) {
     const policy = await this.loanPolicyRepo.findOne({ where: { id } });
     if (!policy) {
       throw new NotFoundException("대출 정책을 찾을 수 없습니다.");
     }
-    if (policy.loanUnavailable) {
-      throw new BadRequestException("대출 불가 정책은 비율을 수정할 수 없습니다.");
-    }
     policy.loanRatio = input.loanRatio;
     policy.appraisalRatio = input.appraisalRatio;
+    policy.loanUnavailable = input.loanUnavailable;
     return this.loanPolicyRepo.save(policy);
   }
 

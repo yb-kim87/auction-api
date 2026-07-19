@@ -160,7 +160,11 @@ export class RecommendationEngineService {
     const affordable = auctions
       .map((item) => {
         const regulated = isRegulatedArea(item.city, item.district, regionNames);
-        const policy = selectLoanPolicy(criteria, regulated, policies);
+        const policy = selectLoanPolicy(criteria, regulated, policies, {
+          usage: item.usage,
+          city: item.city,
+          officialLandPrice: item.officialLandPrice,
+        });
         const requiredEquity = policy
           ? requiredEquityForItem(
               item.minPrice,

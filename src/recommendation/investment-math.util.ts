@@ -72,8 +72,35 @@ export interface LoanPolicyLike {
   businessLoanOnly: boolean;
 }
 
+/** 수도권(서울·경기·인천) 여부. 시/도 명 앞부분으로 판정한다. */
+export function isMetropolitanArea(city: string | null | undefined): boolean {
+  const c = (city ?? "").trim();
+  return c.startsWith("서울") || c.startsWith("경기") || c.startsWith("인천");
+}
+
+const LOW_PRICE_NONMETRO_THRESHOLD_WON = 200_000_000;
+
+/**
+ * 용도가 오피스텔이거나, 비수도권(지방)이면서 공시가 2억 이하인 물건인지 여부.
+ * 해당하면 주택수·규제지역과 무관하게 감정가80%/낙찰가90% 정책이 최우선 적용된다.
+ */
+export function isOfficetelOrLowPriceNonMetro(item: {
+  usage?: string | null;
+  city?: string | null;
+  officialLandPrice?: number | null;
+}): boolean {
+  if ((item.usage ?? "").includes("오피스텔")) return true;
+  const officialLandPrice = item.officialLandPrice ?? 0;
+  return (
+    !isMetropolitanArea(item.city) &&
+    officialLandPrice > 0 &&
+    officialLandPrice <= LOW_PRICE_NONMETRO_THRESHOLD_WON
+  );
+}
+
 /**
  * 회원정보(주택수·생애최초 여부)와 물건의 규제지역 여부로 적용할 대출 정책을 선택한다.
+ * - 오피스텔이거나 비수도권 공시가 2억 이하인 물건은 주택수·규제지역 무관하게 최우선 적용.
  * - 규제지역: 무주택만 대출 가능(감정가 비율만 적용, 생애최초/일반 구분), 1주택 이상은 불가.
  * - 비규제지역: 무주택 일반/생애최초/1주택 이상(사업자대출)로 구분.
  */
@@ -81,8 +108,13 @@ export function selectLoanPolicy(
   criteria: { housingCount: number; firstTimeBuyer: boolean },
   regulatedArea: boolean,
   policies: LoanPolicyLike[],
+  item?: { usage?: string | null; city?: string | null; officialLandPrice?: number | null },
 ): LoanPolicyLike | null {
   const byId = (id: string) => policies.find((p) => p.id === id) ?? null;
+  if (item && isOfficetelOrLowPriceNonMetro(item)) {
+    const special = byId("officetel_or_low_price_nonmetro");
+    if (special) return special;
+  }
   if (regulatedArea) {
     if (criteria.housingCount > 0) return byId("regulated_owner");
     return criteria.firstTimeBuyer ? byId("regulated_first_time") : byId("regulated_no_house");
