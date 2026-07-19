@@ -16,6 +16,12 @@ export interface StrategyTagItem {
   icon: string;
 }
 
+/** bigint 컬럼은 pg 드라이버가 문자열로 반환하므로 number로 왕복 변환한다. */
+const bigintNumberTransformer = {
+  to: (value: number | null | undefined) => value,
+  from: (value: string | null) => (value == null ? value : Number(value)),
+};
+
 @Entity("auctions")
 export class Auction {
   @PrimaryGeneratedColumn("uuid")
@@ -64,16 +70,16 @@ export class Auction {
   @Column({ default: "" })
   bidDate!: string;
 
-  @Column({ type: "integer", default: 0 })
+  @Column({ type: "bigint", default: 0, transformer: bigintNumberTransformer })
   appraisedValue!: number;
 
-  @Column({ type: "integer", default: 0 })
+  @Column({ type: "bigint", default: 0, transformer: bigintNumberTransformer })
   minPrice!: number;
 
-  @Column({ type: "integer", nullable: true })
+  @Column({ type: "bigint", nullable: true, transformer: bigintNumberTransformer })
   salePrice!: number | null;
 
-  @Column({ type: "integer", default: 0 })
+  @Column({ type: "bigint", default: 0, transformer: bigintNumberTransformer })
   naverPrice!: number;
 
   @Column({ type: "integer", nullable: true })
@@ -85,13 +91,13 @@ export class Auction {
   @Column({ default: "" })
   naverId!: string;
 
-  @Column({ type: "integer", nullable: true })
+  @Column({ type: "bigint", nullable: true, transformer: bigintNumberTransformer })
   diffNaverSale!: number | null;
 
-  @Column({ type: "integer", default: 0 })
+  @Column({ type: "bigint", default: 0, transformer: bigintNumberTransformer })
   diffNaverMin!: number;
 
-  @Column({ type: "integer", default: 0 })
+  @Column({ type: "bigint", default: 0, transformer: bigintNumberTransformer })
   diffNaverAppraised!: number;
 
   @Column({ default: "" })
@@ -121,7 +127,7 @@ export class Auction {
   @Column({ default: "" })
   appraiser!: string;
 
-  @Column({ type: "integer", default: 0 })
+  @Column({ type: "bigint", default: 0, transformer: bigintNumberTransformer })
   officialLandPrice!: number;
 
   @Column({ default: "" })
