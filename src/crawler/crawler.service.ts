@@ -11,6 +11,7 @@ import { join } from "path";
 import * as http from "http";
 import * as https from "https";
 import { AuctionsService } from "../auctions/auctions.service";
+import { nowPartsInKst } from "../common/kst-time.util";
 import { CafeKnowledgeService } from "../ai/cafe-knowledge.service";
 import type { KnowledgeDraftStatus } from "../ai/knowledge-draft.entity";
 import { KnowledgeService } from "../ai/knowledge.service";
@@ -1650,32 +1651,6 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
   private schedulerRunning = false;
 
-  /** 서버(Railway 컨테이너)는 기본 UTC로 동작하지만, 관리자 화면에서 입력하는
-   * 예약 시간은 항상 한국시간(KST, UTC+9) 기준이다. Date.getHours() 등은
-   * 실행 환경(서버는 UTC, 로컬 개발 PC는 보통 KST)의 로컬 시간대를 그대로
-   * 반환해 환경마다 결과가 달라지므로, Intl.DateTimeFormat으로 Asia/Seoul을
-   * 명시해 항상 같은 값을 얻는다. */
-  private nowPartsInKst(): { year: number; month: number; date: number; hour: number; minute: number } {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Seoul",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).formatToParts(new Date());
-    const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? "0");
-    return {
-      year: get("year"),
-      month: get("month"),
-      date: get("day"),
-      // 자정(00시)을 Intl이 "24"로 표기하는 로케일 이슈 방어
-      hour: get("hour") % 24,
-      minute: get("minute"),
-    };
-  }
-
   private async tickScheduler() {
     this.config = loadCrawlerConfig();
     const schedule = this.config.schedule;
@@ -1683,7 +1658,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
     if (!schedule.repeatDaily && schedule.oneTimeCompleted) return;
 
-    const now = this.nowPartsInKst();
+    const now = nowPartsInKst();
     const [hour, minute] = schedule.time.split(":");
     if (
       now.hour !== parseInt(hour ?? "0", 10) ||
@@ -1751,29 +1726,23 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
         this.appendLog("info", `[관심조건] ${preset} 수집 시작`);
         try {
-          // v3는 collectUrls가 "현재 화면 상태"를 대신할 개념이 없어
-          // dto.search가 반드시 있어야 한다(없으면 예외) — 저장된 관심조건
-          // (SavedSearchPreset)의 search 값을 직접 채워 넘긴다.
-          const searchOverride =
-            scheduleCrawlerVersion === "v3"
-              ? this.listSavedSearches().find((item) => item.name === preset)?.search
-              : undefined;
-          if (scheduleCrawlerVersion === "v3" && !searchOverride) {
-            throw new ServiceUnavailableException(
-              `저장된 관심조건 "${preset}"을 찾을 수 없습니다. 삭제되었거나 이름이 바뀌었을 수 있습니다.`,
-            );
-          }
+          // 관리자 화면의 "주소 추가" 버튼(handleAddUrls → crawlerCollectUrls)과
+          // 정확히 동일하게 동작한다 — search를 미리 찾아 넘기지 않고, 저장된
+          // 관심조건(SavedSearchPreset) 이름 매칭은 collectUrls 내부 로직에
+          // 그대로 맡긴다.
           await this.collectUrls(
             {
               preset,
               clear: true,
               crawlerVersion: scheduleCrawlerVersion,
-              search: searchOverride,
             },
             "scheduler",
           );
 
-          if (schedule.repeatAfterCollect && this.localStatus.urls.length > 0) {
+          // 화면의 "주소 추가 후 자동으로 조회 시작" 체크와 같은 역할 — 매일
+          // 작업은 수집만 하고 끝나면 의미가 없으므로 항상 수집 직후 조회까지
+          // 이어간다(schedule.repeatAfterCollect 값과 무관하게 강제).
+          if (this.localStatus.urls.length > 0) {
             await this.startCrawl(
               {
                 repeatAfterCollect: true,
@@ -1781,6 +1750,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
               },
               "scheduler",
             );
+          } else {
+            this.appendLog("info", `[관심조건] ${preset} — 수집된 URL 없음(조회 생략)`);
           }
           this.appendLog("info", `[관심조건] ${preset} 완료`);
         } catch (error) {

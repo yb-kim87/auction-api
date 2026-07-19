@@ -28,6 +28,7 @@ import { parseTradingCountFromDetail } from "./trading-count.util";
 import type { AuctionFieldChange } from "./auction-change.entity";
 import { parseUnitFloorFromAddress, selectFloorAwareNaverPrice } from "./naver-floor-price.util";
 import { TagsService } from "../tags/tags.service";
+import { nowPartsInKst } from "../common/kst-time.util";
 
 interface WriteMeta {
   status: AuctionStatus;
@@ -557,9 +558,12 @@ export class AuctionsService implements OnModuleInit {
       .andWhere("a.bidDate != :emptyBidDate", { emptyBidDate: "" })
       .getRawMany<{ auctionNo: string; link: string; bidDate: string }>();
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const resultAnnounced = now.getHours() >= 17;
+    // 서버(Railway)는 UTC로 동작해 new Date()의 시/분/날짜가 KST와 어긋난다
+    // (예: KST 7/20 00:34 = UTC 7/19 15:34) — 반드시 KST 기준으로 계산해야
+    // "오늘" 판정이 실제 한국 날짜와 맞는다.
+    const kst = nowPartsInKst();
+    const today = new Date(kst.year, kst.month - 1, kst.date);
+    const resultAnnounced = kst.hour >= 17;
 
     return rows
       .filter((row) => row.auctionNo?.trim() && row.link?.trim())
