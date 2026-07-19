@@ -1714,15 +1714,21 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     if (schedule.repeatDaily && this.lastScheduledDate === dateKey) return;
     this.lastScheduledDate = dateKey;
 
-    const presetList =
-      schedule.presets && schedule.presets.length > 0
-        ? schedule.presets
-        : [schedule.preset];
+    // presets(배열)가 비어있으면 매일 작업 자체를 실행할 이유가 없다.
+    // 예전 단일 preset 필드로의 폴백(["현재"])은 존재하지 않는 프리셋을
+    // 실행하려다 매번 실패만 남기므로 더 이상 하지 않는다(실측, 2026-07-20).
+    const presetList = schedule.presets ?? [];
 
     // appendLog가 이 로그부터 scheduler=true로 남기도록, 실행 로직보다
     // 먼저 스케줄러 실행 중 플래그를 세운다 — "예약 작업 시작" 로그도
     // 매일 작업 실행 로그 패널에 반드시 포함되어야 한다.
     this.schedulerRunning = true;
+
+    if (presetList.length === 0) {
+      this.appendLog("warn", "[매일작업] 관심조건이 없어 실행을 건너뜁니다.");
+      this.schedulerRunning = false;
+      return;
+    }
     // 관심조건 목록은 각 항목이 [관심조건] 로그로 곧이어 나오므로 여기서는
     // 시작 시각만 짧게 남긴다(장황한 나열 방지).
     this.appendLog(
