@@ -1727,14 +1727,25 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         this.appendLog("info", `[관심조건] ${preset} 수집 시작`);
         try {
           // 관리자 화면의 "주소 추가" 버튼(handleAddUrls → crawlerCollectUrls)과
-          // 정확히 동일하게 동작한다 — search를 미리 찾아 넘기지 않고, 저장된
-          // 관심조건(SavedSearchPreset) 이름 매칭은 collectUrls 내부 로직에
-          // 그대로 맡긴다.
+          // 동일하게 동작하되, v3는 "현재 화면 상태" 개념이 없어 search를
+          // 반드시 명시적으로 함께 보내야 한다(화면에서는 관심조건을 선택하면
+          // search state가 채워져 있는 상태로 전송됨). collectUrls 내부의
+          // v1/v2 전용 "저장된 프리셋 이름으로 검색" 폴백은 v3에는 적용되지
+          // 않으므로(dto.search가 없으면 바로 예외) 여기서 채워 넘긴다.
+          const preferredSearch = this.listSavedSearches().find(
+            (item) => item.name === preset,
+          )?.search;
+          if (scheduleCrawlerVersion === "v3" && !preferredSearch) {
+            throw new ServiceUnavailableException(
+              `저장된 관심조건 "${preset}"을 찾을 수 없습니다. 삭제되었거나 이름이 바뀌었을 수 있습니다.`,
+            );
+          }
           await this.collectUrls(
             {
               preset,
               clear: true,
               crawlerVersion: scheduleCrawlerVersion,
+              search: preferredSearch,
             },
             "scheduler",
           );
