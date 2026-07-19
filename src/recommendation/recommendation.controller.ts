@@ -2,12 +2,16 @@ import { Controller, Get, Headers, Query } from "@nestjs/common";
 import { getAuthContext, requireSearchAccess } from "../common/auth-context";
 import { RecommendationEngineService } from "./recommendation-engine.service";
 import { parseMoneyToWon, type ProgressStatus } from "./investment-math.util";
+import { TagsService } from "../tags/tags.service";
 
 const VALID_PROGRESS_STATUS = new Set(["all", "active", "ended"]);
 
 @Controller("recommendations")
 export class RecommendationController {
-  constructor(private readonly recommendationEngine: RecommendationEngineService) {}
+  constructor(
+    private readonly recommendationEngine: RecommendationEngineService,
+    private readonly tagsService: TagsService,
+  ) {}
 
   @Get()
   async getRecommendations(
@@ -21,6 +25,7 @@ export class RecommendationController {
     @Query("favoritesOnly") favoritesOnly?: string,
     @Query("progressStatus") progressStatus?: string,
     @Query("search") search?: string,
+    @Query("strategyLabel") strategyLabel?: string,
   ) {
     const ctx = getAuthContext(headers);
     requireSearchAccess(ctx);
@@ -39,6 +44,7 @@ export class RecommendationController {
           ? (progressStatus as ProgressStatus)
           : undefined,
         search: search || undefined,
+        strategyLabel: strategyLabel || undefined,
       },
     });
 
@@ -52,5 +58,15 @@ export class RecommendationController {
       hasMore: result.hasMore,
       creditScoreWarning: result.creditScoreWarning,
     };
+  }
+
+  /** 추천 물건 화면의 "라벨 필터" 드롭박스를 채울 전략 라벨 전체 목록.
+   * 로그인만 되어 있으면 조회 가능(관리자 전용 아님). */
+  @Get("strategy-labels")
+  async getStrategyLabels(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    requireSearchAccess(ctx);
+    const labels = await this.tagsService.findAllStrategyLabels();
+    return labels.map((l) => ({ id: l.id, label: l.label }));
   }
 }

@@ -40,6 +40,8 @@ export interface RecommendationFilters {
   favoritesOnly?: boolean;
   progressStatus?: ProgressStatus;
   search?: string;
+  /** 사용자에게 노출되는 전략 라벨(예: "경쟁이 적은 투자")로 필터링. */
+  strategyLabel?: string;
 }
 
 @Injectable()
@@ -228,6 +230,12 @@ export class RecommendationEngineService {
         if (
           filters?.progressStatus &&
           !matchesProgressStatus(row.item.bidDate, filters.progressStatus)
+        ) {
+          return false;
+        }
+        if (
+          filters?.strategyLabel &&
+          !row.item.strategyTagsList.some((tag) => tag.label === filters.strategyLabel)
         ) {
           return false;
         }

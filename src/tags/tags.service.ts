@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { TagRule } from "./tag-rule.entity";
 import { StrategyRule } from "./strategy-rule.entity";
 import { StrategyLabel } from "./strategy-label.entity";
@@ -26,8 +26,9 @@ export interface TagRuleInput {
 export interface StrategyRuleInput {
   strategyCode: string;
   requiredFactCodes: string[];
-  /** 이 전략에 연결할 기존 라벨 마스터의 id(관리자가 드롭박스에서 선택) */
-  labelId?: string;
+  /** 이 전략에 연결할 기존 라벨 마스터의 id 목록(관리자가 드롭박스에서 다중 선택).
+   * 전략 하나가 여러 배지(라벨)를 동시에 가질 수 있다. */
+  labelIds?: string[];
   /** 사용자 노출용 설명 문구(전략마다 다르게 작성) */
   description?: string;
   active?: boolean;
@@ -44,6 +45,15 @@ export interface StrategyLabelInput {
 export interface StrategyLabelMasterInput {
   label: string;
   icon?: string;
+}
+
+function parseStrategyLabelIds(raw: string | null): string[] {
+  try {
+    const parsed = JSON.parse(raw || "[]");
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
 }
 
 /** "85㎡ 초과" → "AREA_OVER_85" 처럼 한글 라벨에서 안정적인 코드를 만든다(중복 시 -2, -3...) */
@@ -151,11 +161,12 @@ export class TagsService implements OnModuleInit {
         }
       }
       for (const rule of DEFAULT_STRATEGY_RULES) {
+        const labelId = labelIdByStrategyCode.get(rule.strategyCode);
         await this.strategyRuleRepo.save(
           this.strategyRuleRepo.create({
             strategyCode: rule.strategyCode,
             requiredFactCodes: JSON.stringify(rule.requiredFactCodes),
-            labelId: labelIdByStrategyCode.get(rule.strategyCode) ?? null,
+            labelIds: JSON.stringify(labelId ? [labelId] : []),
             description: rule.description ?? "",
             active: rule.active ?? true,
             sortOrder: rule.sortOrder ?? 0,
@@ -252,6 +263,15 @@ export class TagsService implements OnModuleInit {
     return this.strategyRuleRepo.find({ order: { sortOrder: "ASC", createdAt: "ASC" } });
   }
 
+  private async validateLabelIds(labelIds: string[]): Promise<void> {
+    if (labelIds.length === 0) return;
+    const uniqueIds = [...new Set(labelIds)];
+    const found = await this.strategyLabelRepo.find({ where: { id: In(uniqueIds) } });
+    if (found.length !== uniqueIds.length) {
+      throw new BadRequestException("선택한 라벨 중 존재하지 않는 항목이 있습니다.");
+    }
+  }
+
   async createStrategyRule(input: StrategyRuleInput): Promise<StrategyRule> {
     if (!input.strategyCode?.trim()) {
       throw new BadRequestException("Strategy 코드를 입력해 주세요.");
@@ -259,15 +279,13 @@ export class TagsService implements OnModuleInit {
     if (!input.requiredFactCodes || input.requiredFactCodes.length === 0) {
       throw new BadRequestException("조건이 될 Fact 태그를 하나 이상 선택해 주세요.");
     }
-    if (input.labelId) {
-      const label = await this.strategyLabelRepo.findOne({ where: { id: input.labelId } });
-      if (!label) throw new BadRequestException("선택한 라벨을 찾을 수 없습니다.");
-    }
+    const labelIds = input.labelIds ?? [];
+    await this.validateLabelIds(labelIds);
     const strategyCode = slugifyToCode(input.strategyCode);
     const rule = this.strategyRuleRepo.create({
       strategyCode,
       requiredFactCodes: JSON.stringify(input.requiredFactCodes),
-      labelId: input.labelId ?? null,
+      labelIds: JSON.stringify(labelIds),
       description: input.description?.trim() ?? "",
       active: input.active ?? true,
       sortOrder: input.sortOrder ?? 0,
@@ -282,12 +300,9 @@ export class TagsService implements OnModuleInit {
     if (input.strategyCode?.trim()) rule.strategyCode = slugifyToCode(input.strategyCode);
     if (input.requiredFactCodes) rule.requiredFactCodes = JSON.stringify(input.requiredFactCodes);
     if (input.description !== undefined) rule.description = input.description.trim();
-    if (input.labelId !== undefined) {
-      if (input.labelId) {
-        const label = await this.strategyLabelRepo.findOne({ where: { id: input.labelId } });
-        if (!label) throw new BadRequestException("선택한 라벨을 찾을 수 없습니다.");
-      }
-      rule.labelId = input.labelId || null;
+    if (input.labelIds !== undefined) {
+      await this.validateLabelIds(input.labelIds);
+      rule.labelIds = JSON.stringify(input.labelIds);
     }
     if (input.active != null) rule.active = input.active;
     if (input.sortOrder != null) rule.sortOrder = input.sortOrder;
@@ -359,15 +374,31 @@ export class TagsService implements OnModuleInit {
     const strategyCodes = this.ruleEngine.computeStrategyCodes(factCodes, strategyRules);
     const labelMap = new Map(labels.map((l) => [l.id, l]));
     const ruleMap = new Map(strategyRules.map((r) => [r.strategyCode, r]));
-    const strategyItems = strategyCodes
-      .map((code) => {
-        const rule = ruleMap.get(code);
-        const label = rule?.labelId ? labelMap.get(rule.labelId) : undefined;
-        if (!label) return null;
-        return { code, label: label.label, description: rule?.description ?? "", icon: label.icon };
-      })
-      .filter((v): v is { code: string; label: string; description: string; icon: string } => v != null);
+    const strategyItems = strategyCodes.flatMap((code) =>
+      this.buildStrategyItemsForRule(ruleMap.get(code), code, labelMap),
+    );
     return { factCodes, strategyItems };
+  }
+
+  /** 전략 규칙 하나가 가진 라벨(들)을 물건 상세에 노출할 {code,label,description,icon}
+   * 항목들로 풀어낸다 — 전략 하나가 여러 라벨(배지)을 가질 수 있으므로 라벨마다 별도
+   * 항목이 된다(code/description은 같고 label/icon만 다름). */
+  private buildStrategyItemsForRule(
+    rule: StrategyRule | undefined,
+    code: string,
+    labelMap: Map<string, StrategyLabel>,
+  ): Array<{ code: string; label: string; description: string; icon: string }> {
+    if (!rule) return [];
+    const labelIds = parseStrategyLabelIds(rule.labelIds);
+    return labelIds
+      .map((labelId) => labelMap.get(labelId))
+      .filter((label): label is StrategyLabel => Boolean(label))
+      .map((label) => ({
+        code,
+        label: label.label,
+        description: rule.description ?? "",
+        icon: label.icon,
+      }));
   }
 
   /** 기존에 등록된 모든 물건의 factTags/strategyTags를 현재 활성 규칙 기준으로 일괄 재계산한다 */
@@ -385,14 +416,9 @@ export class TagsService implements OnModuleInit {
     for (const item of items) {
       const factCodes = this.ruleEngine.computeFactCodes(item, factRules);
       const strategyCodes = this.ruleEngine.computeStrategyCodes(factCodes, strategyRules);
-      const strategyItems = strategyCodes
-        .map((code) => {
-          const rule = ruleMap.get(code);
-          const label = rule?.labelId ? labelMap.get(rule.labelId) : undefined;
-          if (!label) return null;
-          return { code, label: label.label, description: rule?.description ?? "", icon: label.icon };
-        })
-        .filter((v): v is { code: string; label: string; description: string; icon: string } => v != null);
+      const strategyItems = strategyCodes.flatMap((code) =>
+        this.buildStrategyItemsForRule(ruleMap.get(code), code, labelMap),
+      );
 
       const nextFactJson = JSON.stringify(factCodes);
       const nextStrategyJson = JSON.stringify(strategyItems);

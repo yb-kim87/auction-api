@@ -5,6 +5,7 @@ import { ItemAiTag } from "../ai-platform/tag-engine/item-ai-tag.entity";
 import { UsersModule } from "../users/users.module";
 import { LoanPolicyModule } from "../loan-policy/loan-policy.module";
 import { FavoritesModule } from "../favorites/favorites.module";
+import { TagsModule } from "../tags/tags.module";
 import { RecommendationEngineService } from "./recommendation-engine.service";
 import { RecommendationController } from "./recommendation.controller";
 
@@ -14,6 +15,7 @@ import { RecommendationController } from "./recommendation.controller";
     UsersModule,
     LoanPolicyModule,
     FavoritesModule,
+    TagsModule,
   ],
   controllers: [RecommendationController],
   providers: [RecommendationEngineService],
