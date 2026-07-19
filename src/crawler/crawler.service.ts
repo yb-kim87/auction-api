@@ -180,9 +180,18 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     this.applyScheduleToStatus();
     this.migrateLegacyPresetsToSavedSearches();
 
-    this.schedulerTimer = setInterval(() => {
+    // setInterval(60_000)을 서버 기동 시각 기준으로 바로 시작하면, 이후
+    // 모든 tick이 항상 "기동 시각의 초"에 걸린다(예: 서버가 X시Y분42초에
+    // 뜨면 매 분 42초마다 실행) — 예약 시간(정시 0초)과 최대 59초까지
+    // 어긋날 수 있다. 다음 정각(분 경계)까지 먼저 기다린 뒤 매분 정각에
+    // 도는 인터벌을 시작한다.
+    const msToNextMinute = 60_000 - (Date.now() % 60_000);
+    setTimeout(() => {
       void this.tickScheduler();
-    }, 60_000);
+      this.schedulerTimer = setInterval(() => {
+        void this.tickScheduler();
+      }, 60_000);
+    }, msToNextMinute);
   }
 
   onModuleDestroy() {
@@ -774,7 +783,17 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         }
       }
       this.mergeWorkerStatus(remote);
-      if (remote.phase === "idle" || remote.phase === "stopped" || remote.phase === "error") {
+      // v3 워커(full_httpx_worker.py)는 완료 시 phase="done"으로 보낸다
+      // (CrawlerPhase 타입에는 없는 값 — v1 워커의 idle/stopped/error와
+      // 다름). 이걸 완료로 인식하지 못해 jobRunning이 계속 true로 남아,
+      // 매일 작업의 조회 완료 대기(waitForCrawlIdle)가 타임아웃까지
+      // 멈춰있던 버그가 있었다(실측, 2026-07-20).
+      if (
+        remote.phase === "idle" ||
+        remote.phase === "stopped" ||
+        remote.phase === "error" ||
+        (remote.phase as string) === "done"
+      ) {
         this.jobRunning = false;
       }
     } catch {
