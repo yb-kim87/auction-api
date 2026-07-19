@@ -12,6 +12,8 @@ Railway 컨테이너)에 v3 전용 경량 워커로 배포하기 위한 전제 �
 from __future__ import annotations
 
 import asyncio
+import os
+import random
 
 import httpx
 
@@ -107,6 +109,12 @@ async def run_full_httpx(
     return results
 
 
+# 동시 처리 개수 — 탱크옥션/네이버 양쪽에 부담을 주지 않으면서 순차(20초/건)
+# 대비 체감 속도를 크게 올리는 값. queue_manager.py(6~7단계 병렬 큐)와
+# 동일한 기본값을 사용해 두 워커의 동시성 정책을 맞춘다.
+FULL_HTTPX_CONCURRENCY = int(os.environ.get("CRAWL_CONCURRENCY", "5"))
+
+
 async def _run_full_httpx_with_state(
     tids: list[str],
     *,
@@ -115,53 +123,74 @@ async def _run_full_httpx_with_state(
     state,
     should_stop,
 ) -> None:
-    async with make_client() as client:
-        await login(client)
-        for index, tid in enumerate(tids):
-            pos = index + 1
-            check_stop(should_stop)
+    """세마포어로 동시 요청 수를 제한한 병렬 처리. completed/last_message는
+    tid 순서가 아니라 완료되는 순서대로 갱신된다(진행률 표시 용도라 순서
+    무관) — 최종 저장 결과는 순서와 무관하게 전부 반영된다."""
+    total = len(tids)
+    semaphore = asyncio.Semaphore(FULL_HTTPX_CONCURRENCY)
+
+    async def process_one(client: httpx.AsyncClient, tid: str) -> None:
+        async with semaphore:
             with state.lock:
                 if state.stop_requested:
-                    state.phase = "stopped"
-                    state.last_message = "사용자 요청으로 조회가 중단되었습니다."
                     return
-                state.last_message = f"[{pos}/{len(tids)}] tid={tid} 조회 중..."
+            check_stop(should_stop)
 
             try:
                 item = await crawl_one_item_full_httpx(client, tid)
             except Exception as exc:
                 with state.lock:
-                    state.completed = pos
-                    state.last_message = f"[{pos}/{len(tids)}] tid={tid} 실패: {exc}"
+                    state.completed += 1
+                    state.last_message = f"[{state.completed}/{total}] tid={tid} 실패: {exc}"
                     state.events.append(state.last_message)
-                continue
+                return
 
             valid, skip_reason = validate_crawl_item_reason(item)
             if not valid:
                 with state.lock:
-                    state.completed = pos
-                    state.last_message = f"[{pos}/{len(tids)}] 저장 스킵 ({skip_reason})"
+                    state.completed += 1
+                    state.last_message = f"[{state.completed}/{total}] 저장 스킵 ({skip_reason})"
                     state.events.append(state.last_message)
-                continue
+                return
 
             try:
                 await post_item_to_api(
                     client, item, callback_url=callback_url, callback_secret=callback_secret
                 )
                 with state.lock:
-                    state.completed = pos
+                    state.completed += 1
                     state.updated += 1
-                    state.last_message = f"[{pos}/{len(tids)}] {item.get('auctionNo')} 저장 완료"
+                    state.last_message = (
+                        f"[{state.completed}/{total}] {item.get('auctionNo')} 저장 완료"
+                    )
                     state.events.append(state.last_message)
             except httpx.HTTPError as exc:
                 with state.lock:
-                    state.completed = pos
-                    state.last_message = f"[{pos}/{len(tids)}] {item.get('auctionNo')} 저장 실패: {exc}"
+                    state.completed += 1
+                    state.last_message = (
+                        f"[{state.completed}/{total}] {item.get('auctionNo')} 저장 실패: {exc}"
+                    )
                     state.events.append(state.last_message)
+            # 사람이 클릭하듯 간격을 흔들어 트래픽 패턴 탐지를 피한다
+            # (queue_manager.py와 동일한 근거, 0.2~0.8초).
+            await asyncio.sleep(random.uniform(0.2, 0.8))
+
+    async with make_client() as client:
+        await login(client)
+        with state.lock:
+            if state.stop_requested:
+                state.phase = "stopped"
+                state.last_message = "사용자 요청으로 조회가 중단되었습니다."
+                return
+        await asyncio.gather(*(process_one(client, tid) for tid in tids))
 
     with state.lock:
+        if state.stop_requested:
+            state.phase = "stopped"
+            state.last_message = "사용자 요청으로 조회가 중단되었습니다."
+            return
         state.phase = "done"
-        state.last_message = f"조회 완료 ({state.completed}/{len(tids)})"
+        state.last_message = f"조회 완료 ({state.completed}/{total})"
         state.events.append(state.last_message)
 
 
