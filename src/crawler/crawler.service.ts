@@ -39,6 +39,7 @@ import type {
   SaveSearchPresetDto,
   StartCrawlDto,
 } from "./crawler.types";
+import { TODAY_BID_DATE_PRESET_ID } from "./crawler.types";
 
 const DEFAULT_WORKER_PORT = Number(process.env.CRAWLER_WORKER_PORT ?? 8765);
 const WORKER_START_TIMEOUT_MS = 30_000;
@@ -1194,7 +1195,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     if (result.message) this.appendLog("info", result.message);
 
     const rawUrls = result.urls ?? [];
-    const { urls, excluded, deduped, naverRefresh } = filterCollectedUrls(
+    const { urls, excluded, deduped, naverRefresh, beforeResultTime } = filterCollectedUrls(
       rawUrls,
       linkExistingMap,
     );
@@ -1203,6 +1204,12 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       this.appendLog(
         "info",
         `네이버 미수집 ${naverRefresh}건 포함 (입찰기일 미도래)`,
+      );
+    }
+    if (beforeResultTime > 0) {
+      this.appendLog(
+        "info",
+        `당일 5시 이전 제외 ${beforeResultTime}건 (낙찰 결과 미반영 시간대)`,
       );
     }
     if (excluded > 0) {
@@ -1255,6 +1262,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       excluded,
       deduped: deduped + mergeDeduped,
       naverRefresh,
+      beforeResultTime,
     };
   }
 
@@ -1629,10 +1637,12 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
+  private schedulerRunning = false;
+
   private async tickScheduler() {
     this.config = loadCrawlerConfig();
     const schedule = this.config.schedule;
-    if (!schedule.enabled || this.jobRunning) return;
+    if (!schedule.enabled || this.jobRunning || this.schedulerRunning) return;
 
     if (!schedule.repeatDaily && schedule.oneTimeCompleted) return;
 
@@ -1649,31 +1659,75 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     if (schedule.repeatDaily && this.lastScheduledDate === dateKey) return;
     this.lastScheduledDate = dateKey;
 
+    const presetList =
+      schedule.presets && schedule.presets.length > 0
+        ? schedule.presets
+        : [schedule.preset];
     const repeatLabel = schedule.repeatDaily ? "매일" : "1회";
     this.appendLog(
       "info",
-      `예약 작업 시작 (${repeatLabel} ${schedule.time}, ${schedule.preset})`,
+      `예약 작업 시작 (${repeatLabel} ${schedule.time}, 관심조건 ${presetList.length}건: ${presetList.join(", ")})`,
     );
 
+    this.schedulerRunning = true;
     try {
-      this.jobRunning = true;
       await this.ensureCrawlerLoggedIn("scheduler");
-      await this.collectUrls(
-        {
-          preset: schedule.preset,
-          clear: true,
-        },
-        "scheduler",
-      );
 
-      if (schedule.repeatAfterCollect && this.localStatus.urls.length > 0) {
-        await this.startCrawl(
-          {
-            repeatAfterCollect: true,
-            crawlerVersion: schedule.crawlerVersion,
-          },
-          "scheduler",
-        );
+      for (const preset of presetList) {
+        if (preset === TODAY_BID_DATE_PRESET_ID) {
+          this.appendLog("info", "[관심조건] 당일물건 조회 시작");
+          try {
+            const links = await this.auctionsService.listTodayBidDateLinks();
+            if (links.length === 0) {
+              this.appendLog("info", "[관심조건] 당일물건 조회 — 대상 물건 없음");
+            } else {
+              await this.startCrawl(
+                {
+                  urls: links.map((item) => item.link),
+                  crawlerVersion: schedule.crawlerVersion ?? "v3",
+                },
+                "scheduler",
+              );
+              this.appendLog(
+                "info",
+                `[관심조건] 당일물건 조회 완료 (${links.length}건 재조회)`,
+              );
+            }
+          } catch (error) {
+            this.appendLog(
+              "error",
+              `[관심조건] 당일물건 조회 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
+            );
+          }
+          continue;
+        }
+
+        this.appendLog("info", `[관심조건] ${preset} 수집 시작`);
+        try {
+          await this.collectUrls(
+            {
+              preset,
+              clear: true,
+            },
+            "scheduler",
+          );
+
+          if (schedule.repeatAfterCollect && this.localStatus.urls.length > 0) {
+            await this.startCrawl(
+              {
+                repeatAfterCollect: true,
+                crawlerVersion: schedule.crawlerVersion,
+              },
+              "scheduler",
+            );
+          }
+          this.appendLog("info", `[관심조건] ${preset} 완료`);
+        } catch (error) {
+          this.appendLog(
+            "error",
+            `[관심조건] ${preset} 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
+          );
+        }
       }
 
       if (!schedule.repeatDaily) {
@@ -1692,6 +1746,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         error instanceof Error ? error.message : "예약 작업 실패",
       );
       this.jobRunning = false;
+    } finally {
+      this.schedulerRunning = false;
     }
   }
 

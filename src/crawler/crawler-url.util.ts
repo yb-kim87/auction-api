@@ -42,6 +42,20 @@ export function isBidDateTodayOrPast(bidDate: string): boolean {
   return bidDay.getTime() <= today.getTime();
 }
 
+/** 입찰기일이 오늘이면서 아직 탱크옥션에 낙찰 결과가 반영되지 않는
+ * 시각(오후 5시 이전)인지. 이 경우 재수집해도 어차피 옛 정보 그대로라
+ * 목록에서 제외한다(당일 5시 이후에는 결과가 반영되므로 제외하지 않음). */
+export function isTodayBidDateBeforeResultTime(
+  bidDate: string,
+  now: Date = new Date(),
+): boolean {
+  const bidDay = parseBidDateToDay(bidDate);
+  if (!bidDay) return false;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (bidDay.getTime() !== today.getTime()) return false;
+  return now.getHours() < 17;
+}
+
 /** @deprecated isBidDateTodayOrPast 사용 */
 export function isBidDateTodayOrLater(bidDate: string): boolean {
   const bidDay = parseBidDateToDay(bidDate);
@@ -103,21 +117,26 @@ function lookupExistingRecord(
   );
 }
 
-/** DB 중복 중 입찰기일이 오늘·과거이거나 네이버 미수집인 항목 유지 */
+/** DB 중복 중 입찰기일이 오늘·과거이거나 네이버 미수집인 항목 유지.
+ * 단, 입찰기일이 "오늘"이고 아직 탱크옥션에 낙찰 결과가 반영되지 않는
+ * 시각(오후 5시 이전)이면, 재수집해도 옛 정보 그대로라 목록에서 제외한다. */
 export function filterCollectedUrls(
   urls: CrawlerUrlEntry[],
   linkExistingMap: Map<string, LinkExistingRecord>,
+  now: Date = new Date(),
 ): {
   urls: CrawlerUrlEntry[];
   excluded: number;
   deduped: number;
   naverRefresh: number;
+  beforeResultTime: number;
 } {
   const seen = new Set<string>();
   const filtered: CrawlerUrlEntry[] = [];
   let excluded = 0;
   let deduped = 0;
   let naverRefresh = 0;
+  let beforeResultTime = 0;
 
   for (const entry of urls) {
     const key = collectEntryKey(entry.url);
@@ -134,6 +153,11 @@ export function filterCollectedUrls(
       continue;
     }
 
+    if (isTodayBidDateBeforeResultTime(existing.bidDate, now)) {
+      beforeResultTime += 1;
+      continue;
+    }
+
     const bidDateEligible = isBidDateTodayOrPast(existing.bidDate);
     const naverMissing = isNaverDataMissing(existing);
 
@@ -147,7 +171,7 @@ export function filterCollectedUrls(
     }
   }
 
-  return { urls: filtered, excluded, deduped, naverRefresh };
+  return { urls: filtered, excluded, deduped, naverRefresh, beforeResultTime };
 }
 
 export function normalizeTankLink(link: string): string {

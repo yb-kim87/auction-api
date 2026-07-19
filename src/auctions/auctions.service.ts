@@ -501,6 +501,54 @@ export class AuctionsService implements OnModuleInit {
       }));
   }
 
+  /** 프런트 lib/progress-status-filter.ts의 parseBidDate와 동일 규칙. */
+  private parseBidDate(value: string): Date | null {
+    if (!value?.trim()) return null;
+    const normalized = value.trim().replace(/\./g, "-").replace(/\//g, "-");
+    const match = normalized.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (match) {
+      const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+    const parsed = new Date(normalized);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  /** 입찰기일이 오늘인 승인 물건의 링크 목록 — "당일물건 조회" 예약 작업이
+   * 이 링크들을 재크롤링해서 낙찰 여부/변경사항을 갱신하는 데 쓴다.
+   * 탱크옥션은 낙찰 결과를 입찰 당일 오후 5시 이후에나 반영하므로, 그
+   * 전에는 오늘 날짜 물건을 목록에서 제외한다(재조회해도 아직 변경 전
+   * 상태라 의미가 없음). */
+  async listTodayBidDateLinks(): Promise<{ auctionNo: string; link: string }[]> {
+    const rows = await this.auctionRepo
+      .createQueryBuilder("a")
+      .select("a.auctionNo", "auctionNo")
+      .addSelect("a.link", "link")
+      .addSelect("a.bidDate", "bidDate")
+      .where("a.status = :status", { status: AuctionStatus.APPROVED })
+      .andWhere("a.link != :emptyLink", { emptyLink: "" })
+      .andWhere("a.bidDate != :emptyBidDate", { emptyBidDate: "" })
+      .getRawMany<{ auctionNo: string; link: string; bidDate: string }>();
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const resultAnnounced = now.getHours() >= 17;
+
+    return rows
+      .filter((row) => row.auctionNo?.trim() && row.link?.trim())
+      .filter((row) => {
+        const parsed = this.parseBidDate(row.bidDate);
+        if (!parsed) return false;
+        const bidDay = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+        if (bidDay.getTime() === today.getTime()) return resultAnnounced;
+        return bidDay.getTime() < today.getTime();
+      })
+      .map((row) => ({
+        auctionNo: row.auctionNo.trim(),
+        link: row.link.trim(),
+      }));
+  }
+
   async listMissingNaverId(): Promise<{ auctionNo: string; link: string }[]> {
     const rows = await this.auctionRepo
       .createQueryBuilder("a")

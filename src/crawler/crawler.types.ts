@@ -69,6 +69,12 @@ export type CrawlerSearchConfig = {
   saleDivision?: string;
 };
 
+/** 매일 예약 작업의 관심조건 목록에서 선택할 수 있는 특수 항목(가상
+ * 프리셋). 탱크옥션 검색조건이 아니라, 입찰기일이 오늘인 기존 DB 물건을
+ * 재조회해 낙찰 여부/변경사항을 갱신하는 별도 동작이다. */
+export const TODAY_BID_DATE_PRESET_ID = "__TODAY_BID_DATE__";
+export const TODAY_BID_DATE_PRESET_LABEL = "당일물건 조회(낙찰/변경 갱신)";
+
 /** 관리자가 이름 붙여 저장한 검색조건("즐겨찾기") — 아파트/빌라 같은 고정
  * 프리셋 버튼처럼 목록에서 눌러 즉시 적용/조회할 수 있다. */
 export type SavedSearchPreset = {
@@ -91,7 +97,11 @@ export type CrawlerAlgorithmConfig = {
 export type CrawlerScheduleConfig = {
   enabled: boolean;
   time: string;
+  /** @deprecated 단일 프리셋 하위호환용. 새 UI는 presets(배열)를 사용한다. */
   preset: string;
+  /** 매일 예약 작업 때 순서대로 수집·조회할 관심조건(저장된 검색조건) 이름 목록.
+   * 비어 있으면 preset(단일, 하위호환)을 사용한다. */
+  presets?: string[];
   repeatAfterCollect: boolean;
   excludeDuplicates: boolean;
   repeatDaily: boolean;
@@ -137,6 +147,7 @@ export const DEFAULT_CRAWLER_CONFIG: CrawlerConfig = {
     enabled: false,
     time: "00:00",
     preset: "현재",
+    presets: [],
     repeatAfterCollect: false,
     excludeDuplicates: true,
     repeatDaily: true,
