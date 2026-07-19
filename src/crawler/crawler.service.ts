@@ -1651,6 +1651,27 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
   private schedulerRunning = false;
 
+  /** startCrawl()은 워커에 "조회를 시작해라"는 요청만 보내고 바로 리턴한다
+   * (실제 크롤링은 워커 안에서 백그라운드 스레드로 진행). 매일 작업이
+   * 관심조건을 순서대로 처리하려면 한 조회가 완전히 끝난 뒤에 다음으로
+   * 넘어가야 하는데, 이 대기가 없으면 이전 조회가 진행 중인 상태에서 다음
+   * 관심조건의 목록조회/조회 요청이 같은 워커에 겹쳐 들어가 서로 충돌한다
+   * (실측: 진행률 36%인 상태에서 다음 관심조건이 곧바로 시작되어 "not
+   * found"로 실패, 2026-07-20). syncWorkerStatus()로 워커 phase가
+   * idle/stopped/error가 될 때까지 폴링해서 기다린다. */
+  private async waitForCrawlIdle(timeoutMs = 30 * 60_000): Promise<void> {
+    const start = Date.now();
+    while (this.jobRunning || this.localStatus.phase === "crawling") {
+      if (Date.now() - start > timeoutMs) {
+        this.appendLog("warn", "조회 완료 대기 시간 초과 — 다음 관심조건으로 진행합니다.");
+        return;
+      }
+      await this.syncWorkerStatus();
+      if (!this.jobRunning && this.localStatus.phase !== "crawling") break;
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+  }
+
   private async tickScheduler() {
     this.config = loadCrawlerConfig();
     const schedule = this.config.schedule;
@@ -1710,6 +1731,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
                 },
                 "scheduler",
               );
+              await this.waitForCrawlIdle();
               this.appendLog(
                 "info",
                 `[관심조건] 당일물건 조회 완료 (${links.length}건 재조회)`,
@@ -1761,6 +1783,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
               },
               "scheduler",
             );
+            await this.waitForCrawlIdle();
           } else {
             this.appendLog("info", `[관심조건] ${preset} — 수집된 URL 없음(조회 생략)`);
           }
