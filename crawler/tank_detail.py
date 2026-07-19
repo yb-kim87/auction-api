@@ -1591,52 +1591,81 @@ def parse_appraiser_from_detail(detail: dict | None) -> str:
     return ""
 
 
+# AuctView baseInfo/histInfo.items[].sta(sta2와 동일 체계) 상태 코드 — 목록
+# API의 sta1(대분류)/sta2(소분류)와 histInfo 항목별 sta는 같은 코드 체계를
+# 쓴다(실측: 2025타경35392/부천지원3계, tid=2482618, 2026-07-20).
+_BID_HIST_STATE_LABELS: dict[int, str] = {
+    1111: "유찰",
+    1110: "진행",
+    1210: "매각",
+    1212: "차순위매수신고",
+    1230: "대금지급기한",
+    1211: "매각허가결정",
+}
+
+
+def _fmt_bid_amount(amt) -> str:
+    try:
+        n = int(amt)
+    except (TypeError, ValueError):
+        return ""
+    if n <= 0:
+        return ""
+    return f"{n:,}원"
+
+
 def parse_bid_info_from_detail(detail: dict | None) -> str:
+    """histInfo.items[]를 차수별 한 줄 요약으로 변환. 각 항목은
+    "N차 YYYY-MM-DD 상태 금액 (부가정보)" 형태 — 낙찰 회차는 입찰자수·
+    낙찰자명을, 차순위 회차는 2위금액을 부가정보로 붙인다."""
     if not isinstance(detail, dict):
         return ""
+    section = detail.get("histInfo")
+    items: list = []
+    if isinstance(section, list):
+        items = section
+    elif isinstance(section, dict):
+        for key in ("items", "list", "rows", "histList"):
+            raw = section.get(key)
+            if isinstance(raw, list):
+                items = raw
+                break
+    if not items:
+        return ""
+
     lines: list[str] = []
-    for section_key in ("histInfo", "bidHist", "bidInfo", "dtHist", "histList"):
-        section = detail.get(section_key)
-        if not section:
+    for item in items:
+        if not isinstance(item, dict):
             continue
-        items: list = []
-        if isinstance(section, list):
-            items = section
-        elif isinstance(section, dict):
-            for key in ("items", "list", "rows", "histList"):
-                raw = section.get(key)
-                if isinstance(raw, list):
-                    items = raw
-                    break
-        for item in items:
-            if isinstance(item, dict):
-                sale = _pick_str(item, "sucb_amt", "sucbAmt", "sale_amt", "saleAmt")
-                bid = _pick_str(item, "bid_cnt", "bidCnt", "bid", "bid_desc", "bidDesc")
-                date = _pick_str(item, "bid_dt", "bidDt", "bid_dtm", "bidDtm", "date")
-                parts: list[str] = []
-                if date:
-                    parts.append(date)
-                if sale:
-                    parts.append(f"매각 {sale}원")
-                if bid:
-                    parts.append(f"입찰 {bid}")
-                if parts:
-                    lines.append(" / ".join(parts))
-                else:
-                    text = " | ".join(
-                        str(v).strip()
-                        for v in item.values()
-                        if v not in (None, "") and str(v).strip()
-                    )
-                    if text:
-                        lines.append(text)
-            elif item:
-                text = str(item).strip()
-                if text:
-                    lines.append(text)
-        if lines:
-            return "\n".join(lines)
-    return ""
+        seq = _pick_str(item, "seq")
+        date = _pick_str(item, "bid_dt", "bidDt", "bid_dtm", "bidDtm", "date")
+        sta = item.get("sta")
+        try:
+            sta_int = int(sta)
+        except (TypeError, ValueError):
+            sta_int = None
+        state_label = _BID_HIST_STATE_LABELS.get(sta_int, "") if sta_int is not None else ""
+
+        amount = _fmt_bid_amount(item.get("amt"))
+        extras: list[str] = []
+        if sta_int == 1210:
+            bidr_cnt = item.get("bidr_cnt")
+            if bidr_cnt:
+                extras.append(f"입찰 {bidr_cnt}명")
+            sucb_nm = _pick_str(item, "sucb_nm", "sucbNm")
+            if sucb_nm:
+                extras.append(f"낙찰자 {sucb_nm}")
+        elif sta_int == 1212 and amount:
+            extras.append(f"2위금액 {amount}")
+            amount = ""
+
+        parts = [p for p in (f"{seq}차" if seq else "", date, state_label, amount) if p]
+        if extras:
+            parts.append(f"({', '.join(extras)})")
+        if parts:
+            lines.append(" ".join(parts))
+
+    return "\n".join(lines)
 
 
 def _format_rg_info_items(section) -> str:
