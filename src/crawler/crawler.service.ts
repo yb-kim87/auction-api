@@ -1050,10 +1050,26 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     const headers = this.workerAuthHeaders();
     const results: Record<string, unknown> = { workerBaseUrl: base };
 
+    const testSearch = JSON.stringify({
+      preset: "테스트",
+      clear: true,
+      search: {
+        listType: "auction",
+        propertyTypes: ["아파트"],
+        status: "진행물건",
+        appraisalMin: "",
+        appraisalMax: "",
+        preserveRegistryFrom: "",
+        excludeSpecialConditions: [],
+        pageSize: "5",
+      },
+    });
+
     for (const [name, path, method, body] of [
       ["health", "/health", "GET", undefined],
       ["status", "/status", "GET", undefined],
       ["tankLoginCheck", "/tank-login-check", "POST", "{}"],
+      ["collectUrlsV3", "/collect-urls-v3", "POST", testSearch],
     ] as const) {
       try {
         const res = await nodeHttpFetch(`${base}${path}`, {
