@@ -117,12 +117,12 @@ export type CrawlerConfig = {
 export const DEFAULT_CRAWLER_CONFIG: CrawlerConfig = {
   search: {
     listType: "auction",
-    propertyTypes: ["아파트"],
+    propertyTypes: [],
     status: "진행물건",
-    appraisalMin: "8억",
-    appraisalMax: "30억",
-    preserveRegistryFrom: "2012",
-    excludeSpecialConditions: ["위반건축물"],
+    appraisalMin: "",
+    appraisalMax: "",
+    preserveRegistryFrom: "",
+    excludeSpecialConditions: [],
     pageSize: "100",
   },
   algorithm: {

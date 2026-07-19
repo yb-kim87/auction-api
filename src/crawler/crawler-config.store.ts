@@ -26,7 +26,12 @@ export function loadCrawlerConfig(): CrawlerConfig {
       readFileSync(CONFIG_PATH, "utf-8"),
     ) as Partial<CrawlerConfig>;
     return {
-      search: { ...DEFAULT_CRAWLER_CONFIG.search, ...parsed.search },
+      // "검색조건" 화면 진입 시 기본으로 채워지는 값은 항상 코드의 빈 기본값을
+      // 쓴다(저장된 파일 값을 무시) — 관리자가 마지막으로 조회했던 조건이
+      // 남아있으면 다음 접속자가 그 조건 그대로 조회하는 것으로 오해하기
+      // 쉽다(실측: 아파트/2012/위반건축물 제외가 기본 선택된 것처럼 보임,
+      // 2026-07-19). 저장해둔 관심조건(savedSearches)은 그대로 보존한다.
+      search: structuredClone(DEFAULT_CRAWLER_CONFIG.search),
       algorithm: { ...DEFAULT_CRAWLER_CONFIG.algorithm, ...parsed.algorithm },
       schedule: { ...DEFAULT_CRAWLER_CONFIG.schedule, ...parsed.schedule },
       credentials: {
