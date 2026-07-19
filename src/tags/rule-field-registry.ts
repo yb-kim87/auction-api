@@ -79,6 +79,12 @@ export const RULE_FIELDS: RuleFieldDef[] = [
     extract: (item) => item.specialNote ?? "",
   },
   {
+    key: "tenant_detail",
+    label: "임차인 현황(원본 텍스트, 예: 전입:미상 확정:미상 배당:없음)",
+    type: "string",
+    extract: (item) => item.tenantDetail ?? "",
+  },
+  {
     key: "official_land_price",
     label: "공시가격(원)",
     type: "number",
