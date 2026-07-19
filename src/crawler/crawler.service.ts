@@ -1697,7 +1697,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
     this.schedulerRunning = true;
     try {
-      await this.ensureCrawlerLoggedIn("scheduler");
+      // v3(HTTPX)는 브라우저 세션이 없는 stateless 구조라 /session 자체가
+      // 없다 — v1/v2 전용 로그인 확인은 v1/v2로 실행할 때만 필요하다.
+      if ((schedule.crawlerVersion ?? "v1") !== "v3") {
+        await this.ensureCrawlerLoggedIn("scheduler");
+      }
 
       for (const preset of presetList) {
         if (preset === TODAY_BID_DATE_PRESET_ID) {
@@ -1769,7 +1773,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       this.appendLog(
         "error",
-        error instanceof Error ? error.message : "예약 작업 실패",
+        `예약 작업 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
       );
       this.jobRunning = false;
     } finally {
