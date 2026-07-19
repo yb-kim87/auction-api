@@ -5,6 +5,12 @@ export type CrawlerSearchConfig = {
   appraisalMin: string;
   appraisalMax: string;
   preserveRegistryFrom: string;
+  /** 보존등기 상한 연도(탱크옥션 prsvEnd, 예: "2005" = ~2005년, "구축" 조건의 핵심). */
+  preserveRegistryTo?: string;
+  /** 해당층(물건이 위치한 층, 총 층수와 다름) 하한(탱크옥션 flrBgn, 101=1층). */
+  objectFloorMin?: string;
+  /** 해당층 상한(탱크옥션 flrEnd, 103=3층). "저층 단타" 같은 조건의 핵심. */
+  objectFloorMax?: string;
   excludeSpecialConditions: string[];
   pageSize: string;
   /** 사건번호 연도(탱크옥션 sn1, 예: "2024"). 빈 값이면 전체 연도. */

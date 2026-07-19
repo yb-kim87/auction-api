@@ -396,6 +396,13 @@ def build_query_from_search_config(config: dict) -> tuple[str, dict]:
 
     preserve = config.get("preserveRegistryFrom")
     params["prsvBgn"] = preserve if preserve else "0"
+    preserve_to = config.get("preserveRegistryTo")
+    params["prsvEnd"] = preserve_to if preserve_to else "0"
+
+    floor_min = config.get("objectFloorMin")
+    params["flrBgn"] = floor_min if floor_min else "0"
+    floor_max = config.get("objectFloorMax")
+    params["flrEnd"] = floor_max if floor_max else "0"
 
     property_types = config.get("propertyTypes") or []
     codes = []
@@ -491,6 +498,12 @@ def parse_favorite_search_param(param_json: dict) -> dict:
         config["failCountMax"] = str(param_json["fbCntEnd"])
     if param_json.get("prsvBgn") is not None:
         config["preserveRegistryFrom"] = str(param_json["prsvBgn"])
+    if param_json.get("prsvEnd") is not None:
+        config["preserveRegistryTo"] = str(param_json["prsvEnd"])
+    if param_json.get("flrBgn") is not None:
+        config["objectFloorMin"] = str(param_json["flrBgn"])
+    if param_json.get("flrEnd") is not None:
+        config["objectFloorMax"] = str(param_json["flrEnd"])
     if param_json.get("sn1") is not None:
         config["caseYear"] = str(param_json["sn1"])
     if param_json.get("sn2") is not None:
