@@ -20,7 +20,7 @@ export class StrategyRule {
   /** 이 전략에 연결된 노출 라벨(StrategyLabel)의 id. 라벨은 여러 전략이
    * 동시에 재사용할 수 있어 다대다이므로, 연결은 라벨이 아니라 이쪽
    * (StrategyRule)이 FK를 들고 있는 방식으로 표현한다. */
-  @Column({ nullable: true })
+  @Column({ type: "varchar", nullable: true })
   labelId!: string | null;
 
   /** 이 Fact 코드들을 모두 가지고 있어야 매칭(AND). JSON 배열 문자열로 저장 */
