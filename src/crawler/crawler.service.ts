@@ -44,7 +44,7 @@ import type {
   SaveSearchPresetDto,
   StartCrawlDto,
 } from "./crawler.types";
-import { TODAY_BID_DATE_PRESET_ID } from "./crawler.types";
+import { TODAY_BID_DATE_PRESET_ID, TODAY_BID_DATE_PRESET_LABEL } from "./crawler.types";
 
 const DEFAULT_WORKER_PORT = Number(process.env.CRAWLER_WORKER_PORT ?? 8765);
 const WORKER_START_TIMEOUT_MS = 30_000;
@@ -1742,12 +1742,18 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       }
 
       for (const preset of presetList) {
+        const presetLabel =
+          preset === TODAY_BID_DATE_PRESET_ID ? TODAY_BID_DATE_PRESET_LABEL : preset;
+        // 관심조건 이름은 여기서 한 번만 로그에 남긴다 — 이후 이 관심조건
+        // 처리 중 남는 진행 로그(수집 시작, 로그인 확인, 완료/실패 등)에는
+        // 이름을 반복하지 않고 내용만 표시해 로그가 장황해지지 않게 한다.
+        this.appendLog("info", `[관심조건] ${presetLabel}`);
+
         if (preset === TODAY_BID_DATE_PRESET_ID) {
-          this.appendLog("info", "[관심조건] 당일물건 조회 시작");
           try {
             const links = await this.auctionsService.listTodayBidDateLinks();
             if (links.length === 0) {
-              this.appendLog("info", "[관심조건] 당일물건 조회 — 대상 물건 없음");
+              this.appendLog("info", "[매일작업] 대상 물건 없음");
             } else {
               await this.startCrawl(
                 {
@@ -1757,21 +1763,17 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
                 "scheduler",
               );
               await this.waitForCrawlIdle();
-              this.appendLog(
-                "info",
-                `[관심조건] 당일물건 조회 완료 (${links.length}건 재조회)`,
-              );
+              this.appendLog("info", `[매일작업] 완료 (${links.length}건 재조회)`);
             }
           } catch (error) {
             this.appendLog(
               "error",
-              `[관심조건] 당일물건 조회 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
+              `[매일작업] 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
             );
           }
           continue;
         }
 
-        this.appendLog("info", `[관심조건] ${preset} 수집 시작`);
         try {
           // 관리자 화면의 "주소 추가" 버튼(handleAddUrls → crawlerCollectUrls)과
           // 동일하게 동작하되, v3는 "현재 화면 상태" 개념이 없어 search를
@@ -1810,13 +1812,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
             );
             await this.waitForCrawlIdle();
           } else {
-            this.appendLog("info", `[관심조건] ${preset} — 수집된 URL 없음(조회 생략)`);
+            this.appendLog("info", "[매일작업] 수집된 URL 없음(조회 생략)");
           }
-          this.appendLog("info", `[관심조건] ${preset} 완료`);
+          this.appendLog("info", "[매일작업] 완료");
         } catch (error) {
           this.appendLog(
             "error",
-            `[관심조건] ${preset} 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
+            `[매일작업] 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
           );
           this.logger.error(
             `[tickScheduler] ${preset} 실패 상세`,
