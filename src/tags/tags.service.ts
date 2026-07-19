@@ -136,21 +136,26 @@ export class TagsService implements OnModuleInit {
       }
     }
     if ((await this.strategyRuleRepo.count()) === 0) {
+      const labelIdByStrategyCode = new Map<string, string>();
+      if ((await this.strategyLabelRepo.count()) === 0) {
+        for (const label of DEFAULT_STRATEGY_LABELS) {
+          const saved = await this.strategyLabelRepo.save(
+            this.strategyLabelRepo.create({ label: label.label, icon: label.icon }),
+          );
+          labelIdByStrategyCode.set(label.strategyCode, saved.id);
+        }
+      }
       for (const rule of DEFAULT_STRATEGY_RULES) {
         await this.strategyRuleRepo.save(
           this.strategyRuleRepo.create({
             strategyCode: rule.strategyCode,
             requiredFactCodes: JSON.stringify(rule.requiredFactCodes),
+            labelId: labelIdByStrategyCode.get(rule.strategyCode) ?? null,
             description: rule.description ?? "",
             active: rule.active ?? true,
             sortOrder: rule.sortOrder ?? 0,
           }),
         );
-      }
-    }
-    if ((await this.strategyLabelRepo.count()) === 0) {
-      for (const label of DEFAULT_STRATEGY_LABELS) {
-        await this.strategyLabelRepo.save(this.strategyLabelRepo.create(label));
       }
     }
   }
@@ -242,14 +247,6 @@ export class TagsService implements OnModuleInit {
     return this.strategyRuleRepo.find({ order: { sortOrder: "ASC", createdAt: "ASC" } });
   }
 
-  /** 선택된 라벨 마스터(labelId)를 이 전략 코드에 연결한다(다른 전략에 붙어있던 연결은 해제). */
-  private async assignLabelToStrategyCode(labelId: string, strategyCode: string): Promise<void> {
-    const label = await this.strategyLabelRepo.findOne({ where: { id: labelId } });
-    if (!label) throw new BadRequestException("선택한 라벨을 찾을 수 없습니다.");
-    label.strategyCode = strategyCode;
-    await this.strategyLabelRepo.save(label);
-  }
-
   async createStrategyRule(input: StrategyRuleInput): Promise<StrategyRule> {
     if (!input.strategyCode?.trim()) {
       throw new BadRequestException("Strategy 코드를 입력해 주세요.");
@@ -257,47 +254,39 @@ export class TagsService implements OnModuleInit {
     if (!input.requiredFactCodes || input.requiredFactCodes.length === 0) {
       throw new BadRequestException("조건이 될 Fact 태그를 하나 이상 선택해 주세요.");
     }
+    if (input.labelId) {
+      const label = await this.strategyLabelRepo.findOne({ where: { id: input.labelId } });
+      if (!label) throw new BadRequestException("선택한 라벨을 찾을 수 없습니다.");
+    }
     const strategyCode = slugifyToCode(input.strategyCode);
     const rule = this.strategyRuleRepo.create({
       strategyCode,
       requiredFactCodes: JSON.stringify(input.requiredFactCodes),
+      labelId: input.labelId ?? null,
       description: input.description?.trim() ?? "",
       active: input.active ?? true,
       sortOrder: input.sortOrder ?? 0,
     });
-    const saved = await this.strategyRuleRepo.save(rule);
-    if (input.labelId) {
-      await this.assignLabelToStrategyCode(input.labelId, strategyCode);
-    }
-    return saved;
+    return this.strategyRuleRepo.save(rule);
   }
 
   async updateStrategyRule(id: string, input: Partial<StrategyRuleInput>): Promise<StrategyRule> {
     const rule = await this.strategyRuleRepo.findOne({ where: { id } });
     if (!rule) throw new NotFoundException("Strategy 규칙을 찾을 수 없습니다.");
 
-    const prevCode = rule.strategyCode;
     if (input.strategyCode?.trim()) rule.strategyCode = slugifyToCode(input.strategyCode);
     if (input.requiredFactCodes) rule.requiredFactCodes = JSON.stringify(input.requiredFactCodes);
     if (input.description !== undefined) rule.description = input.description.trim();
+    if (input.labelId !== undefined) {
+      if (input.labelId) {
+        const label = await this.strategyLabelRepo.findOne({ where: { id: input.labelId } });
+        if (!label) throw new BadRequestException("선택한 라벨을 찾을 수 없습니다.");
+      }
+      rule.labelId = input.labelId || null;
+    }
     if (input.active != null) rule.active = input.active;
     if (input.sortOrder != null) rule.sortOrder = input.sortOrder;
-    const saved = await this.strategyRuleRepo.save(rule);
-
-    // 전략 코드가 바뀌면, 이 코드로 사용자 노출 문구를 연결해둔 StrategyLabel도
-    // 같이 옮겨줘야 라벨 연결이 끊기지 않는다(안 그러면 화면에 문구가 사라짐).
-    if (prevCode !== saved.strategyCode) {
-      await this.strategyLabelRepo.update(
-        { strategyCode: prevCode },
-        { strategyCode: saved.strategyCode },
-      );
-    }
-
-    if (input.labelId) {
-      await this.assignLabelToStrategyCode(input.labelId, saved.strategyCode);
-    }
-
-    return saved;
+    return this.strategyRuleRepo.save(rule);
   }
 
   async removeStrategyRule(id: string): Promise<{ ok: boolean }> {
@@ -363,13 +352,14 @@ export class TagsService implements OnModuleInit {
     ]);
     const factCodes = this.ruleEngine.computeFactCodes(item, factRules);
     const strategyCodes = this.ruleEngine.computeStrategyCodes(factCodes, strategyRules);
-    const labelMap = new Map(labels.map((l) => [l.strategyCode, l]));
+    const labelMap = new Map(labels.map((l) => [l.id, l]));
     const ruleMap = new Map(strategyRules.map((r) => [r.strategyCode, r]));
     const strategyItems = strategyCodes
       .map((code) => {
-        const label = labelMap.get(code);
+        const rule = ruleMap.get(code);
+        const label = rule?.labelId ? labelMap.get(rule.labelId) : undefined;
         if (!label) return null;
-        return { code, label: label.label, description: ruleMap.get(code)?.description ?? "", icon: label.icon };
+        return { code, label: label.label, description: rule?.description ?? "", icon: label.icon };
       })
       .filter((v): v is { code: string; label: string; description: string; icon: string } => v != null);
     return { factCodes, strategyItems };
@@ -382,7 +372,7 @@ export class TagsService implements OnModuleInit {
       this.findAllStrategyRules(),
       this.findAllStrategyLabels(),
     ]);
-    const labelMap = new Map(labels.map((l) => [l.strategyCode, l]));
+    const labelMap = new Map(labels.map((l) => [l.id, l]));
     const ruleMap = new Map(strategyRules.map((r) => [r.strategyCode, r]));
     const items = await this.auctionRepo.find();
 
@@ -392,9 +382,10 @@ export class TagsService implements OnModuleInit {
       const strategyCodes = this.ruleEngine.computeStrategyCodes(factCodes, strategyRules);
       const strategyItems = strategyCodes
         .map((code) => {
-          const label = labelMap.get(code);
+          const rule = ruleMap.get(code);
+          const label = rule?.labelId ? labelMap.get(rule.labelId) : undefined;
           if (!label) return null;
-          return { code, label: label.label, description: ruleMap.get(code)?.description ?? "", icon: label.icon };
+          return { code, label: label.label, description: rule?.description ?? "", icon: label.icon };
         })
         .filter((v): v is { code: string; label: string; description: string; icon: string } => v != null);
 
