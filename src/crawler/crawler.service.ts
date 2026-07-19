@@ -1825,6 +1825,20 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         }
       }
 
+      const finishedAt = nowPartsInKst();
+      const hourLabel =
+        finishedAt.hour === 0
+          ? "0시"
+          : finishedAt.hour < 12
+            ? `오전 ${finishedAt.hour}시`
+            : finishedAt.hour === 12
+              ? "오후 12시"
+              : `오후 ${finishedAt.hour - 12}시`;
+      this.appendLog(
+        "info",
+        `${finishedAt.year}.${String(finishedAt.month).padStart(2, "0")}.${String(finishedAt.date).padStart(2, "0")} ${hourLabel} 작업이 완료되었습니다.`,
+      );
+
       if (!schedule.repeatDaily) {
         this.updateConfig({
           schedule: {
