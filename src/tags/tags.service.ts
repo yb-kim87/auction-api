@@ -374,31 +374,54 @@ export class TagsService implements OnModuleInit {
     const strategyCodes = this.ruleEngine.computeStrategyCodes(factCodes, strategyRules);
     const labelMap = new Map(labels.map((l) => [l.id, l]));
     const ruleMap = new Map(strategyRules.map((r) => [r.strategyCode, r]));
-    const strategyItems = strategyCodes.flatMap((code) =>
-      this.buildStrategyItemsForRule(ruleMap.get(code), code, labelMap),
-    );
+    const strategyItems = this.buildStrategyItemsForCodes(strategyCodes, ruleMap, labelMap);
     return { factCodes, strategyItems };
   }
 
-  /** 전략 규칙 하나가 가진 라벨(들)을 물건 상세에 노출할 {code,label,description,icon}
-   * 항목들로 풀어낸다 — 전략 하나가 여러 라벨(배지)을 가질 수 있으므로 라벨마다 별도
-   * 항목이 된다(code/description은 같고 label/icon만 다름). */
-  private buildStrategyItemsForRule(
-    rule: StrategyRule | undefined,
-    code: string,
+  /**
+   * 매칭된 전략 코드들이 가진 라벨을 물건 상세에 노출할 {code,label,description,icon}
+   * 배지 목록으로 만든다. 같은 라벨이 서로 다른 전략에 동시에 붙어있으면(예: "경쟁이
+   * 적은 투자"가 "85_초과+아파트"와 "미상임차인" 둘 다에 쓰인 경우) 화면에 같은
+   * 배지가 두 번 뜨는 대신 라벨 하나로 합치고, 설명은 줄바꿈으로 이어붙인다.
+   */
+  private buildStrategyItemsForCodes(
+    strategyCodes: string[],
+    ruleMap: Map<string, StrategyRule>,
     labelMap: Map<string, StrategyLabel>,
   ): Array<{ code: string; label: string; description: string; icon: string }> {
-    if (!rule) return [];
-    const labelIds = parseStrategyLabelIds(rule.labelIds);
-    return labelIds
-      .map((labelId) => labelMap.get(labelId))
-      .filter((label): label is StrategyLabel => Boolean(label))
-      .map((label) => ({
-        code,
-        label: label.label,
-        description: rule.description ?? "",
-        icon: label.icon,
-      }));
+    const byLabelId = new Map<
+      string,
+      { code: string; label: StrategyLabel; descriptions: string[] }
+    >();
+
+    for (const code of strategyCodes) {
+      const rule = ruleMap.get(code);
+      if (!rule) continue;
+      const labelIds = parseStrategyLabelIds(rule.labelIds);
+      for (const labelId of labelIds) {
+        const label = labelMap.get(labelId);
+        if (!label) continue;
+        const existing = byLabelId.get(labelId);
+        if (existing) {
+          if (rule.description && !existing.descriptions.includes(rule.description)) {
+            existing.descriptions.push(rule.description);
+          }
+        } else {
+          byLabelId.set(labelId, {
+            code,
+            label,
+            descriptions: rule.description ? [rule.description] : [],
+          });
+        }
+      }
+    }
+
+    return [...byLabelId.values()].map(({ code, label, descriptions }) => ({
+      code,
+      label: label.label,
+      description: descriptions.join("\n\n"),
+      icon: label.icon,
+    }));
   }
 
   /** 기존에 등록된 모든 물건의 factTags/strategyTags를 현재 활성 규칙 기준으로 일괄 재계산한다 */
@@ -416,9 +439,7 @@ export class TagsService implements OnModuleInit {
     for (const item of items) {
       const factCodes = this.ruleEngine.computeFactCodes(item, factRules);
       const strategyCodes = this.ruleEngine.computeStrategyCodes(factCodes, strategyRules);
-      const strategyItems = strategyCodes.flatMap((code) =>
-        this.buildStrategyItemsForRule(ruleMap.get(code), code, labelMap),
-      );
+      const strategyItems = this.buildStrategyItemsForCodes(strategyCodes, ruleMap, labelMap);
 
       const nextFactJson = JSON.stringify(factCodes);
       const nextStrategyJson = JSON.stringify(strategyItems);
