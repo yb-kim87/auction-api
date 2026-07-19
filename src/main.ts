@@ -2,6 +2,7 @@ import { config as loadEnv } from "dotenv";
 import { join } from "path";
 import { NestFactory } from "@nestjs/core";
 import cookieParser from "cookie-parser";
+import express from "express";
 import { AppModule } from "./app.module";
 
 loadEnv({ path: join(__dirname, "..", ".env") });
@@ -56,6 +57,12 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+
+  // Express 기본 JSON body 한도(100kb)로는 크롤러가 보내는 물건 상세
+  // payload(사진 목록·파일정보 등 extraData 포함 시)가 종종 초과돼 413으로
+  // 거부됐다(예: "2023타경6551" 저장 실패, 2026-07-19). 여유 있게 늘린다.
+  app.use(express.json({ limit: "20mb" }));
+  app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
