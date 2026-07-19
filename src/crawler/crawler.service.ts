@@ -1144,10 +1144,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       await this.checkTankLoginV3(submittedBy);
     }
 
-    this.appendLog(
-      "info",
-      `${submittedBy}님이 주소 수집을 시작합니다 (프리셋: ${dto.preset}).`,
-    );
+    this.appendLog("info", `${submittedBy}님이 주소 수집을 시작합니다.`);
 
     let searchConfig: CollectUrlsDto["search"];
     if (version === "v3") {
@@ -1248,15 +1245,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         `당일 5시 이전 제외 ${beforeResultTime}건 (낙찰 결과 미반영 시간대)`,
       );
     }
-    if (excluded > 0) {
-      this.appendLog(
-        "info",
-        `DB 중복 ${excluded}건 제외 (입찰기일 미도래)`,
-      );
-    }
-    if (deduped > 0) {
-      this.appendLog("info", `수집 목록 내 중복 ${deduped}건 제외`);
-    }
+    // 중복 제외 건수는 아래 최종 요약 로그("탱크 N건 → 작업목록 N건 ...")에
+    // 함께 표시되므로 여기서 별도로 반복하지 않는다(로그 중복 방지).
 
     let finalUrls = urls;
     let mergeDeduped = 0;
@@ -1272,10 +1262,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
+    const excludedParts: string[] = [];
+    if (excluded > 0) excludedParts.push(`DB중복·입찰기일 미도래 ${excluded}건`);
+    if (deduped > 0) excludedParts.push(`목록 내 중복 ${deduped}건`);
     this.appendLog(
       "info",
       `탱크 ${rawUrls.length}건 → 작업목록 ${finalUrls.length}건` +
-        (excluded > 0 ? ` (DB중복·입찰기일 미도래 ${excluded}건 제외)` : ""),
+        (excludedParts.length > 0 ? ` (${excludedParts.join(", ")} 제외)` : ""),
     );
 
     this.localStatus.urls = finalUrls;
@@ -1726,15 +1719,16 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       schedule.presets && schedule.presets.length > 0
         ? schedule.presets
         : [schedule.preset];
-    const repeatLabel = schedule.repeatDaily ? "매일" : "1회";
 
     // appendLog가 이 로그부터 scheduler=true로 남기도록, 실행 로직보다
     // 먼저 스케줄러 실행 중 플래그를 세운다 — "예약 작업 시작" 로그도
     // 매일 작업 실행 로그 패널에 반드시 포함되어야 한다.
     this.schedulerRunning = true;
+    // 관심조건 목록은 각 항목이 [관심조건] 로그로 곧이어 나오므로 여기서는
+    // 시작 시각만 짧게 남긴다(장황한 나열 방지).
     this.appendLog(
       "info",
-      `예약 작업 시작 (${repeatLabel} ${schedule.time}, 관심조건 ${presetList.length}건: ${presetList.join(", ")})`,
+      `예약 작업 시작 ${now.year}.${String(now.month).padStart(2, "0")}.${String(now.date).padStart(2, "0")} ${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`,
     );
 
     // 매일 예약 작업은 항상 v3(HTTPX, 브라우저 없음·서버 자체 실행)로 돈다.
