@@ -1067,7 +1067,6 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   // 추가 버튼을 활성화하는 게이트로 쓴다.
   async checkTankLoginV3(submittedBy: string) {
     await this.ensureWorker();
-    this.appendLog("info", `${submittedBy}님이 탱크옥션 로그인을 확인합니다.`);
     try {
       await this.workerFetch<{ ok: boolean }>("/tank-login-check", {
         method: "POST",
@@ -1830,19 +1829,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         }
       }
 
-      const finishedAt = nowPartsInKst();
-      const hourLabel =
-        finishedAt.hour === 0
-          ? "0시"
-          : finishedAt.hour < 12
-            ? `오전 ${finishedAt.hour}시`
-            : finishedAt.hour === 12
-              ? "오후 12시"
-              : `오후 ${finishedAt.hour - 12}시`;
-      this.appendLog(
-        "info",
-        `${finishedAt.year}.${String(finishedAt.month).padStart(2, "0")}.${String(finishedAt.date).padStart(2, "0")} ${hourLabel} 작업이 완료되었습니다.`,
-      );
+      this.appendLog("info", "작업 완료");
 
       if (!schedule.repeatDaily) {
         this.updateConfig({
