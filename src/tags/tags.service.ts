@@ -6,7 +6,12 @@ import { StrategyRule } from "./strategy-rule.entity";
 import { StrategyLabel } from "./strategy-label.entity";
 import { Auction } from "../auctions/auction.entity";
 import { RuleEngineService } from "./rule-engine.service";
-import { RULE_FIELD_MAP, RULE_OPERATORS, RULE_VALUE_OPTIONS_FIELDS } from "./rule-field-registry";
+import {
+  RULE_FIELD_MAP,
+  RULE_OPERATORS,
+  RULE_VALUE_OPTIONS_FIELDS,
+  SPECIAL_NOTE_KEYWORD_OPTIONS,
+} from "./rule-field-registry";
 
 export interface TagRuleInput {
   tagName: string;
@@ -426,6 +431,11 @@ export class TagsService implements OnModuleInit {
         .orderBy("a.usage", "ASC")
         .getRawMany<{ usage: string }>();
       return rows.map((r) => r.usage).filter(Boolean);
+    }
+    if (fieldKey === "special_note") {
+      // 특이사항은 물건마다 자유 문장이라 DISTINCT 조회로는 드롭박스를 만들 수
+      // 없다 — 크롤러 화면의 "특수조건" 체크박스 라벨을 그대로 재사용한다.
+      return SPECIAL_NOTE_KEYWORD_OPTIONS;
     }
     return [];
   }
