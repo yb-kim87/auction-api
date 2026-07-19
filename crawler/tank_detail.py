@@ -412,7 +412,24 @@ def parse_base_info_fields(detail: dict | None) -> dict:
     if usage:
         out["usage"] = usage
 
+    court = _make_court_label(base)
+    if court:
+        out["court"] = court
+
     return out
+
+
+def _make_court_label(base: dict) -> str:
+    """AuctView baseInfo.caNm(법원명)+csNm(지원 표기)+dptNm(담당계) → "OO지방법원 OO계"
+    형태의 사람이 읽는 담당법원 표시. 사건번호(2025타경12336 등)는 법원마다
+    독립적으로 채번되어 서로 다른 법원의 사건이 같은 번호를 쓸 수 있으므로,
+    이 값을 사건번호와 함께 물건 식별에 반드시 같이 써야 한다."""
+    ca_nm = _pick_str(base, "caNm", "ca_nm")
+    dpt_nm = _pick_str(base, "dptNm", "dpt_nm")
+    if not ca_nm and not dpt_nm:
+        return ""
+    parts = [p for p in (ca_nm, dpt_nm) if p]
+    return " ".join(parts)
 
 
 def merge_tank_fields(*sources: dict | None) -> dict:

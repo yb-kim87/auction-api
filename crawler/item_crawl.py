@@ -819,6 +819,7 @@ def _collect_tank_page_fields(
 
     return {
         "auction_no": auction_no,
+        "court": tank_fields.get("court") or "",
         "address": address,
         "views": views,
         "top_text": top_text,
@@ -1078,6 +1079,7 @@ def crawl_item(driver, raw_entry: str, should_stop: ShouldStop = None) -> dict:
         "link": auc_link,
         "views": _safe_int(tank_snapshot["views"]) or 0,
         "auctionNo": tank_snapshot["auction_no"],
+        "court": tank_snapshot.get("court") or "",
         "address": tank_snapshot["address"],
         "totalUnits": tank_snapshot["total_units"],
         "usage": usage,

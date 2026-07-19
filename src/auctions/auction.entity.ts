@@ -39,6 +39,15 @@ export class Auction {
   @Column({ default: "" })
   auctionNo!: string;
 
+  /** 담당 법원+계(예: "수원지방법원 9계"). 사건번호는 법원마다 독립적으로
+   * 채번되어 서로 다른 법원의 사건이 같은 번호를 쓸 수 있으므로,
+   * auctionNoNorm(물건 식별 고유 키)을 만들 때 사건번호와 함께 반드시
+   * 같이 써야 한다 — 안 그러면 서로 다른 물건이 같은 물건으로 취급되어
+   * 덮어써지는 사고가 난다(실측: "2025타경12336"이 서울북부2계·서울남부4계·
+   * 천안7계에 각각 별개로 존재, 2026-07-19). */
+  @Column({ default: "" })
+  court!: string;
+
   @Index({ unique: true })
   @Column({ type: "text", nullable: true })
   auctionNoNorm!: string | null;

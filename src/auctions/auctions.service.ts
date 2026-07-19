@@ -279,7 +279,16 @@ export class AuctionsService implements OnModuleInit {
     return item;
   }
 
-  private async findByNormalizedAuctionNo(norm: string) {
+  /** court(법원+계)를 포함한 고유 키로 우선 조회한다. court 정보가 아직 없는
+   * 크롤링 결과(v1/v2 일부 경로 등)나, court 도입 이전에 저장된 레거시
+   * 물건과 이어 붙이기 위해 사건번호만으로도 재시도한다 — 단, 사건번호가
+   * 같은 물건이 법원별로 여러 건(다른 court) 존재하면 어느 것이 맞는지
+   * 알 수 없으므로, 후보가 정확히 1건일 때만 채택한다(잘못된 병합 방지). */
+  private async findByNormalizedAuctionNo(
+    norm: string,
+    rawAuctionNo?: string,
+    court?: string,
+  ) {
     const byNorm = await this.auctionRepo.findOne({
       where: { auctionNoNorm: norm },
     });
@@ -288,10 +297,25 @@ export class AuctionsService implements OnModuleInit {
     const legacyRows = await this.auctionRepo.find({
       where: { auctionNoNorm: IsNull() },
     });
-    return (
-      legacyRows.find((row) => normalizeAuctionNo(row.auctionNo) === norm) ??
-      null
+    const legacyMatch = legacyRows.find(
+      (row) => normalizeAuctionNo(row.auctionNo) === norm,
     );
+    if (legacyMatch) return legacyMatch;
+
+    // court가 있는 새 크롤링 결과인데 court 포함 키로 못 찾은 경우 —
+    // court 없이 저장된 기존 물건과 이어 붙일 수 있는지 사건번호만으로
+    // 한 번 더 확인한다(후보가 유일할 때만).
+    if (court && rawAuctionNo) {
+      const bareNorm = normalizeAuctionNo(rawAuctionNo);
+      if (bareNorm && bareNorm !== norm) {
+        const candidates = await this.auctionRepo.find({
+          where: { auctionNoNorm: bareNorm },
+        });
+        if (candidates.length === 1) return candidates[0];
+      }
+    }
+
+    return null;
   }
 
   private async applyUpdate(
@@ -362,8 +386,11 @@ export class AuctionsService implements OnModuleInit {
     dto: UpdateAuctionDto | Partial<AuctionRow>,
     meta: WriteMeta,
   ): Promise<{ item: Auction; created: boolean; unchanged?: boolean }> {
-    const norm = normalizeAuctionNo(dto.auctionNo ?? "");
-    const existing = norm ? await this.findByNormalizedAuctionNo(norm) : null;
+    const court = "court" in dto ? (dto.court ?? "") : "";
+    const norm = normalizeAuctionNo(dto.auctionNo ?? "", court);
+    const existing = norm
+      ? await this.findByNormalizedAuctionNo(norm, dto.auctionNo ?? "", court)
+      : null;
 
     if (existing) {
       const before = this.cloneAuctionState(existing);

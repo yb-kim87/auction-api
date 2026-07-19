@@ -147,6 +147,7 @@ def parse_detail_page(detail_response: dict, env_payload: dict | None = None) ->
         "link": link,
         "views": int(base.get("hit") or 0),
         "auctionNo": auction_no,
+        "court": tank_fields.get("court") or "",
         "address": address,
         "totalUnits": total_units,
         "usage": usage,

@@ -3,6 +3,10 @@ export type UpdateAuctionDto = {
   link: string;
   views: number;
   auctionNo: string;
+  /** 담당 법원+계(예: "수원지방법원 9계"). 사건번호가 법원마다 독립적으로
+   * 채번되어 겹칠 수 있어, 물건 식별 고유 키를 만들 때 사건번호와 함께
+   * 반드시 같이 쓴다(auction-no.util.ts normalizeAuctionNo 참고). */
+  court?: string;
   address: string;
   totalUnits: number;
   usage: string;

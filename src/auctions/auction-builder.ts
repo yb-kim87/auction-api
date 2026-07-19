@@ -170,6 +170,10 @@ export function mergeAuctionFromSource(
     link: pickStr(source.link, existing.link),
     views: pickNum(source.views, existing.views, false),
     auctionNo: pickStr(source.auctionNo, existing.auctionNo) || existing.auctionNo,
+    court: pickStr(
+      "court" in source ? source.court : undefined,
+      existing.court,
+    ),
     address: cleanAddress(
       pickStr(source.address, existing.address) || existing.address,
     ),
@@ -297,7 +301,11 @@ export function buildAuctionEntity(
     link: parsed.link ?? "",
     views: parsed.views ?? 0,
     auctionNo: parsed.auctionNo ?? "",
-    auctionNoNorm: normalizeAuctionNo(parsed.auctionNo ?? ""),
+    court: ("court" in parsed ? parsed.court : "") ?? "",
+    auctionNoNorm: normalizeAuctionNo(
+      parsed.auctionNo ?? "",
+      "court" in parsed ? parsed.court : "",
+    ),
     address: cleanAddress(parsed.address ?? ""),
     totalUnits: parsed.totalUnits ?? 0,
     usage: parsed.usage ?? "",
