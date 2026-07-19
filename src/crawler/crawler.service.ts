@@ -186,7 +186,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // 어긋날 수 있다. 다음 정각(분 경계)까지 먼저 기다린 뒤 매분 정각에
     // 도는 인터벌을 시작한다.
     const msToNextMinute = 60_000 - (Date.now() % 60_000);
+    this.logger.log(
+      `[onModuleInit] scheduler timer armed, first tick in ${msToNextMinute}ms`,
+    );
     setTimeout(() => {
+      this.logger.log("[onModuleInit] first tick fired, starting 60s interval");
       void this.tickScheduler();
       this.schedulerTimer = setInterval(() => {
         void this.tickScheduler();
@@ -1697,6 +1701,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   private async tickScheduler() {
     this.config = loadCrawlerConfig();
     const schedule = this.config.schedule;
+    // 임시 진단(2026-07-20) — 예약 시간이 됐는데도 스케줄러가 실행되지
+    // 않는 문제를 원인 규명하기 위해 매 tick마다 상태를 콘솔에 남긴다.
+    this.logger.log(
+      `[tickScheduler] tick enabled=${schedule.enabled} jobRunning=${this.jobRunning} schedulerRunning=${this.schedulerRunning} time=${schedule.time} now=${JSON.stringify(nowPartsInKst())}`,
+    );
     if (!schedule.enabled || this.jobRunning || this.schedulerRunning) return;
 
     if (!schedule.repeatDaily && schedule.oneTimeCompleted) return;
