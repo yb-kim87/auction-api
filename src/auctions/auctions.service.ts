@@ -567,20 +567,47 @@ export class AuctionsService implements OnModuleInit {
     const today = new Date(kst.year, kst.month - 1, kst.date);
     const resultAnnounced = kst.hour >= 17;
 
-    return rows
-      .filter((row) => row.auctionNo?.trim() && row.link?.trim())
-      .filter((row) => !isClosedCaseState(row.caseState))
-      .filter((row) => {
-        const parsed = this.parseBidDate(row.bidDate);
-        if (!parsed) return false;
-        const bidDay = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-        if (bidDay.getTime() === today.getTime()) return resultAnnounced;
-        return bidDay.getTime() < today.getTime();
-      })
-      .map((row) => ({
-        auctionNo: row.auctionNo.trim(),
-        link: row.link.trim(),
-      }));
+    // court 필드 도입 전 레거시 레코드(court="")와 court 포함 정규화 이후
+    // 새로 만들어진 레코드가 같은 link를 가진 채 둘 다 남아있는 경우가
+    // 있다(실측: 2025타경33665 / 2025타경33665(9)가 court만 다르고
+    // link·물건은 완전히 동일, 2026-07-20). 레거시 쪽은 caseState가 채워
+    // 지지 않아 종결 판정을 피해가므로, 링크 단위로 먼저 묶어 그룹 중
+    // 하나라도 종결·미래 상태면 그룹 전체를 제외한다.
+    const byLink = new Map<string, typeof rows>();
+    for (const row of rows) {
+      if (!row.auctionNo?.trim() || !row.link?.trim()) continue;
+      const key = row.link.trim();
+      const group = byLink.get(key);
+      if (group) group.push(row);
+      else byLink.set(key, [row]);
+    }
+
+    const isEligibleRow = (row: (typeof rows)[number]) => {
+      if (isClosedCaseState(row.caseState)) return false;
+      const parsed = this.parseBidDate(row.bidDate);
+      if (!parsed) return false;
+      const bidDay = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+      if (bidDay.getTime() === today.getTime()) return resultAnnounced;
+      return bidDay.getTime() < today.getTime();
+    };
+
+    const result: { auctionNo: string; link: string }[] = [];
+    for (const [link, group] of byLink) {
+      // 그룹 안에 종결(caseState 종결) 레코드가 하나라도 있으면, 이 링크의
+      // 물건은 이미 결론이 났다는 뜻이므로 다른 레코드가 caseState 미기재
+      // 상태라도 전체를 제외한다.
+      if (group.some((row) => isClosedCaseState(row.caseState))) continue;
+      // caseState가 채워진 레코드를 우선 대표로 쓰고, 그 값이 재조회 대상
+      // 조건(오늘/과거 입찰기일)을 만족하는 것이 하나라도 있으면 포함한다.
+      const representative =
+        group.find((row) => row.caseState?.trim()) ?? group[0];
+      if (!isEligibleRow(representative)) continue;
+      result.push({
+        auctionNo: representative.auctionNo.trim(),
+        link,
+      });
+    }
+    return result;
   }
 
   async listMissingNaverId(): Promise<{ auctionNo: string; link: string }[]> {

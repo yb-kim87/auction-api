@@ -1554,17 +1554,17 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
           // 이 목록에 오르지 않으므로, 여기 도달했다면 사건이 아직
           // 진행/유찰/변경 등 살아있는 상태라는 뜻이다.
           const state = dto.caseState?.trim() || "";
-          const reasonSuffix =
+          const statusLabel =
             state === "변경"
-              ? " — 매각기일 변경, 다음 기일 재확인"
+              ? "변경물건"
               : state === "유찰"
-                ? " — 유찰 후 다음 매각기일 재확인"
+                ? "유찰(다음 기일 대기)"
                 : state
-                  ? ` — 진행 중(${state}), 결과 확정 전까지 재확인`
-                  : "";
+                  ? `진행중(${state})`
+                  : "변경 없음";
           this.appendLog(
             "info",
-            `${progressPrefix}${label} (변경 없음 — DB에 이미 있음${reasonSuffix})`,
+            `${progressPrefix}${label} (${statusLabel} — DB에 이미 있음)`,
           );
         }
       } else if (!options.mirror) {
