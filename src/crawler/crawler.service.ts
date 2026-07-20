@@ -1745,7 +1745,6 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async tickScheduler() {
-    if (Date.now() < this.schedulerReadyAt) return;
     this.config = loadCrawlerConfig();
     const schedule = this.config.schedule;
     if (!schedule.enabled || this.jobRunning || this.schedulerRunning) return;
@@ -1754,10 +1753,25 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
     const now = nowPartsInKst();
     const [hour, minute] = schedule.time.split(":");
-    if (
-      now.hour !== parseInt(hour ?? "0", 10) ||
-      now.minute !== parseInt(minute ?? "0", 10)
-    ) {
+    const isScheduledMinute =
+      now.hour === parseInt(hour ?? "0", 10) &&
+      now.minute === parseInt(minute ?? "0", 10);
+
+    if (Date.now() < this.schedulerReadyAt) {
+      // 예약 시각이 됐는데도 아무 로그 없이 조용히 건너뛰면, 사용자가
+      // "왜 예약이 안 도는지" 알 방법이 없다 — 재배포 직후 안전장치로
+      // 스킵됐다는 사실을 반드시 로그에 남긴다(사용자 요청, 2026-07-20).
+      if (isScheduledMinute) {
+        const remainSec = Math.ceil((this.schedulerReadyAt - Date.now()) / 1000);
+        this.appendLog(
+          "warn",
+          `[매일작업] 서버가 방금 재시작되어 준비 중입니다 — 약 ${remainSec}초 뒤 다음 정각(분)에 자동으로 실행됩니다. 지금 실행이 건너뛰어진 게 아니라 잠시 지연된 것입니다.`,
+        );
+      }
+      return;
+    }
+
+    if (!isScheduledMinute) {
       return;
     }
 
