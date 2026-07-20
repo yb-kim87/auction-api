@@ -18,7 +18,6 @@ import random
 import httpx
 
 from crawl_abort import check_stop
-from exceptions import RetryableError
 from http_client import fetch_detail, fetch_env_view_data, login, make_client
 from item_validation import validate_crawl_item_reason
 from naver_httpx import extract_naver_prices_httpx
@@ -137,22 +136,15 @@ async def _run_full_httpx_with_state(
                     return
             check_stop(should_stop)
 
-            item: dict | None = None
-            last_exc: Exception | None = None
-            for attempt in range(3):
-                try:
-                    item = await crawl_one_item_full_httpx(client, tid)
-                    break
-                except RetryableError as exc:
-                    last_exc = exc
-                    if attempt < 2:
-                        await asyncio.sleep(random.uniform(1.0, 2.0))
-                except Exception as exc:
-                    last_exc = exc
-                    break
-
-            if item is None:
-                detail = str(last_exc) or type(last_exc).__name__
+            # 재시도(타임아웃/연결오류 시 자동 재시도)를 넣었더니 세마포어
+            # 슬롯을 오래 붙드는 태스크가 생겨, 대량 작업(수백~수천 건)에서
+            # 병렬성이 무너지고 전체가 순차 처리처럼 느려졌다(실측: 969건
+            # 작업에서 물건당 20~40초 소요, 2026-07-20). 재시도 없이 실패
+            # 시 즉시 다음 물건으로 넘어가는 원래 동작으로 되돌린다.
+            try:
+                item = await crawl_one_item_full_httpx(client, tid)
+            except Exception as exc:
+                detail = str(exc) or type(exc).__name__
                 with state.lock:
                     state.completed += 1
                     state.last_message = f"[{state.completed}/{total}] tid={tid} 실패: {detail}"
