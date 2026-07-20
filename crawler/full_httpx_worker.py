@@ -137,6 +137,23 @@ def _naver_miss_note(item: dict) -> str:
     return ""
 
 
+def _case_state_note(api_result: dict) -> str:
+    """(변경 없음)일 때 왜 이 물건이 재조회 대상에 남아 있는지 사유를
+    붙인다. 예전에는 이 사유를 NestJS(import-item 콜백) 쪽에서 로그로
+    남겼지만, 워커 자체 이벤트와 중복돼 콜백 쪽 로그를 억제한 뒤로는
+    사유 없는 "(변경 없음)"만 남아 왜 재조회되는지 알 수 없었다(실측,
+    2026-07-20). post_item_to_api 응답에 실려 오는 item.caseState를
+    읽어 워커 로그에 직접 사유를 붙인다."""
+    case_state = str((api_result.get("item") or {}).get("caseState") or "").strip()
+    if case_state == "변경":
+        return " — 매각기일 변경, 다음 기일 재확인"
+    if case_state == "유찰":
+        return " — 유찰 후 다음 매각기일 재확인"
+    if case_state:
+        return f" — 진행 중({case_state}), 결과 확정 전까지 재확인"
+    return ""
+
+
 async def _run_full_httpx_with_state(
     tids: list[str],
     *,
@@ -191,8 +208,9 @@ async def _run_full_httpx_with_state(
                     if not unchanged:
                         state.updated += 1
                     naver_note = _naver_miss_note(item)
+                    case_note = _case_state_note(api_result) if unchanged else ""
                     state.last_message = (
-                        f"[{state.completed}/{total}] {item.get('auctionNo')} (변경 없음){naver_note}"
+                        f"[{state.completed}/{total}] {item.get('auctionNo')} (변경 없음{case_note}){naver_note}"
                         if unchanged
                         else f"[{state.completed}/{total}] {item.get('auctionNo')} 저장 완료{naver_note}"
                     )

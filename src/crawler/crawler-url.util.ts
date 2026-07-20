@@ -117,21 +117,22 @@ function isNaverDataConfirmedUnavailable(record: LinkExistingRecord): boolean {
 
 /** 네이버 호가·실거래가 아직 비어 있는지.
  *
- * tradingDetail(실거래)은 정상 조회해도 거래 이력이 0건이면 그냥 빈
- * 문자열로 남는다 — "아직 조회 안 함"과 "조회했지만 0건"을 구분하는
- * 별도 사유 문구가 없다(호가는 naver_price_detail에 "면적 조건에 맞는
- * 평형 없음" 같은 확정 문구를 남기는 것과 다름). tradingDetail 하나만
- * 보고 계속 missing 취급하면, 호가는 이미 정상적으로 다 채워진 물건도
- * 실거래 0건이라는 이유만으로 영원히 재조회 대상에 남는다(실측:
- * 2025타경8789가 호가는 가득 찼는데도 계속 재조회 목록에 걸림,
- * 2026-07-20). priceDetail이 정상적으로 채워졌다면(호가 조회 성공) 그
- * 자체로 이 물건에 대한 네이버 조회가 이미 완료됐다는 뜻이므로,
- * tradingDetail이 비어 있어도 더 이상 missing으로 보지 않는다. */
+ * 호가(priceDetail)와 실거래(tradingDetail)는 완전히 독립된 데이터라
+ * 어느 한쪽만 있고 다른 쪽은 0건일 수 있다 — 둘 다 정상 조회했어도
+ * "그중 하나가 원래 없음"과 "아직 조회 자체를 안 함"을 구분하는 사유
+ * 문구가 없는 건 실거래 쪽만 마찬가지다(호가는 naver_price_detail에
+ * "면적 조건에 맞는 평형 없음" 같은 확정 문구를 남김). 한쪽만 보고
+ * missing을 판정하면, 반대쪽만 채워진 물건이 계속 재조회 대상에
+ * 남는다(실측: 2025타경8789는 호가만 있고 실거래가 비어 있는데
+ * 재조회 목록에 남았고, 2025타경11960/3932/3988은 반대로 실거래만
+ * 있고 호가가 비어 있는데도 재조회 목록에 남음, 2026-07-20). 둘 중
+ * 하나라도 유의미하게 채워졌으면 missing으로 보지 않는다. */
 export function isNaverDataMissing(record: LinkExistingRecord): boolean {
   if (!isNaverCollectTarget(record)) return false;
   if (isNaverDataConfirmedUnavailable(record)) return false;
-  if (record.naverPrice !== 0 && record.priceDetail.trim()) return false;
-  return true;
+  const hasPrice = record.naverPrice !== 0 && Boolean(record.priceDetail.trim());
+  const hasTrading = Boolean(record.tradingDetail.trim());
+  return !hasPrice && !hasTrading;
 }
 
 function collectEntryKey(url: string): string {
