@@ -197,17 +197,26 @@ export class VatController {
     return res.json();
   }
 
-  /** PNU(19자리 고유번호) 기준 건축물대장 표제부 조회 — 건물 면적(연면적)·
-   * 신축연도(사용승인일)·구조·주용도를 자동으로 채우는 데 쓴다. PNU는
-   * VWorld 주소 변환 응답의 structure.level4LC 필드에서 얻는다. 공공
-   * 데이터포털 "건축물대장정보 서비스(建築HUB)" API를 그대로 프록시한다
-   * (실측 확인, 2026-07-21) — platGbCd(대지/산 여부)가 PNU의 11번째
-   * 자리와 항상 일치하지는 않아 0(대지)을 먼저 시도하고 결과가 없으면
-   * 1(산)로 재시도한다. */
+  /** PNU(19자리 고유번호) 기준 건축물대장 조회 — 건물 면적·신축연도·구조·
+   * 주용도를 자동으로 채우는 데 쓴다. PNU는 VWorld 주소 변환 응답의
+   * structure.level4LC 필드에서 얻는다.
+   *
+   * 표제부(getBrTitleInfo)는 집합건물(아파트 단지 등) 전체 필지의 모든
+   * 동·부속건축물(경비실/관리동/지하주차장 등)을 뒤섞어 반환하고, 순서도
+   * 보장되지 않는다 — 그냥 items[0]을 쓰면 엉뚱한 동(경비실 등)이 걸릴
+   * 수 있다(실측: 이 문제로 건물 면적이 7.29㎡(경비실)로 잘못 채워짐,
+   * 2026-07-21). 동/호가 주어지면 전유부(getBrExposPubuseAreaInfo)로
+   * 정확히 그 세대의 전유(exposPubuseGbCd=1) + 공용(=2) 면적 합을
+   * 구한다 — 원본 사이트(atomtax-app)의 "전유+공용 자동 합산" 결과와
+   * 실측 대조로 정확히 일치함을 확인(166.82㎡ = 전유 105.14 + 공용
+   * 61.68). 동/호가 없으면(단독주택 등) 표제부의 총 연면적(totArea)을
+   * 그대로 쓴다. */
   @Get("building-register")
   async buildingRegister(
     @Headers() headers: Record<string, string>,
     @Query("pnu") pnu: string,
+    @Query("dong") dong?: string,
+    @Query("ho") ho?: string,
   ) {
     requireAdmin(getAuthContext(headers));
     if (!pnu || pnu.trim().length !== 19) {
@@ -226,45 +235,177 @@ export class VatController {
       );
     }
 
-    const fetchOnce = async (platGbCd: "0" | "1") => {
-      const url = new URL(
-        "https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo",
+    if (dong?.trim() && ho?.trim()) {
+      const exposed = await this.fetchExposedArea(
+        key,
+        { sigunguCd, bjdongCd, bun, ji },
+        dong.trim(),
+        ho.trim(),
       );
-      url.searchParams.set("sigunguCd", sigunguCd);
-      url.searchParams.set("bjdongCd", bjdongCd);
-      url.searchParams.set("platGbCd", platGbCd);
-      url.searchParams.set("bun", bun);
-      url.searchParams.set("ji", ji);
-      url.searchParams.set("serviceKey", key);
-      url.searchParams.set("numOfRows", "10");
-      url.searchParams.set("pageNo", "1");
-      url.searchParams.set("_type", "json");
+      if (exposed) {
+        // 전유부 API에는 사용승인일(신축연도)이 없다 — 표제부에서 동
+        // 이름이 일치하는 항목을 찾아 보강한다(항상 성공하지 않아도
+        // 면적은 이미 정확하므로 실패해도 무시).
+        const titleUseAprDay = await this.findUseAprDayByDong(
+          key,
+          { sigunguCd, bjdongCd, bun, ji },
+          dong.trim(),
+        );
+        return { ...exposed, useAprDay: titleUseAprDay ?? exposed.useAprDay };
+      }
+      // 동/호로 못 찾으면 표제부로 폴백(사람이 오타를 냈거나 API 표기
+      // 형식이 다를 수 있음).
+    }
 
-      const res = await fetchExternal(
-        this.logger,
-        "건축물대장 조회",
-        url.toString(),
-      );
-      if (!res.ok) return null;
-      const data = (await res.json()) as {
-        response?: {
-          body?: { items?: { item?: unknown[] } | "" };
-        };
-      };
-      const items = data.response?.body?.items;
-      const item =
-        items && typeof items === "object" && Array.isArray(items.item)
-          ? items.item[0]
-          : null;
-      return item ?? null;
-    };
-
-    const item = (await fetchOnce("0")) ?? (await fetchOnce("1"));
+    const item =
+      (await this.fetchTitleInfo(key, { sigunguCd, bjdongCd, bun, ji }, "0")) ??
+      (await this.fetchTitleInfo(key, { sigunguCd, bjdongCd, bun, ji }, "1"));
     if (!item) {
       throw new ServiceUnavailableException(
         "이 위치의 건축물대장 정보를 찾지 못했습니다.",
       );
     }
     return item;
+  }
+
+  private async fetchExposedArea(
+    key: string,
+    params: { sigunguCd: string; bjdongCd: string; bun: string; ji: string },
+    dong: string,
+    ho: string,
+  ): Promise<{
+    totArea: number;
+    useAprDay?: string;
+    strctCdNm?: string;
+    mainPurpsCdNm?: string;
+  } | null> {
+    const dongNm = dong.endsWith("동") ? dong : `${dong}동`;
+    const hoNm = ho.endsWith("호") ? ho : `${ho}호`;
+
+    const fetchOnce = async (platGbCd: "0" | "1") => {
+      const url = new URL(
+        "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo",
+      );
+      url.searchParams.set("sigunguCd", params.sigunguCd);
+      url.searchParams.set("bjdongCd", params.bjdongCd);
+      url.searchParams.set("platGbCd", platGbCd);
+      url.searchParams.set("bun", params.bun);
+      url.searchParams.set("ji", params.ji);
+      url.searchParams.set("dongNm", dongNm);
+      url.searchParams.set("hoNm", hoNm);
+      url.searchParams.set("serviceKey", key);
+      url.searchParams.set("numOfRows", "50");
+      url.searchParams.set("pageNo", "1");
+      url.searchParams.set("_type", "json");
+
+      const res = await fetchExternal(
+        this.logger,
+        "건축물대장(전유부) 조회",
+        url.toString(),
+      );
+      if (!res.ok) return [];
+      const data = (await res.json()) as {
+        response?: { body?: { items?: { item?: Record<string, unknown>[] } | "" } };
+      };
+      const items = data.response?.body?.items;
+      return items && typeof items === "object" && Array.isArray(items.item)
+        ? items.item
+        : [];
+    };
+
+    const rows = [...(await fetchOnce("0")), ...(await fetchOnce("1"))];
+    if (rows.length === 0) return null;
+
+    const sum = (gb: string) =>
+      rows
+        .filter((r) => String(r.exposPubuseGbCd) === gb)
+        .reduce((acc, r) => acc + (Number(r.area) || 0), 0);
+    const totArea = Math.round((sum("1") + sum("2")) * 100) / 100;
+    const first = rows[0];
+    return {
+      totArea,
+      // 전유부 API에는 사용승인일(신축연도) 필드가 없다 — 호출부에서
+      // 표제부 조회로 보강한다.
+      useAprDay: undefined,
+      strctCdNm: typeof first.strctCdNm === "string" ? first.strctCdNm : undefined,
+      mainPurpsCdNm:
+        typeof first.mainPurpsCdNm === "string" ? first.mainPurpsCdNm : undefined,
+    };
+  }
+
+  /** 표제부 목록에서 동 이름이 일치하는 항목의 사용승인일을 찾는다.
+   * dongNm 쿼리 파라미터로 필터링되지 않는(실측: 여전히 전체 목록이
+   * 반환됨, 2026-07-21) API 특성상 응답을 순회해 직접 매칭한다. */
+  private async findUseAprDayByDong(
+    key: string,
+    params: { sigunguCd: string; bjdongCd: string; bun: string; ji: string },
+    dong: string,
+  ): Promise<string | undefined> {
+    const dongNm = dong.endsWith("동") ? dong : `${dong}동`;
+    const rows = await this.fetchTitleInfoList(key, params, "0");
+    const match = rows.find((r) => r.dongNm === dongNm);
+    return typeof match?.useAprDay === "string" && match.useAprDay.trim()
+      ? match.useAprDay
+      : undefined;
+  }
+
+  private async fetchTitleInfoList(
+    key: string,
+    params: { sigunguCd: string; bjdongCd: string; bun: string; ji: string },
+    platGbCd: "0" | "1",
+  ): Promise<Record<string, unknown>[]> {
+    const url = new URL(
+      "https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo",
+    );
+    url.searchParams.set("sigunguCd", params.sigunguCd);
+    url.searchParams.set("bjdongCd", params.bjdongCd);
+    url.searchParams.set("platGbCd", platGbCd);
+    url.searchParams.set("bun", params.bun);
+    url.searchParams.set("ji", params.ji);
+    url.searchParams.set("serviceKey", key);
+    url.searchParams.set("numOfRows", "50");
+    url.searchParams.set("pageNo", "1");
+    url.searchParams.set("_type", "json");
+
+    const res = await fetchExternal(this.logger, "건축물대장 목록 조회", url.toString());
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      response?: { body?: { items?: { item?: Record<string, unknown>[] } | "" } };
+    };
+    const items = data.response?.body?.items;
+    return items && typeof items === "object" && Array.isArray(items.item)
+      ? items.item
+      : [];
+  }
+
+  private async fetchTitleInfo(
+    key: string,
+    params: { sigunguCd: string; bjdongCd: string; bun: string; ji: string },
+    platGbCd: "0" | "1",
+  ): Promise<Record<string, unknown> | null> {
+    const url = new URL(
+      "https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo",
+    );
+    url.searchParams.set("sigunguCd", params.sigunguCd);
+    url.searchParams.set("bjdongCd", params.bjdongCd);
+    url.searchParams.set("platGbCd", platGbCd);
+    url.searchParams.set("bun", params.bun);
+    url.searchParams.set("ji", params.ji);
+    url.searchParams.set("serviceKey", key);
+    url.searchParams.set("numOfRows", "10");
+    url.searchParams.set("pageNo", "1");
+    url.searchParams.set("_type", "json");
+
+    const res = await fetchExternal(this.logger, "건축물대장 조회", url.toString());
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      response?: { body?: { items?: { item?: Record<string, unknown>[] } | "" } };
+    };
+    const items = data.response?.body?.items;
+    const item =
+      items && typeof items === "object" && Array.isArray(items.item)
+        ? items.item[0]
+        : null;
+    return item ?? null;
   }
 }
