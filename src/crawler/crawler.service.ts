@@ -797,13 +797,23 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         signal: abortTimeoutSignal(this.jobRunning ? 2500 : 5000),
       });
       if (remote.events?.length) {
-        // 물건별 처리 결과(저장 완료/변경 없음)는 /crawler/import-item
-        // 콜백 쪽(importItem)에서 이미 appendLog로 기록된다. 여기서
-        // 워커의 진행률 이벤트까지 그대로 복사하면 같은 물건이 두 줄로
-        // 찍힌다(실측, 2026-07-20) — 콜백에 없는 실패 이벤트만 반영한다.
+        // 물건 하나당 결과("저장 완료"/"(변경 없음)"/"저장 스킵")는
+        // /crawler/import-item 콜백 쪽(importItem)에서 이미 appendLog로
+        // 기록되므로, 여기서 워커 이벤트로 또 찍으면 같은 물건이 두 줄로
+        // 나온다(실측, 2026-07-20). 그런데 "조회 완료 (N/N)" 같은 작업
+        // 전체 요약 메시지는 이 워커 이벤트가 유일한 경로라 — 이전에
+        // 실패 메시지만 통과시키도록 막았더니 완료 로그 자체가 통째로
+        // 사라졌다(실측: 작업창에서 1건 조회해도 완료 로그 없음,
+        // 2026-07-20). "물건 하나당 결과" 패턴만 걸러내고 나머지(완료
+        // 요약, 실패 등)는 그대로 통과시킨다.
+        const isPerItemResultLog = (message: string) =>
+          /저장 완료|\(변경 없음|저장 스킵/.test(message);
         for (const message of remote.events) {
-          if (!message.includes("실패")) continue;
-          this.appendLog("error", message);
+          if (isPerItemResultLog(message)) continue;
+          this.appendLog(
+            message.includes("실패") ? "error" : "info",
+            message,
+          );
         }
       }
       this.mergeWorkerStatus(remote);
