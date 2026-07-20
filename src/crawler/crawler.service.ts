@@ -133,6 +133,9 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   /** 같은 1분(tick) 안에서의 스케줄러 재진입만 막는 용도(하루 1회 제한
    * 아님) — 재배포로 초기화돼도 문제없다. */
   private lastTickKey = "";
+  /** 이 시각 전에는 tickScheduler를 실행하지 않는다(부팅 직후 안전장치,
+   * onModuleInit에서 세팅). */
+  private schedulerReadyAt = 0;
   /** importItem 콜백 로그에 "[N/전체]" 순번을 붙이기 위한 전용 카운터.
    * localStatus.completed는 워커 폴링이 주기적으로 덮어써 순번 표시에
    * 쓸 수 없다. */
@@ -185,6 +188,14 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     this.config = await initCrawlerConfigStore(this.configRepo);
     this.applyScheduleToStatus();
     this.migrateLegacyPresetsToSavedSearches();
+
+    // 재배포 직후 신구 인스턴스가 잠시 겹치거나 DB 커넥션 풀이 완전히
+    // 자리잡기 전에 스케줄러가 도는 것을 막는다(실측: 서버 재기동
+    // 11초 뒤 첫 tick에서 caseState·매각기일 필터가 최신 값을 반영하지
+    // 못한 목록으로 재조회가 실행됨, 2026-07-20). 부팅 후 최소
+    // READY_DELAY_MS가 지나기 전에는 tick을 실행하지 않는다.
+    const READY_DELAY_MS = 30_000;
+    this.schedulerReadyAt = Date.now() + READY_DELAY_MS;
 
     // setInterval(60_000)을 서버 기동 시각 기준으로 바로 시작하면, 이후
     // 모든 tick이 항상 "기동 시각의 초"에 걸린다(예: 서버가 X시Y분42초에
@@ -1734,6 +1745,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async tickScheduler() {
+    if (Date.now() < this.schedulerReadyAt) return;
     this.config = loadCrawlerConfig();
     const schedule = this.config.schedule;
     if (!schedule.enabled || this.jobRunning || this.schedulerRunning) return;
