@@ -1535,15 +1535,25 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         }
       } else if ((result as { unchanged?: boolean }).unchanged) {
         if (!options.mirror) {
-          // caseState가 "변경"인 물건은 종결 처리하지 않고 다음 매각기일이
-          // 잡힐 때까지 계속 재조회 대상에 남는다(의도된 동작) — 다른
-          // "변경 없음" 물건과 같은 문구면 왜 계속 도는지 헷갈리므로
-          // 구분해 표시한다(사용자 요청, 2026-07-20).
+          // "변경 없음"이라는 문구만으로는 취하·매각처럼 종결된 물건이 왜
+          // 다시 재조회 목록에 걸렸는지 알 수 없다는 피드백 — caseState
+          // 기준으로 "아직 결론이 안 난 사건이라 다음 매각기일까지 계속
+          // 재확인한다"는 이유를 함께 남긴다(사용자 요청, 2026-07-20).
+          // 종결 상태(취하/매각/허가 등)는 CLOSED_CASE_STATES에 의해 애초에
+          // 이 목록에 오르지 않으므로, 여기 도달했다면 사건이 아직
+          // 진행/유찰/변경 등 살아있는 상태라는 뜻이다.
+          const state = dto.caseState?.trim() || "";
+          const reasonSuffix =
+            state === "변경"
+              ? " — 매각기일 변경, 다음 기일 재확인"
+              : state === "유찰"
+                ? " — 유찰 후 다음 매각기일 재확인"
+                : state
+                  ? ` — 진행 중(${state}), 결과 확정 전까지 재확인`
+                  : "";
           this.appendLog(
             "info",
-            dto.caseState?.trim() === "변경"
-              ? `${progressPrefix}${label} (변경 물건 — 재조회 확인)`
-              : `${progressPrefix}${label} (변경 없음 — DB에 이미 있음)`,
+            `${progressPrefix}${label} (변경 없음 — DB에 이미 있음${reasonSuffix})`,
           );
         }
       } else if (!options.mirror) {
