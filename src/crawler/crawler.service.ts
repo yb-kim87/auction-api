@@ -797,19 +797,17 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         signal: abortTimeoutSignal(this.jobRunning ? 2500 : 5000),
       });
       if (remote.events?.length) {
-        // 물건 하나당 결과("저장 완료"/"(변경 없음)"/"저장 스킵")는
-        // /crawler/import-item 콜백 쪽(importItem)에서 이미 appendLog로
-        // 기록되므로, 여기서 워커 이벤트로 또 찍으면 같은 물건이 두 줄로
-        // 나온다(실측, 2026-07-20). 그런데 "조회 완료 (N/N)" 같은 작업
-        // 전체 요약 메시지는 이 워커 이벤트가 유일한 경로라 — 이전에
-        // 실패 메시지만 통과시키도록 막았더니 완료 로그 자체가 통째로
-        // 사라졌다(실측: 작업창에서 1건 조회해도 완료 로그 없음,
-        // 2026-07-20). "물건 하나당 결과" 패턴만 걸러내고 나머지(완료
-        // 요약, 실패 등)는 그대로 통과시킨다.
-        const isPerItemResultLog = (message: string) =>
-          /저장 완료|\(변경 없음|저장 스킵/.test(message);
+        // 워커(v1 Selenium이든 v3 HTTPX든)가 남기는 이벤트는 "조회 완료
+        // (N/N)" 같은 작업 전체 요약뿐 아니라, 물건 하나당 결과("저장
+        // 완료"/"(변경 없음)"/"저장 스킵")의 유일한 표시 경로이기도 하다.
+        // 한때 이 물건별 결과를 /crawler/import-item 콜백(importItem)이
+        // 중복으로 다시 찍는다고 보고 여기서 걸러냈지만, 실제로는 콜백이
+        // mirror 여부에 따라 로그를 안 남기는 경우가 있어 물건별 로그
+        // 자체가 통째로 사라지는 회귀가 있었다(실측: 작업창에서 5건
+        // 조회했는데 완료 요약만 남고 개별 물건 로그가 하나도 안 보임,
+        // 2026-07-20). 중복 방지는 importItem 콜백 쪽에서 하도록 하고,
+        // 여기서는 워커 이벤트를 그대로 통과시킨다.
         for (const message of remote.events) {
-          if (isPerItemResultLog(message)) continue;
           this.appendLog(
             message.includes("실패") ? "error" : "info",
             message,
@@ -1555,7 +1553,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
           this.appendLog("warn", `${progressPrefix}저장 스킵 (${detail}): ${label}`);
         }
       } else if ((result as { unchanged?: boolean }).unchanged) {
-        if (!options.mirror) {
+        // 워커(v1/v3 공통)가 보낸 콜백은 자체 이벤트("(변경 없음)" 등)로
+        // 이미 진행 로그를 남기므로, 여기서 또 찍으면 같은 물건이 두 줄로
+        // 나온다(실측, 2026-07-20). 워커를 거치지 않은 제출(관리자 수동
+        // 엑셀 업로드 등)만 여기서 로그를 남긴다.
+        const fromCrawlerWorker =
+          submittedBy === "crawler" || submittedBy.startsWith("crawler-");
+        if (!options.mirror && !fromCrawlerWorker) {
           // "변경 없음"이라는 문구만으로는 취하·매각처럼 종결된 물건이 왜
           // 다시 재조회 목록에 걸렸는지 알 수 없다는 피드백 — caseState
           // 기준으로 "아직 결론이 안 난 사건이라 다음 매각기일까지 계속
