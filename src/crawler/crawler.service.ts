@@ -1519,7 +1519,16 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         }
       } else if ((result as { unchanged?: boolean }).unchanged) {
         if (!options.mirror) {
-          this.appendLog("info", `${label} (변경 없음 — DB에 이미 있음)`);
+          // caseState가 "변경"인 물건은 종결 처리하지 않고 다음 매각기일이
+          // 잡힐 때까지 계속 재조회 대상에 남는다(의도된 동작) — 다른
+          // "변경 없음" 물건과 같은 문구면 왜 계속 도는지 헷갈리므로
+          // 구분해 표시한다(사용자 요청, 2026-07-20).
+          this.appendLog(
+            "info",
+            dto.caseState?.trim() === "변경"
+              ? `${label} (변경 물건 — 재조회 확인)`
+              : `${label} (변경 없음 — DB에 이미 있음)`,
+          );
         }
       } else if (!options.mirror) {
         this.appendLog("warn", `${label} 저장 스킵 (${reason || "unknown"})`);
