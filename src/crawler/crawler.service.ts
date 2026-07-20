@@ -1711,7 +1711,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const dateKey = `${now.year}-${String(now.month).padStart(2, "0")}-${String(now.date).padStart(2, "0")}`;
+    // 날짜뿐 아니라 실행 시간(time)까지 묶어서 키로 쓴다 — 날짜만 비교하면
+    // 오늘 이미 한 번 실행한 뒤 사용자가 실행 시간을 바꿔 다시 저장해도
+    // "오늘 이미 실행함"으로 걸려 새 시간에 재실행되지 않는 버그가 있었다
+    // (실측: 09:11 실행 후 09:20으로 바꿔 저장했지만 미실행, 2026-07-20).
+    const dateKey = `${now.year}-${String(now.month).padStart(2, "0")}-${String(now.date).padStart(2, "0")}T${schedule.time}`;
     // DB(crawler_config)에 저장된 값을 기준으로 판단 — 인메모리 변수만
     // 쓰면 재배포로 서버가 재시작될 때마다 초기화되어, 같은 시각에 두
     // 번째 재시작이 겹치면 당일 중복 실행 방지가 무력화된다(실측,
