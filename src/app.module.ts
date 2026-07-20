@@ -14,6 +14,7 @@ import { KakaoNotifyModule } from "./kakao-notify/kakao-notify.module";
 import { TagsModule } from "./tags/tags.module";
 import { SecurityLogModule } from "./security-log/security-log.module";
 import { RequestLogMiddleware } from "./security-log/request-log.middleware";
+import { VatModule } from "./vat/vat.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -32,6 +33,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     KakaoNotifyModule,
     TagsModule,
     SecurityLogModule,
+    VatModule,
   ],
 })
 export class AppModule implements NestModule {
