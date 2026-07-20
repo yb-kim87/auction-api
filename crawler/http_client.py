@@ -124,6 +124,8 @@ async def fetch_list_page(
         )
     except httpx.TimeoutException as exc:
         raise RetryableError(f"목록 API 타임아웃: {exc}") from exc
+    except httpx.TransportError as exc:
+        raise RetryableError(f"목록 API 연결 오류: {exc}") from exc
     if resp.status_code >= 400:
         _classify_and_raise(resp, context="목록 API")
     if _looks_like_login_redirect(resp):
@@ -157,6 +159,8 @@ async def fetch_list_page_with_preset(
         resp = await client.get(path, params=params)
     except httpx.TimeoutException as exc:
         raise RetryableError(f"목록(프리셋) API 타임아웃: {exc}") from exc
+    except httpx.TransportError as exc:
+        raise RetryableError(f"목록(프리셋) API 연결 오류: {exc}") from exc
     if resp.status_code >= 400:
         _classify_and_raise(resp, context="목록(프리셋) API")
     if _looks_like_login_redirect(resp):
@@ -175,6 +179,8 @@ async def fetch_detail(client: httpx.AsyncClient, tid: str) -> dict:
         resp = await client.get(DETAIL_PATH, params={"tid": tid})
     except httpx.TimeoutException as exc:
         raise RetryableError(f"상세 API 타임아웃(tid={tid}): {exc}") from exc
+    except httpx.TransportError as exc:
+        raise RetryableError(f"상세 API 연결 오류(tid={tid}): {exc}") from exc
     if resp.status_code >= 400:
         _classify_and_raise(resp, context=f"상세 API(tid={tid})")
     if _looks_like_login_redirect(resp):
@@ -201,6 +207,8 @@ async def fetch_favorite_searches(client: httpx.AsyncClient) -> list[dict]:
         )
     except httpx.TimeoutException as exc:
         raise RetryableError(f"즐겨쓰는 검색 조회 타임아웃: {exc}") from exc
+    except httpx.TransportError as exc:
+        raise RetryableError(f"즐겨쓰는 검색 조회 연결 오류: {exc}") from exc
     if resp.status_code >= 400:
         _classify_and_raise(resp, context="즐겨쓰는 검색 조회")
     if _looks_like_login_redirect(resp):

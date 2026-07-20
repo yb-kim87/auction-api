@@ -130,7 +130,6 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   private readonly maxLogs = 500;
   private localStatus: CrawlerStatus = this.defaultStatus();
   private config: CrawlerConfig = loadCrawlerConfig();
-  private lastScheduledDate = "";
   private schedulerTimer: ReturnType<typeof setInterval> | null = null;
   private jobRunning = false;
 
@@ -1711,8 +1710,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     }
 
     const dateKey = `${now.year}-${String(now.month).padStart(2, "0")}-${String(now.date).padStart(2, "0")}`;
-    if (schedule.repeatDaily && this.lastScheduledDate === dateKey) return;
-    this.lastScheduledDate = dateKey;
+    // DB(crawler_config)에 저장된 값을 기준으로 판단 — 인메모리 변수만
+    // 쓰면 재배포로 서버가 재시작될 때마다 초기화되어, 같은 시각에 두
+    // 번째 재시작이 겹치면 당일 중복 실행 방지가 무력화된다(실측,
+    // 2026-07-20). 저장은 아래에서 즉시 수행해 다음 tick이 곧바로
+    // 참조할 수 있게 한다.
+    if (schedule.repeatDaily && schedule.lastRunDate === dateKey) return;
+    this.updateConfig({ schedule: { ...schedule, lastRunDate: dateKey } });
 
     // presets(배열)가 비어있으면 매일 작업 자체를 실행할 이유가 없다.
     // 예전 단일 preset 필드로의 폴백(["현재"])은 존재하지 않는 프리셋을

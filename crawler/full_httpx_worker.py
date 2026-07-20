@@ -18,6 +18,7 @@ import random
 import httpx
 
 from crawl_abort import check_stop
+from exceptions import RetryableError
 from http_client import fetch_detail, fetch_env_view_data, login, make_client
 from item_validation import validate_crawl_item_reason
 from naver_httpx import extract_naver_prices_httpx
@@ -138,6 +139,16 @@ async def _run_full_httpx_with_state(
 
             try:
                 item = await crawl_one_item_full_httpx(client, tid)
+            except RetryableError:
+                await asyncio.sleep(random.uniform(1.0, 2.0))
+                try:
+                    item = await crawl_one_item_full_httpx(client, tid)
+                except Exception as exc:
+                    with state.lock:
+                        state.completed += 1
+                        state.last_message = f"[{state.completed}/{total}] tid={tid} 실패: {exc}"
+                        state.events.append(state.last_message)
+                    return
             except Exception as exc:
                 with state.lock:
                     state.completed += 1
@@ -154,14 +165,18 @@ async def _run_full_httpx_with_state(
                 return
 
             try:
-                await post_item_to_api(
+                api_result = await post_item_to_api(
                     client, item, callback_url=callback_url, callback_secret=callback_secret
                 )
+                unchanged = bool(api_result.get("skipped") and api_result.get("unchanged"))
                 with state.lock:
                     state.completed += 1
-                    state.updated += 1
+                    if not unchanged:
+                        state.updated += 1
                     state.last_message = (
-                        f"[{state.completed}/{total}] {item.get('auctionNo')} 저장 완료"
+                        f"[{state.completed}/{total}] {item.get('auctionNo')} (변경 없음)"
+                        if unchanged
+                        else f"[{state.completed}/{total}] {item.get('auctionNo')} 저장 완료"
                     )
                     state.events.append(state.last_message)
             except httpx.HTTPError as exc:

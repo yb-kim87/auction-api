@@ -108,6 +108,13 @@ export type CrawlerScheduleConfig = {
   oneTimeCompleted?: boolean;
   /** 자동 스케줄 실행 시 사용할 크롤러 경로. 미지정 시 v1(기존 Selenium, 회귀 없음). */
   crawlerVersion?: CrawlerVersion;
+  /** 오늘(repeatDaily) 예약이 마지막으로 실행된 날짜(YYYY-MM-DD, KST 기준).
+   * 인메모리 변수로만 관리하면 배포·재시작마다 초기화되어, 같은 시각에
+   * 두 번째 재시작이 겹치면 당일 중복 실행 방지가 무력화된다(실측:
+   * 2026-07-20 08:52 실행 도중 재배포로 서버가 재시작되며 08:56에
+   * 같은 관심조건이 한 번 더 실행됨). DB(crawler_config)에 저장해
+   * 재시작에도 유지되도록 한다. */
+  lastRunDate?: string;
 };
 
 export type CrawlerCredentialsConfig = {

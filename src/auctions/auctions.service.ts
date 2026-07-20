@@ -548,6 +548,7 @@ export class AuctionsService implements OnModuleInit {
   private static readonly CLOSED_CASE_STATES = new Set([
     "취하",
     "매각",
+    "허가",
     "기각",
     "각하",
     "취소",
