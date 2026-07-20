@@ -2,10 +2,35 @@ import {
   Controller,
   Get,
   Headers,
+  Logger,
   Query,
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
+
+/** fetch 실패(TypeError, 예: undici 레벨 연결 오류)는 기본적으로 원인
+ * (cause: ECONNREFUSED, DNS 실패, TLS 오류 등)이 로그에 안 찍혀 원인
+ * 파악이 어렵다(실측: Railway에서 VWorld 호출이 "fetch failed"로만
+ * 남고 원인 불명, 2026-07-21) — cause까지 로그에 남기고, 사용자에게도
+ * 외부 API 연결 실패임을 명확히 알린다. */
+async function fetchExternal(
+  logger: Logger,
+  label: string,
+  url: string,
+): Promise<Response> {
+  try {
+    return await fetch(url);
+  } catch (err) {
+    const cause =
+      err instanceof Error
+        ? ((err as { cause?: unknown }).cause ?? err.message)
+        : err;
+    logger.error(`${label} 호출 실패: ${JSON.stringify(cause)}`);
+    throw new ServiceUnavailableException(
+      `${label} 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.`,
+    );
+  }
+}
 
 /** 부가세 계산기(admin CrawlerVatTab)의 "주소 검색 → 토지공시지가 자동조회"
  * 기능이 VWorld(국토교통부 공간정보 오픈플랫폼) API를 호출한다. API 키를
@@ -14,6 +39,8 @@ import { getAuthContext, requireAdmin } from "../common/auth-context";
  * (api.vworld.kr/req/address, req/data)를 사용한다(2026-07-21). */
 @Controller("vat")
 export class VatController {
+  private readonly logger = new Logger(VatController.name);
+
   private get apiKey(): string {
     const key = process.env.VWORLD_API_KEY;
     if (!key) {
@@ -45,7 +72,7 @@ export class VatController {
     url.searchParams.set("format", "json");
     url.searchParams.set("key", this.apiKey);
 
-    const res = await fetch(url.toString());
+    const res = await fetchExternal(this.logger, "VWorld 주소 변환", url.toString());
     if (!res.ok) {
       throw new ServiceUnavailableException("VWorld 주소 변환 요청 실패");
     }
@@ -77,7 +104,7 @@ export class VatController {
     url.searchParams.set("format", "json");
     url.searchParams.set("key", this.apiKey);
 
-    const res = await fetch(url.toString());
+    const res = await fetchExternal(this.logger, "VWorld 공시지가 조회", url.toString());
     if (!res.ok) {
       throw new ServiceUnavailableException("VWorld 공시지가 조회 요청 실패");
     }
@@ -127,7 +154,11 @@ export class VatController {
       url.searchParams.set("pageNo", "1");
       url.searchParams.set("_type", "json");
 
-      const res = await fetch(url.toString());
+      const res = await fetchExternal(
+        this.logger,
+        "건축물대장 조회",
+        url.toString(),
+      );
       if (!res.ok) return null;
       const data = (await res.json()) as {
         response?: {
