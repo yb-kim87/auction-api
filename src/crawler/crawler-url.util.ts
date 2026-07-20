@@ -94,12 +94,20 @@ export function isNaverCollectTarget(record: LinkExistingRecord): boolean {
 }
 
 /** 네이버에서 이 물건과 매칭되는 평형/단지를 찾을 수 없다고 이미 확정된
- * 경우(item_crawl.py가 남기는 문구). 이런 물건은 재조회해도 네이버 쪽
+ * 경우(naver_httpx.py가 남기는 문구). 이런 물건은 재조회해도 네이버 쪽
  * 데이터 자체가 존재하지 않아 매번 똑같이 실패하므로, "아직 못 채움"과
  * 구분해 재시도 대상에서 제외해야 한다(실측: 2025타경1260이 매번 재조회
- * 대상에 걸리던 원인, 2026-07-20). */
+ * 대상에 걸리던 원인, 2026-07-20). "호가·실거래 없음"은 호가와 실거래를
+ * 모두 조회해봤지만 둘 다 없는 경우(2026-07-20 naver_httpx.py 수정 이후
+ * 문구)만 포함한다 — "호가 매물 없음"만 확정됐던 이전 문구는 실거래가
+ * 아예 조회되지 않은 채였을 수 있어 제외 대상에 넣지 않는다. */
+const NAVER_CONFIRMED_UNAVAILABLE_MESSAGES = new Set([
+  "면적 조건에 맞는 평형 없음",
+  "면적 조건에 맞는 호가·실거래 없음",
+]);
+
 function isNaverDataConfirmedUnavailable(record: LinkExistingRecord): boolean {
-  return record.priceDetail.trim() === "면적 조건에 맞는 평형 없음";
+  return NAVER_CONFIRMED_UNAVAILABLE_MESSAGES.has(record.priceDetail.trim());
 }
 
 /** 네이버 호가·실거래가 아직 비어 있는지 */

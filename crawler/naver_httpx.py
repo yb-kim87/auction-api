@@ -354,19 +354,26 @@ def extract_naver_prices_httpx(
     try:
         lowest_price, price_detail = _fetch_articles(session, complex_id, pyeong_numbers, referer)
     except Exception:
-        return empty_naver_result("호가 조회 실패", complex_id=complex_id, matched_area_label=matched_label)
+        lowest_price, price_detail = None, ""
 
-    if lowest_price is None:
-        return empty_naver_result(
-            "면적 조건에 맞는 호가 매물 없음", complex_id=complex_id, matched_area_label=matched_label
-        )
-
+    # 호가(현재 매물)와 실거래(과거 거래 이력)는 서로 독립된 데이터라,
+    # 호가 매물이 없어도 실거래 이력은 있을 수 있다 — 호가가 없으면 바로
+    # 리턴해 실거래 조회 자체를 건너뛰던 버그를 수정한다(실측:
+    # 2024타경58335가 호가/실거래 둘 다 비어 있었는데, 실거래는 시도조차
+    # 되지 않았음, 2026-07-20).
     try:
         transaction_prices, real_trade_count = _fetch_real_price(
             session, complex_id, pyeong_numbers, pyeong_labels, referer
         )
     except Exception:
         transaction_prices, real_trade_count = "", ""
+
+    if lowest_price is None and not transaction_prices:
+        return empty_naver_result(
+            "면적 조건에 맞는 호가·실거래 없음",
+            complex_id=complex_id,
+            matched_area_label=matched_label,
+        )
 
     return empty_naver_result(
         naver_price_detail=price_detail,
