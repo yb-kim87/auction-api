@@ -101,24 +101,37 @@ export function isNaverCollectTarget(record: LinkExistingRecord): boolean {
  * 모두 조회해봤지만 둘 다 없는 경우(2026-07-20 naver_httpx.py 수정 이후
  * 문구)만 포함한다 — "호가 매물 없음"만 확정됐던 이전 문구는 실거래가
  * 아예 조회되지 않은 채였을 수 있어 제외 대상에 넣지 않는다. */
-const NAVER_CONFIRMED_UNAVAILABLE_MESSAGES = new Set([
-  "면적 조건에 맞는 평형 없음",
-  "면적 조건에 맞는 호가·실거래 없음",
-]);
-
+// "네이버 접속 실패"/"호가 조회 실패"는 일시적 네트워크 문제일 수 있어
+// 여기 포함하지 않는다 — 확정 취급하면 진짜 일시 오류도 영영 재시도되지
+// 않는다. "단지ID 없음"/"면적 파싱 실패"/"평형 없음"은 탱크옥션·네이버
+// 원본 데이터 자체의 구조적 문제라 재시도해도 결과가 바뀌지 않는다.
 function isNaverDataConfirmedUnavailable(record: LinkExistingRecord): boolean {
-  return NAVER_CONFIRMED_UNAVAILABLE_MESSAGES.has(record.priceDetail.trim());
+  const detail = record.priceDetail.trim();
+  return (
+    detail === "단지ID 없음" ||
+    detail === "면적 파싱 실패" ||
+    detail === "면적 조건에 맞는 평형 없음" ||
+    detail === "면적 조건에 맞는 호가·실거래 없음"
+  );
 }
 
-/** 네이버 호가·실거래가 아직 비어 있는지 */
+/** 네이버 호가·실거래가 아직 비어 있는지.
+ *
+ * tradingDetail(실거래)은 정상 조회해도 거래 이력이 0건이면 그냥 빈
+ * 문자열로 남는다 — "아직 조회 안 함"과 "조회했지만 0건"을 구분하는
+ * 별도 사유 문구가 없다(호가는 naver_price_detail에 "면적 조건에 맞는
+ * 평형 없음" 같은 확정 문구를 남기는 것과 다름). tradingDetail 하나만
+ * 보고 계속 missing 취급하면, 호가는 이미 정상적으로 다 채워진 물건도
+ * 실거래 0건이라는 이유만으로 영원히 재조회 대상에 남는다(실측:
+ * 2025타경8789가 호가는 가득 찼는데도 계속 재조회 목록에 걸림,
+ * 2026-07-20). priceDetail이 정상적으로 채워졌다면(호가 조회 성공) 그
+ * 자체로 이 물건에 대한 네이버 조회가 이미 완료됐다는 뜻이므로,
+ * tradingDetail이 비어 있어도 더 이상 missing으로 보지 않는다. */
 export function isNaverDataMissing(record: LinkExistingRecord): boolean {
   if (!isNaverCollectTarget(record)) return false;
   if (isNaverDataConfirmedUnavailable(record)) return false;
-  return (
-    record.naverPrice === 0 ||
-    !record.priceDetail.trim() ||
-    !record.tradingDetail.trim()
-  );
+  if (record.naverPrice !== 0 && record.priceDetail.trim()) return false;
+  return true;
 }
 
 function collectEntryKey(url: string): string {
