@@ -779,11 +779,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         signal: abortTimeoutSignal(this.jobRunning ? 2500 : 5000),
       });
       if (remote.events?.length) {
+        // 물건별 처리 결과(저장 완료/변경 없음)는 /crawler/import-item
+        // 콜백 쪽(importItem)에서 이미 appendLog로 기록된다. 여기서
+        // 워커의 진행률 이벤트까지 그대로 복사하면 같은 물건이 두 줄로
+        // 찍힌다(실측, 2026-07-20) — 콜백에 없는 실패 이벤트만 반영한다.
         for (const message of remote.events) {
-          const level: CrawlerLogEntry["level"] = message.includes("오류")
-            ? "error"
-            : "info";
-          this.appendLog(level, message);
+          if (!message.includes("실패")) continue;
+          this.appendLog("error", message);
         }
       }
       this.mergeWorkerStatus(remote);

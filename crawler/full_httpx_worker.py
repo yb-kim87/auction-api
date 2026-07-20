@@ -137,22 +137,25 @@ async def _run_full_httpx_with_state(
                     return
             check_stop(should_stop)
 
-            try:
-                item = await crawl_one_item_full_httpx(client, tid)
-            except RetryableError:
-                await asyncio.sleep(random.uniform(1.0, 2.0))
+            item: dict | None = None
+            last_exc: Exception | None = None
+            for attempt in range(3):
                 try:
                     item = await crawl_one_item_full_httpx(client, tid)
+                    break
+                except RetryableError as exc:
+                    last_exc = exc
+                    if attempt < 2:
+                        await asyncio.sleep(random.uniform(1.0, 2.0))
                 except Exception as exc:
-                    with state.lock:
-                        state.completed += 1
-                        state.last_message = f"[{state.completed}/{total}] tid={tid} 실패: {exc}"
-                        state.events.append(state.last_message)
-                    return
-            except Exception as exc:
+                    last_exc = exc
+                    break
+
+            if item is None:
+                detail = str(last_exc) or type(last_exc).__name__
                 with state.lock:
                     state.completed += 1
-                    state.last_message = f"[{state.completed}/{total}] tid={tid} 실패: {exc}"
+                    state.last_message = f"[{state.completed}/{total}] tid={tid} 실패: {detail}"
                     state.events.append(state.last_message)
                 return
 
