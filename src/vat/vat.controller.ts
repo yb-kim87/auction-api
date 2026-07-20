@@ -51,8 +51,17 @@ export class VatController {
     return key;
   }
 
-  /** 도로명주소 → 지번(PARCEL) 좌표 변환. 카카오 우편번호 팝업에서 도로명
-   * 주소를 선택한 뒤, 이 좌표로 개별공시지가를 조회하기 위한 중간 단계. */
+  /** 도로명주소 → 좌표 → PNU 조회(2단계).
+   *
+   * 카카오 우편번호 팝업이 주는 값은 도로명주소("인천 남동구 구월로 65")
+   * 인데, VWorld getCoord를 type=PARCEL(지번)로 호출하면 도로명주소를
+   * 못 찾아 NOT_FOUND가 난다(실측: "구월로 65"가 PARCEL로는 0건,
+   * ROAD로는 정상 매칭, 2026-07-21) — 그래서 반드시 type=ROAD로 먼저
+   * 좌표를 구해야 한다. 그런데 ROAD 응답에는 PNU(structure.level4LC)가
+   * 비어 있다(도로명·지번은 별개 체계라 ROAD 검색 결과에 지번 코드가
+   * 안 실림) — 얻은 좌표를 다시 getAddress(역지오코딩, type=PARCEL)로
+   * 조회해야 법정동코드+본번+부번을 얻어 PNU를 조합할 수 있다.
+   */
   @Get("address-to-coord")
   async addressToCoord(
     @Headers() headers: Record<string, string>,
@@ -62,25 +71,97 @@ export class VatController {
     if (!address?.trim()) {
       throw new ServiceUnavailableException("주소가 필요합니다.");
     }
-    const url = new URL("https://api.vworld.kr/req/address");
-    url.searchParams.set("service", "address");
-    url.searchParams.set("request", "getCoord");
-    url.searchParams.set("version", "2.0");
-    url.searchParams.set("crs", "EPSG:4326");
-    url.searchParams.set("type", "PARCEL");
-    url.searchParams.set("address", address.trim());
-    url.searchParams.set("format", "json");
-    url.searchParams.set("key", this.apiKey);
+    const trimmed = address.trim();
 
-    const res = await fetchExternal(this.logger, "VWorld 주소 변환", url.toString());
-    if (!res.ok) {
+    const coordUrl = new URL("https://api.vworld.kr/req/address");
+    coordUrl.searchParams.set("service", "address");
+    coordUrl.searchParams.set("request", "getCoord");
+    coordUrl.searchParams.set("version", "2.0");
+    coordUrl.searchParams.set("crs", "EPSG:4326");
+    coordUrl.searchParams.set("type", "ROAD");
+    coordUrl.searchParams.set("address", trimmed);
+    coordUrl.searchParams.set("format", "json");
+    coordUrl.searchParams.set("key", this.apiKey);
+
+    const coordRes = await fetchExternal(
+      this.logger,
+      "VWorld 주소 변환",
+      coordUrl.toString(),
+    );
+    if (!coordRes.ok) {
       throw new ServiceUnavailableException("VWorld 주소 변환 요청 실패");
     }
-    return res.json();
+    const coordData = (await coordRes.json()) as {
+      response?: {
+        status?: string;
+        result?: { point?: { x?: string; y?: string } };
+        refined?: { text?: string };
+      };
+    };
+    const point = coordData.response?.result?.point;
+    if (coordData.response?.status !== "OK" || !point?.x || !point?.y) {
+      return coordData;
+    }
+
+    const reverseUrl = new URL("https://api.vworld.kr/req/address");
+    reverseUrl.searchParams.set("service", "address");
+    reverseUrl.searchParams.set("request", "getAddress");
+    reverseUrl.searchParams.set("version", "2.0");
+    reverseUrl.searchParams.set("crs", "EPSG:4326");
+    reverseUrl.searchParams.set("point", `${point.x},${point.y}`);
+    reverseUrl.searchParams.set("type", "PARCEL");
+    reverseUrl.searchParams.set("format", "json");
+    reverseUrl.searchParams.set("key", this.apiKey);
+
+    const reverseRes = await fetchExternal(
+      this.logger,
+      "VWorld 역지오코딩",
+      reverseUrl.toString(),
+    );
+    let pnu: string | null = null;
+    if (reverseRes.ok) {
+      const reverseData = (await reverseRes.json()) as {
+        response?: {
+          status?: string;
+          result?: {
+            structure?: { level4LC?: string; level5?: string };
+          }[];
+        };
+      };
+      const structure = reverseData.response?.result?.[0]?.structure;
+      const dongCode = structure?.level4LC?.trim();
+      // level5는 "900-153"(본번-부번) 또는 "736"(부번 없음) 형태.
+      const [bunRaw, jiRaw] = (structure?.level5 ?? "").split("-");
+      if (dongCode && bunRaw) {
+        const bun = bunRaw.padStart(4, "0").slice(-4);
+        const ji = (jiRaw ?? "0").padStart(4, "0").slice(-4);
+        // PNU 11번째 자리(산여부)는 이 API 응답만으로 확정할 수 없어
+        // 일반 대지(0)로 고정한다 — 건축물대장 조회 쪽에서 0/1 모두
+        // 재시도하므로 실제 조회 정확도에는 영향이 없다.
+        pnu = `${dongCode}1${bun}${ji}`;
+      }
+    }
+
+    return {
+      ...coordData,
+      response: {
+        ...coordData.response,
+        refined: {
+          ...coordData.response?.refined,
+          structure: { level4LC: pnu ?? "" },
+        },
+      },
+    };
   }
 
   /** 좌표(경도/위도) 기준 개별공시지가 조회(원/㎡). VWorld data API의
-   * ladfrlVal(개별공시지가) 레이어를 사용한다. */
+   * LP_PA_CBND_BUBUN(개별공시지가) 레이어를 사용한다.
+   *
+   * VWorld 2D데이터 API(req/data)는 인증키가 서비스URL로 등록돼 있으면
+   * domain 파라미터에 그 URL을 실어 보내지 않으면 INCORRECT_KEY로
+   * 거부한다(주소 API(req/address)는 이 검증이 없어 이 사실을 놓치기
+   * 쉬웠다 — 실측: domain 파라미터 유무 차이로만 성공/실패가 갈림,
+   * 2026-07-21). */
   @Get("land-price")
   async landPrice(
     @Headers() headers: Record<string, string>,
@@ -97,6 +178,11 @@ export class VatController {
     url.searchParams.set("version", "2.0");
     url.searchParams.set("crs", "EPSG:4326");
     url.searchParams.set("data", "LP_PA_CBND_BUBUN");
+    url.searchParams.set(
+      "domain",
+      process.env.VWORLD_REGISTERED_DOMAIN ??
+        "https://auction-seven-tan.vercel.app",
+    );
     url.searchParams.set(
       "geomFilter",
       `POINT(${x} ${y})`,
