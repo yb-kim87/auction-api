@@ -114,6 +114,28 @@ async def run_full_httpx(
 # 동일한 기본값을 사용해 두 워커의 동시성 정책을 맞춘다.
 FULL_HTTPX_CONCURRENCY = int(os.environ.get("CRAWL_CONCURRENCY", "5"))
 
+# naver_httpx.py가 남기는 "찾을 수 없음" 계열 문구 — 이 경우 저장은
+# 정상 완료됐지만 네이버 데이터는 못 채웠다는 걸 실행 로그에서 바로
+# 알 수 있어야 한다는 요청(2026-07-20). DB에는 저장되지만 로그 화면
+# 에서는 완전히 안 보이던 문제.
+_NAVER_MISS_PHRASES = (
+    "단지ID 없음",
+    "면적 파싱 실패",
+    "면적 조건에 맞는 평형 없음",
+    "면적 조건에 맞는 호가·실거래 없음",
+    "네이버 접속 실패",
+    "호가 조회 실패",
+)
+
+
+def _naver_miss_note(item: dict) -> str:
+    detail = str(item.get("naver_price_detail") or "").strip()
+    if not detail:
+        return ""
+    if any(detail.startswith(phrase) for phrase in _NAVER_MISS_PHRASES):
+        return f" (네이버: {detail})"
+    return ""
+
 
 async def _run_full_httpx_with_state(
     tids: list[str],
@@ -168,10 +190,11 @@ async def _run_full_httpx_with_state(
                     state.completed += 1
                     if not unchanged:
                         state.updated += 1
+                    naver_note = _naver_miss_note(item)
                     state.last_message = (
-                        f"[{state.completed}/{total}] {item.get('auctionNo')} (변경 없음)"
+                        f"[{state.completed}/{total}] {item.get('auctionNo')} (변경 없음){naver_note}"
                         if unchanged
-                        else f"[{state.completed}/{total}] {item.get('auctionNo')} 저장 완료"
+                        else f"[{state.completed}/{total}] {item.get('auctionNo')} 저장 완료{naver_note}"
                     )
                     state.events.append(state.last_message)
             except httpx.HTTPError as exc:
