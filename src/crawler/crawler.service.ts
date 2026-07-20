@@ -130,6 +130,9 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   private readonly maxLogs = 500;
   private localStatus: CrawlerStatus = this.defaultStatus();
   private config: CrawlerConfig = loadCrawlerConfig();
+  /** 같은 1분(tick) 안에서의 스케줄러 재진입만 막는 용도(하루 1회 제한
+   * 아님) — 재배포로 초기화돼도 문제없다. */
+  private lastTickKey = "";
   private schedulerTimer: ReturnType<typeof setInterval> | null = null;
   private jobRunning = false;
 
@@ -1711,18 +1714,15 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    // 날짜뿐 아니라 실행 시간(time)까지 묶어서 키로 쓴다 — 날짜만 비교하면
-    // 오늘 이미 한 번 실행한 뒤 사용자가 실행 시간을 바꿔 다시 저장해도
-    // "오늘 이미 실행함"으로 걸려 새 시간에 재실행되지 않는 버그가 있었다
-    // (실측: 09:11 실행 후 09:20으로 바꿔 저장했지만 미실행, 2026-07-20).
-    const dateKey = `${now.year}-${String(now.month).padStart(2, "0")}-${String(now.date).padStart(2, "0")}T${schedule.time}`;
-    // DB(crawler_config)에 저장된 값을 기준으로 판단 — 인메모리 변수만
-    // 쓰면 재배포로 서버가 재시작될 때마다 초기화되어, 같은 시각에 두
-    // 번째 재시작이 겹치면 당일 중복 실행 방지가 무력화된다(실측,
-    // 2026-07-20). 저장은 아래에서 즉시 수행해 다음 tick이 곧바로
-    // 참조할 수 있게 한다.
-    if (schedule.repeatDaily && schedule.lastRunDate === dateKey) return;
-    this.updateConfig({ schedule: { ...schedule, lastRunDate: dateKey } });
+    // "오늘 이미 실행했으면 하루 동안 재실행 안 함" 게이트는 사용자 요청으로
+    // 제거했다 — 관심조건을 재조회하고 싶을 때 시간을 그대로 두고 다시
+    // 저장해도(또는 시간을 바꿔도) 항상 그 시각에 실행되어야 한다(2026-07-20).
+    // 같은 1분(tick) 안에서의 중복 실행만 dateKey로 막는다 — setInterval이
+    // 60초 주기라 정상적으로는 같은 분에 두 번 걸릴 일이 없지만, 재배포
+    // 겹침 등으로 같은 분에 두 번째 tick이 도는 경우를 막기 위함이다.
+    const dateKey = `${now.year}-${String(now.month).padStart(2, "0")}-${String(now.date).padStart(2, "0")}T${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`;
+    if (this.lastTickKey === dateKey) return;
+    this.lastTickKey = dateKey;
 
     // presets(배열)가 비어있으면 매일 작업 자체를 실행할 이유가 없다.
     // 예전 단일 preset 필드로의 폴백(["현재"])은 존재하지 않는 프리셋을
