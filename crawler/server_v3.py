@@ -65,15 +65,21 @@ async def _collect_urls_v3(
 
     url_collect.py: collect_urls() 의 HTTPX 버전 — 단, 브라우저 화면
     페이지네이션이 없으므로 totalCount 를 보고 필요한 페이지 수만큼 반복
-    호출한다. 무한 루프 방지를 위해 최대 50페이지(=5,000건)로 상한을 둔다.
+    호출한다. 무한 루프 방지를 위해 최대 5,000건으로 상한을 둔다 — 페이지
+    "수"가 아니라 수집된 "건수"로 상한을 걸어야 한다. 예전에는
+    max_pages=50(페이지 수)으로 제한했는데, 관심조건의 pageSize(관리자가
+    저장한 dataSize)가 100이 아니라 20 등 작은 값이면 50페이지×20건=
+    1,000건에서 조기 종료돼, 탱크옥션에는 그보다 훨씬 많은 결과가 있는데도
+    수집이 잘려나갔다(실측: pageSize=20인 관심조건이 실제 1,365건인데
+    1,000건에서 멈춤, 2026-07-20).
     """
+    MAX_ENTRIES = 5000
     async with make_client() as client:
         await login(client)
 
         entries: list[dict] = []
         page_no = 1
-        max_pages = 50
-        while page_no <= max_pages:
+        while len(entries) < MAX_ENTRIES:
             data = await fetch_list_page_with_preset(
                 client, api_path, params, page_no=page_no, data_size=data_size
             )
@@ -93,7 +99,7 @@ async def _collect_urls_v3(
                 break
             page_no += 1
 
-        return entries
+        return entries[:MAX_ENTRIES]
 
 
 async def _check_tank_login_v3() -> bool:
