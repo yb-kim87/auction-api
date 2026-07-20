@@ -83,4 +83,71 @@ export class VatController {
     }
     return res.json();
   }
+
+  /** PNU(19자리 고유번호) 기준 건축물대장 표제부 조회 — 건물 면적(연면적)·
+   * 신축연도(사용승인일)·구조·주용도를 자동으로 채우는 데 쓴다. PNU는
+   * VWorld 주소 변환 응답의 structure.level4LC 필드에서 얻는다. 공공
+   * 데이터포털 "건축물대장정보 서비스(建築HUB)" API를 그대로 프록시한다
+   * (실측 확인, 2026-07-21) — platGbCd(대지/산 여부)가 PNU의 11번째
+   * 자리와 항상 일치하지는 않아 0(대지)을 먼저 시도하고 결과가 없으면
+   * 1(산)로 재시도한다. */
+  @Get("building-register")
+  async buildingRegister(
+    @Headers() headers: Record<string, string>,
+    @Query("pnu") pnu: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    if (!pnu || pnu.trim().length !== 19) {
+      throw new ServiceUnavailableException("올바른 PNU(19자리)가 필요합니다.");
+    }
+    const trimmed = pnu.trim();
+    const sigunguCd = trimmed.slice(0, 5);
+    const bjdongCd = trimmed.slice(5, 10);
+    const bun = trimmed.slice(11, 15);
+    const ji = trimmed.slice(15, 19);
+
+    const key = process.env.BUILDING_REGISTER_API_KEY;
+    if (!key) {
+      throw new ServiceUnavailableException(
+        "건축물대장 API 키가 설정되지 않았습니다.",
+      );
+    }
+
+    const fetchOnce = async (platGbCd: "0" | "1") => {
+      const url = new URL(
+        "https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo",
+      );
+      url.searchParams.set("sigunguCd", sigunguCd);
+      url.searchParams.set("bjdongCd", bjdongCd);
+      url.searchParams.set("platGbCd", platGbCd);
+      url.searchParams.set("bun", bun);
+      url.searchParams.set("ji", ji);
+      url.searchParams.set("serviceKey", key);
+      url.searchParams.set("numOfRows", "10");
+      url.searchParams.set("pageNo", "1");
+      url.searchParams.set("_type", "json");
+
+      const res = await fetch(url.toString());
+      if (!res.ok) return null;
+      const data = (await res.json()) as {
+        response?: {
+          body?: { items?: { item?: unknown[] } | "" };
+        };
+      };
+      const items = data.response?.body?.items;
+      const item =
+        items && typeof items === "object" && Array.isArray(items.item)
+          ? items.item[0]
+          : null;
+      return item ?? null;
+    };
+
+    const item = (await fetchOnce("0")) ?? (await fetchOnce("1"));
+    if (!item) {
+      throw new ServiceUnavailableException(
+        "이 위치의 건축물대장 정보를 찾지 못했습니다.",
+      );
+    }
+    return item;
+  }
 }
