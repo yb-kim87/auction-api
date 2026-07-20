@@ -133,6 +133,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   /** 같은 1분(tick) 안에서의 스케줄러 재진입만 막는 용도(하루 1회 제한
    * 아님) — 재배포로 초기화돼도 문제없다. */
   private lastTickKey = "";
+  /** importItem 콜백 로그에 "[N/전체]" 순번을 붙이기 위한 전용 카운터.
+   * localStatus.completed는 워커 폴링이 주기적으로 덮어써 순번 표시에
+   * 쓸 수 없다. */
+  private importItemCount = 0;
   private schedulerTimer: ReturnType<typeof setInterval> | null = null;
   private jobRunning = false;
 
@@ -1378,6 +1382,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     this.localStatus.repeatAfterCollect = Boolean(dto.repeatAfterCollect);
     this.localStatus.created = 0;
     this.localStatus.updated = 0;
+    this.importItemCount = 0;
     this.jobRunning = true;
 
     this.appendLog(
@@ -1500,6 +1505,17 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     const dto = mapCrawledItem(raw);
     const label = String(dto.auctionNo || dto.address || "?").trim();
 
+    // 몇 번째 물건을 처리 중인지 로그에서 바로 알아볼 수 있도록, 콜백이
+    // 들어올 때마다 순번을 매긴다(mirror 콜백은 원본과 중복 집계되므로
+    // 제외). localStatus.completed는 워커 폴링(syncWorkerStatus)이 주기적
+    // 으로 덮어쓰므로 여기 쓰면 값이 튄다 — 이 카운터 전용 필드를 따로
+    // 둔다. 워커 이벤트를 그대로 로그에 복사하지 않기로 한 뒤로 이 콜백이
+    // 유일한 물건별 로그 지점이라, 여기서 순번을 붙여야 한다(사용자 요청,
+    // 2026-07-20).
+    const progressPrefix = options.mirror
+      ? ""
+      : `[${++this.importItemCount}/${this.localStatus.total || "?"}] `;
+
     const result = await this.auctionsService.importCrawledItem(
       dto,
       submittedBy || "crawler",
@@ -1515,7 +1531,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
               : reason === "invalid_address"
                 ? "주소 없음"
                 : "탱크 링크 형식 오류";
-          this.appendLog("warn", `저장 스킵 (${detail}): ${label}`);
+          this.appendLog("warn", `${progressPrefix}저장 스킵 (${detail}): ${label}`);
         }
       } else if ((result as { unchanged?: boolean }).unchanged) {
         if (!options.mirror) {
@@ -1526,12 +1542,12 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
           this.appendLog(
             "info",
             dto.caseState?.trim() === "변경"
-              ? `${label} (변경 물건 — 재조회 확인)`
-              : `${label} (변경 없음 — DB에 이미 있음)`,
+              ? `${progressPrefix}${label} (변경 물건 — 재조회 확인)`
+              : `${progressPrefix}${label} (변경 없음 — DB에 이미 있음)`,
           );
         }
       } else if (!options.mirror) {
-        this.appendLog("warn", `${label} 저장 스킵 (${reason || "unknown"})`);
+        this.appendLog("warn", `${progressPrefix}${label} 저장 스킵 (${reason || "unknown"})`);
       }
       return result;
     }
@@ -1544,8 +1560,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         this.appendLog(
           "info",
           result.created
-            ? `${dto.auctionNo || dto.address} 등록완료`
-            : `${dto.auctionNo || dto.address} 갱신완료`,
+            ? `${progressPrefix}${dto.auctionNo || dto.address} 등록완료`
+            : `${progressPrefix}${dto.auctionNo || dto.address} 갱신완료`,
         );
       }
     }
