@@ -1,7 +1,11 @@
 import type { UpdateAuctionDto } from "./update-auction.dto";
 
 /** 탱크옥션 baseInfo.stateNm 원문 기준(실측, 2026-07-20) — "변경"은 다음
- * 매각기일이 다시 잡힐 수 있어 제외 대상이 아니다. auctions.service.ts와
+ * 매각기일이 다시 잡힐 수 있어 제외 대상이 아니다. 매각결정기일·지급기한·
+ * 배당기일은 이미 낙찰이 확정된 뒤의 후속 절차 단계라 입찰기일이 다시
+ * 잡히지 않으므로 함께 종결 처리한다(실측: 이 값들이 CLOSED_CASE_STATES에
+ * 없어 당일물건 조회가 매번 "변경 없음"만 반복하며 재조회하던 문제,
+ * 2026-07-20 — DB 전수조사로 실제 caseState 분포 확인). auctions.service.ts와
  * crawler-url.util.ts 양쪽에서 같은 기준으로 종결 여부를 판단하기 위해
  * 공용으로 둔다. */
 export const CLOSED_CASE_STATES = new Set([
@@ -11,6 +15,10 @@ export const CLOSED_CASE_STATES = new Set([
   "기각",
   "각하",
   "취소",
+  "매각결정기일",
+  "지급기한",
+  "배당기일",
+  "배당종결",
 ]);
 
 export function isClosedCaseState(caseState: string | undefined): boolean {
