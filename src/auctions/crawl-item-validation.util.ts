@@ -1,5 +1,22 @@
 import type { UpdateAuctionDto } from "./update-auction.dto";
 
+/** 탱크옥션 baseInfo.stateNm 원문 기준(실측, 2026-07-20) — "변경"은 다음
+ * 매각기일이 다시 잡힐 수 있어 제외 대상이 아니다. auctions.service.ts와
+ * crawler-url.util.ts 양쪽에서 같은 기준으로 종결 여부를 판단하기 위해
+ * 공용으로 둔다. */
+export const CLOSED_CASE_STATES = new Set([
+  "취하",
+  "매각",
+  "허가",
+  "기각",
+  "각하",
+  "취소",
+]);
+
+export function isClosedCaseState(caseState: string | undefined): boolean {
+  return CLOSED_CASE_STATES.has((caseState ?? "").trim());
+}
+
 const AUCTION_NO_PATTERN = /^\d{4}타경\d+(?:\(\d+\))?$/;
 
 const INVALID_AUCTION_NO_HINTS = [

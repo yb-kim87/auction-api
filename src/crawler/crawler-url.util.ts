@@ -1,3 +1,4 @@
+import { isClosedCaseState } from "../auctions/crawl-item-validation.util";
 import type { CrawlerUrlEntry } from "./crawler.types";
 
 /** 입찰기일 문자열을 날짜(자정)로 파싱 */
@@ -82,6 +83,7 @@ export type LinkExistingRecord = {
   naverPrice: number;
   priceDetail: string;
   tradingDetail: string;
+  caseState: string;
 };
 
 /** 크롤러가 네이버 호가·실거래를 수집하는 대상인지 (item_crawl.py와 동일) */
@@ -91,9 +93,19 @@ export function isNaverCollectTarget(record: LinkExistingRecord): boolean {
   return Boolean(area) && area !== "0" && area !== "없음";
 }
 
+/** 네이버에서 이 물건과 매칭되는 평형/단지를 찾을 수 없다고 이미 확정된
+ * 경우(item_crawl.py가 남기는 문구). 이런 물건은 재조회해도 네이버 쪽
+ * 데이터 자체가 존재하지 않아 매번 똑같이 실패하므로, "아직 못 채움"과
+ * 구분해 재시도 대상에서 제외해야 한다(실측: 2025타경1260이 매번 재조회
+ * 대상에 걸리던 원인, 2026-07-20). */
+function isNaverDataConfirmedUnavailable(record: LinkExistingRecord): boolean {
+  return record.priceDetail.trim() === "면적 조건에 맞는 평형 없음";
+}
+
 /** 네이버 호가·실거래가 아직 비어 있는지 */
 export function isNaverDataMissing(record: LinkExistingRecord): boolean {
   if (!isNaverCollectTarget(record)) return false;
+  if (isNaverDataConfirmedUnavailable(record)) return false;
   return (
     record.naverPrice === 0 ||
     !record.priceDetail.trim() ||
@@ -150,6 +162,14 @@ export function filterCollectedUrls(
 
     if (existing === undefined) {
       filtered.push(entry);
+      continue;
+    }
+
+    // 취하·매각(허가) 등 종결된 사건은 더 이상 입찰기일이 갱신되지 않으니
+    // 재조회해도 항상 "변경 없음"만 반복된다(실측: 2025타경1260이 이미
+    // 처리됐는데도 검색 결과에 계속 남아 재조회되던 문제, 2026-07-20).
+    if (isClosedCaseState(existing.caseState)) {
+      excluded += 1;
       continue;
     }
 
