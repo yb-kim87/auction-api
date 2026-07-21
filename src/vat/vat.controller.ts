@@ -366,7 +366,11 @@ export class VatController {
       rows
         .filter((r) => String(r.exposPubuseGbCd) === gb)
         .reduce((acc, r) => acc + (Number(r.area) || 0), 0);
-    const totArea = Math.round((sum("1") + sum("2")) * 100) / 100;
+    // 소수점을 2자리로 반올림하면 최종 부가세 계산 결과가 원본 대비
+    // 오차가 생긴다(실측: 166.82㎡로 반올림 시 105,930,700원, 원본
+    // 정밀도 166.8163㎡ 그대로 쓰면 105,928,350.5원 — 원본 사이트와
+    // 정확히 일치, 2026-07-21) — 반올림 없이 원래 정밀도를 그대로 넘긴다.
+    const totArea = sum("1") + sum("2");
     const first = rows[0];
     return {
       totArea,
