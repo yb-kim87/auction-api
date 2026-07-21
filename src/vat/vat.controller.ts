@@ -282,7 +282,14 @@ export class VatController {
     const dongNm = dong.endsWith("동") ? dong : `${dong}동`;
     const hoNm = ho.endsWith("호") ? ho : `${ho}호`;
 
-    const fetchOnce = async (platGbCd: "0" | "1") => {
+    // 공공데이터포털 건축물대장 API가 간헐적으로 빈 응답/오류를 준다
+    // (실측: 같은 요청을 3회 연속 보냈더니 실패·표제부성 폴백·정상성공이
+    // 각각 한 번씩 나옴, 2026-07-21) — "진짜 매칭 없음"과 "일시적 실패"를
+    // 구분하기 위해 실패(ok가 아니거나 응답 파싱 불가)는 별도 신호로
+    // 반환하고, 호출부가 표제부로 잘못 폴백하지 않도록 최대 2회 재시도한다.
+    const fetchOnce = async (
+      platGbCd: "0" | "1",
+    ): Promise<{ ok: boolean; rows: Record<string, unknown>[] }> => {
       const url = new URL(
         "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo",
       );
@@ -303,17 +310,56 @@ export class VatController {
         "건축물대장(전유부) 조회",
         url.toString(),
       );
-      if (!res.ok) return [];
-      const data = (await res.json()) as {
-        response?: { body?: { items?: { item?: Record<string, unknown>[] } | "" } };
-      };
-      const items = data.response?.body?.items;
-      return items && typeof items === "object" && Array.isArray(items.item)
-        ? items.item
-        : [];
+      if (!res.ok) return { ok: false, rows: [] };
+      try {
+        const data = (await res.json()) as {
+          response?: {
+            header?: { resultCode?: string };
+            body?: { items?: { item?: Record<string, unknown>[] } | "" };
+          };
+        };
+        if (data.response?.header?.resultCode !== "00") {
+          return { ok: false, rows: [] };
+        }
+        const items = data.response?.body?.items;
+        const rows =
+          items && typeof items === "object" && Array.isArray(items.item)
+            ? items.item
+            : [];
+        return { ok: true, rows };
+      } catch {
+        return { ok: false, rows: [] };
+      }
     };
 
-    const rows = [...(await fetchOnce("0")), ...(await fetchOnce("1"))];
+    // 공공데이터포털 건축물대장 API는 resultCode="00"(성공)이면서도 실제
+    // 매칭 row가 0건인 응답을 간헐적으로 준다(실측: 106동 501호가 이미
+    // 존재를 확인한 세대인데도 5회 중 1회 빈 배열이 옴, 2026-07-21) —
+    // ok=true/rows=[]인 경우도 진짜 "매칭 없음"과 구분할 수 없으니
+    // 여러 번 더 재시도한다.
+    const fetchWithRetry = async (platGbCd: "0" | "1") => {
+      let sawEmptySuccess = false;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const result = await fetchOnce(platGbCd);
+        if (result.ok && result.rows.length > 0) return result.rows;
+        if (result.ok) sawEmptySuccess = true;
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 400));
+      }
+      return sawEmptySuccess ? [] : null; // null = 진짜 API 실패
+    };
+
+    const [rows0, rows1] = await Promise.all([
+      fetchWithRetry("0"),
+      fetchWithRetry("1"),
+    ]);
+    if (rows0 === null && rows1 === null) {
+      // 두 platGbCd 조회 모두 API 실패 — 표제부로 조용히 폴백하면 엉뚱한
+      // 동(경비실 등)의 면적이 나올 수 있으므로 명확히 실패로 알린다.
+      throw new ServiceUnavailableException(
+        "건축물대장(전유부) 조회에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    }
+    const rows = [...(rows0 ?? []), ...(rows1 ?? [])];
     if (rows.length === 0) return null;
 
     const sum = (gb: string) =>
