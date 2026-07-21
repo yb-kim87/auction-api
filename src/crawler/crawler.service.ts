@@ -1662,6 +1662,35 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return result;
   }
 
+  async listMissingSharedArea() {
+    return this.auctionsService.listMissingSharedArea();
+  }
+
+  async importSharedArea(
+    raw: Record<string, unknown>,
+    submittedBy: string,
+    secret: string,
+  ) {
+    const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
+    if (secret !== expected) {
+      throw new ServiceUnavailableException("크롤러 인증 실패");
+    }
+
+    const link = String(raw.link ?? "").trim();
+    const sharedArea = String(raw.sharedArea ?? "").trim();
+    const result = await this.auctionsService.patchSharedAreaOnly(
+      link,
+      sharedArea,
+      submittedBy || "crawler-shared-area-backfill",
+    );
+
+    if (result.updated) {
+      this.appendLog("info", `[공용면적] ${link} → ${sharedArea}㎡`);
+    }
+
+    return result;
+  }
+
   async backfillNaverIds(submittedBy: string) {
     await this.ensureCrawlerLoggedIn(submittedBy);
     await this.ensureWorker();

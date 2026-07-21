@@ -31,6 +31,7 @@ from tank_detail import (
     parse_education_from_env_payload,
     parse_intr_flag_from_detail,
     parse_owner_from_detail,
+    parse_exclusive_area_from_env_bldg,
     normalize_build_year_value,
     is_valid_build_year,
     _state_name_from_detail,
@@ -88,7 +89,11 @@ def parse_list_page(list_response: dict) -> list[dict]:
     return [parse_list_item(item) for item in items if isinstance(item, dict)]
 
 
-def parse_detail_page(detail_response: dict, env_payload: dict | None = None) -> dict:
+def parse_detail_page(
+    detail_response: dict,
+    env_payload: dict | None = None,
+    env_bldg_payload: dict | None = None,
+) -> dict:
     """AuctView.php(+ EnvViewData.php) 응답 → crawl_item() 과 동일한 키 집합의
     딕셔너리.
 
@@ -144,6 +149,12 @@ def parse_detail_page(detail_response: dict, env_payload: dict | None = None) ->
     tid = base.get("tid")
     link = f"https://www.tankauction.com/ca/caView.php?tid={tid}" if tid else ""
 
+    shared_area = ""
+    if env_bldg_payload:
+        shared_area = parse_exclusive_area_from_env_bldg(env_bldg_payload).get(
+            "shared_area", ""
+        )
+
     return {
         "memo": "",
         "link": link,
@@ -156,6 +167,7 @@ def parse_detail_page(detail_response: dict, env_payload: dict | None = None) ->
         "usage": usage,
         "area": building_area,
         "builtYear": build_year,
+        "sharedArea": shared_area,
         "bidDate": tank_fields.get("bidDate") or "없음",
         "appraisal_price": tank_fields.get("appraisal_price") or 0,
         "min_price": tank_fields.get("min_price") or 0,

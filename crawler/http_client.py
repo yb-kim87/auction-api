@@ -18,6 +18,7 @@ LOGIN_PATH = "/auth/res/logIn.php"
 LIST_PATH = "/api/proxy/api1.php/ca/AuctList.php"
 DETAIL_PATH = "/api/proxy/api1.php/ca/AuctView.php"
 ENV_VIEW_PATH = "/molit/res/EnvViewData.php"
+ENV_BLDG_PATH = "/ca/res/getEnvBldg.php"
 
 DEFAULT_HEADERS = {
     "Accept": "application/json",
@@ -234,6 +235,45 @@ async def fetch_env_view_data(client: httpx.AsyncClient, tid: str) -> dict | Non
     try:
         resp = await client.get(
             ENV_VIEW_PATH, params={"tid": tid, "gb": "1"}
+        )
+        resp.raise_for_status()
+        if _looks_like_login_redirect(resp):
+            return None
+        data = resp.json()
+        return data if isinstance(data, dict) else None
+    except (httpx.HTTPError, ValueError):
+        return None
+
+
+async def fetch_env_bldg(
+    client: httpx.AsyncClient,
+    tid: str,
+    title_pk,
+    recap_pk,
+    pnu: str,
+) -> dict | None:
+    """탱크 POST /ca/res/getEnvBldg.php — 전유부/공용부 면적 상세("건축물정보"
+    탭, dfInfo에 "공용면적" 항목 포함). title_pk/recap_pk/pnu는 AuctView.php
+    응답의 baseInfo.apiBldgTitle_Pk / apiBldgRecap_Pk / landInfo.items[0].pnu
+    에서 얻는다(실측, 2026-07-21). 실패해도 상세 파싱을 막지 않도록 예외를
+    삼키고 None 반환한다(fetch_env_view_data와 동일 정책).
+    """
+    try:
+        resp = await client.post(
+            ENV_BLDG_PATH,
+            data={
+                "isMobile": "0",
+                "gb": "1",
+                "pkTab": "3",
+                "tid": tid,
+                "recapPk": recap_pk,
+                "titlePk": title_pk,
+                "dfTitlePk": title_pk,
+                "pnu": pnu,
+                "bldgStat": "0",
+                "orgTitlePk": title_pk,
+                "epChk": "1",
+            },
         )
         resp.raise_for_status()
         if _looks_like_login_redirect(resp):

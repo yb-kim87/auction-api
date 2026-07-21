@@ -103,6 +103,7 @@ export function mapCrawledItem(raw: Record<string, unknown>): Partial<UpdateAuct
     totalUnits: num(raw.totalUnits ?? raw.total_units),
     usage,
     area: str(raw.area),
+    sharedArea: str(raw.sharedArea ?? raw.shared_area),
     builtYear: builtYear || 0,
     bidDate: str(raw.bidDate ?? raw.bid_date),
     appraisedValue,

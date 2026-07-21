@@ -627,6 +627,27 @@ export class AuctionsService implements OnModuleInit {
       }));
   }
 
+  /** 부가세계산기 자동조회 대상(85㎡ 초과 아파트) 중 sharedArea(공용면적)가
+   * 비어있는 물건만 골라 link를 반환한다. area는 text 컬럼이라 85 초과
+   * 비교는 SQL이 아닌 애플리케이션 레벨에서 한다(실측, 2026-07-21). */
+  async listMissingSharedArea(): Promise<{ link: string; area: string }[]> {
+    const rows = await this.auctionRepo
+      .createQueryBuilder("a")
+      .select("a.link", "link")
+      .addSelect("a.area", "area")
+      .where("a.usage LIKE :usage", { usage: "아파트%" })
+      .andWhere("(a.sharedArea IS NULL OR a.sharedArea = :empty)", { empty: "" })
+      .andWhere("a.link != :emptyLink", { emptyLink: "" })
+      .getRawMany<{ link: string; area: string }>();
+
+    return rows
+      .filter((row) => {
+        const area = Number(String(row.area ?? "").replace(/,/g, ""));
+        return row.link?.trim() && Number.isFinite(area) && area > 85;
+      })
+      .map((row) => ({ link: row.link.trim(), area: row.area }));
+  }
+
   async patchNaverIdOnly(
     auctionNo: string,
     naverId: string,
@@ -653,6 +674,58 @@ export class AuctionsService implements OnModuleInit {
 
     const before = this.cloneAuctionState(item);
     item.naverId = nextId;
+    item.isUpdated = true;
+    item.updatedAt = new Date();
+    item.updatedBy = updatedBy;
+
+    const changes = buildFieldChanges(
+      snapshotAuction(before),
+      snapshotAuction(item),
+    );
+    if (changes.length === 0) {
+      return { updated: false as const, skipped: true as const, item };
+    }
+
+    const saved = await this.auctionRepo.save(item);
+    await this.recordChanges(
+      item.id,
+      before,
+      saved,
+      updatedBy,
+      "crawler",
+      changes,
+    );
+    return { updated: true as const, skipped: false as const, item: saved };
+  }
+
+  /** 탱크옥션 getEnvBldg.php에서만 얻을 수 있는 공용면적(sharedArea)을
+   * link(tid 포함 URL) 기준으로 단일 필드만 채운다. auctionNo는 법원이
+   * 다르면 중복될 수 있어 link로 찾는다(실측, 2026-07-19). */
+  async patchSharedAreaOnly(link: string, sharedArea: string, updatedBy: string) {
+    const trimmedLink = link.trim();
+    if (!trimmedLink) {
+      return { updated: false as const, skipped: true as const, reason: "invalid_link" };
+    }
+    const item = await this.auctionRepo.findOne({ where: { link: trimmedLink } });
+    if (!item) {
+      return { updated: false as const, skipped: true as const, reason: "not_found" };
+    }
+
+    const nextValue = sharedArea.trim();
+    if (!nextValue) {
+      return { updated: false as const, skipped: true as const, reason: "invalid_value" };
+    }
+    if (item.sharedArea === nextValue) {
+      return {
+        updated: false as const,
+        skipped: true as const,
+        reason: "unchanged",
+        item,
+      };
+    }
+
+    const before = this.cloneAuctionState(item);
+    item.sharedArea = nextValue;
     item.isUpdated = true;
     item.updatedAt = new Date();
     item.updatedBy = updatedBy;

@@ -18,7 +18,7 @@ import random
 import httpx
 
 from crawl_abort import check_stop
-from http_client import fetch_detail, fetch_env_view_data, login, make_client
+from http_client import fetch_detail, fetch_env_bldg, fetch_env_view_data, login, make_client
 from item_validation import validate_crawl_item_reason
 from naver_httpx import extract_naver_prices_httpx
 from parsers import parse_detail_page
@@ -86,7 +86,17 @@ async def crawl_one_item_full_httpx(client: httpx.AsyncClient, tid: str) -> dict
     """목록/상세/네이버 전부 브라우저 없이 처리한 완성 결과 하나를 반환."""
     detail = await fetch_detail(client, tid)
     env_payload = await fetch_env_view_data(client, tid)
-    item = parse_detail_page(detail, env_payload)
+
+    env_bldg_payload = None
+    base = (detail or {}).get("baseInfo") or {}
+    land_items = ((detail or {}).get("landInfo") or {}).get("items") or []
+    title_pk = base.get("apiBldgTitle_Pk")
+    recap_pk = base.get("apiBldgRecap_Pk")
+    pnu = land_items[0].get("pnu") if land_items else None
+    if title_pk and recap_pk and pnu:
+        env_bldg_payload = await fetch_env_bldg(client, tid, title_pk, recap_pk, pnu)
+
+    item = parse_detail_page(detail, env_payload, env_bldg_payload)
     naver_complex_id = extract_complex_id_from_env_payload(env_payload)
     check_stop(None)
     item = _apply_naver_part_httpx(item, naver_complex_id)

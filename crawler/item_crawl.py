@@ -934,6 +934,18 @@ def crawl_item(driver, raw_entry: str, should_stop: ShouldStop = None) -> dict:
         except Exception:
             tank_fields = {}
 
+    shared_area = ""
+    if tid and raw_detail:
+        try:
+            from tank_detail import fetch_env_bldg, parse_exclusive_area_from_env_bldg
+
+            env_bldg_payload = fetch_env_bldg(driver, tid, raw_detail)
+            shared_area = parse_exclusive_area_from_env_bldg(env_bldg_payload).get(
+                "shared_area", ""
+            )
+        except Exception:
+            pass
+
     if not _tank_api_has_core(tank_fields):
         _wait_tank_detail_render(driver, tid)
         if tid:
@@ -1092,6 +1104,7 @@ def crawl_item(driver, raw_entry: str, should_stop: ShouldStop = None) -> dict:
             else building_area
         ),
         "builtYear": tank_snapshot["build_year"],
+        "sharedArea": shared_area,
         "bidDate": tank_snapshot["bid_date"],
         "appraisal_price": appraisal_price or 0,
         "min_price": min_price or 0,

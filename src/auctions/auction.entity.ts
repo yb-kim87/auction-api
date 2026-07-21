@@ -80,6 +80,9 @@ export class Auction {
   @Column({ default: "" })
   area!: string;
 
+  @Column({ default: "" })
+  sharedArea!: string;
+
   @Column({ type: "integer", default: 0 })
   builtYear!: number;
 

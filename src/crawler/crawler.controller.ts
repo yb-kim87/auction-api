@@ -247,6 +247,30 @@ export class CrawlerController {
     return this.crawlerService.backfillNaverIds(ctx.username);
   }
 
+  @Get("missing-shared-area")
+  async missingSharedArea(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    const secret = headers["x-crawler-secret"] ?? "";
+    const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
+    if (secret !== expected) {
+      requireAdmin(ctx);
+    }
+    return this.crawlerService.listMissingSharedArea();
+  }
+
+  @Post("import-shared-area")
+  importSharedArea(
+    @Headers() headers: Record<string, string>,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const secret = headers["x-crawler-secret"] ?? "";
+    const submittedBy =
+      typeof body.submittedBy === "string"
+        ? body.submittedBy
+        : "crawler-shared-area-backfill";
+    return this.crawlerService.importSharedArea(body, submittedBy, secret);
+  }
+
   @Post("backfill-today-naver-format")
   async backfillTodayNaverFormat(
     @Headers() headers: Record<string, string>,

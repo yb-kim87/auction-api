@@ -184,6 +184,7 @@ export function mergeAuctionFromSource(
     totalUnits: pickNum(source.totalUnits, existing.totalUnits),
     usage: pickStr(source.usage, existing.usage),
     area: pickStr(source.area, existing.area),
+    sharedArea: pickStr(source.sharedArea, existing.sharedArea),
     builtYear:
       options?.preserveExistingIfEmpty &&
       (source.builtYear == null ||
@@ -315,6 +316,7 @@ export function buildAuctionEntity(
     totalUnits: parsed.totalUnits ?? 0,
     usage: parsed.usage ?? "",
     area: parsed.area ?? "",
+    sharedArea: parsed.sharedArea ?? "",
     builtYear: parsed.builtYear ?? 0,
     bidDate: parsed.bidDate ?? "",
     appraisedValue: parsed.appraisedValue ?? 0,

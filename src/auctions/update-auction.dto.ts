@@ -13,6 +13,7 @@ export type UpdateAuctionDto = {
   totalUnits: number;
   usage: string;
   area: string;
+  sharedArea: string;
   builtYear: number;
   bidDate: string;
   appraisedValue: number;

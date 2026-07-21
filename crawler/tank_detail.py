@@ -484,6 +484,91 @@ def fetch_env_view_data(driver, tid: str) -> dict | None:
     return None
 
 
+def fetch_env_bldg(driver, tid: str, detail: dict | None) -> dict | None:
+    """탱크 POST /ca/res/getEnvBldg.php — 전유부/공용부 면적 상세("건축물정보"
+    탭, dfInfo에 "공용면적" 항목 포함). title_pk/recap_pk/pnu는 AuctView.php
+    응답의 baseInfo.apiBldgTitle_Pk / apiBldgRecap_Pk / landInfo.items[0].pnu
+    에서 얻는다(실측, 2026-07-21).
+    """
+    if not tid or not isinstance(detail, dict):
+        return None
+    base = detail.get("baseInfo") or {}
+    title_pk = base.get("apiBldgTitle_Pk") if isinstance(base, dict) else None
+    recap_pk = base.get("apiBldgRecap_Pk") if isinstance(base, dict) else None
+    land_items = ((detail.get("landInfo") or {}).get("items")) or []
+    pnu = land_items[0].get("pnu") if land_items and isinstance(land_items[0], dict) else None
+    if not title_pk or not recap_pk or not pnu:
+        return None
+    try:
+        raw = driver.execute_async_script(
+            """
+            const [tid, titlePk, recapPk, pnu] = arguments;
+            const cb = arguments[arguments.length - 1];
+            const body = new URLSearchParams({
+              isMobile: '0', gb: '1', pkTab: '3', tid: String(tid),
+              recapPk: String(recapPk), titlePk: String(titlePk),
+              dfTitlePk: String(titlePk), pnu: String(pnu),
+              bldgStat: '0', orgTitlePk: String(titlePk), epChk: '1',
+            });
+            fetch('/ca/res/getEnvBldg.php', {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              },
+              body: body.toString(),
+            })
+              .then(r => r.text())
+              .then(text => {
+                try { cb(JSON.parse(text)); }
+                catch { cb(null); }
+              })
+              .catch(() => cb(null));
+            """,
+            str(tid),
+            str(title_pk),
+            str(recap_pk),
+            str(pnu),
+        )
+        if isinstance(raw, dict):
+            return raw
+    except Exception:
+        pass
+    return None
+
+
+def parse_exclusive_area_from_env_bldg(payload: dict | None) -> dict:
+    """getEnvBldg.php 응답 dfInfo에서 전용/공용면적(㎡) 추출.
+    dfInfo는 [{"totJuArea": ["전용면적", "102.86㎡ (31.11평)"]}, {"totPbArea": ["공용면적", "86.62㎡ (26.20평)"]}, ...] 형태.
+    """
+    if not isinstance(payload, dict):
+        return {}
+    df_info = payload.get("0", {}).get("dfInfo") if isinstance(payload.get("0"), dict) else None
+    if not isinstance(df_info, list):
+        return {}
+
+    def _extract_sqm(label_key: str) -> str:
+        for entry in df_info:
+            if not isinstance(entry, dict):
+                continue
+            pair = entry.get(label_key)
+            if isinstance(pair, list) and len(pair) >= 2:
+                match = re.search(r"[\d.]+", str(pair[1]))
+                if match:
+                    return match.group(0)
+        return ""
+
+    out: dict = {}
+    exclusive = _extract_sqm("totJuArea")
+    shared = _extract_sqm("totPbArea")
+    if exclusive:
+        out["exclusive_area"] = exclusive
+    if shared:
+        out["shared_area"] = shared
+    return out
+
+
 def _parse_json_list(value) -> list:
     if not value:
         return []
