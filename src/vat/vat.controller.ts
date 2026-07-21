@@ -280,7 +280,10 @@ export class VatController {
     mainPurpsCdNm?: string;
   } | null> {
     const dongNm = dong.endsWith("동") ? dong : `${dong}동`;
-    const hoNm = ho.endsWith("호") ? ho : `${ho}호`;
+    // hoNm은 "호" 접미사를 붙이면 매칭이 0건으로 나온다(실측: "2202호"는
+    // 0건, 순수 숫자 "2202"는 정상 9건 매칭, 2026-07-21) — dongNm과
+    // 달리 순수 숫자만 받는 것으로 보인다.
+    const hoNm = ho.replace(/호\s*$/, "").trim();
 
     // 공공데이터포털 건축물대장 API가 간헐적으로 빈 응답/오류를 준다
     // (실측: 같은 요청을 3회 연속 보냈더니 실패·표제부성 폴백·정상성공이
