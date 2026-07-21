@@ -32,6 +32,7 @@ export const AUCTION_FIELD_LABELS: Record<string, string> = {
   totalUnits: "총 세대수",
   usage: "용도",
   area: "평형",
+  sharedArea: "공용면적",
   builtYear: "연식",
   bidDate: "입찰기일",
   appraisedValue: "감정가",
