@@ -721,6 +721,13 @@ def _collect_tank_page_fields(
             )
     except Exception:
         official_land_price = None
+    if official_land_price is None and env_payload:
+        # DOM에 "주택공시가격" 섹션이 아직 안 채워졌거나 파싱 실패 시,
+        # EnvViewData.php의 pubAmt(공동주택공시가격, 최신 연도)로 보강한다
+        # (실측: 두 값이 동일 출처, 2026-07-22).
+        from tank_detail import parse_official_land_price_from_env_payload
+
+        official_land_price = parse_official_land_price_from_env_payload(env_payload)
 
     tenant_info = "임차정보없음"
     try:
@@ -738,7 +745,14 @@ def _collect_tank_page_fields(
         )
     except Exception:
         special_note = "없음"
-    if (
+    if special_note == "없음" and raw_detail:
+        # DOM 배너가 비어있을 때만 API(baseInfo.spCdtn)로 보강한다 —
+        # DOM이 정상 렌더된 경우는 기존 동작을 그대로 유지(실측: DOM과
+        # spCdtn 내용이 100% 동일, 2026-07-22).
+        from tank_detail import parse_special_note_from_detail
+
+        special_note = parse_special_note_from_detail(raw_detail)
+    elif (
         raw_detail
         and tid
         and parse_intr_flag_from_detail

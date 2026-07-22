@@ -648,6 +648,79 @@ export class AuctionsService implements OnModuleInit {
       .map((row) => ({ link: row.link.trim(), area: row.area }));
   }
 
+  /** 공시가격(officialLandPrice)이 비어있는 진행중 물건의 link를 반환한다.
+   * 이 필드는 페이지 렌더 시점에 탱크옥션 쪽 공시가격 데이터가 아직 안
+   * 채워져 있으면 크롤링 당시 0으로 남는 경우가 있어(실측, 2026-07-22)
+   * 재조회로 보정한다. */
+  async listMissingOfficialLandPrice(): Promise<{ link: string }[]> {
+    const rows = await this.auctionRepo
+      .createQueryBuilder("a")
+      .select("a.link", "link")
+      .where("(a.officialLandPrice IS NULL OR a.officialLandPrice = 0)")
+      .andWhere("a.link != :emptyLink", { emptyLink: "" })
+      .andWhere("a.caseState NOT IN (:...closed)", {
+        closed: [
+          "취하",
+          "매각",
+          "허가",
+          "기각",
+          "각하",
+          "취소",
+          "매각결정기일",
+          "지급기한",
+          "배당기일",
+          "배당종결",
+        ],
+      })
+      .getRawMany<{ link: string }>();
+
+    return rows.filter((row) => row.link?.trim()).map((row) => ({ link: row.link.trim() }));
+  }
+
+  /** link 기준으로 officialLandPrice/specialNote 두 필드만 patch한다
+   * (전체 재크롤 없는 가벼운 보정용). */
+  async patchLandPriceAndNoteOnly(
+    link: string,
+    officialLandPrice: number,
+    specialNote: string,
+    updatedBy: string,
+  ) {
+    const trimmedLink = link.trim();
+    if (!trimmedLink) {
+      return { updated: false as const, skipped: true as const, reason: "invalid_link" };
+    }
+    const item = await this.auctionRepo.findOne({ where: { link: trimmedLink } });
+    if (!item) {
+      return { updated: false as const, skipped: true as const, reason: "not_found" };
+    }
+
+    const before = this.cloneAuctionState(item);
+    if (officialLandPrice > 0) item.officialLandPrice = officialLandPrice;
+    if (specialNote.trim()) item.specialNote = specialNote.trim();
+    item.isUpdated = true;
+    item.updatedAt = new Date();
+    item.updatedBy = updatedBy;
+
+    const changes = buildFieldChanges(
+      snapshotAuction(before),
+      snapshotAuction(item),
+    );
+    if (changes.length === 0) {
+      return { updated: false as const, skipped: true as const, item };
+    }
+
+    const saved = await this.auctionRepo.save(item);
+    await this.recordChanges(
+      item.id,
+      before,
+      saved,
+      updatedBy,
+      "crawler",
+      changes,
+    );
+    return { updated: true as const, skipped: false as const, item: saved };
+  }
+
   async patchNaverIdOnly(
     auctionNo: string,
     naverId: string,

@@ -1666,6 +1666,40 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return this.auctionsService.listMissingSharedArea();
   }
 
+  async listMissingOfficialLandPrice() {
+    return this.auctionsService.listMissingOfficialLandPrice();
+  }
+
+  async importOfficialLandPrice(
+    raw: Record<string, unknown>,
+    submittedBy: string,
+    secret: string,
+  ) {
+    const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
+    if (secret !== expected) {
+      throw new ServiceUnavailableException("크롤러 인증 실패");
+    }
+
+    const link = String(raw.link ?? "").trim();
+    const officialLandPrice = Number(raw.officialLandPrice ?? 0) || 0;
+    const specialNote = String(raw.specialNote ?? "").trim();
+    const result = await this.auctionsService.patchLandPriceAndNoteOnly(
+      link,
+      officialLandPrice,
+      specialNote,
+      submittedBy || "crawler-land-price-backfill",
+    );
+
+    if (result.updated) {
+      this.appendLog(
+        "info",
+        `[공시가/특이사항] ${link} → ${officialLandPrice.toLocaleString("ko-KR")}원 / ${specialNote || "-"}`,
+      );
+    }
+
+    return result;
+  }
+
   async importSharedArea(
     raw: Record<string, unknown>,
     submittedBy: string,

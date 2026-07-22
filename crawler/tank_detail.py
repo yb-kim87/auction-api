@@ -885,6 +885,27 @@ def parse_apt_meta_from_env_payload(payload: dict | None) -> dict:
     return out
 
 
+def parse_official_land_price_from_env_payload(payload: dict | None) -> int | None:
+    """EnvViewData pubAmt.items[0].pubAmt — 가장 최근 연도의 공동주택
+    공시가격(원). 기존에는 물건상세 페이지 DOM(Btbl_list, "주택공시가격")
+    에서만 파싱했는데, Selenium 없이 이미 호출 중인 EnvViewData.php
+    응답에도 동일한 값이 있음을 확인해(실측, 2026-07-22) httpx 경로에서도
+    채울 수 있게 됐다. items는 최신 연도부터 내림차순으로 온다.
+    """
+    if not isinstance(payload, dict):
+        return None
+    pub_amt = payload.get("pubAmt")
+    if not isinstance(pub_amt, dict):
+        return None
+    items = pub_amt.get("items")
+    if not isinstance(items, list) or not items:
+        return None
+    first = items[0]
+    if not isinstance(first, dict):
+        return None
+    return _safe_int(first.get("pubAmt"))
+
+
 TENANT_STATUS_PREFIX = "__TENANT_STATUS_V1__"
 
 
@@ -1877,6 +1898,24 @@ def parse_bldg_meta_from_detail(detail: dict | None) -> dict:
 
     walk(bldg)
     return out
+
+
+def parse_special_note_from_detail(detail: dict | None) -> str:
+    """baseInfo.spCdtn — "공시가 1억이하", "임차권등기", "HUG 임차권
+    인수조건변경" 등 특이사항 라벨을 "/"로 이어붙인 원문 문자열. 유치권
+    존재 여부(dtIntr.exist)는 이 문자열에 항상 포함되지는 않아(실측,
+    2026-07-22) 별도로 덧붙인다. httpx 전용 경로(parsers.py)는 기존에
+    유치권 여부만 채우고 spCdtn 자체를 아예 쓰지 않고 있었다 — Selenium
+    경로는 동일 내용을 DOM(.red.spanBox)에서 읽어 이미 정상 표시 중.
+    """
+    if not isinstance(detail, dict):
+        return "없음"
+    base = detail.get("baseInfo") or {}
+    sp_cdtn = str(base.get("spCdtn") or "").strip() if isinstance(base, dict) else ""
+    note = sp_cdtn or "없음"
+    if parse_intr_flag_from_detail(detail) and "유치권" not in note:
+        note = f"{note} (유치권 존재)" if note != "없음" else "유치권 존재"
+    return note
 
 
 def parse_intr_flag_from_detail(detail: dict | None) -> bool:

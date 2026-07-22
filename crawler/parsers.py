@@ -30,6 +30,8 @@ from tank_detail import (
     parse_deunggi_from_detail,
     parse_education_from_env_payload,
     parse_intr_flag_from_detail,
+    parse_official_land_price_from_env_payload,
+    parse_special_note_from_detail,
     parse_owner_from_detail,
     parse_exclusive_area_from_env_bldg,
     normalize_build_year_value,
@@ -118,12 +120,14 @@ def parse_detail_page(
     build_year = parse_build_year_from_detail(detail_response)
     total_units = 0
     education_setup = ""
+    official_land_price = 0
     if env_payload:
         apt_meta = parse_apt_meta_from_env_payload(env_payload)
         if not is_valid_build_year(build_year) and apt_meta.get("build_year"):
             build_year = apt_meta["build_year"]
         total_units = apt_meta.get("total_units") or 0
         education_setup = parse_education_from_env_payload(env_payload)
+        official_land_price = parse_official_land_price_from_env_payload(env_payload) or 0
 
     if is_valid_build_year(build_year):
         build_year = normalize_build_year_value(build_year) or build_year
@@ -142,9 +146,7 @@ def parse_detail_page(
     elevator = bldg_meta.get("elevator") or "없음"
     parking = bldg_meta.get("parking") or "없음"
 
-    special_note = "없음"
-    if parse_intr_flag_from_detail(detail_response):
-        special_note = "유치권 존재"
+    special_note = parse_special_note_from_detail(detail_response)
 
     tid = base.get("tid")
     link = f"https://www.tankauction.com/ca/caView.php?tid={tid}" if tid else ""
@@ -180,7 +182,7 @@ def parse_detail_page(
         "bid_info": bid_info,
         "owner": owner,
         "appraiser": appraiser,
-        "official_land_price": 0,
+        "official_land_price": official_land_price,
         "tenant_info": tenant_info,
         "special_note": special_note,
         "elevator": elevator,

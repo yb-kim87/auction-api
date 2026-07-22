@@ -271,6 +271,30 @@ export class CrawlerController {
     return this.crawlerService.importSharedArea(body, submittedBy, secret);
   }
 
+  @Get("missing-official-land-price")
+  async missingOfficialLandPrice(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    const secret = headers["x-crawler-secret"] ?? "";
+    const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
+    if (secret !== expected) {
+      requireAdmin(ctx);
+    }
+    return this.crawlerService.listMissingOfficialLandPrice();
+  }
+
+  @Post("import-official-land-price")
+  importOfficialLandPrice(
+    @Headers() headers: Record<string, string>,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const secret = headers["x-crawler-secret"] ?? "";
+    const submittedBy =
+      typeof body.submittedBy === "string"
+        ? body.submittedBy
+        : "crawler-land-price-backfill";
+    return this.crawlerService.importOfficialLandPrice(body, submittedBy, secret);
+  }
+
   @Post("backfill-today-naver-format")
   async backfillTodayNaverFormat(
     @Headers() headers: Record<string, string>,
