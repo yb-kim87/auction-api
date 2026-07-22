@@ -479,7 +479,12 @@ export class TagsService implements OnModuleInit {
     strategyCounts: Record<string, number>;
   }> {
     const [items, strategyRules] = await Promise.all([
-      this.auctionRepo.find({ select: ["factTags"] }),
+      // @AfterLoad 훅(normalizeDisplayFields)이 select 여부와 무관하게
+      // address 등 여러 필드에 접근하므로, 부분 select를 쓰면 해당 필드가
+      // undefined가 되어 훅 내부에서 예외가 난다(실측: "Cannot read
+      // properties of undefined (reading 'replace')", 2026-07-22).
+      // 전체 컬럼을 로드해야 안전하다.
+      this.auctionRepo.find(),
       this.findAllStrategyRules(),
     ]);
 
