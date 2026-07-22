@@ -59,6 +59,22 @@ function isExcludedUserAgent(userAgent: string, username?: string): boolean {
   return false;
 }
 
+/**
+ * 관리자(admin) 본인이 로그인해서 화면을 정상 사용할 때도 /users/me,
+ * /recommendations, /favorites 등을 연속 호출하는 패턴이 매 페이지
+ * 로드마다 발생해 짧은 간격·다수 경로 조건에 걸려 오탐이 반복됐다
+ * (2026-07-22, 사용자 신고). IP는 매번 바뀔 수 있어 IP 화이트리스트로는
+ * 못 막으므로 "admin으로 로그인된 요청"을 통계 집계 자체에서 제외한다.
+ * 로그 파일에는 그대로 남으므로 감사 추적은 유지된다 — 계정 탈취 후
+ * 오남용을 완전히 놓치지 않도록, 완전 무시가 아니라 통계 판단에서만
+ * 제외하는 것이 목적이다.
+ */
+const ANALYSIS_EXCLUDED_USERNAMES = ["admin"];
+
+function isExcludedUsername(username?: string): boolean {
+  return Boolean(username && ANALYSIS_EXCLUDED_USERNAMES.includes(username));
+}
+
 interface IpStat {
   ip: string;
   count: number;
@@ -187,7 +203,8 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
         (e) =>
           new Date(e.ts).getTime() >= cutoff &&
           !excluded.has(e.ip) &&
-          !isExcludedUserAgent(e.userAgent ?? "", e.username),
+          !isExcludedUserAgent(e.userAgent ?? "", e.username) &&
+          !isExcludedUsername(e.username),
       );
       if (recent.length === 0) return;
 
