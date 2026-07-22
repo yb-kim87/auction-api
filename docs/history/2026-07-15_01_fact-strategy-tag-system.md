@@ -207,3 +207,70 @@ description에 반영했다.
 - 관리자가 화면에서 직접 값을 확인·복구할 수 있음(브라우저 쿠키의 JWT로 API를 조회해
   Fact/Strategy 규칙의 실제 코드값을 대조하는 방식으로 원인 진단)
 - "85㎡ 초과 + 아파트" 물건이 목록/상세 양쪽에서 "경쟁이 적은 투자" 배지로 정상 노출됨
+
+## 추가: 같은 라벨을 쓰는 서로 다른 전략의 뱃지 중복 표시 수정 (2026-07-22 追記)
+
+사용자가 물건 카드에 "경쟁이 적은 투자" 뱃지가 완전히 똑같이 2개 찍히는 걸 발견.
+`대형평수_아파트`와 `구축빌라`(서로 다른 strategyCode)가 한 물건에 동시에 매칭됐는데,
+관리자가 둘 다 같은 라벨("경쟁이 적은 투자")을 선택해둔 상태였음 — 데이터/규칙 설정
+자체가 원인이라 렌더링 단계에서 라벨 기준 dedupe 처리.
+
+- `src/types/auction.ts`: `dedupeStrategyTagsByLabel()` 신규(같은 label이면 첫 번째
+  항목만 유지).
+- `src/app/page.tsx`(홈 그리드/리스트뷰 2곳), `src/components/AuctionDetailModal.tsx`
+  (상세 모달)에 적용.
+
+## 추가: 전략 규칙이 실제로 매칭되는지 확인할 방법이 없던 문제 (2026-07-22 追記)
+
+### 발단
+사용자가 관리자 화면(전략 관리 탭)을 보며 "수도권_공시가_1억이하", "지방_공시가_2억이하_아파트"
+전략이 실제로 물건에 붙는지 확인해달라고 요청. 화면 스크린샷만으로는 매칭 여부를 알 수
+없어 운영 DB(Railway Postgres, `DATABASE_PUBLIC_URL`로 로컬에서 직접 접근 — `railway run`은
+내부 호스트(`postgres.railway.internal`)라 로컬에서 접속 불가, Public 프록시
+(`reseau.proxy.rlwy.net:27149`)를 써야 함)를 임시 Node 스크립트로 직접 조회해 실측 검증.
+
+### 발견 1: 오피스텔 전략이 완전히 죽어있었음
+`tag_rules`의 `오피스텔` fact 규칙이 `usage eq "오피스텔"`(정확일치)인데, 실제 저장된
+`usage` 값은 항상 `"오피스텔(주거)"`(808건)/`"오피스텔(상업)"`(17건)이라 단 한 건도
+매칭되지 않았음. 사용자가 관리자 화면에서 직접 연산자를 `contains_any`로 수정
+(값: `오피스텔,오피스텔(상업),오피스텔(주거)`).
+
+### 발견 2: 규칙을 고쳐도 매칭 결과가 갱신 안 됨
+`auctions.factTags/strategyTags`는 물건이 저장/수정될 때만 재계산되고, 관리자가 규칙
+자체를 바꿔도 자동으로 다시 계산되지 않는 구조였음 — 그래서 "규칙은 맞는데 화면엔
+반영이 안 되는" 혼란이 반복됨(지방_공시가_2억이하_아파트가 실측 이론값 1996건인데 저장된
+값 기준 11건으로 나오는 등 크게 어긋남).
+
+### 해결
+1. **자동 재계산**: `TagsService.createRule/updateRule/removeRule`,
+   `createStrategyRule/updateStrategyRule/removeStrategyRule` 전부 저장 직후
+   `backfillTags()`를 자동 호출하도록 변경(`src/tags/tags.service.ts`) — 이후로는 규칙
+   변경 시점에 항상 전체 물건이 재계산됨. 다만 이 자동화가 배포되기 **이전**에 사용자가
+   이미 오피스텔 규칙을 고친 상태였어서, 그 변경분은 자동 재계산 대상이 아니었음 — 관리자
+   화면의 기존 "기존 물건 태그 일괄 재계산" 버튼(`POST /tag-rules/backfill`)을 사용자가
+   직접 눌러 반영.
+2. **매칭 건수 표시**: `GET /tag-rules/match-counts` 신규 — 매 요청마다 규칙 엔진을
+   재실행하지 않고 `auctions.factTags`에 저장된 코드 배열만 집계(물건 수가 늘어나도
+   빠름). **`strategyTags` 컬럼은 집계에 쓰지 않음** — `buildStrategyItemsForCodes`가
+   같은 라벨을 쓰는 여러 strategyCode를 병합하며 `code` 필드 하나만 남기므로, 저장된
+   `strategyTags`만 보면 실제 매칭된 strategyCode 중 일부가 누락돼 있음. 대신
+   `strategyRule.requiredFactCodes`를 `factTags` 집합에 직접 대조해서 정확히 셈.
+   프론트(`StrategyTagsTab.tsx`) 전략 테이블에 "매칭 건수" 컬럼 추가, 0건이면 빨간색
+   강조.
+3. **버그**: 배포 직후 `/tag-rules/match-counts`가 항상 500 에러. 원인은
+   `Auction.@AfterLoad`(`normalizeDisplayFields`)가 select 여부와 무관하게 `address`
+   등 여러 필드에 접근하는데, `getRuleMatchCounts()`가 `find({ select: ["factTags"] })`로
+   일부 컬럼만 로드해 `address`가 `undefined`가 되어 `cleanAddress()` 내부에서
+   `Cannot read properties of undefined (reading 'replace')` 예외 발생. 부분 select를
+   제거하고 전체 컬럼 로드로 수정(운영 로그로 원인 확인, 2026-07-22).
+4. 헤더 "매칭 건수"(4자)가 좁은 컬럼 폭에서 2줄로 줄바꿈되던 문제 — 컬럼 폭 비율 재조정
+   + `whitespace-nowrap` 추가.
+
+### 교훈
+- 엔티티에 `@AfterLoad`/`@BeforeInsert` 등 라이프사이클 훅이 있으면, TypeORM의 부분
+  `select` 옵션을 쓸 때 그 훅이 접근하는 모든 필드가 함께 select됐는지 반드시 확인해야
+  한다 — 아니면 프로덕션에서만 조용히 500 에러가 난다(로컬 sql.js에서는 재현 안 될 수도
+  있음, 검증 필요).
+- 저장된 파생 컬럼(`strategyTags`처럼 여러 원본을 병합해서 만든 값)은 "그 컬럼이 정확히
+  무엇을 표현하는지" 재확인 없이 통계 집계에 재사용하면 안 된다 — 병합 과정에서 정보가
+  소실될 수 있다.
