@@ -1,0 +1,944 @@
+{
+  "status": 200,
+  "message": "물건상세검색 정보가  조회되었습니다.",
+  "timestamp": 1784763116723,
+  "errors": null,
+  "data": {
+    "dma_result": {
+      "csBaseInfo": {
+        "cortOfcCd": "B000210",
+        "cortOfcNm": "서울중앙지방법원",
+        "cortSptNm": "서울중앙지방법원",
+        "csNo": "20080130025092",
+        "csNm": "부동산임의경매",
+        "csRcptYmd": "20080826",
+        "csCmdcYmd": "20080827",
+        "clmAmt": 827912378,
+        "rletApalYn": "N",
+        "auctnSuspStatCd": "03",
+        "ultmtDvsCd": "000",
+        "csUltmtYmd": null,
+        "csProgStatCd": "0002100001",
+        "jdgeAojAsstnNm": "김병학",
+        "auctnDpcnMrgDvsCd": "0",
+        "csProgSuspRsn": null,
+        "mvprpCsNo": null,
+        "mvprpRletDvsCd": "00031R",
+        "jdbnCd": "1002",
+        "cortAuctnJdbnNm": "경매2계",
+        "jdbnTelno": "530-1814(제4별관 민사집행과)",
+        "execrCsTelno": "02-533-6852",
+        "cortTypCd": "40",
+        "expCsNo": null,
+        "lwstDvsCd": "1",
+        "userCsNo": "2008타경25092"
+      },
+      "dstrtDemnInfo": [
+        {
+          "orddcsDvsCd": "021",
+          "dstrtDemnLstprdYmd": "20081128"
+        }
+      ],
+      "dspslGdsDxdyInfo": {
+        "cortOfcCd": "B000210",
+        "csNo": "20080130025092",
+        "dspslGdsSeq": 3,
+        "auctnGdsStatCd": "01",
+        "gdsSpcfcWrtYmd": "20260703",
+        "ndstrcRghCtt": null,
+        "sprfcExstcDts": null,
+        "gdsSpcfcRmk": "-개시결정 당시에는 대지권 미등기이나, 이후 대지권등기가 완료되어 이를 포함하여 매각함(감정평가액도 대지권을 포함한 금액임)\n-건축법상 사용승인 받지 않은 장기미준공 건물(사전입주 및 5층 무단증축으로 인해)로서 집합건축물대장이 없음.\n-2008.11.28. 이재선 유치권신고(879,596,895원)하였으나, 성립여부 불분명함\n-토지 별도등기 있음(가등기, 근저당권)",
+        "tprtyRnkHypthcStngDts": "508-123번지, 508-124번지 토지 : 2003.05.23. 근저당권\n집합건물 : 2008.07.09 근저당권",
+        "dspslGdsRmk": null,
+        "auctnGdsUsgCd": "01",
+        "flbdNcnt": 2,
+        "aeeEvlAmt": 197000000,
+        "fstPbancLwsDspslPrc": 157600000,
+        "scndPbancLwsDspslPrc": null,
+        "thrdPbancLwsDspslPrc": null,
+        "fothPbancLwsDspslPrc": null,
+        "bidDvsCd": "000331",
+        "dspslDxdyYmd": "20260730",
+        "fstDspslHm": "1000",
+        "scndDspslHm": null,
+        "thrdDspslHm": null,
+        "fothDspslHm": null,
+        "dspslDcsnDxdyYmd": "20260806",
+        "dspslGdsSpcfcEcdocId": "2730A5B2AC1906E6721316B64B5EEB22",
+        "prchDposRate": 10,
+        "auctnDxdyGdsStatCd": "00",
+        "dspslPlcNm": "경매법정(제4별관211호)",
+        "dspslDcsnHm": "1400",
+        "dspslDcsnPlcNm": "배당법정(제4별관 3층 7호)",
+        "bidBgngYmd": null,
+        "bidEndYmd": null,
+        "cortOfcNm": "서울중앙지방법원",
+        "cortSptNm": "서울중앙지방법원",
+        "realMulKind": "1",
+        "orvParam": "YQN2WHHG1nS29x92QX9H4PNjJnRHhahyewQ/+XVWNrA+jHHpWKt0LqtUlfdCxDquqNuJPlVqdMvEx6emt1pIL2/oc77lSTI4POIXy0mDLPSrAbjjcKUbtBGg+ZtLRsE1AAkA"
+      },
+      "picDvsIndvdCnt": [
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "cortAuctnPicDvsCd": "000247",
+          "photoGubunCnt": 2
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "cortAuctnPicDvsCd": "000241",
+          "photoGubunCnt": 13
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "cortAuctnPicDvsCd": "000244",
+          "photoGubunCnt": 2
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "cortAuctnPicDvsCd": "000245",
+          "photoGubunCnt": 24
+        }
+      ],
+      "csPicLst": [
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2008/1026/",
+          "picTitlNm": "B000210200801300250921.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "1",
+          "pageSeq": "1",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509226.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "26",
+          "pageSeq": "2",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509227.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "27",
+          "pageSeq": "3",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509228.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "28",
+          "pageSeq": "4",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509229.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "29",
+          "pageSeq": "5",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509230.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "30",
+          "pageSeq": "6",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509231.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "31",
+          "pageSeq": "7",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509232.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "32",
+          "pageSeq": "8",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509233.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "33",
+          "pageSeq": "9",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509234.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "34",
+          "pageSeq": "10",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509235.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "35",
+          "pageSeq": "11",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509236.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "36",
+          "pageSeq": "12",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kj/2026/0403/",
+          "picTitlNm": "B0002102008013002509237.jpg",
+          "cortAuctnPicDvsCd": "000241",
+          "cortAuctnPicSeq": "37",
+          "pageSeq": "13",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509238.jpg",
+          "cortAuctnPicDvsCd": "000244",
+          "cortAuctnPicSeq": "38",
+          "pageSeq": "14",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509239.jpg",
+          "cortAuctnPicDvsCd": "000244",
+          "cortAuctnPicSeq": "39",
+          "pageSeq": "15",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509240.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "40",
+          "pageSeq": "16",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509241.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "41",
+          "pageSeq": "17",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509242.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "42",
+          "pageSeq": "18",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509243.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "43",
+          "pageSeq": "19",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509244.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "44",
+          "pageSeq": "20",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509245.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "45",
+          "pageSeq": "21",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509246.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "46",
+          "pageSeq": "22",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509247.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "47",
+          "pageSeq": "23",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509248.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "48",
+          "pageSeq": "24",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509249.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "49",
+          "pageSeq": "25",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509250.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "50",
+          "pageSeq": "26",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509251.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "51",
+          "pageSeq": "27",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509252.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "52",
+          "pageSeq": "28",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509253.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "53",
+          "pageSeq": "29",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509254.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "54",
+          "pageSeq": "30",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509255.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "55",
+          "pageSeq": "31",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509256.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "56",
+          "pageSeq": "32",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509257.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "57",
+          "pageSeq": "33",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509258.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "58",
+          "pageSeq": "34",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509259.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "59",
+          "pageSeq": "35",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509260.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "60",
+          "pageSeq": "36",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509261.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "61",
+          "pageSeq": "37",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509262.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "62",
+          "pageSeq": "38",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509263.jpg",
+          "cortAuctnPicDvsCd": "000245",
+          "cortAuctnPicSeq": "63",
+          "pageSeq": "39",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509264.jpg",
+          "cortAuctnPicDvsCd": "000247",
+          "cortAuctnPicSeq": "64",
+          "pageSeq": "40",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        },
+        {
+          "picFileUrl": "/nas_e_image_pgj/kp/2026/0429/",
+          "picTitlNm": "B0002102008013002509265.jpg",
+          "cortAuctnPicDvsCd": "000247",
+          "cortAuctnPicSeq": "65",
+          "pageSeq": "41",
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092"
+        }
+      ],
+      "gdsDspslDxdyLst": [
+        {
+          "dxdyYmd": "20151222",
+          "dxdyHm": "1000",
+          "bidBgngYmd": null,
+          "bidEndYmd": null,
+          "dxdyPlcNm": "4별관 211호 경매법정",
+          "auctnDxdyKndCd": "01",
+          "auctnDxdyRsltCd": "002",
+          "auctnDxdyGdsStatCd": "01",
+          "tsLwsDspslPrc": 174000000,
+          "dspslAmt": null
+        },
+        {
+          "dxdyYmd": "20260625",
+          "dxdyHm": "1000",
+          "bidBgngYmd": null,
+          "bidEndYmd": null,
+          "dxdyPlcNm": "경매법정(제4별관211호)",
+          "auctnDxdyKndCd": "01",
+          "auctnDxdyRsltCd": "002",
+          "auctnDxdyGdsStatCd": "01",
+          "tsLwsDspslPrc": 197000000,
+          "dspslAmt": null
+        },
+        {
+          "dxdyYmd": "20260730",
+          "dxdyHm": "1000",
+          "bidBgngYmd": null,
+          "bidEndYmd": null,
+          "dxdyPlcNm": "경매법정(제4별관211호)",
+          "auctnDxdyKndCd": "01",
+          "auctnDxdyRsltCd": null,
+          "auctnDxdyGdsStatCd": "00",
+          "tsLwsDspslPrc": 157600000,
+          "dspslAmt": 0
+        },
+        {
+          "dxdyYmd": "20260806",
+          "dxdyHm": "1400",
+          "bidBgngYmd": null,
+          "bidEndYmd": null,
+          "dxdyPlcNm": "배당법정(제4별관 3층 7호)",
+          "auctnDxdyKndCd": "02",
+          "auctnDxdyRsltCd": null,
+          "auctnDxdyGdsStatCd": null,
+          "tsLwsDspslPrc": 0,
+          "dspslAmt": 0
+        }
+      ],
+      "gdsDspslObjctLst": [
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "dspslGdsSeq": 3,
+          "dspslObjctSeq": 5,
+          "rletDvsDts": "전유",
+          "pjbBuldList": "철근콘크리트조\r\n68.70㎡",
+          "aeeEvlAmt": 197000000,
+          "lclDspslGdsLstUsgCd": "20000",
+          "mclDspslGdsLstUsgCd": "20100",
+          "sclDspslGdsLstUsgCd": "20104",
+          "rprsAdongSdCd": "11",
+          "rprsAdongSggCd": "290",
+          "rprsAdongEmdCd": "133",
+          "rprsAdongRiCd": "00",
+          "stXcrd": 312192,
+          "stYcrd": 555694,
+          "adongSdNm": "서울특별시",
+          "adongSggNm": "성북구",
+          "adongEmdNm": "정릉동",
+          "adongRiNm": null,
+          "rprsLtnoAddr": "508-123",
+          "bldNm": null,
+          "objctArDts": null,
+          "ldcgDts": null,
+          "dspslStkNmrtVal": 0,
+          "dspslStkDnmnVal": 0,
+          "dspslStkCtt": null,
+          "gdsVendNm": null,
+          "fuelKndCd": "0001002",
+          "grbxTypCd": null,
+          "motrFmtDts": null,
+          "carMdlNm": null,
+          "carDsplcCtt": "0",
+          "objctRegNo": null,
+          "carDelvYr": null,
+          "carVidCtt": null,
+          "objctAprvNo": null,
+          "drvnDistIndctCtt": null,
+          "auctnLstDvsCd": "03",
+          "storgPlcAdongSdCd": null,
+          "storgPlcAdongSggCd": null,
+          "storgPlcAdongEmdCd": "112\u001f",
+          "storgPlcAdongRiCd": "00",
+          "storgPlcAllLtnoAddr": null,
+          "objctRletCarUnqNo": "11442003011710",
+          "pnuNoCtt": "1129013300105080123",
+          "storgPlcAdongSd": null,
+          "storgPlcAdongSgg": null,
+          "storgPlcAdongEmd": null,
+          "storgPlcAdongRi": null,
+          "rdnmSdNm": null,
+          "rdnmSggNm": null,
+          "rdEubMyun": null,
+          "rdnm": null,
+          "rdnmBldNo": null,
+          "rdnmRefcAddr": null,
+          "addrTypCd": "A",
+          "storgPlcRdnmAddr": " ",
+          "storgPlcAddrTypCd": null,
+          "bldDtlDts": "1층104호",
+          "userPrintSt": "서울특별시 성북구 정릉동 508-123 1층104호",
+          "rgstRdngYn": "Y"
+        }
+      ],
+      "rgltLandLstAll": [
+        [
+          {
+            "cortOfcCd": "B000210",
+            "csNo": "20080130025092",
+            "dspslObjctSeq": 5,
+            "rgltLandSeq": 1,
+            "rletCarUnqNo": "11442003011710",
+            "rletDvsDts": "전유",
+            "landArDts": "254㎡",
+            "landLdcgDts": "대",
+            "auctnRgltKndCd": "12401",
+            "rgltRateDnmnVal": "1362.83",
+            "rgltRateNmrtVal": "68.7",
+            "rletIndctDts": "서울특별시성북구정릉동508-123",
+            "rgltLandSdNm": "서울특별시",
+            "rgltLandSggNm": "성북구",
+            "rgltLandEmdNm": "정릉동",
+            "rgltLandRiNm": null,
+            "rgltLandLtnoAddr": "508-123",
+            "rgltLandNo": 3
+          },
+          {
+            "cortOfcCd": "B000210",
+            "csNo": "20080130025092",
+            "dspslObjctSeq": 5,
+            "rgltLandSeq": 2,
+            "rletCarUnqNo": "11442003011710",
+            "rletDvsDts": "전유",
+            "landArDts": "298㎡",
+            "landLdcgDts": "대",
+            "auctnRgltKndCd": "12401",
+            "rgltRateDnmnVal": "1362.83",
+            "rgltRateNmrtVal": "68.7",
+            "rletIndctDts": "서울특별시성북구정릉동508-124",
+            "rgltLandSdNm": "서울특별시",
+            "rgltLandSggNm": "성북구",
+            "rgltLandEmdNm": "정릉동",
+            "rgltLandRiNm": null,
+            "rgltLandLtnoAddr": "508-124",
+            "rgltLandNo": 4
+          }
+        ]
+      ],
+      "bldSdtrDtlLstAll": [
+        [
+          {
+            "cortOfcCd": "B000210",
+            "csNo": "20080130025092",
+            "dspslObjctSeq": 5,
+            "bldSdtrSeq": 1,
+            "rletCarUnqNo": "11442003011710",
+            "rletDvsDts": "1동",
+            "bldSdtrDtlDts": "철근콘크리트조 평스라브지붕 5층 아파트\n지하1층 509.58㎡\n    1층 315.68㎡\n    2층 315.68㎡\n    3층 315.68㎡\n    4층 315.68㎡\n    5층 238.13㎡\n옥탑1층  27.60㎡\n옥탑2층   7.68㎡"
+          },
+          {
+            "cortOfcCd": "B000210",
+            "csNo": "20080130025092",
+            "dspslObjctSeq": 5,
+            "bldSdtrSeq": 2,
+            "rletCarUnqNo": "11442003011710",
+            "rletDvsDts": "전유",
+            "bldSdtrDtlDts": "철근콘크리트조\r\n68.70㎡"
+          }
+        ]
+      ],
+      "gdsNotSugtBldLsstAll": [
+        []
+      ],
+      "gdsRletStLtnoLstAll": [
+        [
+          {
+            "cortOfcCd": "B000210",
+            "csNo": "20080130025092",
+            "dspslObjctSeq": 5,
+            "rletStSeq": 1,
+            "adongSdCd": "11",
+            "adongSggCd": "290",
+            "adongEmdCd": "133",
+            "adongRiCd": "00",
+            "rletStLtnoAddr": "508-123",
+            "adongSdNm": "서울특별시",
+            "adongSggNm": "성북구",
+            "adongEmdNm": "정릉동",
+            "adongRiNm": null,
+            "auctnLstDvsCd": "03",
+            "mclDspslGdsLstUsgCd": "20100",
+            "rdnmSdNm": null,
+            "rdnmSggNm": null,
+            "rdEubMyun": null,
+            "rdnm": null,
+            "rdnmBldNo": null,
+            "rdnmRefcAddr": null,
+            "addrTypCd": "A"
+          },
+          {
+            "cortOfcCd": "B000210",
+            "csNo": "20080130025092",
+            "dspslObjctSeq": 5,
+            "rletStSeq": 2,
+            "adongSdCd": "11",
+            "adongSggCd": "290",
+            "adongEmdCd": "133",
+            "adongRiCd": "00",
+            "rletStLtnoAddr": "508-124",
+            "adongSdNm": "서울특별시",
+            "adongSggNm": "성북구",
+            "adongEmdNm": "정릉동",
+            "adongRiNm": null,
+            "auctnLstDvsCd": "03",
+            "mclDspslGdsLstUsgCd": "20100",
+            "rdnmSdNm": null,
+            "rdnmSggNm": null,
+            "rdEubMyun": null,
+            "rdnm": null,
+            "rdnmBldNo": null,
+            "rdnmRefcAddr": null,
+            "addrTypCd": "A"
+          }
+        ]
+      ],
+      "aeeWevlMnpntLst": [
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 1,
+          "aeeWevlMnpntTbltDvsCd": "00082001",
+          "aeeWevlMnpntItmCd": "00083001",
+          "aeeWevlMnpntCtt": "본건은 서울특별시 성북구 정릉동 소재 \"스카이단지\" 내에 위치하며, \n주변은 일반주택지대로서, 단독주택, 공동주택, 임야등이 소재함."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 2,
+          "aeeWevlMnpntTbltDvsCd": "00082001",
+          "aeeWevlMnpntItmCd": "00083003",
+          "aeeWevlMnpntCtt": "본건까지 차량 접근 가능하고 도보로 인근에 마을버스정류장이 소재하며, 운행상태 등으로\n보아 대중교통사정은 보통시됨."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 3,
+          "aeeWevlMnpntTbltDvsCd": "00082001",
+          "aeeWevlMnpntItmCd": "00083008",
+          "aeeWevlMnpntCtt": "본건은 완경사 부정형 토지로서, 현황 주거용(아파트) 대지임. 일부 약 28㎡은 현황도로임.\n"
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 4,
+          "aeeWevlMnpntTbltDvsCd": "00082001",
+          "aeeWevlMnpntItmCd": "00083004",
+          "aeeWevlMnpntCtt": "본건은 세각(가)로서 북측으로 로폭 약 4 미터, 남서측으로 로폭 약 6미터의 도로 등에 \n접함."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 5,
+          "aeeWevlMnpntTbltDvsCd": "00082001",
+          "aeeWevlMnpntItmCd": "00083011",
+          "aeeWevlMnpntCtt": "도시지역, 제1종일반주거지역, 대공방어협조구역, 제한보호구역, 토지거래계약에관한허가구역"
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 6,
+          "aeeWevlMnpntTbltDvsCd": "00082001",
+          "aeeWevlMnpntItmCd": "00083013",
+          "aeeWevlMnpntCtt": "-."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 7,
+          "aeeWevlMnpntTbltDvsCd": "00082001",
+          "aeeWevlMnpntItmCd": "00083014",
+          "aeeWevlMnpntCtt": " 기호(1) ,(2) 지상에 건물등기부 등본 및 일반건축물대장상 건축물이 등재되어있으나 현황은 철거되어 멸실후 구분건물신축상태임.\n 기호(2)는 지적도상 전체가 대지이나, 약 28㎡은 현황 도로임.(지적도 참조)"
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 8,
+          "aeeWevlMnpntTbltDvsCd": "00082001",
+          "aeeWevlMnpntItmCd": "00083026",
+          "aeeWevlMnpntCtt": " 기호(1), (2)는 현재 구분건물이 위치해있으나 현재 멸실된 구건물의 건물등기부등본 및\n일반건축물대장이 아직 정리되지 않았기에 경매진행시 이를 참고바람니다.\n임대관계 미상임."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 1,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083001",
+          "aeeWevlMnpntCtt": "본건은 서울특별시 성북구 정릉동 소재 &amp;quot;성북참요양병원&amp;quot; 북서측 인근에 위치하며, 주변은 단독 및 다세대연립주택, 공원, 근린생활시설 등이 혼재하는 지역으로 제반 주위환경은 보통임."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 1,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083001",
+          "aeeWevlMnpntCtt": "본건은 서울특별시 성북구 정릉동 소재 \"스카이단지\" 내에 위치하며, \n주변은 일반주택지대로서, 단독주택, 공동주택, 임야등이 소재함."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 2,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083003",
+          "aeeWevlMnpntCtt": "본건까지 차량 진출입이 가능하고, 인근에 노선버스 정류장이 소재하는 등 제반 교통상황은 보통임."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 2,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083003",
+          "aeeWevlMnpntCtt": "본건까지 차량 접근 가능하고 인근에 마을버스정류장이 소재하며, 운행상태 등으로\n보아 대중교통사정은 보통시됨.\n"
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 3,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083015",
+          "aeeWevlMnpntCtt": "본건은 철근콘크리트조 평스라브지붕 5층 건물중 제1층 제102호외 로서\n외벽은 변색벽돌 치장쌓기 및 후면 드라이비트 마감\n내벽은 벽지마감 및 일부 타일붙임\n바닥은 장판 마감 및 일부 타일깔기\n창호는 하이샷시등 임."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 3,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083015",
+          "aeeWevlMnpntCtt": "본건은 철근콘크리트조 5층 건물 내, 제1층 제102호 외 14개호로서  외벽 : 치장벽돌붙임 마감 등, 창호 : 샷시 창호 등임."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 4,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083006",
+          "aeeWevlMnpntCtt": "본건은 등기사항전부증명서에 아파트로 기재되어 있음."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 4,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083006",
+          "aeeWevlMnpntCtt": "  제1층 제102호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제1층 제103호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제1층 제104호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제2층 제202호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제2층 제203호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제2층 제204호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제3층 제302호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제3층 제303호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)     \n  제3층 제304호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제4층 제401호  아파트(방3, 거실1, 주방1, 욕실1, 발코니3, 다용도실1)\n  제4층 제402호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제4층 제403호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제4층 제404호  아파트(방3, 거실1, 주방1, 욕실2, 발코니2)\n  제5층 제501호  아파트(방3, 거실1, 주방1, 욕실1, 발코니2, 다용도실1)\n  제5층 제502호  아파트(방3, 거실1, 주방1, 욕실1, 발코니2, 다용도실1)\n  제5층 제503호  아파트(방2, 거실1, 주방1, 욕실2, 발코니3)\n등으로 각각 이용중임."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 5,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083017",
+          "aeeWevlMnpntCtt": "기본적인 위생 및 급배수설비, 소방설비, 난방설비, 지하주차장설비 등이 구비되어 있음."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 5,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083017",
+          "aeeWevlMnpntCtt": "위생설비 갖추었으며, 도시가스보일러에 의한 개별난방임.\n1-2호라인에 엘레베이터 시설 갖추었으나 운행가능한지는 미확인됨.\n"
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 6,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083009",
+          "aeeWevlMnpntCtt": "-."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 6,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083009",
+          "aeeWevlMnpntCtt": "인접지 및 인접도로 대비 완경사지내 평탄하게 조성된 2필지 일단의 가장형 토지로서, 주거용 건부지로 이용중임."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 7,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083005",
+          "aeeWevlMnpntCtt": "-.\n"
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 7,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083005",
+          "aeeWevlMnpntCtt": "본건 남서측으로 7미터, 2미터 내외의 포장도로에 각각 접함."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 8,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083011",
+          "aeeWevlMnpntCtt": "도시지역, 제1종일반주거지역, 대공방어협조구역, 제한보호구역, \n토지거래계약에관한허가구역\n"
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 8,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083011",
+          "aeeWevlMnpntCtt": "기호 1),2) 각각 : 도시지역, 제1종일반주거지역, 가축사육제한구역&lt;가축분뇨의 관리 및 이용에 관한 법률&gt;, 대공방어협조구역(위탁고도:77-257m)&lt;군사기지 및 군사시설 보호법&gt;, 제한보호구역(후방지역:500m)&lt;군사기지 및 군사시설 보호법&gt;, 역사문화환경보존지역(2008-12-10)(자세한사항별도확인:문화체육과)&lt;문화유산의 보존 및 활용에 관한 법률&gt;, 과밀억제권역&lt;수도권정비계획법&gt;, 토지거래계약에관한허가구역(2025-08-21)(대상자: 외국인 등. 용도: 단독 다가구 아파트 연립 다세대. 지정기간: 2025.8.26.~2026.8.25.),토지거래계약에관한허가구역(2025-10-15)(허가대상 용도: 아파트. 지정기간: 2025.10.20.~2026.12.31.)임. "
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 9,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083014",
+          "aeeWevlMnpntCtt": "1)기호(18) 제5층 제503호로 되어 있으나 현황 제504호로 표기되어 있음.\n2)본건 아파트의 집합건축물대장 없음.\n3)양지상에 현재 멸실된 구건물의 건물등기와 일반건축물관리대장 존재함.\n"
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 9,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083014",
+          "aeeWevlMnpntCtt": "본건은 장기미준공 건물로서 집합건축물대장이 없음."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 10,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083026",
+          "aeeWevlMnpntCtt": "임대관계 미상임."
+        },
+        {
+          "cortOfcCd": "B000210",
+          "csNo": "20080130025092",
+          "aeeWevlMnpntDtlSeq": 10,
+          "aeeWevlMnpntTbltDvsCd": "00082003",
+          "aeeWevlMnpntItmCd": "00083026",
+          "aeeWevlMnpntCtt": "임대미상임."
+        }
+      ]
+    },
+    "ipcheck": true
+  },
+  "token": null
+}
