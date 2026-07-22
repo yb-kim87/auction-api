@@ -82,6 +82,45 @@
 - 구글 서비스 계정이 다른 IP로 요청하게 되면(주소가 바뀌면) 같은 알림이
   다시 발생할 수 있음 — 그때는 새로 등장한 IP를 목록에 추가할 것
 
+## User-Agent 기반 예외 추가 (2026-07-17/18)
+
+- Google Apps Script(인스타그램 인스턴트 구글시트 연동)는 GCP 임대 IP를 매번 다르게
+  써서 IP 화이트리스트를 계속 추가해야 하는 문제. User-Agent에 `Google-Apps-Script`가
+  포함되면 예외 처리(`EXCLUDED_USER_AGENT_SUBSTRINGS`).
+- 개발자 본인이 로컬/서버에서 node 스크립트(curl 테스트 등)로 관리자 계정 로그인 후
+  테스트할 때도 오탐 다수 발생. User-Agent가 정확히 `"node"`이고 **동시에** 로그인
+  사용자명이 `admin`일 때만 예외 처리(`EXCLUDED_USER_AGENT_EXACT` +
+  `EXCLUDED_UA_REQUIRES_ADMIN_USERNAMES`) — User-Agent만으로 전역 예외하면 공격자가
+  UA를 흉내 낼 수 있는 구멍이 생기므로, 로그인 조건을 반드시 함께 건다.
+
+## admin 계정 자체를 통계에서 제외 (2026-07-22)
+
+배포 후에도 관리자 본인이 화면을 정상 사용할 때(`/users/me`, `/recommendations`,
+`/recommendations/strategy-labels`, `/favorites` 등을 페이지 로드마다 연속 호출)
+"이상행위 감지" 텔레그램 알림이 계속 옴 — 사용자가 로그 스크린샷으로 신고. User-Agent가
+브라우저(`Mozilla/...`)라 기존 node UA 예외 조건에 걸리지 않았고, IP도 매번 달라져 IP
+화이트리스트로는 못 막는 상황이었음.
+
+- `isExcludedUsername()` 추가, `username === "admin"`인 요청은 통계 집계(`runOnce`의
+  `recent` 필터링) 단계에서 제외. **로그 파일에는 그대로 기록되므로 감사 추적은
+  유지**되고, 이상행위 "판단" 대상에서만 빠진다 — 계정 탈취 후 오남용까지 완전히
+  놓치지 않기 위한 절충.
+- 검토했으나 채택하지 않은 대안: 경로(path) 자체를 화이트리스트하는 방식. 범위가
+  너무 넓어져(`/auctions`, `/favorites`, `/recommendations` 등 대부분의 API가 대상이
+  됨) 로그인 없이 그 경로들을 두드리는 진짜 공격까지 놓칠 위험이 있어 배제. 사용자
+  결정: "admin 예외만 유지, 경로는 추가 안 함".
+
+## 텔레그램 알림에 계정/경로 정보 추가 (2026-07-22)
+
+기존 알림 메시지에는 의심 IP만 나열되어 어떤 계정으로 어떤 경로를 두드렸는지 알림만
+보고는 알 수 없었음(사용자 피드백: "username이랑 path도 같이 보여주면 좋을 것 같아").
+
+- `runOnce()`에서 AI가 지목한 `suspiciousIps`(또는 없으면 전체 통계)를 이미 집계해둔
+  `IpStat`(usernames, paths)과 매칭해, 알림 메시지에 IP별로
+  `- {ip} (계정: {usernames} / 경로: {paths 최대 5개} 외)` 형태로 함께 표시.
+  AI에게 매번 정확한 포맷으로 계정/경로까지 뽑아달라고 하는 대신, 이미 계산해둔 통계를
+  재사용하는 방식을 택함(AI 응답 포맷 불안정성 회피).
+
 ## 참고사항 / 향후 고려
 
 - Railway 컨테이너는 재배포 시 파일시스템이 초기화될 수 있어, `logs/requests.log`도
