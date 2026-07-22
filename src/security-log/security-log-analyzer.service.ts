@@ -211,9 +211,19 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
       const stats = buildIpStats(recent);
       const result = await this.judge(stats);
       if (result.suspicious) {
+        const statByIp = new Map(stats.map((s) => [s.ip, s]));
+        const ipDetailLines = (
+          result.suspiciousIps.length > 0 ? result.suspiciousIps : stats.map((s) => s.ip)
+        ).map((ip) => {
+          const s = statByIp.get(ip);
+          if (!s) return `- ${ip}`;
+          const usernames = s.usernames.size > 0 ? [...s.usernames].join(",") : "비로그인";
+          const paths = [...s.paths].slice(0, 5).join(", ") + (s.paths.size > 5 ? " 외" : "");
+          return `- ${ip} (계정: ${usernames} / 경로: ${paths})`;
+        });
         await this.telegramAlert.send(
-          `[보안 알림] 이상 요청 패턴이 감지되었습니다.\n\n${result.summary}\n\n의심 IP: ${
-            result.suspiciousIps.join(", ") || "특정 불가"
+          `[보안 알림] 이상 요청 패턴이 감지되었습니다.\n\n${result.summary}\n\n의심 IP:\n${
+            ipDetailLines.join("\n") || "특정 불가"
           }`,
         );
         this.logger.warn(`이상행위 감지: ${result.summary}`);
