@@ -121,6 +121,30 @@
   AI에게 매번 정확한 포맷으로 계정/경로까지 뽑아달라고 하는 대신, 이미 계산해둔 통계를
   재사용하는 방식을 택함(AI 응답 포맷 불안정성 회피).
 
+## 로그 저장을 파일에서 DB 테이블로 전환 (2026-07-22)
+
+파일(`logs/requests.log`) 방식은 위 "참고사항"에서 이미 지적했던 대로 Railway
+재배포 시 컨테이너 파일시스템이 초기화돼 로그가 사라지고, 20MB 넘으면 회전만
+될 뿐 옛 로그를 어디에도 보관하지 않는 문제가 있었음. 로그가 쌓이면 느려질까
+걱정되면서도, 나중에 문제 조사를 위해 로그를 남겨두고 싶다는 요청(사용자,
+2026-07-22)에 따라 구글시트/로컬 파일 등 대안을 검토한 뒤 **DB 테이블**로
+결정 — 이미 Postgres가 붙어있어 추가 인프라 없이 가능하고, SQL 조회가
+grep보다 빠르며, 재배포에도 안전.
+
+- `src/security-log/request-log.entity.ts` 신규: `request_logs` 테이블(`ts`에
+  인덱스). 마이그레이션 `1784234000000-AddRequestLogsTable.ts`.
+- `RequestLogWriterService`: 파일 append/readAll → Repository
+  insert/`findSince(since)`/`findRecent(limit)`로 전환.
+- `SecurityLogAnalyzerService.runOnce()`: 파일 파싱(`parseLogLines`) 제거,
+  `findSince(cutoffDate)`로 최근 구간만 DB에서 직접 조회.
+- **보관 정책**: `purgeOld()` 추가, 30일 지난 로그를 1시간 간격으로 자동
+  삭제(`PURGE_INTERVAL_MINUTES`) — 이 스케줄러는 OpenAI/텔레그램 키 설정
+  여부와 무관하게 항상 동작해야 하므로 AI 분석 스케줄러와 분리해서 등록.
+- 로그 양이 너무 많아지면(30일 보관으로도 부족하면) 그때 DB에서 로컬로 내려
+  받아 보관하는 방식을 쓰기로 함(사용자 결정) — 지금은 자동 아카이빙 별도
+  구현 없이 30일 자동 삭제만 적용.
+- `.gitignore`에 `logs/` 추가(파일 로그 잔재 정리).
+
 ## 참고사항 / 향후 고려
 
 - Railway 컨테이너는 재배포 시 파일시스템이 초기화될 수 있어, `logs/requests.log`도
