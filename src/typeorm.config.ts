@@ -28,6 +28,7 @@ import { TagRule } from "./tags/tag-rule.entity";
 import { StrategyRule } from "./tags/strategy-rule.entity";
 import { StrategyLabel } from "./tags/strategy-label.entity";
 import { SecurityLogIpExclusion } from "./security-log/security-log-ip-exclusion.entity";
+import { RequestLog } from "./security-log/request-log.entity";
 import { CrawlerConfigRow } from "./crawler/crawler-config.entity";
 
 const entities = [
@@ -58,6 +59,7 @@ const entities = [
   StrategyRule,
   StrategyLabel,
   SecurityLogIpExclusion,
+  RequestLog,
   CrawlerConfigRow,
 ];
 

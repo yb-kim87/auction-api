@@ -17,13 +17,12 @@ export class SecurityLogController {
     return this.analyzer.runNow();
   }
 
-  /** 최근 로그 파일 원문(마지막 N줄)을 관리자 화면에서 확인용으로 노출 */
+  /** 최근 요청 로그(최신 200건)를 관리자 화면에서 확인용으로 노출 */
   @Get("recent")
   async recent(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
-    const raw = await this.logWriter.readAll();
-    const lines = raw.split("\n").filter((l) => l.trim());
-    return { lines: lines.slice(-200) };
+    const entries = await this.logWriter.findRecent(200);
+    return { lines: entries.map((e) => JSON.stringify(e)) };
   }
 
   /** 분석 대상에서 제외할 IP 목록(화이트리스트) 조회 */

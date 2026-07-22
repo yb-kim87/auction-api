@@ -11,6 +11,10 @@ const ANALYZE_INTERVAL_MINUTES = 10;
 const WINDOW_MINUTES = 10;
 /** 로그 라인이 너무 많으면 AI 프롬프트가 비대해지므로 통계로 압축해서 넘긴다 */
 const TOP_N = 20;
+/** 오래된 로그 삭제(purgeOld)를 이 간격으로 실행한다 — AI 분석과 달리
+ * OpenAI/텔레그램 설정 여부와 무관하게 항상 동작해야 한다(사용자 요청,
+ * 2026-07-22). */
+const PURGE_INTERVAL_MINUTES = 60;
 
 /**
  * 정상적인 외부 연동(구글 서비스 계정 Sheets API 등)에서 반복 오탐이
@@ -65,7 +69,7 @@ function isExcludedUserAgent(userAgent: string, username?: string): boolean {
  * 로드마다 발생해 짧은 간격·다수 경로 조건에 걸려 오탐이 반복됐다
  * (2026-07-22, 사용자 신고). IP는 매번 바뀔 수 있어 IP 화이트리스트로는
  * 못 막으므로 "admin으로 로그인된 요청"을 통계 집계 자체에서 제외한다.
- * 로그 파일에는 그대로 남으므로 감사 추적은 유지된다 — 계정 탈취 후
+ * 로그 테이블에는 그대로 남으므로 감사 추적은 유지된다 — 계정 탈취 후
  * 오남용을 완전히 놓치지 않도록, 완전 무시가 아니라 통계 판단에서만
  * 제외하는 것이 목적이다.
  */
@@ -83,19 +87,6 @@ interface IpStat {
   userAgents: Set<string>;
   minIntervalMs: number;
   errorCount: number;
-}
-
-function parseLogLines(raw: string): RequestLogEntry[] {
-  const lines = raw.split("\n").filter((l) => l.trim());
-  const entries: RequestLogEntry[] = [];
-  for (const line of lines) {
-    try {
-      entries.push(JSON.parse(line) as RequestLogEntry);
-    } catch {
-      // 손상된 줄은 건너뜀
-    }
-  }
-  return entries;
 }
 
 function buildIpStats(entries: RequestLogEntry[]): IpStat[] {
@@ -163,8 +154,17 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
     private readonly ipExclusionRepo: Repository<SecurityLogIpExclusion>,
   ) {}
 
+  private purgeTimer: ReturnType<typeof setInterval> | null = null;
+
   async onModuleInit() {
     await this.seedInitialExclusions();
+
+    this.purgeTimer = setInterval(
+      () => void this.logWriter.purgeOld().catch(() => {}),
+      PURGE_INTERVAL_MINUTES * 60_000,
+    );
+    void this.logWriter.purgeOld().catch(() => {});
+
     if (!this.openAi.isConfigured() || !this.telegramAlert.isConfigured()) {
       this.logger.log(
         "보안 로그 분석 스케줄러 비활성화(OPENAI_API_KEY 또는 TELEGRAM 설정 없음)",
@@ -187,21 +187,20 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
 
   onModuleDestroy() {
     if (this.timer) clearInterval(this.timer);
+    if (this.purgeTimer) clearInterval(this.purgeTimer);
   }
 
   private async runOnce(): Promise<void> {
     if (this.analyzing) return;
     this.analyzing = true;
     try {
-      const raw = await this.logWriter.readAll();
-      const allEntries = parseLogLines(raw);
+      const cutoffDate = new Date(Date.now() - WINDOW_MINUTES * 60_000);
+      const allEntries = await this.logWriter.findSince(cutoffDate);
       const excluded = new Set(
         (await this.ipExclusionRepo.find()).map((row) => row.ip),
       );
-      const cutoff = Date.now() - WINDOW_MINUTES * 60_000;
       const recent = allEntries.filter(
         (e) =>
-          new Date(e.ts).getTime() >= cutoff &&
           !excluded.has(e.ip) &&
           !isExcludedUserAgent(e.userAgent ?? "", e.username) &&
           !isExcludedUsername(e.username),
