@@ -225,7 +225,9 @@ export class TagsService implements OnModuleInit {
       active: input.active ?? true,
       sortOrder: input.sortOrder ?? 0,
     });
-    return this.tagRuleRepo.save(rule);
+    const saved = await this.tagRuleRepo.save(rule);
+    await this.backfillTags();
+    return saved;
   }
 
   async updateRule(id: string, input: Partial<TagRuleInput>): Promise<TagRule> {
@@ -248,12 +250,15 @@ export class TagsService implements OnModuleInit {
     rule.value = merged.value;
     rule.active = merged.active ?? true;
     rule.sortOrder = merged.sortOrder ?? 0;
-    return this.tagRuleRepo.save(rule);
+    const saved = await this.tagRuleRepo.save(rule);
+    await this.backfillTags();
+    return saved;
   }
 
   async removeRule(id: string): Promise<{ ok: boolean }> {
     const result = await this.tagRuleRepo.delete({ id });
     if (!result.affected) throw new NotFoundException("태그 규칙을 찾을 수 없습니다.");
+    await this.backfillTags();
     return { ok: true };
   }
 
@@ -290,7 +295,9 @@ export class TagsService implements OnModuleInit {
       active: input.active ?? true,
       sortOrder: input.sortOrder ?? 0,
     });
-    return this.strategyRuleRepo.save(rule);
+    const saved = await this.strategyRuleRepo.save(rule);
+    await this.backfillTags();
+    return saved;
   }
 
   async updateStrategyRule(id: string, input: Partial<StrategyRuleInput>): Promise<StrategyRule> {
@@ -306,12 +313,15 @@ export class TagsService implements OnModuleInit {
     }
     if (input.active != null) rule.active = input.active;
     if (input.sortOrder != null) rule.sortOrder = input.sortOrder;
-    return this.strategyRuleRepo.save(rule);
+    const saved = await this.strategyRuleRepo.save(rule);
+    await this.backfillTags();
+    return saved;
   }
 
   async removeStrategyRule(id: string): Promise<{ ok: boolean }> {
     const result = await this.strategyRuleRepo.delete({ id });
     if (!result.affected) throw new NotFoundException("Strategy 규칙을 찾을 수 없습니다.");
+    await this.backfillTags();
     return { ok: true };
   }
 
@@ -451,6 +461,55 @@ export class TagsService implements OnModuleInit {
       }
     }
     return { total: items.length, updated };
+  }
+
+  /** 각 Fact/Strategy 규칙이 현재 몇 건의 물건에 매칭되는지 집계한다. 매
+   * 요청마다 규칙 엔진을 다시 돌리지 않고 auctions.factTags에 저장된
+   * fact 코드 배열만 세므로, 물건 수가 늘어나도 카운트 자체는 빠르다
+   * (규칙 변경 직후엔 create/update/remove가 자동으로 backfillTags를
+   * 호출해 이 컬럼을 최신 상태로 맞춰둔다 — 사용자 요청, 2026-07-22).
+   *
+   * strategyTags 컬럼은 쓰지 않는다 — buildStrategyItemsForCodes가 같은
+   * 라벨을 쓰는 여러 strategyCode를 하나로 병합하면서 code 하나만 남기기
+   * 때문에(라벨 공유 시 다른 strategyCode가 저장에서 누락됨), strategy
+   * 규칙의 requiredFactCodes를 factTags 집합에 직접 대조해서 센다.
+   */
+  async getRuleMatchCounts(): Promise<{
+    factCounts: Record<string, number>;
+    strategyCounts: Record<string, number>;
+  }> {
+    const [items, strategyRules] = await Promise.all([
+      this.auctionRepo.find({ select: ["factTags"] }),
+      this.findAllStrategyRules(),
+    ]);
+
+    const factCounts: Record<string, number> = {};
+    const strategyCounts: Record<string, number> = {};
+    for (const rule of strategyRules) {
+      strategyCounts[rule.strategyCode] = 0;
+    }
+
+    for (const item of items) {
+      let factCodes: string[] = [];
+      try {
+        const parsed = JSON.parse(item.factTags || "[]");
+        if (Array.isArray(parsed)) factCodes = parsed;
+      } catch {
+        // 무시
+      }
+      const factSet = new Set(factCodes);
+      for (const code of factCodes) {
+        factCounts[code] = (factCounts[code] ?? 0) + 1;
+      }
+      for (const rule of strategyRules) {
+        const required = parseStrategyLabelIds(rule.requiredFactCodes);
+        if (required.length > 0 && required.every((c) => factSet.has(c))) {
+          strategyCounts[rule.strategyCode] += 1;
+        }
+      }
+    }
+
+    return { factCounts, strategyCounts };
   }
 
   getFieldRegistry() {

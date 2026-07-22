@@ -31,6 +31,12 @@ export class TagsController {
     return this.tagsService.findAllRules();
   }
 
+  @Get("match-counts")
+  async matchCounts(@Headers() headers: Record<string, string>) {
+    requireAuth(getAuthContext(headers));
+    return this.tagsService.getRuleMatchCounts();
+  }
+
   @Get("fields")
   async fields(@Headers() headers: Record<string, string>) {
     requireAuth(getAuthContext(headers));
