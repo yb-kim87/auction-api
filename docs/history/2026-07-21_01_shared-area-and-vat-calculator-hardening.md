@@ -106,6 +106,48 @@
   (일반 사용자) 청크에는 없고 `/admin`(관리자, CrawlerVatTab) 청크에만 있음을
   확인 — 기존에 구축해둔 "부가세 계산식 클라이언트 비노출" 방침이 새 로직에도 유지됨.
 
+## 관리자 부가세계산기 상업용 옵션 미작동 + 구조지수 자동 매칭 (2026-07-23 追記)
+
+오피스텔 취득세/부가세 작업 도중 사용자가 관리자 부가세계산기(`CrawlerVatTab.tsx`)의
+"상업용" 버튼을 눌러도 아무 반영이 안 된다고 지적 — 확인 결과 `usageType`(주거용/
+상업용) state는 있었지만 용도 드롭박스(`USAGE_OPTIONS`, 항상 아파트/기타/오피스텔
+3개 고정)가 이 state를 전혀 참조하지 않는 버그였음(구현 자체가 누락된 상태).
+
+atomtax-app.vercel.app(https://atomtax-app.vercel.app/calculator/vat/calc)을
+Selenium으로 재실측:
+- 상업용 용도 옵션 40개(호텔·백화점·사무소·병원·학교 등) 전체 확보, 확인 완료.
+- 구조 드롭박스는 주거용/상업용 공통으로 동일한 목록(24개)임을 확인 — 카테고리별로
+  분리할 필요 없음.
+- atomtax는 **용도** 옵션 라벨엔 지수를 표시하지만(`오피스텔 (주거용 임대) (140)`),
+  **구조** 옵션 라벨엔 지수를 표시하지 않음(`철근콘크리트조 (RC)`만) — 우리 화면은
+  구조에도 `(지수)`를 붙이고 있어 atomtax와 동일하게 구조 라벨에서만 지수 표시 제거.
+
+`CrawlerVatTab.tsx` 수정: `RESIDENTIAL_USAGE_OPTIONS`(기존 3개)/`COMMERCIAL_USAGE_
+OPTIONS`(신규 40개)로 분리, `usage` state를 문자열 대신 "선택된 인덱스"로 바꿔
+카테고리 전환 시 `usageOptions[usageOptionIndex]`로 실제 옵션이 함께 바뀌도록 연결
+(`handleUsageTypeChange`가 토글 시 인덱스를 0으로 리셋).
+
+### 구조지수 자동 매칭 (수익계산기 `/api/vat/calc`)
+논의 중 "구조가 바뀌면 계산식이 어떻게 달라지냐"는 질문에서, 현재 수익계산기
+서버 라우트가 구조지수를 항상 `STRUCTURE_INDEX_RC=100`(철근콘크리트조) 고정으로
+계산하고 있음을 재확인. 건축물대장 자동조회 API(`fetchVatBuildingRegister`)가
+이미 `structureName`(공공데이터포털 표준 구조코드명, 예: "철근콘크리트구조")을
+받아오고 있었지만 그동안 버려지고 있었음(기존 주석: "계산기 구조 select와 표기가
+달라 매칭은 안 되지만 참고용으로 표시").
+
+- `src/lib/vat-calc.ts`: `STRUCTURE_TABLE`(국세청 고시 구조지수·잔가율 그룹표,
+  `CrawlerVatTab.tsx`의 `STRUCTURE_OPTIONS`와 동일 데이터) + 각 구조별
+  `keywords`(strctCdNm 매칭용 부분 문자열, 예: "철근콘크리트", "SRC", "경량철골")
+  추가. `matchStructureIndex(structureName)`으로 매칭, 실패 시 null(호출자가
+  RC/100/내용연수50으로 폴백).
+- `/api/vat/calc`가 `body.structureName`을 받아 매칭 시도, 매칭되면 지수뿐 아니라
+  잔가율 그룹(depGroup, 내용연수)도 함께 구조에 맞게 적용.
+- 클라이언트(`fetchVatCalc`, `ProfitCalculatorPanel.tsx`)에 `structureName` 전달
+  경로 연결 — 단, `skipBuildingRegister`(DB에 이미 sharedArea+builtYear 있어
+  건축물대장 API 자체를 생략하는 경로)일 때는 구조명을 못 얻어 `null`(RC 폴백).
+- 프로덕션 빌드로 재검증: `STRUCTURE_TABLE`/`matchStructureIndex`가 `/search`
+  청크에는 없고 서버 전용으로 유지됨(기존 "계산식 클라이언트 비노출" 방침 유지).
+
 ## 인프라 이슈(참고)
 
 - Railway 배포가 "Deployment queued due to upstream GitHub issues"로 20분 가까이 멈춘 사례
