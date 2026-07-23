@@ -34,14 +34,19 @@ export interface RecommendationCriteria {
 }
 
 export interface RecommendationFilters {
-  city?: string;
-  propType?: string;
+  /** 다중 선택 가능(사용자 요청, 2026-07-23) — 하나라도 일치하면 통과. */
+  city?: string[];
+  propType?: string[];
   maxFailureRate?: string;
   favoritesOnly?: boolean;
   progressStatus?: ProgressStatus;
   search?: string;
-  /** 사용자에게 노출되는 전략 라벨(예: "경쟁이 적은 투자")로 필터링. */
-  strategyLabel?: string;
+  /** 사용자에게 노출되는 전략 라벨(예: "경쟁이 적은 투자")로 필터링,
+   * 다중 선택 가능. */
+  strategyLabel?: string[];
+  /** 전용면적(㎡) 범위 필터. */
+  minArea?: number;
+  maxArea?: number;
 }
 
 @Injectable()
@@ -222,8 +227,16 @@ export class RecommendationEngineService {
         return row.estimatedProfit != null && row.estimatedProfit >= criteria.targetReturnWon;
       })
       .filter((row) => {
-        if (filters?.city && row.item.city !== filters.city) return false;
-        if (filters?.propType && !matchesPropertyType(row.item, filters.propType)) return false;
+        if (filters?.city && filters.city.length > 0 && !filters.city.includes(row.item.city)) {
+          return false;
+        }
+        if (
+          filters?.propType &&
+          filters.propType.length > 0 &&
+          !filters.propType.some((t) => matchesPropertyType(row.item, t))
+        ) {
+          return false;
+        }
         if (
           filters?.maxFailureRate &&
           !matchesFailureRateFilter(row.item.minPrice, row.item.appraisedValue, filters.maxFailureRate)
@@ -239,9 +252,16 @@ export class RecommendationEngineService {
         }
         if (
           filters?.strategyLabel &&
-          !row.item.strategyTagsList.some((tag) => tag.label === filters.strategyLabel)
+          filters.strategyLabel.length > 0 &&
+          !row.item.strategyTagsList.some((tag) => filters.strategyLabel!.includes(tag.label))
         ) {
           return false;
+        }
+        if (filters?.minArea != null || filters?.maxArea != null) {
+          const areaNum = Number.parseFloat(String(row.item.area ?? "").match(/[\d.]+/)?.[0] ?? "");
+          if (!Number.isFinite(areaNum)) return false;
+          if (filters.minArea != null && areaNum < filters.minArea) return false;
+          if (filters.maxArea != null && areaNum > filters.maxArea) return false;
         }
         if (searchQuery) {
           const matchesText =

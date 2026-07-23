@@ -6,6 +6,17 @@ import { TagsService } from "../tags/tags.service";
 
 const VALID_PROGRESS_STATUS = new Set(["all", "active", "ended"]);
 
+/** 지역/물건종류/투자전략 필터는 콤마로 구분된 다중 값을 받는다
+ * (사용자 요청: 상세 필터에서 중복 선택 가능하게, 2026-07-23). */
+function parseMultiValue(raw?: string): string[] | undefined {
+  if (!raw) return undefined;
+  const values = raw
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  return values.length > 0 ? values : undefined;
+}
+
 @Controller("recommendations")
 export class RecommendationController {
   constructor(
@@ -26,6 +37,8 @@ export class RecommendationController {
     @Query("progressStatus") progressStatus?: string,
     @Query("search") search?: string,
     @Query("strategyLabel") strategyLabel?: string,
+    @Query("minArea") minArea?: string,
+    @Query("maxArea") maxArea?: string,
   ) {
     const ctx = getAuthContext(headers);
     requireSearchAccess(ctx);
@@ -36,15 +49,17 @@ export class RecommendationController {
       limit: limit ? Math.min(100, Math.max(1, Number(limit) || 30)) : undefined,
       offset: offset ? Math.max(0, Number(offset) || 0) : undefined,
       filters: {
-        city: city || undefined,
-        propType: propType || undefined,
+        city: parseMultiValue(city),
+        propType: parseMultiValue(propType),
         maxFailureRate: maxFailureRate || undefined,
         favoritesOnly: favoritesOnly === "true",
         progressStatus: VALID_PROGRESS_STATUS.has(progressStatus ?? "")
           ? (progressStatus as ProgressStatus)
           : undefined,
         search: search || undefined,
-        strategyLabel: strategyLabel || undefined,
+        strategyLabel: parseMultiValue(strategyLabel),
+        minArea: minArea ? Number(minArea) || undefined : undefined,
+        maxArea: maxArea ? Number(maxArea) || undefined : undefined,
       },
     });
 
