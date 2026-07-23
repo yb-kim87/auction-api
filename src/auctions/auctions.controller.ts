@@ -20,6 +20,7 @@ import {
   getAuthContext,
   requireAdmin,
   requireConsultant,
+  requireSearchAccess,
 } from "../common/auth-context";
 import { AuctionStatus, UserRole } from "../common/constants";
 
@@ -230,6 +231,27 @@ export class AuctionsController {
     const ctx = getAuthContext(headers);
     requireAdmin(ctx);
     return this.auctionsService.updateOne(id, body, ctx.username);
+  }
+
+  /** 부가세계산기 자동계산 결과(PNU·구조명·주용도명·지상층수)를 캐싱한다.
+   * 로그인만 되어 있으면 호출 가능(관리자 전용 아님) — 물건 상세의
+   * 수익계산기는 수강생 이상 등급도 쓸 수 있어 requireAdmin이 아니라
+   * requireSearchAccess를 쓴다(사용자 요청, 2026-07-24). */
+  @Patch(":id/vat-building-info")
+  updateVatBuildingInfo(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+    @Body()
+    body: {
+      vatPnu?: string | null;
+      vatStructureName?: string | null;
+      vatMainPurposeName?: string | null;
+      vatGroundFloors?: number | null;
+    },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireSearchAccess(ctx);
+    return this.auctionsService.updateVatBuildingInfo(id, body);
   }
 
   @Delete("all")

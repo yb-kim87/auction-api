@@ -86,6 +86,23 @@ export class Auction {
   @Column({ type: "integer", default: 0 })
   builtYear!: number;
 
+  /** 부가세계산기 자동계산에서 조회한 PNU(19자리)·구조명·주용도명·지상
+   * 층수 — 물건 고유값이라 한 번 확보하면 바뀌지 않으므로 캐싱해 다음
+   * 자동계산부터는 VWorld 좌표변환+건축물대장 API 호출을 생략한다.
+   * 토지공시지가는 매년 갱신될 수 있어 캐싱하지 않고 항상 API로 새로
+   * 받는다(사용자 요청, 2026-07-24). */
+  @Column({ type: "text", nullable: true })
+  vatPnu!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  vatStructureName!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  vatMainPurposeName!: string | null;
+
+  @Column({ type: "integer", nullable: true })
+  vatGroundFloors!: number | null;
+
   @Column({ default: "" })
   bidDate!: string;
 

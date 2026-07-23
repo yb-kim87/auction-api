@@ -251,6 +251,39 @@ export class AuctionsService implements OnModuleInit {
     return this.applyUpdate(item, dto, updatedBy);
   }
 
+  /** 부가세계산기 자동계산이 VWorld/건축물대장 API로 조회한 물건 고유값
+   * (PNU·구조명·주용도명·지상층수)을 캐싱한다. 이 값들은 물건마다 바뀌지
+   * 않으므로 한 번 저장해두면 다음 자동계산부터는 API 호출을 건너뛸 수
+   * 있다(사용자 요청, 2026-07-24) — 공시지가는 매년 갱신될 수 있어
+   * 캐싱 대상에서 제외하고 항상 API로 새로 받는다. 전체 필드 업데이트
+   * (updateOne)와 달리 승인 상태·변경이력에 영향을 주지 않는 가벼운
+   * patch라 로그인한 일반 회원도 호출할 수 있다. */
+  async updateVatBuildingInfo(
+    id: string,
+    dto: {
+      vatPnu?: string | null;
+      vatStructureName?: string | null;
+      vatMainPurposeName?: string | null;
+      vatGroundFloors?: number | null;
+    },
+  ) {
+    const item = await this.auctionRepo.findOne({ where: { id } });
+    if (!item) {
+      throw new BadRequestException("물건을 찾을 수 없습니다.");
+    }
+    if (dto.vatPnu !== undefined) item.vatPnu = dto.vatPnu;
+    if (dto.vatStructureName !== undefined) item.vatStructureName = dto.vatStructureName;
+    if (dto.vatMainPurposeName !== undefined) item.vatMainPurposeName = dto.vatMainPurposeName;
+    if (dto.vatGroundFloors !== undefined) item.vatGroundFloors = dto.vatGroundFloors;
+    await this.auctionRepo.save(item);
+    return {
+      vatPnu: item.vatPnu,
+      vatStructureName: item.vatStructureName,
+      vatMainPurposeName: item.vatMainPurposeName,
+      vatGroundFloors: item.vatGroundFloors,
+    };
+  }
+
   async updateOwnPending(id: string, username: string, dto: UpdateAuctionDto) {
     const item = await this.findOwnPending(id, username);
     return this.applyUpdate(item, dto, username, "consultant_edit");
