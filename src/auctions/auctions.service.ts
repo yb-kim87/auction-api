@@ -341,7 +341,7 @@ export class AuctionsService implements OnModuleInit {
       }
     }
 
-    const { city, district, propType } = parseAddressMeta(merged.address);
+    const { city, district, propType } = parseAddressMeta(merged.address, merged.usage);
     const diffs = resolvePriceDiffs(merged);
 
     const next = this.cloneAuctionState(item);
@@ -407,7 +407,7 @@ export class AuctionsService implements OnModuleInit {
         preserveMemoIfEmpty,
         preserveExistingIfEmpty: meta.changeSource === "crawler",
       });
-      const { city, district, propType } = parseAddressMeta(merged.address);
+      const { city, district, propType } = parseAddressMeta(merged.address, merged.usage);
       const diffs = resolvePriceDiffs(merged);
 
       const next = this.cloneAuctionState(existing);

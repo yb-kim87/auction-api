@@ -169,7 +169,15 @@ function parseDistrict(rest: string): string {
   return match[1] && match[2] ? `${match[1]} ${match[2]}` : match[3];
 }
 
-export function parseAddressMeta(address: string) {
+/** propType(상세 모달 상단 배지 등)은 원래 주소 문자열에 "빌라/연립/
+ * 다세대/다가구"가 있는지만 보고 아파트/빌라 둘 중 하나로 판정했는데,
+ * 오피스텔이라는 카테고리 자체가 없어 오피스텔 물건도 "아파트"로
+ * 잘못 표시됐다(실측: "2025타경511686", usage="오피스텔(주거)"인데
+ * propType="아파트"로 나와 목록 카드의 "오피스텔(주거)" 배지와
+ * 불일치, 2026-07-23). usage 필드가 있으면 주소 문자열보다 우선
+ * 신뢰한다 — usage는 탱크옥션이 매긴 시장 상품유형이라 주소 텍스트의
+ * "빌라/연립/다세대" 키워드보다 정확하다. */
+export function parseAddressMeta(address: string, usage?: string) {
   const trimmed = cleanAddress(address);
   let city = "";
   let district = "";
@@ -195,8 +203,11 @@ export function parseAddressMeta(address: string) {
     }
   }
 
+  const usageTrimmed = (usage ?? "").trim();
   let propType = "아파트";
-  if (/빌라|연립|다세대|다가구/.test(trimmed)) {
+  if (/오피스텔/.test(usageTrimmed)) {
+    propType = "오피스텔";
+  } else if (/빌라|연립|다세대|다가구/.test(usageTrimmed) || /빌라|연립|다세대|다가구/.test(trimmed)) {
     propType = "빌라";
   }
 

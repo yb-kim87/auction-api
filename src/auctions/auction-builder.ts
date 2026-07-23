@@ -294,7 +294,7 @@ export function buildAuctionEntity(
   meta: CreateMeta,
 ): Auction {
   const auction = new Auction();
-  const { city, district, propType } = parseAddressMeta(parsed.address ?? "");
+  const { city, district, propType } = parseAddressMeta(parsed.address ?? "", parsed.usage ?? "");
   const diffs = resolvePriceDiffs(parsed);
   const { elevator, parking } = cleanElevatorAndParking(
     parsed.elevator ?? "",
