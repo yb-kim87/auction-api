@@ -76,6 +76,36 @@
   `crawler/backfill_official_land_price.py` 스크립트. 결과: 3165건 업데이트, 121건
   스킵(탱크옥션 자체에 데이터 없음), 실패 0건.
 
+## 오피스텔 취득세/부가세 특례 반영 (2026-07-23 追記)
+
+사용자 요청: 오피스텔은 취득세가 주택 취득세 체계(무주택/다주택 중과 등)와 무관하게
+건물분 4%+지방교육세 0.4%+농특세 0.2%=4.6% 단일세율이고, 부가세도 면적(85㎡)과
+무관하게 항상 부담이 발생하는데 수익계산기가 이를 반영 안 하고 있다는 지적.
+
+- `src/lib/profit-calculator.ts`: `isOfficetel(usage)`(usage 문자열이 "오피스텔"로
+  시작하는지 판정) 신규. `acquisitionTaxRate()`에 `usage` 파라미터 추가 — 오피스텔이면
+  무주택/다주택 로직을 건너뛰고 `OFFICETEL_ACQUISITION_TAX_RATE = 0.046`을 바로 반환.
+  `acquisitionTaxBracketLabel()`도 오피스텔이면 "오피스텔(4.6% 고정)" 표시.
+- 부가세 대상 판정(`over85`)도 `isOver85Sqm(area) || isOfficetel(usage)`로 OR 조건
+  확장 — 오피스텔은 면적과 무관하게 항상 부가세계산기 UI(자동계산 버튼 등)가 노출됨.
+- **부가세 용도지수 버그 발견**: `/api/vat/calc`(서버 계산 라우트)가 물건의 실제 usage와
+  무관하게 항상 `APARTMENT_USAGE_INDEX = 110`(아파트 지수)으로 고정돼 있었음. 참고
+  서비스 atomtax-app(https://atomtax-app.vercel.app/calculator/vat/calc)을 Selenium으로
+  실측(주거용/상업용 카테고리 토글 클릭 후 각각의 "용도" 드롭다운 옵션 비교) 결과,
+  오피스텔은 두 카테고리 어디에 있든 용도지수가 동일하게 **140**임을 확인(카테고리
+  토글은 옵션 목록을 필터링하는 UI 기능일 뿐, 계산 파라미터 자체를 바꾸지 않음) —
+  관리자 전용 `CrawlerVatTab.tsx`에는 이미 이 140 값이 있었는데(주석: "시행령상
+  업무시설로 분류되나 주거용 임대 편의를 위해 주거 카테고리에 추가, 지수는 동일") 수익
+  계산 패널의 서버 라우트에는 반영이 안 돼 있었음. `usage`가 오피스텔이면 자동으로
+  140을 쓰도록 수정 — 용도지수는 건물기준시가 계산식에 곱해지는 파라미터라, 110→140
+  적용 시 건물기준시가가 약 1.27배 커지고 그에 비례해 건물 안분 부가세도 커진다(즉
+  이전까지는 오피스텔 부가세가 실제보다 낮게 계산되고 있었음).
+- `fetchVatCalc()`/`ProfitCalculatorPanel.tsx`/`estimateDefaultProfit()`(목록 카드
+  "추정 수익" 요약값 계산)까지 전부 `usage`를 전달하도록 연결.
+- 프로덕션 빌드로 재검증: 오피스텔 계산 상수(`OFFICETEL_USAGE_INDEX` 등)가 `/search`
+  (일반 사용자) 청크에는 없고 `/admin`(관리자, CrawlerVatTab) 청크에만 있음을
+  확인 — 기존에 구축해둔 "부가세 계산식 클라이언트 비노출" 방침이 새 로직에도 유지됨.
+
 ## 인프라 이슈(참고)
 
 - Railway 배포가 "Deployment queued due to upstream GitHub issues"로 20분 가까이 멈춘 사례
