@@ -108,6 +108,9 @@ export type CrawlerScheduleConfig = {
   oneTimeCompleted?: boolean;
   /** 자동 스케줄 실행 시 사용할 크롤러 경로. 미지정 시 v1(기존 Selenium, 회귀 없음). */
   crawlerVersion?: CrawlerVersion;
+  /** 매일 작업을 실행하지 않을 요일 목록. 0=일 1=월 2=화 3=수 4=목 5=금 6=토(KST 기준).
+   * 비어 있으면(미지정 포함) 매일 실행된다(기존 동작 그대로 유지). */
+  excludeWeekdays?: number[];
 };
 
 export type CrawlerCredentialsConfig = {
@@ -152,6 +155,7 @@ export const DEFAULT_CRAWLER_CONFIG: CrawlerConfig = {
     excludeDuplicates: true,
     repeatDaily: true,
     oneTimeCompleted: false,
+    excludeWeekdays: [],
   },
   credentials: {
     userId: "zgamez",

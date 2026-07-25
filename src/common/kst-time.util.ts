@@ -9,6 +9,8 @@ export function nowPartsInKst(): {
   date: number;
   hour: number;
   minute: number;
+  /** 0=일 1=월 2=화 3=수 4=목 5=금 6=토 (KST 기준) */
+  weekday: number;
 } {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Seoul",
@@ -20,6 +22,19 @@ export function nowPartsInKst(): {
     hour12: false,
   }).formatToParts(new Date());
   const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? "0");
+  const weekdayName = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    weekday: "short",
+  }).format(new Date());
+  const weekdayMap: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
   return {
     year: get("year"),
     month: get("month"),
@@ -27,6 +42,7 @@ export function nowPartsInKst(): {
     // 자정(00시)을 Intl이 "24"로 표기하는 로케일 이슈 방어
     hour: get("hour") % 24,
     minute: get("minute"),
+    weekday: weekdayMap[weekdayName] ?? new Date().getDay(),
   };
 }
 

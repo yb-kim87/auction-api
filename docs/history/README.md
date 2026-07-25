@@ -17,6 +17,8 @@
 - [2026-07-16_03 크롤러 Selenium → HTTPX 정적 방식 전환 (1단계 분석)](./2026-07-16_03_crawler-httpx-migration.md)
 - [2026-07-19_01 대법원 법원경매정보 HTTPX 크롤링 가능성 조사](./2026-07-19_01_courtauction-httpx-exploration.md)
 - [2026-07-21_01 공용면적(sharedArea) 수집 및 부가세계산기 고도화](./2026-07-21_01_shared-area-and-vat-calculator-hardening.md)
+- [2026-07-24_01 강의자료 관리자 탭 (파일럿: 1번 슬라이드)](./2026-07-24_01_lecture-materials-admin-tab.md)
+- [2026-07-25_01 매일 작업(크롤러 예약 실행) 제외 요일 설정 추가](./2026-07-25_01_daily-job-exclude-weekdays.md)
 
 ## 앞으로의 작업 방식
 

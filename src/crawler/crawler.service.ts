@@ -1852,6 +1852,22 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
+    const excludeWeekdays = schedule.excludeWeekdays ?? [];
+    if (excludeWeekdays.includes(now.weekday)) {
+      const weekdayLabel = ["일", "월", "화", "수", "목", "금", "토"][now.weekday];
+      // "매일 작업 실행 로그" 패널은 scheduler=true로 남긴 로그만 걸러 보여준다
+      // (entry.scheduler 필터) — 요일 제외로 건너뛰었다는 사실도 사용자가 그
+      // 패널에서 바로 확인할 수 있어야 하므로, 이 한 줄만 잠깐 스케줄러
+      // 실행 중 플래그를 세워 남긴다.
+      this.schedulerRunning = true;
+      this.appendLog(
+        "info",
+        `[매일작업] 오늘(${weekdayLabel}요일)은 제외 요일로 설정되어 있어 실행을 건너뜁니다.`,
+      );
+      this.schedulerRunning = false;
+      return;
+    }
+
     // "오늘 이미 실행했으면 하루 동안 재실행 안 함" 게이트는 사용자 요청으로
     // 제거했다 — 관심조건을 재조회하고 싶을 때 시간을 그대로 두고 다시
     // 저장해도(또는 시간을 바꿔도) 항상 그 시각에 실행되어야 한다(2026-07-20).
