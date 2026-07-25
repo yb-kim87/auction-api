@@ -60,6 +60,30 @@ def _build_tenant_info_summary(detail_response: dict) -> str:
     return f"임차인: {count} 건, 임차보증금합계: {deposit_sum:,}원"
 
 
+def _parse_unpaid_fee(detail_response: dict) -> dict:
+    """arersInfo.items[0](체납조사) → 체납금액/비고/조사일자.
+
+    이 조사는 탱크옥션이 관리사무소에 개별 문의해 채워넣는 수동 데이터라
+    items가 빈 배열인 물건이 실제로 많다(원본 데이터 자체가 없는 정상
+    케이스) — 그 경우 전부 기본값(0/빈 문자열)으로 남긴다(실측,
+    2026-07-25).
+    """
+    arers = detail_response.get("arersInfo") if isinstance(detail_response, dict) else None
+    items = arers.get("items") if isinstance(arers, dict) else None
+    if not isinstance(items, list) or not items:
+        return {"unpaid_fee_amount": 0, "unpaid_fee_note": "", "unpaid_fee_checked_at": ""}
+    row = items[0] if isinstance(items[0], dict) else {}
+    try:
+        amount = int(row.get("amt") or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    return {
+        "unpaid_fee_amount": amount,
+        "unpaid_fee_note": str(row.get("note") or "").strip(),
+        "unpaid_fee_checked_at": str(row.get("wdt") or "").strip(),
+    }
+
+
 def parse_list_item(raw_item: dict) -> dict:
     """AuctList.php 의 items[] 원소 하나 → 목록 화면에서 쓰던 최소 필드.
 
@@ -147,6 +171,7 @@ def parse_detail_page(
     parking = bldg_meta.get("parking") or "없음"
 
     special_note = parse_special_note_from_detail(detail_response)
+    unpaid_fee = _parse_unpaid_fee(detail_response)
 
     tid = base.get("tid")
     link = f"https://www.tankauction.com/ca/caView.php?tid={tid}" if tid else ""
@@ -185,6 +210,9 @@ def parse_detail_page(
         "official_land_price": official_land_price,
         "tenant_info": tenant_info,
         "special_note": special_note,
+        "unpaid_fee_amount": unpaid_fee["unpaid_fee_amount"],
+        "unpaid_fee_note": unpaid_fee["unpaid_fee_note"],
+        "unpaid_fee_checked_at": unpaid_fee["unpaid_fee_checked_at"],
         "elevator": elevator,
         "parking": parking,
         "land_area": str(base.get("rt_sqm") or "없음"),

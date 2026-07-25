@@ -256,6 +256,19 @@ export function mergeAuctionFromSource(
     ),
     tenantInfo: pickStr(source.tenantInfo, existing.tenantInfo),
     specialNote: pickStr(source.specialNote, existing.specialNote),
+    unpaidFeeAmount: pickNum(
+      (source as Partial<UpdateAuctionDto>).unpaidFeeAmount,
+      existing.unpaidFeeAmount,
+      false,
+    ),
+    unpaidFeeNote: pickStr(
+      (source as Partial<UpdateAuctionDto>).unpaidFeeNote,
+      existing.unpaidFeeNote,
+    ),
+    unpaidFeeCheckedAt: pickStr(
+      (source as Partial<UpdateAuctionDto>).unpaidFeeCheckedAt,
+      existing.unpaidFeeCheckedAt,
+    ),
     tenantDetail: cleanTenantDetail(
       pickStr(source.tenantDetail, existing.tenantDetail),
     ),
@@ -339,6 +352,9 @@ export function buildAuctionEntity(
     officialLandPrice: parsed.officialLandPrice ?? 0,
     tenantInfo: parsed.tenantInfo ?? "",
     specialNote: parsed.specialNote ?? "",
+    unpaidFeeAmount: (parsed as Partial<UpdateAuctionDto>).unpaidFeeAmount ?? 0,
+    unpaidFeeNote: (parsed as Partial<UpdateAuctionDto>).unpaidFeeNote ?? "",
+    unpaidFeeCheckedAt: (parsed as Partial<UpdateAuctionDto>).unpaidFeeCheckedAt ?? "",
     tenantDetail: cleanTenantDetail(parsed.tenantDetail ?? ""),
     priceDetail: parsed.priceDetail ?? "",
     tradingDetail: parsed.tradingDetail ?? "",

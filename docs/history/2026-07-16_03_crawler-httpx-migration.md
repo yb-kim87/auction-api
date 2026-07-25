@@ -1250,3 +1250,63 @@ full_httpx` → `post_item_to_api`)으로 실제 재크롤링 + 저장까지 실
 (예: 2025타경101488(tid=2459496) naverPrice 0 → 430,000,000원 반영
 확인). 이후 신규 크롤링(예약 조회 포함)부터는 오피스텔도 아파트와
 동일하게 자동으로 네이버 시세가 채워진다.
+
+## 追記 (2026-07-25) — 체납금액(미납 관리비) 필드 수집·저장 추가
+
+### 요청 원문 (요약)
+"크롤링 해올때 아파트나 오피스텔 경우엔 관리비정보가 나오긴하는데 미납관리비
+없음 이나 관리비 얼마 이런 정보가 있는데 가져와지나 현재 db로 테스트 해볼래?
+왜 안되지??" → 실측 조사로 원인 확인 후 "네, 지금 바로 추가해줘" → "그리고
+미납관리비가 있을경우엔 물건 상세에도 표기를 해줘"
+
+### 원인
+탱크옥션 상세페이지의 "단지정보" 패널 하단 "체납조사(본건)" 섹션(체납금액,
+조사일, 비고)이 실제로는 `AuctView.php` 상세 API 응답의 최상위 필드
+`arersInfo.items[]`에 이미 내려오고 있었는데, `parsers.py`/`item_crawl.py`
+어디에도 이 필드를 파싱하는 코드가 없어 그냥 버려지고 있었음 — API 호출 실패가
+아니라 **파싱 자체가 아예 없었던 것**.
+
+실측 확인(tid=1923913, 2020타경1097, 침산동삼정그린코아 — 사용자 스크린샷과
+일치):
+```
+arersInfo.items[0] = {
+  "amt": 0,
+  "period": "",
+  "note": "* 미납 관리비 없음\r\n- 전기, 수도 포함/도시가스 별도",
+  "wdt": "2022-03-31",
+  "staff": "helloamy22"
+}
+```
+"있는 물건도 있고 없는 물건도 있다"는 사용자 관찰과 일치하게, 이 조사는
+탱크옥션 직원이 관리사무소에 개별 문의해 채워넣는 수동 데이터라 `items`가
+빈 배열인 물건이 실제로 다수 존재함(4건 표본 중 2건이 빈 배열) — 원본 데이터
+자체가 없는 정상 케이스.
+
+### 변경 내용
+- `src/auctions/auction.entity.ts`: `unpaidFeeAmount`(bigint), `unpaidFeeNote`,
+  `unpaidFeeCheckedAt` 컬럼 추가.
+- `src/migrations/1784248000000-AddAuctionUnpaidFee.ts` 신설.
+- `crawler/parsers.py`: `_parse_unpaid_fee()` 헬퍼 신설(`arersInfo.items[0]`
+  → amt/note/wdt 추출, items가 없으면 0/빈 문자열). `parse_detail_page()`
+  반환에 `unpaid_fee_amount`/`unpaid_fee_note`/`unpaid_fee_checked_at` 추가
+  — v3(HTTPX, `full_httpx_worker.py`)와 하이브리드(`hybrid_worker.py`) 경로는
+  모두 이 함수를 재사용하므로 자동으로 적용됨.
+- `crawler/item_crawl.py`(Selenium 경로): 동일 헬퍼를 import해 재사용, 최종
+  반환 딕셔너리에도 3개 필드 추가.
+- `src/crawler/crawler-item.mapper.ts`: `unpaidFeeAmount`/`unpaidFeeNote`/
+  `unpaidFeeCheckedAt` 매핑 추가.
+- `src/auctions/update-auction.dto.ts`, `auction-builder.ts`: DTO에 필드
+  추가, 병합 로직에서 `unpaidFeeAmount`는 `zeroIsEmpty=false`로 지정해
+  0(미납 없음)도 유효한 값으로 취급하도록 함(0을 "값 없음"으로 오인해 기존
+  값을 덮어쓰지 못하는 사고 방지).
+- `src/auctions/auction-change.util.ts`: 변경 로그 라벨 등록.
+- 프론트: `types/auction.ts`(AuctionItem 필드 추가 — UpdateAuctionPayload는
+  AuctionItem에서 Omit으로 파생되어 자동 반영), `lib/auction-form.ts`(상세
+  정보 그룹에 "체납금액(관리비)"/"체납조사 비고" 필드 추가),
+  `AuctionDetailModal.tsx`: 특이사항 배너 바로 아래에 `unpaidFeeAmount > 0`일
+  때만 보이는 빨간 강조 박스 추가(금액 + 비고 + 조사일).
+
+### 검증
+- `npx tsc --noEmit -p .` 백엔드/프론트 모두 통과.
+- 파서 실측 재검증(tid 3건): 1923913(0원, "미납 관리비 없음"),
+  2415616(1,570,000원), 2431730(조사 없음, items=[]) — 전부 기대값과 일치.

@@ -175,6 +175,19 @@ export class Auction {
   @Column({ default: "" })
   tenantDetail!: string;
 
+  /** 탱크옥션이 관리사무소에 개별 문의해 조사한 미납 관리비(체납금액).
+   * 조사가 안 된 물건은 원본 API(arersInfo.items)가 빈 배열이라 이 필드도
+   * 전부 기본값(0/빈 문자열)으로 남는다 — 크롤링 누락이 아니라 원본
+   * 데이터 자체가 없는 정상 케이스(실측, 2026-07-25). */
+  @Column({ type: "bigint", default: 0, transformer: bigintNumberTransformer })
+  unpaidFeeAmount!: number;
+
+  @Column({ default: "" })
+  unpaidFeeNote!: string;
+
+  @Column({ default: "" })
+  unpaidFeeCheckedAt!: string;
+
   @Column({ default: "" })
   priceDetail!: string;
 

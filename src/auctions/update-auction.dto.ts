@@ -38,6 +38,12 @@ export type UpdateAuctionDto = {
   officialLandPrice: number;
   tenantInfo: string;
   specialNote: string;
+  /** 탱크옥션이 관리사무소에 개별 문의해 조사한 미납 관리비(체납금액).
+   * 조사 자체가 안 된 물건은 0/빈 문자열로 남는다(원본 arersInfo.items가
+   * 빈 배열인 정상 케이스, 크롤링 실패 아님). */
+  unpaidFeeAmount?: number;
+  unpaidFeeNote?: string;
+  unpaidFeeCheckedAt?: string;
   tenantDetail: string;
   priceDetail: string;
   tradingDetail: string;

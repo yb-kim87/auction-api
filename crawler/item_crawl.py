@@ -743,6 +743,17 @@ def _collect_tank_page_fields(
     except Exception:
         pass
 
+    unpaid_fee_amount = 0
+    unpaid_fee_note = ""
+    unpaid_fee_checked_at = ""
+    if raw_detail:
+        from parsers import _parse_unpaid_fee
+
+        unpaid_fee = _parse_unpaid_fee(raw_detail)
+        unpaid_fee_amount = unpaid_fee["unpaid_fee_amount"]
+        unpaid_fee_note = unpaid_fee["unpaid_fee_note"]
+        unpaid_fee_checked_at = unpaid_fee["unpaid_fee_checked_at"]
+
     try:
         special_note = (
             driver.find_element(By.CSS_SELECTOR, ".red.spanBox").text or "없음"
@@ -857,6 +868,9 @@ def _collect_tank_page_fields(
         "official_land_price": official_land_price,
         "tenant_info": tenant_info,
         "special_note": special_note,
+        "unpaid_fee_amount": unpaid_fee_amount,
+        "unpaid_fee_note": unpaid_fee_note,
+        "unpaid_fee_checked_at": unpaid_fee_checked_at,
         "elevator": elevator,
         "parking": parking,
         "land_area": land_area,
@@ -1138,6 +1152,9 @@ def crawl_item(driver, raw_entry: str, should_stop: ShouldStop = None) -> dict:
         "official_land_price": tank_snapshot["official_land_price"] or 0,
         "tenant_info": tank_snapshot["tenant_info"],
         "special_note": tank_snapshot["special_note"],
+        "unpaid_fee_amount": tank_snapshot["unpaid_fee_amount"],
+        "unpaid_fee_note": tank_snapshot["unpaid_fee_note"],
+        "unpaid_fee_checked_at": tank_snapshot["unpaid_fee_checked_at"],
         "elevator": tank_snapshot["elevator"],
         "parking": tank_snapshot["parking"],
         "land_area": tank_snapshot["land_area"],
