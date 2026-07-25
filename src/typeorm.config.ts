@@ -30,6 +30,8 @@ import { StrategyLabel } from "./tags/strategy-label.entity";
 import { SecurityLogIpExclusion } from "./security-log/security-log-ip-exclusion.entity";
 import { RequestLog } from "./security-log/request-log.entity";
 import { CrawlerConfigRow } from "./crawler/crawler-config.entity";
+import { CrawlerLogRow } from "./crawler/crawler-log.entity";
+import { LectureSlide } from "./lecture-materials/lecture-slide.entity";
 
 const entities = [
   Auction,
@@ -61,6 +63,8 @@ const entities = [
   SecurityLogIpExclusion,
   RequestLog,
   CrawlerConfigRow,
+  CrawlerLogRow,
+  LectureSlide,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {
