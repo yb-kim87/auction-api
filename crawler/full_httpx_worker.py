@@ -28,7 +28,11 @@ from tank_detail import extract_complex_id_from_env_payload
 
 def _is_apartment_usage(usage: str) -> bool:
     normalized = (usage or "").strip()
-    return normalized == "아파트" or normalized.startswith("아파트")
+    return (
+        normalized.startswith("아파트")
+        or normalized.startswith("오피스텔")
+        or "업무시설" in normalized
+    )
 
 
 def _apply_naver_part_httpx(item: dict, naver_complex_id: str | None) -> dict:

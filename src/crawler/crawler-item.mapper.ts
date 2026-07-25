@@ -52,7 +52,9 @@ export function mapCrawledItem(raw: Record<string, unknown>): Partial<UpdateAuct
   const address = cleanAddress(str(raw.address));
   const priceDetail = str(raw.priceDetail ?? raw.naver_price_detail);
 
-  if (usage === "아파트" && priceDetail) {
+  const isFloorAwareUsage =
+    usage.startsWith("아파트") || usage.startsWith("오피스텔") || usage.includes("업무시설");
+  if (isFloorAwareUsage && priceDetail) {
     const targetFloor = parseUnitFloorFromAddress(address);
     const floorAware = selectFloorAwareNaverPrice(priceDetail, targetFloor);
     if (floorAware.naverPrice != null) {

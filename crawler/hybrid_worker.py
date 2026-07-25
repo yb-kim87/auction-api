@@ -27,7 +27,11 @@ from tank_login import is_logged_in, login as selenium_login
 
 def _is_apartment_usage(usage: str) -> bool:
     normalized = (usage or "").strip().replace(" ", " ")
-    return normalized == "아파트" or normalized.startswith("아파트")
+    return (
+        normalized.startswith("아파트")
+        or normalized.startswith("오피스텔")
+        or "업무시설" in normalized
+    )
 
 
 async def _fetch_tank_part(client: httpx.AsyncClient, tid: str) -> tuple[dict, str | None]:

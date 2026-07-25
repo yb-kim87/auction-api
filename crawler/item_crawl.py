@@ -444,7 +444,11 @@ def _extract_building_area(top_text: str) -> str:
 
 def _is_apartment_usage(usage: str) -> bool:
     normalized = usage.strip().replace("\u00a0", " ")
-    return normalized == "아파트" or normalized.startswith("아파트")
+    return (
+        normalized.startswith("아파트")
+        or normalized.startswith("오피스텔")
+        or "업무시설" in normalized
+    )
 
 
 def _education_from_dom(driver, timeout: float = TANK_DOM_TIMEOUT) -> str:

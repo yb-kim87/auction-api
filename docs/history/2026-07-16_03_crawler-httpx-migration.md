@@ -1179,3 +1179,74 @@ GET /status (완료 후)
   (`tickScheduler`)를 `/crawl/start-v2`로 전환할지 결정
 - 전환 이후에도 기존 Selenium 경로(`/crawl/start`, `crawl_worker`)는
   요청 지침대로 즉시 삭제하지 않고 일정 기간 유지
+
+## 追記 (2026-07-25) — 오피스텔/업무시설까지 네이버 시세 크롤링 확장
+
+### 요청 원문 (요약)
+"우리가 지금까지 크롤링할때 용도가 아파트인것만 네이버 로직을 보내서
+호가와 실거래를 가져왔짜나. 이번에 오피스텔도 크롤링을 돌려서 호가
+시세를 면적에 맞게 잘가져오는지 확인해보자 (2025타경1335 대상 검증)."
+검증 후: "좋아 이제 오피스텔까지 확장시키고, 현재 db에 등록된 물건들을
+대상으로 테스트하면서 데이터를 추가해줘 문제가 있으면 말해주고."
+
+### 원인 진단
+`_is_apartment_usage(usage)` 필터가 `usage`가 정확히 "아파트"로
+시작할 때만 네이버부동산 호가/실거래 조회(`extract_naver_prices*`)를
+호출하도록 3곳(Selenium 경로 `item_crawl.py`, HTTPX 경로
+`full_httpx_worker.py`, 하이브리드 경로 `hybrid_worker.py`)에
+동일하게 박혀 있어, 오피스텔/업무시설 물건은 애초에 네이버 조회
+자체를 시도조차 하지 않고 `naverPrice: 0`으로만 저장되고 있었음.
+`naver_httpx.py`의 `extract_naver_prices_httpx()`, `naver_crawl.py`의
+`extract_naver_prices()` 자체는 아파트 전용 로직이 아니라 네이버
+단지ID(complex_id) 기반 범용 함수라 오피스텔에도 그대로 적용 가능함을
+실측 확인(2025타경1335, tid=2428175, 인천지방법원 14계, usage="업무
+시설(주거용)"으로 실행 → complex_id=111226 정상 확보, 호가 27건/최저
+2.4억, 실거래 2026년 6건 2025년 13건 정상 조회).
+
+### 변경 내용
+`_is_apartment_usage()` 조건을 아래로 확장(3개 Python 파일 동일 패턴):
+```python
+def _is_apartment_usage(usage: str) -> bool:
+    normalized = (usage or "").strip()...
+    return (
+        normalized.startswith("아파트")
+        or normalized.startswith("오피스텔")
+        or "업무시설" in normalized
+    )
+```
+- `crawler/item_crawl.py`
+- `crawler/full_httpx_worker.py`
+- `crawler/hybrid_worker.py`
+
+프론트 DB 저장 매핑 단계(`src/crawler/crawler-item.mapper.ts`)의 층수
+기반 정밀 매칭(`selectFloorAwareNaverPrice`, 동일 층 매물 우선 매칭)도
+`usage === "아파트"` 단일 비교에서 동일한 startsWith/includes 조건으로
+확장 — 오피스텔도 층수 기반 정밀 매칭 대상에 포함.
+
+usage 실측값은 "오피스텔(주거)", "오피스텔(상업)", "업무시설(주거)",
+"업무시설(상업)" 4종류가 확인됨 — 확장된 조건은 4종류 전부 포함(사무
+용/주거용 구분 없이 오피스텔·업무시설 전체가 대상).
+
+### 실측 검증 — DB 등록 물건 전체 배치 실행
+프로덕션 DB(Railway) 전체 물건(3921건) 중 usage에 "오피스�텔" 또는
+"업무시설"이 포함된 839건을 추출해 httpx 파이프라인(`crawl_one_item_
+full_httpx` → `post_item_to_api`)으로 실제 재크롤링 + 저장까지 실행.
+
+- 전체 839건 처리 완료, 저장 성공 839건(누락 0), 실행 예외(크래시) 0건
+- 네이버 시세 확보 성공: 338건 (40.3%)
+- 시세 미확보: 501건 (59.7%) — 전부 "네이버에 데이터가 없는" 정상
+  결측이며 크롤러/코드 결함 아님:
+  - 호가매물 자체 없음(단지ID는 확보): 223건
+  - 평형 불일치/조회 실패: 165건
+  - 네이버에 단지ID 자체 없음(나홀로 건물 등): 113건
+- 실행 중 1회, 51건 처리 후 별도 에러 로그 없이 백그라운드 프로세스가
+  조용히 종료된 사례 발생 — Bash 백그라운드 실행이 셸 세션 종료와
+  함께 죽은 것으로 추정(원인 미확정). `nohup ... & disown`으로 셸과
+  완전히 분리해 재실행한 뒤로는 나머지 788건 끊김 없이 완주.
+- `npx tsc --noEmit -p .` 통과.
+
+### 결과
+오피스텔/업무시설 매물의 네이버 호가·실거래 시세가 DB에 정상 반영됨
+(예: 2025타경101488(tid=2459496) naverPrice 0 → 430,000,000원 반영
+확인). 이후 신규 크롤링(예약 조회 포함)부터는 오피스텔도 아파트와
+동일하게 자동으로 네이버 시세가 채워진다.
