@@ -17,6 +17,7 @@ import type { KnowledgeDraftStatus } from "../ai/knowledge-draft.entity";
 import { KnowledgeService } from "../ai/knowledge.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { Repository } from "typeorm";
+import { CrawlerLogRow } from "./crawler-log.entity";
 import { CrawlerConfigRow } from "./crawler-config.entity";
 import {
   initCrawlerConfigStore,
@@ -150,6 +151,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     private readonly knowledgeService: KnowledgeService,
     @InjectRepository(CrawlerConfigRow)
     private readonly configRepo: Repository<CrawlerConfigRow>,
+    @InjectRepository(CrawlerLogRow)
+    private readonly logRepo: Repository<CrawlerLogRow>,
   ) {
     const dataDir = join(process.cwd(), "data", "crawler");
     if (!existsSync(dataDir)) {
@@ -188,6 +191,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     this.config = await initCrawlerConfigStore(this.configRepo);
     this.applyScheduleToStatus();
     this.migrateLegacyPresetsToSavedSearches();
+    this.pruneOldLogs();
 
     // 재배포 직후 신구 인스턴스가 잠시 겹치거나 DB 커넥션 풀이 완전히
     // 자리잡기 전에 스케줄러가 도는 것을 막는다(실측: 서버 재기동
@@ -288,7 +292,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private appendLog(level: CrawlerLogEntry["level"], message: string) {
-    this.logs.push({
+    const entry: CrawlerLogEntry = {
       at: new Date().toISOString(),
       level,
       message,
@@ -297,18 +301,56 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       // 실행 로그"가 메시지 텍스트 태그에 의존하지 않고 이 플래그만으로
       // 정확히 걸러낼 수 있게 한다.
       scheduler: this.schedulerRunning,
-    });
+    };
+    this.logs.push(entry);
     if (this.logs.length > this.maxLogs) {
       this.logs.splice(0, this.logs.length - this.maxLogs);
     }
+    // Railway는 재배포·재시작마다 컨테이너가 통째로 새로 뜨면서 인메모리
+    // this.logs가 초기화된다 — "며칠 전 매일 작업이 잘 돌았는지" 확인할
+    // 방법이 없다는 문제(사용자 지적, 2026-07-25)라 DB에도 남긴다. insert
+    // 실패로 로그 자체가 끊기면 안 되므로 fire-and-forget + 실패는 콘솔에만
+    // 남긴다(인메모리 this.logs는 이 실패와 무관하게 계속 쌓인다).
+    void this.logRepo
+      .insert({ at: new Date(entry.at), level: entry.level, message: entry.message, scheduler: entry.scheduler ?? false })
+      .catch((err) => this.logger.error(`크롤러 로그 DB 저장 실패: ${err instanceof Error ? err.message : err}`));
   }
 
-  getLogs(limit = 200): CrawlerLogEntry[] {
-    return this.logs.slice(-limit);
+  async getLogs(limit = 200): Promise<CrawlerLogEntry[]> {
+    const rows = await this.logRepo.find({
+      order: { at: "DESC" },
+      take: limit,
+    });
+    return rows
+      .slice()
+      .reverse()
+      .map((row) => ({
+        at: row.at.toISOString(),
+        level: row.level,
+        message: row.message,
+        scheduler: row.scheduler,
+      }));
   }
 
-  clearLogs() {
+  async clearLogs() {
     this.logs.length = 0;
+    await this.logRepo.clear();
+  }
+
+  /** 매일 작업 로그를 무기한 쌓아두면 테이블이 계속 커지기만 하므로,
+   * 서버 기동 시 1회 30일 지난 로그만 정리한다(일 단위 실행 이력 확인이
+   * 목적이라 30일이면 충분, 사용자 요청은 "일별로 진행 여부를 남기고
+   * 싶다"였음, 2026-07-25). */
+  private pruneOldLogs() {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    void this.logRepo
+      .createQueryBuilder()
+      .delete()
+      .where("at < :cutoff", { cutoff })
+      .execute()
+      .catch((err) =>
+        this.logger.error(`오래된 크롤러 로그 정리 실패: ${err instanceof Error ? err.message : err}`),
+      );
   }
 
   appendWorkerLog(level: CrawlerLogEntry["level"], message: string) {

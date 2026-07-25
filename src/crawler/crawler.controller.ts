@@ -62,9 +62,9 @@ export class CrawlerController {
   }
 
   @Post("logs/clear")
-  clearLogs(@Headers() headers: Record<string, string>) {
+  async clearLogs(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
-    this.crawlerService.clearLogs();
+    await this.crawlerService.clearLogs();
     return { ok: true };
   }
 

@@ -52,3 +52,43 @@
 - `npx tsc --noEmit -p .` 백엔드/프론트 모두 통과.
 - UI 동작(Playwright 등 브라우저 검증)은 별도로 하지 않음 — 사용자
   요청이 코드 반영 중심이었고, 스타일/구조상 위험이 낮은 변경.
+
+## 追記 (2026-07-25) — 매일 작업 실행 로그 DB 영속화
+
+### 요청 원문 (요약)
+"매일작업 실행 로그에서 일별로 로그가 잘 진행되었는지 남았으면 좋겠는데
+작업이 됐어도 리셋이 되니 볼 수가 없는데 이거 확인할 방법이 없을까??"
+
+### 원인
+`CrawlerService.logs`가 인메모리 배열(`private readonly logs:
+CrawlerLogEntry[] = []`)이었음. Railway는 재배포·재시작마다 컨테이너가
+통째로 새로 뜨는데, `CrawlerConfigRow`(설정)는 이미 DB로 옮겨져
+재배포와 무관하게 유지되지만 로그는 여전히 메모리에만 있어 재배포/재시작
+시점에 전부 사라짐. `maxLogs=500` 제한도 있어 하루 실행량이 많으면
+당일 안에도 앞부분이 밀려나감.
+
+### 변경 내용
+`CrawlerConfigRow`와 동일한 패턴으로 DB 영속화:
+- `src/crawler/crawler-log.entity.ts` 신설: `crawler_log` 테이블
+  엔티티(`id`(uuid), `at`, `level`, `message`, `scheduler`).
+- `src/migrations/1784247000000-AddCrawlerLogTable.ts` 신설.
+- `src/crawler/crawler.module.ts`: `TypeOrmModule.forFeature`에
+  `CrawlerLogRow` 추가.
+- `crawler.service.ts`:
+  - `appendLog()`: 기존 인메모리 push는 유지하고, 추가로
+    `logRepo.insert()`를 fire-and-forget으로 호출해 DB에도 기록.
+    insert 실패해도 인메모리 로그·크롤링 자체는 영향받지 않도록
+    catch로 격리.
+  - `getLogs()`: 인메모리 slice 대신 DB에서 `at DESC` 최신순 조회
+    (async로 전환, 컨트롤러도 `await` 대응).
+  - `clearLogs()`: DB `logRepo.clear()`도 함께 수행(async 전환).
+  - `pruneOldLogs()` 신설, `onModuleInit()`에서 1회 호출 — 30일
+    지난 로그를 정리해 테이블이 무기한 커지지 않도록 함.
+- `crawler.controller.ts`: `clearLogs` 핸들러를 async로 전환.
+
+### 결과
+서버가 재배포되거나 재시작되어도 "매일 작업 실행 로그" 패널에서
+과거 실행 이력(스케줄러가 며칠 전 정상 실행됐는지, 요일 제외로
+건너뛴 날이 언제였는지 등)을 그대로 확인할 수 있다. `npx tsc
+--noEmit -p .` 통과. 마이그레이션은 `migrationsRun: true`(운영
+설정)에 따라 다음 배포 시 자동 적용.
