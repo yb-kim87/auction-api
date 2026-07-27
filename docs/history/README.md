@@ -19,6 +19,7 @@
 - [2026-07-21_01 공용면적(sharedArea) 수집 및 부가세계산기 고도화](./2026-07-21_01_shared-area-and-vat-calculator-hardening.md)
 - [2026-07-24_01 강의자료 관리자 탭 (파일럿: 1번 슬라이드)](./2026-07-24_01_lecture-materials-admin-tab.md)
 - [2026-07-25_01 매일 작업(크롤러 예약 실행) 제외 요일 설정 추가](./2026-07-25_01_daily-job-exclude-weekdays.md)
+- [2026-07-26_01 관리자 화면 "크롤링" 표현을 "물건 작업"으로 순화](./2026-07-26_01_admin-ui-crawling-wording.md)
 
 ## 앞으로의 작업 방식
 
