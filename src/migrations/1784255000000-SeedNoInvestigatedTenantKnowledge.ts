@@ -26,11 +26,11 @@ export class SeedNoInvestigatedTenantKnowledge1784255000000
       `INSERT INTO "auction_knowledge"
         ("id", "title", "category", "tags", "content", "grade", "active", "createdAt", "updatedAt")
        SELECT
-         gen_random_uuid(), $1, '권리분석',
+         gen_random_uuid(), $1::text, '권리분석',
          '조사된임차내역없음,현황조사서,임차인없음,대항력없음,인수권리없음,세대열람',
-         $2, 2, true, NOW(), NOW()
+         $2::text, 2, true, NOW(), NOW()
        WHERE NOT EXISTS (
-         SELECT 1 FROM "auction_knowledge" WHERE "title" = $1
+         SELECT 1 FROM "auction_knowledge" WHERE "title" = $1::text
        )`,
       [TITLE, CONTENT],
     );
