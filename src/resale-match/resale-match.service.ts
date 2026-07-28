@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Not, Repository } from "typeorm";
 import { Auction } from "../auctions/auction.entity";
 import { ActualTradeRow } from "./entities/actual-trade.entity";
 import { AuctionTradeMatchRow } from "./entities/auction-trade-match.entity";
@@ -130,6 +130,18 @@ export class ResaleMatchService implements OnModuleInit {
         windowStart: windowStart.toISOString().slice(0, 10),
       })
       .getMany();
+
+    // 이전 배치 실행에서 저장된 후보 중 이번엔 조건에 안 맞아 빠진
+    // 것들을 정리한다 — 그대로 두면 QA 화면/조회에서 낡은 후보와 새
+    // 후보가 섞여 candidateRank가 중복되는 등 혼란을 준다(실측,
+    // 2026-07-28 — 층 하드필터 도입 직후 이전 실행의 인접층 후보가
+    // 안 지워지고 남아있던 것을 발견).
+    const currentTradeIds = candidates.map((c) => c.id);
+    await this.matchRepo.delete(
+      currentTradeIds.length > 0
+        ? { auctionId: auction.id, actualTradeId: Not(In(currentTradeIds)) }
+        : { auctionId: auction.id },
+    );
 
     if (candidates.length === 0) return;
 

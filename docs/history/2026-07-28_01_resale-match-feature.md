@@ -275,3 +275,27 @@ ingestOne()`이 이미 개별 실패를 catch해서 계속 진행하는 구조�
 ### 검증
 `npx tsc --noEmit -p .` 통과. 배포 후 매칭 배치 재실행해 층 하드필터
 반영 확인 예정.
+
+## 追記 (2026-07-28) — 2단계 관리자 QA 조회/검토 API 추가
+
+### 배경
+사용자가 매칭 결과를 확인할 방법을 물어봄 — 지금까지는 관리자 API도
+물건 ID를 알아야 후보를 볼 수 있었고, 결과를 한눈에 모아 보는 화면이
+전혀 없었음. "관리자 QA 화면만 먼저" 만들기로 결정(설계 로드맵 2단계).
+
+### 변경 내용
+- `resale-match.service.ts`의 `matchOne()`: 새 후보 집합을 계산한 뒤,
+  이전 배치 실행에서 남았지만 이번엔 조건에 안 맞는 낡은
+  `auction_trade_match` 행을 삭제하도록 수정(`Not(In(currentTradeIds))`)
+  — 층 하드필터 도입 직후 이전 실행의 인접층 후보가 안 지워지고 남아
+  QA 조회 시 candidateRank 1이 여러 개 뒤섞이는 문제를 방지.
+- `resale-match.controller.ts`:
+  - `GET /resale-match/matches` — 물건별 1위 후보 중 MEDIUM(55점)
+    이상만 모아, 2위 후보 점수와 비교한 `ambiguous` 플래그까지 계산해
+    반환(관리자용 QA 목록).
+  - `PATCH /resale-match/matches/:matchId/review` — 관리자가
+    CONFIRMED/REJECTED로 검토 상태를 남김(`reviewedBy`/`reviewedAt`
+    기록, 엔티티에 이미 있던 필드 활용).
+
+### 검증
+`npx tsc --noEmit -p .` 통과.
