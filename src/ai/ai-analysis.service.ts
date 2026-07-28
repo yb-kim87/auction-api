@@ -287,6 +287,19 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
       structured.missingEvidence.push("배당 결과와 실제 잔존 인수채무");
     }
 
+    const possibleAmountWithoutResidualBasis =
+      structured.assumption.status === "possible" &&
+      structured.assumption.estimatedAmount != null &&
+      !/예상\s*배당|미배당|배당[^.\n]*(?:차액|잔액|부족)|잔존/.test(
+        structured.assumption.reason,
+      );
+    if (possibleAmountWithoutResidualBasis) {
+      structured.assumption.estimatedAmount = null;
+      structured.assumption.reason =
+        "예상 배당액 또는 미배당 잔액 근거가 없어 인수 가능 금액을 산정할 수 없습니다.";
+      structured.missingEvidence.push("예상 배당액과 미배당 보증금 잔액");
+    }
+
     const noneHasExplicitBasis =
       /인수[^.\n]*(?:없|0원)|소멸|포기|전액\s*배당/.test(
         structured.assumption.reason,
