@@ -28,6 +28,7 @@ import { KnowledgeCategoryService } from "./knowledge-category.service";
 import { OpenAiService } from "./openai.service";
 import type { KnowledgeDraftStatus } from "./knowledge-draft.entity";
 import type { AuctionRightsReview } from "../auctions/auction.entity";
+import { RightsRuleService } from "./rights-rule.service";
 
 @Controller("ai")
 export class AiController {
@@ -38,7 +39,30 @@ export class AiController {
     private readonly knowledgeCategoryService: KnowledgeCategoryService,
     private readonly cafeKnowledgeService: CafeKnowledgeService,
     private readonly openAiService: OpenAiService,
+    private readonly rightsRuleService: RightsRuleService,
   ) {}
+
+  @Get("rights-rules")
+  async getRightsRules(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.rightsRuleService.findAll();
+  }
+
+  @Patch("rights-rules/:code")
+  async updateRightsRule(
+    @Headers() headers: Record<string, string>,
+    @Param("code") code: string,
+    @Body() body: { value?: string },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.rightsRuleService.update(
+      code,
+      String(body?.value ?? ""),
+      ctx.username,
+    );
+  }
 
   @Post("ask")
   async ask(

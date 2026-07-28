@@ -22,6 +22,7 @@ import {
   formatRightsAnalysisFacts,
   type RightsAnalysisFacts,
 } from "./rights-analysis-context.util";
+import { RightsRuleService } from "./rights-rule.service";
 
 const ANALYSIS_ENGINE_LABEL = "경매코치 AI";
 
@@ -94,6 +95,7 @@ export class AiAnalysisService {
     private readonly usersService: UsersService,
     private readonly knowledgeService: KnowledgeService,
     private readonly openAi: OpenAiService,
+    private readonly rightsRuleService: RightsRuleService,
   ) {}
 
   private async findAuction(id: string, role: UserRole | "") {
@@ -313,9 +315,13 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
     if (facts.allKnownTenantDatesOnOrAfterBaseline && facts.baselineCandidate?.date) {
       const baselineDate = facts.baselineCandidate.date;
       const moveInDates = facts.nonPriorTenantDates.join(", ");
+      const timingReason =
+        facts.tenantEffectiveTiming === "next_day"
+          ? "대항력은 전입 다음 날 0시부터 발생하므로 "
+          : "";
       const conclusion =
-        `확인된 임차인 전입일(${moveInDates})이 말소기준권리일(${baselineDate})과 같거나 늦고 ` +
-        "대항력은 전입 다음 날 0시부터 발생하므로 " +
+        `확인된 임차인 전입일(${moveInDates})이 적용 규칙상 말소기준권리일(${baselineDate})보다 후순위이고 ` +
+        timingReason +
         "해당 임차인은 낙찰자에게 대항할 수 없고, 낙찰자가 인수할 임차보증금은 없습니다.";
 
       const tenantRiskPattern = /임차|대항력|보증금|배당\s*요구/;
@@ -531,7 +537,8 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
       k.category ? `[${k.category}] ${k.title}` : k.title,
     );
 
-    const facts = extractRightsAnalysisFacts(auction);
+    const rightsRuleSettings = await this.rightsRuleService.getSettings();
+    const facts = extractRightsAnalysisFacts(auction, rightsRuleSettings);
     const userPrompt = this.buildUserPrompt(auction, knowledgeBlock, facts);
 
     const rawLlm = await this.openAi.analyzeAuction(SYSTEM_PROMPT, userPrompt);

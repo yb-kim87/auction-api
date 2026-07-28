@@ -107,4 +107,18 @@ const sameDayTenant = extractRightsAnalysisFacts({
 assert.deepEqual(sameDayTenant.nonPriorTenantDates, ["2015-08-03"]);
 assert.equal(sameDayTenant.allKnownTenantDatesOnOrAfterBaseline, true);
 
+const sameDayImmediateRule = extractRightsAnalysisFacts(
+  {
+    buildingRegistry:
+      "을(1) 2015-08-03 근저당권설정 우리은행 (말소기준등기)",
+    tenantDetail: "임차인: 동일자\n전입: 2015-08-03",
+  },
+  { tenantEffectiveTiming: "immediate" },
+);
+assert.deepEqual(sameDayImmediateRule.nonPriorTenantDates, []);
+assert.equal(
+  sameDayImmediateRule.allKnownTenantDatesOnOrAfterBaseline,
+  false,
+);
+
 console.log("rights-analysis-context: ok");

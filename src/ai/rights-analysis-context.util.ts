@@ -11,8 +11,14 @@ export type RightsAnalysisFacts = {
   preBaselineTenantDates: string[];
   nonPriorTenantDates: string[];
   allKnownTenantDatesOnOrAfterBaseline: boolean;
+  tenantEffectiveTiming: "next_day" | "immediate";
   investigatedTenantStatus: "none" | "conflict" | "unknown";
   warnings: string[];
+};
+
+export type RightsRuleSettings = {
+  tenantEffectiveTiming?: "next_day" | "immediate";
+  noInvestigatedTenantPolicy?: "auto_none" | "manual_review";
 };
 
 function parseWon(raw: string): number | null {
@@ -41,7 +47,7 @@ export function extractRightsAnalysisFacts(input: {
   tenantDetail?: string | null;
   tenantInfo?: string | null;
   specialNote?: string | null;
-}): RightsAnalysisFacts {
+}, settings: RightsRuleSettings = {}): RightsAnalysisFacts {
   const registry = String(input.buildingRegistry ?? "").trim();
   const tenantDetail = String(input.tenantDetail ?? "").trim();
   const tenantInfo = String(input.tenantInfo ?? "").trim();
@@ -96,13 +102,23 @@ export function extractRightsAnalysisFacts(input: {
       if (match[1] < baselineCandidate.date) preBaselineTenantDates.push(match[1]);
       // 주택임대차 대항력은 인도와 주민등록을 마친 다음 날부터 발생한다.
       // 따라서 전입일이 말소기준권리일과 같아도 해당 권리보다 후순위다.
-      if (match[1] >= baselineCandidate.date) nonPriorTenantDates.push(match[1]);
+      const sameDayIsJunior = settings.tenantEffectiveTiming !== "immediate";
+      if (
+        match[1] > baselineCandidate.date ||
+        (sameDayIsJunior && match[1] === baselineCandidate.date)
+      ) {
+        nonPriorTenantDates.push(match[1]);
+      }
     }
   }
   const allKnownTenantDatesOnOrAfterBaseline =
     Boolean(baselineCandidate?.date) &&
     tenantMoveInDates.length > 0 &&
-    tenantMoveInDates.every((date) => date >= baselineCandidate!.date);
+    tenantMoveInDates.every((date) =>
+      settings.tenantEffectiveTiming === "immediate"
+        ? date > baselineCandidate!.date
+        : date >= baselineCandidate!.date,
+    );
 
   const explicitlyNoInvestigatedTenant =
     /조사된\s*임차\s*내역(?:이)?\s*(?:없음|없습니다)/.test(tenantDetail);
@@ -113,7 +129,9 @@ export function extractRightsAnalysisFacts(input: {
   const investigatedTenantStatus = explicitlyNoInvestigatedTenant
     ? conflictingTenantEvidence
       ? "conflict"
-      : "none"
+      : settings.noInvestigatedTenantPolicy === "manual_review"
+        ? "unknown"
+        : "none"
     : "unknown";
 
   const warnings: string[] = [];
@@ -159,6 +177,8 @@ export function extractRightsAnalysisFacts(input: {
     preBaselineTenantDates: [...new Set(preBaselineTenantDates)],
     nonPriorTenantDates: [...new Set(nonPriorTenantDates)],
     allKnownTenantDatesOnOrAfterBaseline,
+    tenantEffectiveTiming:
+      settings.tenantEffectiveTiming === "immediate" ? "immediate" : "next_day",
     investigatedTenantStatus,
     warnings,
   };
@@ -179,7 +199,8 @@ export function formatRightsAnalysisFacts(facts: RightsAnalysisFacts): string {
 - 잔존 임차보증금반환채권 포기 문구: ${facts.hasCreditorWaiver ? "있음" : "없음"}
 - 말소기준일보다 빠른 전입일: ${facts.preBaselineTenantDates.join(", ") || "없음 또는 비교 불가"}
 - 말소기준일과 같거나 늦은 전입일: ${facts.nonPriorTenantDates.join(", ") || "없음 또는 비교 불가"}
-- 확인된 전입일이 모두 말소기준일과 같거나 이후: ${facts.allKnownTenantDatesOnOrAfterBaseline ? "예(대항력은 전입 다음 날 발생하므로 임차인 대항력·보증금 인수 없음)" : "아니오 또는 비교 불가"}
+- 적용 중인 대항력 발생 규칙: ${facts.tenantEffectiveTiming === "next_day" ? "요건 충족 다음 날 0시" : "요건 충족 즉시"}
+- 확인된 전입일이 모두 말소기준일보다 후순위: ${facts.allKnownTenantDatesOnOrAfterBaseline ? "예(임차인 대항력·보증금 인수 없음)" : "아니오 또는 비교 불가"}
 - 법원 조사 임차내역: ${
     facts.investigatedTenantStatus === "none"
       ? "조사된 임차내역 없음(임차인 대항력·임차보증금 인수권리 없음)"

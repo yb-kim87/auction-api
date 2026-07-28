@@ -13,6 +13,8 @@ import { CafeKnowledgeService } from "./cafe-knowledge.service";
 import { KnowledgeService } from "./knowledge.service";
 import { KnowledgeCategoryService } from "./knowledge-category.service";
 import { OpenAiService } from "./openai.service";
+import { RightsAnalysisRule } from "./rights-rule.entity";
+import { RightsRuleService } from "./rights-rule.service";
 import { RecommendationModule } from "../recommendation/recommendation.module";
 
 @Module({
@@ -23,6 +25,7 @@ import { RecommendationModule } from "../recommendation/recommendation.module";
       AuctionKnowledge,
       KnowledgeCategory,
       KnowledgeDraft,
+      RightsAnalysisRule,
     ]),
     UsersModule,
     RecommendationModule,
@@ -35,6 +38,7 @@ import { RecommendationModule } from "../recommendation/recommendation.module";
     KnowledgeCategoryService,
     CafeKnowledgeService,
     OpenAiService,
+    RightsRuleService,
   ],
   exports: [CafeKnowledgeService, KnowledgeService, OpenAiService],
 })

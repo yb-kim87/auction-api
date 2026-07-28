@@ -9,6 +9,7 @@ import { AuctionAnalysis } from "./ai/auction-analysis.entity";
 import { AuctionKnowledge } from "./ai/knowledge.entity";
 import { KnowledgeCategory } from "./ai/knowledge-category.entity";
 import { KnowledgeDraft } from "./ai/knowledge-draft.entity";
+import { RightsAnalysisRule } from "./ai/rights-rule.entity";
 import { LoanPolicy } from "./loan-policy/loan-policy.entity";
 import { LoanSettings } from "./loan-policy/loan-settings.entity";
 import { RegulatedRegion } from "./loan-policy/regulated-region.entity";
@@ -44,6 +45,7 @@ const entities = [
   AuctionKnowledge,
   KnowledgeCategory,
   KnowledgeDraft,
+  RightsAnalysisRule,
   LoanPolicy,
   LoanSettings,
   RegulatedRegion,
