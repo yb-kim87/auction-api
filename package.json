@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "test:rights": "npm run build && node scripts/test-rights-analysis-context.mjs",
+    "test:rights": "npm run build && node scripts/test-rights-analysis-context.mjs && node scripts/test-rights-analysis-pipeline.mjs",
     "test:rag": "npm run build && node scripts/test-knowledge-selection.mjs",
     "start": "nest start",
     "start:dev": "nest start --watch",

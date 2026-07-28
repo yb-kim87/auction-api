@@ -13,7 +13,29 @@ export type RightsAnalysisFacts = {
   allKnownTenantDatesOnOrAfterBaseline: boolean;
   tenantEffectiveTiming: "next_day" | "immediate";
   investigatedTenantStatus: "none" | "conflict" | "unknown";
+  occupancyEvidence: "owner" | "tenant" | "none" | "unknown";
+  complexExceptionSignals: string[];
   warnings: string[];
+};
+
+export type DeterministicRightsDecision = {
+  code:
+    | "owner_occupied"
+    | "no_tenant"
+    | "junior_tenant"
+    | "senior_tenant_waiver"
+    | "senior_tenant_review"
+    | "insufficient_data";
+  final: boolean;
+  reviewStatus: "unknown" | "possible" | "none";
+  tenantPriorityStatus: "unknown" | "possible" | "none";
+  opposability: "unknown" | "possible" | "none";
+  assumptionStatus: "unknown" | "possible" | "none";
+  assumptionAmount: number | null;
+  summary: string;
+  reason: string;
+  missingEvidence: string[];
+  requiresRag: boolean;
 };
 
 export type RightsRuleSettings = {
@@ -133,6 +155,30 @@ export function extractRightsAnalysisFacts(input: {
         ? "unknown"
         : "none"
     : "unknown";
+  const ownerOccupied =
+    /소유자(?:가|의)?\s*(?:전부|일부)?\s*(?:점유|거주)|소유자\s*세대가\s*전입/.test(
+      `${tenantInfo}\n${tenantDetail}`,
+    );
+  const tenantEvidence =
+    conflictingTenantEvidence ||
+    /임차인|임대차관계|주택임차권|상가임차권/.test(`${tenantInfo}\n${tenantDetail}`);
+  const occupancyEvidence = ownerOccupied && !tenantEvidence
+    ? "owner"
+    : investigatedTenantStatus === "none"
+      ? "none"
+      : tenantEvidence
+        ? "tenant"
+        : "unknown";
+  const complexExceptionSignals = [
+    "유치권",
+    "법정지상권",
+    "분묘기지권",
+    "지분매각",
+    "대지권 미등기",
+    "선순위 가처분",
+    "선순위 가등기",
+    "임차권등기",
+  ].filter((signal) => combined.includes(signal));
 
   const warnings: string[] = [];
   if (!registry || registry === "값없음") {
@@ -180,7 +226,154 @@ export function extractRightsAnalysisFacts(input: {
     tenantEffectiveTiming:
       settings.tenantEffectiveTiming === "immediate" ? "immediate" : "next_day",
     investigatedTenantStatus,
+    occupancyEvidence,
+    complexExceptionSignals,
     warnings,
+  };
+}
+
+export function buildDeterministicRightsDecision(
+  facts: RightsAnalysisFacts,
+): DeterministicRightsDecision {
+  const baselineDate = facts.baselineCandidate?.date ?? "";
+  const postDates = facts.nonPriorTenantDates.join(", ");
+  const priorDates = facts.preBaselineTenantDates.join(", ");
+  const complexReason = facts.complexExceptionSignals.join(", ");
+
+  const tenantNoneWithComplexException = (
+    code: "owner_occupied" | "no_tenant" | "junior_tenant",
+    summary: string,
+    tenantReason: string,
+  ): DeterministicRightsDecision => ({
+    code,
+    final: false,
+    reviewStatus: "unknown",
+    tenantPriorityStatus: "none",
+    opposability: "none",
+    assumptionStatus: "unknown",
+    assumptionAmount: null,
+    summary: `${summary} 다만 별도 예외 권리(${complexReason})는 추가 검토가 필요합니다.`,
+    reason: `${tenantReason} 전체 인수 여부는 별도 예외 권리 검토 후 확정합니다.`,
+    missingEvidence: [`별도 예외 권리 검토: ${complexReason}`],
+    requiresRag: true,
+  });
+
+  if (facts.occupancyEvidence === "owner") {
+    if (complexReason) {
+      return tenantNoneWithComplexException(
+        "owner_occupied",
+        "법원 조사자료상 소유자가 점유하고 있어 대항력 있는 임차인은 확인되지 않습니다.",
+        "소유자 점유로 인한 임차보증금 인수는 없습니다.",
+      );
+    }
+    return {
+      code: "owner_occupied",
+      final: true,
+      reviewStatus: "none",
+      tenantPriorityStatus: "none",
+      opposability: "none",
+      assumptionStatus: "none",
+      assumptionAmount: 0,
+      summary: "법원 조사자료상 소유자가 점유하고 있어 대항력 있는 임차인은 확인되지 않습니다.",
+      reason: "소유자 점유는 임대차보증금 반환채권이 아니므로 낙찰자가 인수할 임차보증금은 없습니다.",
+      missingEvidence: [],
+      requiresRag: false,
+    };
+  }
+
+  if (facts.investigatedTenantStatus === "none") {
+    if (complexReason) {
+      return tenantNoneWithComplexException(
+        "no_tenant",
+        "법원 조사자료상 조사된 임차내역이 없어 대항력 있는 임차인은 없는 것으로 판단됩니다.",
+        "임차인 관련 인수권리는 없습니다.",
+      );
+    }
+    return {
+      code: "no_tenant",
+      final: true,
+      reviewStatus: "none",
+      tenantPriorityStatus: "none",
+      opposability: "none",
+      assumptionStatus: "none",
+      assumptionAmount: 0,
+      summary: "법원 조사자료상 조사된 임차내역이 없어 대항력 있는 임차인은 없는 것으로 판단됩니다.",
+      reason: "조사된 임차내역이 없고 충돌하는 임차자료가 없어 낙찰자가 인수할 임차보증금은 없습니다.",
+      missingEvidence: [],
+      requiresRag: false,
+    };
+  }
+
+  if (facts.allKnownTenantDatesOnOrAfterBaseline && baselineDate) {
+    if (complexReason) {
+      return tenantNoneWithComplexException(
+        "junior_tenant",
+        `확인된 전입일(${postDates})이 말소기준권리일(${baselineDate})과 같거나 늦어 해당 임차인은 낙찰자에게 대항할 수 없습니다.`,
+        "해당 임차인의 보증금 인수는 없습니다.",
+      );
+    }
+    return {
+      code: "junior_tenant",
+      final: true,
+      reviewStatus: "none",
+      tenantPriorityStatus: "none",
+      opposability: "none",
+      assumptionStatus: "none",
+      assumptionAmount: 0,
+      summary: `확인된 전입일(${postDates})이 말소기준권리일(${baselineDate})과 같거나 늦어 해당 임차인은 낙찰자에게 대항할 수 없습니다.`,
+      reason: "적용 중인 대항력 발생 시점 규칙에 따라 후순위이므로 낙찰자가 인수할 임차보증금은 없습니다.",
+      missingEvidence: [],
+      requiresRag: false,
+    };
+  }
+
+  if (facts.preBaselineTenantDates.length > 0 && facts.hasCreditorWaiver) {
+    return {
+      code: "senior_tenant_waiver",
+      final: true,
+      reviewStatus: "none",
+      tenantPriorityStatus: "possible",
+      opposability: "possible",
+      assumptionStatus: "none",
+      assumptionAmount: 0,
+      summary: `말소기준권리일(${baselineDate})보다 빠른 전입일(${priorDates})이 있으나 잔존 임차보증금반환채권 포기 문구가 확인됩니다.`,
+      reason: "명시된 잔존채권 포기 조건에 따라 배당 후 남는 임차보증금 반환채권을 낙찰자가 인수하지 않는 것으로 판단합니다.",
+      missingEvidence: [],
+      requiresRag: true,
+    };
+  }
+
+  if (facts.preBaselineTenantDates.length > 0) {
+    return {
+      code: "senior_tenant_review",
+      final: false,
+      reviewStatus: "possible",
+      tenantPriorityStatus: "possible",
+      opposability: "possible",
+      assumptionStatus: "unknown",
+      assumptionAmount: null,
+      summary: `말소기준권리일(${baselineDate})보다 빠른 전입일(${priorDates})이 있어 선순위 임차인 가능성이 있습니다.`,
+      reason: "대항요건과 배당 결과가 확인되지 않아 낙찰자의 실제 인수금액은 아직 확정할 수 없습니다.",
+      missingEvidence: ["임차인의 대항요건", "배당요구 및 예상 배당 결과", "미배당 보증금 잔액"],
+      requiresRag: true,
+    };
+  }
+
+  return {
+    code: "insufficient_data",
+    final: false,
+    reviewStatus: "unknown",
+    tenantPriorityStatus: "unknown",
+    opposability: "unknown",
+    assumptionStatus: "unknown",
+    assumptionAmount: null,
+    summary: "확정 판정에 필요한 말소기준권리 또는 임차인 자료가 부족합니다.",
+    reason: "서버가 확정할 수 없는 복잡한 권리관계는 RAG 근거와 추가 자료를 함께 검토해야 합니다.",
+    missingEvidence: [
+      ...(baselineDate ? [] : ["말소기준권리 종류와 일자"]),
+      "임차인 전입일 및 대항요건",
+    ],
+    requiresRag: true,
   };
 }
 
@@ -208,6 +401,9 @@ export function formatRightsAnalysisFacts(facts: RightsAnalysisFacts): string {
         ? "임차내역 없음 문구와 별도 임차자료가 충돌함"
         : "명시적 없음 문구 미확인"
   }
+- 서버 확정 판정: ${buildDeterministicRightsDecision(facts).summary}
+- 복잡한 예외 RAG 검토 필요: ${buildDeterministicRightsDecision(facts).requiresRag ? "예" : "아니오"}
+- 감지된 별도 예외 권리: ${facts.complexExceptionSignals.join(", ") || "없음"}
 - 주의사항:
 ${facts.warnings.length > 0 ? facts.warnings.map((warning) => `  - ${warning}`).join("\n") : "  - 없음"}`;
 }

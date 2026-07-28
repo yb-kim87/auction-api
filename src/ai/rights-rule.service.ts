@@ -75,6 +75,54 @@ const RULE_DEFINITIONS: RuleDefinition[] = [
     sortOrder: 30,
   },
   {
+    code: "owner_occupancy_has_no_tenant_assumption",
+    title: "소유자 거주 물건의 임차권 판단",
+    description:
+      "법원 조사자료에 소유자 점유·거주가 명시되면 임차인의 대항력과 임차보증금 인수는 없음으로 판정합니다.",
+    legalBasis:
+      "소유자의 점유는 임대차보증금 반환채권이 아니므로 임차인 권리와 분리합니다. 별도 임차자료가 함께 있으면 자동 확정하지 않습니다.",
+    defaultValue: "enforced",
+    options: [{ value: "enforced", label: "항상 적용", description: "안전상 변경할 수 없습니다." }],
+    editable: false,
+    sortOrder: 40,
+  },
+  {
+    code: "junior_tenant_has_no_opposability",
+    title: "후순위 임차인의 대항력·인수금액",
+    description:
+      "전입 효력 발생일이 말소기준권리일과 같거나 늦으면 후순위로 판정하고 임차보증금 인수금액을 0원으로 확정합니다.",
+    legalBasis:
+      "관리자가 설정한 대항력 발생 시점과 말소기준권리일을 서버가 비교하며 AI가 이 결론을 변경할 수 없습니다.",
+    defaultValue: "enforced",
+    options: [{ value: "enforced", label: "항상 적용", description: "안전상 변경할 수 없습니다." }],
+    editable: false,
+    sortOrder: 50,
+  },
+  {
+    code: "senior_tenant_requires_dividend_review",
+    title: "선순위 가능 임차인의 인수금액",
+    description:
+      "말소기준권리보다 빠른 전입일은 선순위 가능으로 표시하되 배당 결과가 없으면 인수금액을 임의로 확정하지 않습니다.",
+    legalBasis:
+      "전입일 선후만으로 실제 대항요건과 미배당 보증금 잔액을 확정할 수 없으므로 복잡한 예외는 RAG 검토로 넘깁니다.",
+    defaultValue: "enforced",
+    options: [{ value: "enforced", label: "항상 적용", description: "안전상 변경할 수 없습니다." }],
+    editable: false,
+    sortOrder: 60,
+  },
+  {
+    code: "creditor_residual_claim_waiver",
+    title: "보증기관 잔존채권 포기",
+    description:
+      "선순위 가능 임차인이 있어도 잔존 임차보증금반환채권 포기 문구가 명확하면 해당 보증금 인수금액을 0원으로 판정합니다.",
+    legalBasis:
+      "포기 문구가 실제 자료에 명시된 경우에만 적용하며, HUG·LH·SGI 등 보증기관의 복합 승계관계는 관련 RAG를 함께 검토합니다.",
+    defaultValue: "enforced",
+    options: [{ value: "enforced", label: "항상 적용", description: "안전상 변경할 수 없습니다." }],
+    editable: false,
+    sortOrder: 70,
+  },
+  {
     code: "same_day_without_time_policy",
     title: "즉시 효력 규칙의 동일 날짜 자료",
     description:
@@ -83,7 +131,7 @@ const RULE_DEFINITIONS: RuleDefinition[] = [
     defaultValue: "unknown",
     options: [{ value: "unknown", label: "선후순위 미확인", description: "안전상 변경할 수 없습니다." }],
     editable: false,
-    sortOrder: 40,
+    sortOrder: 80,
   },
 ];
 

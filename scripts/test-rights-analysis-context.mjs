@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { extractRightsAnalysisFacts } = require(
+const { extractRightsAnalysisFacts, buildDeterministicRightsDecision } = require(
   "../dist/ai/rights-analysis-context.util.js",
 );
 
@@ -122,3 +122,71 @@ assert.equal(
 );
 
 console.log("rights-analysis-context: ok");
+
+const baselineRegistry =
+  "을(1) 2020-06-23 근저당권설정 국민은행 (말소기준등기)";
+
+const ownerOccupiedCase = buildDeterministicRightsDecision(
+  extractRightsAnalysisFacts({
+    buildingRegistry: baselineRegistry,
+    tenantInfo: "소유자 점유",
+    tenantDetail: "소유자가 전부 거주하고 있음",
+  }),
+);
+assert.equal(ownerOccupiedCase.code, "owner_occupied");
+assert.equal(ownerOccupiedCase.opposability, "none");
+assert.equal(ownerOccupiedCase.assumptionAmount, 0);
+assert.equal(ownerOccupiedCase.requiresRag, false);
+
+const noTenantCase = buildDeterministicRightsDecision(
+  extractRightsAnalysisFacts({
+    buildingRegistry: baselineRegistry,
+    tenantDetail: "조사된 임차내역 없음",
+  }),
+);
+assert.equal(noTenantCase.code, "no_tenant");
+assert.equal(noTenantCase.assumptionStatus, "none");
+assert.equal(noTenantCase.assumptionAmount, 0);
+
+const seniorTenantCase = buildDeterministicRightsDecision(
+  extractRightsAnalysisFacts({
+    buildingRegistry: baselineRegistry,
+    tenantInfo: "임차인 홍길동",
+    tenantDetail:
+      "임차인: 홍길동 / 전입: 2019-08-30 / 확정: 2019-08-19 / 보증금: 200,000,000원",
+  }),
+);
+assert.equal(seniorTenantCase.code, "senior_tenant_review");
+assert.equal(seniorTenantCase.opposability, "possible");
+assert.equal(seniorTenantCase.assumptionStatus, "unknown");
+assert.equal(seniorTenantCase.assumptionAmount, null);
+assert.equal(seniorTenantCase.requiresRag, true);
+
+const hugWaiverCase = buildDeterministicRightsDecision(
+  extractRightsAnalysisFacts({
+    buildingRegistry: baselineRegistry,
+    tenantInfo: "주택도시보증공사(HUG) 임차보증금반환채권 승계",
+    tenantDetail:
+      "임차인: 홍길동 / 전입: 2019-08-30 / 확정: 2019-08-19 / 보증금: 200,000,000원",
+    specialNote:
+      "주택도시보증공사는 보증금 전액을 배당받지 못하더라도 잔존 임차보증금반환채권을 포기한다.",
+  }),
+);
+assert.equal(hugWaiverCase.code, "senior_tenant_waiver");
+assert.equal(hugWaiverCase.opposability, "possible");
+assert.equal(hugWaiverCase.assumptionStatus, "none");
+assert.equal(hugWaiverCase.assumptionAmount, 0);
+assert.equal(hugWaiverCase.requiresRag, true);
+
+const juniorTenantCase = buildDeterministicRightsDecision(
+  extractRightsAnalysisFacts({
+    buildingRegistry: baselineRegistry,
+    tenantInfo: "임차인 김후순",
+    tenantDetail: "임차인: 김후순 / 전입: 2020-06-23 / 보증금: 80,000,000원",
+  }),
+);
+assert.equal(juniorTenantCase.code, "junior_tenant");
+assert.equal(juniorTenantCase.opposability, "none");
+assert.equal(juniorTenantCase.assumptionAmount, 0);
+
+console.log("deterministic-rights-decisions: ok");

@@ -18,6 +18,7 @@ import { AuctionAnalysis } from "./auction-analysis.entity";
 import { KnowledgeService } from "./knowledge.service";
 import { OpenAiService } from "./openai.service";
 import {
+  buildDeterministicRightsDecision,
   extractRightsAnalysisFacts,
   formatRightsAnalysisFacts,
   type RightsAnalysisFacts,
@@ -403,7 +404,41 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
     if (structured.knowledgeEvidence.length === 0) {
       structured.missingEvidence.push("분석에 실제 적용한 RAG 지식 근거");
     }
+
+    // 확정 가능한 기본 권리관계는 AI 문장보다 서버 판정을 우선한다.
+    // RAG와 AI는 복잡한 예외 검토와 사용자용 설명만 보완한다.
+    const decision = buildDeterministicRightsDecision(facts);
+    structured.reviewStatus = decision.reviewStatus;
+    structured.tenant.priorityStatus = decision.tenantPriorityStatus;
+    structured.tenant.opposability = decision.opposability;
+    structured.assumption.status = decision.assumptionStatus;
+    structured.assumption.estimatedAmount = decision.assumptionAmount;
+    structured.assumption.reason = decision.reason;
+    llm.summary = decision.summary;
+
+    if (decision.final) {
+      const tenantPattern = /임차|대항력|보증금|전입|배당/;
+      structured.missingEvidence = structured.missingEvidence.filter(
+        (item) => !tenantPattern.test(item),
+      );
+      llm.risks = llm.risks.filter((item) => !tenantPattern.test(item));
+    }
+    structured.missingEvidence.push(...decision.missingEvidence);
+    structured.evidence.push(
+      `서버 확정 규칙: ${decision.code}`,
+      decision.reason,
+    );
+    const aiNonTenantExplanation = llm.rightsAnalysis
+      .split(/(?<=[.!?])\s+/)
+      .filter((sentence) => !/임차|대항력|보증금|전입|배당/.test(sentence))
+      .join(" ")
+      .trim();
+    llm.rightsAnalysis = [decision.summary, decision.reason, aiNonTenantExplanation]
+      .filter(Boolean)
+      .join(" ");
+
     structured.missingEvidence = [...new Set(structured.missingEvidence.filter(Boolean))];
+    structured.evidence = [...new Set(structured.evidence.filter(Boolean))];
     return llm;
   }
 
