@@ -86,11 +86,15 @@ export class AiController {
     const ctx = getAuthContext(headers);
     requireAuth(ctx);
     requireSearchAccess(ctx);
+    const refresh = Boolean(body?.refresh);
+    if (refresh) {
+      requireAdmin(ctx);
+    }
     return this.aiAnalysisService.analyze(
       auctionId,
       ctx.username,
       ctx.role,
-      Boolean(body?.refresh),
+      refresh,
     );
   }
 
