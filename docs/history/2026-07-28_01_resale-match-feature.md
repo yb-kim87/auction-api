@@ -111,3 +111,42 @@
 ### 검증
 `npx tsc --noEmit -p .` 통과. Railway 재배포 후 API 정상 응답 확인
 (CLAUDE.md 배포 확인 규칙 준수).
+
+## 追記 (2026-07-28) — 백필이 실제로는 0건 저장되고 있었던 버그 발견·수정
+
+"백필 매칭 중에 매칭된 사례가 있었어?"라는 질문에 답하려고 운영
+DB를 직접 조회(`railway run --service Postgres`로 Postgres 서비스의
+`DATABASE_PUBLIC_URL`을 이용)한 결과, **`lawdCd`/`umdNm`/`jibun`/
+`saleConfirmedAt`/`paymentCompletedAt` 전부 0건**으로 확인됨.
+백필 스크립트(`crawler/backfill_resale_match.py`)는 40/40 성공
+로그를 남겼는데도 실제로는 아무것도 저장되지 않고 있었다.
+
+원인: `src/auctions/auction-change.util.ts`의 `AUCTION_FIELD_LABELS`
+(=`TRACKED_FIELDS`, 변경 감지 대상 필드 목록)에 신규 5개 필드가
+빠져 있었음. 크롤러 임포트 경로(`AuctionsService.upsertOne` →
+`skipIfUnchanged: true`)는 `TRACKED_FIELDS` 기준으로 diff가 없으면
+`unchanged: true`를 반환하고 **`auctionRepo.save()` 자체를 호출하지
+않는다**. 백필 대상 40건은 전부 이미 DB에 있던(완료된) 사건이라
+기존 추적 필드는 안 바뀌었으므로, `merged`/`next`에는 새 필드값이
+정상적으로 계산돼 있었음에도 저장 단계에서 통째로 버려졌다. 백필
+스크립트는 `/crawler/import-item` 콜백의 HTTP 200 응답만 보고
+"saved: true"를 기록했기 때문에 이 스킵을 감지하지 못했다.
+
+수정: `AUCTION_FIELD_LABELS`에 `lawdCd`/`umdNm`/`jibun`/
+`saleConfirmedAt`/`paymentCompletedAt` 5개 필드와 한글 라벨 추가
+(`src/auctions/auction-change.util.ts`). 이제 이 필드들의 변화도
+diff에 잡혀 저장이 스킵되지 않는다.
+
+### 교훈
+크롤러 저장 경로에 새 필드를 추가할 때는 엔티티/마이그레이션/DTO/
+매퍼/병합 로직뿐 아니라, **변경 감지(diff) 대상 필드 목록에도 반드시
+추가해야 한다** — 그렇지 않으면 "이미 DB에 있고 다른 필드는 안 바뀐"
+케이스(= 완료된 과거 사건 재크롤링/백필의 전형적 상황)에서 조용히
+저장이 스킵된다. 이번처럼 API가 200을 반환하고 로그도 "성공"으로
+남기 때문에 겉보기엔 정상 동작한 것처럼 보인다는 점이 특히
+위험하다 — 반드시 운영 DB를 직접 조회해 실제 반영 여부까지
+확인해야 한다.
+
+### 다음 단계
+수정을 배포한 뒤 백필 스크립트를 재실행해 실제로 DB에 값이
+채워지는지 재확인 필요(진행 중).
