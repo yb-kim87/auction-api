@@ -25,8 +25,8 @@ assert.deepEqual(facts.baselineCandidate, {
 assert.deepEqual(facts.claimAmounts, [880_000_000]);
 assert.equal(facts.hasCreditorWaiver, true);
 assert.deepEqual(facts.preBaselineTenantDates, ["2019-08-30"]);
-assert.deepEqual(facts.postBaselineTenantDates, []);
-assert.equal(facts.allKnownTenantDatesAfterBaseline, false);
+assert.deepEqual(facts.nonPriorTenantDates, []);
+assert.equal(facts.allKnownTenantDatesOnOrAfterBaseline, false);
 assert.equal(facts.investigatedTenantStatus, "unknown");
 
 const separateRows = extractRightsAnalysisFacts({
@@ -93,17 +93,18 @@ const allTenantsAfterBaseline = extractRightsAnalysisFacts({
     "임차인: 황종환\n전입: 2025-01-02",
 });
 assert.deepEqual(allTenantsAfterBaseline.preBaselineTenantDates, []);
-assert.deepEqual(allTenantsAfterBaseline.postBaselineTenantDates, [
+assert.deepEqual(allTenantsAfterBaseline.nonPriorTenantDates, [
   "2015-08-04",
   "2025-01-02",
 ]);
-assert.equal(allTenantsAfterBaseline.allKnownTenantDatesAfterBaseline, true);
+assert.equal(allTenantsAfterBaseline.allKnownTenantDatesOnOrAfterBaseline, true);
 
 const sameDayTenant = extractRightsAnalysisFacts({
   buildingRegistry:
     "을(1) 2015-08-03 근저당권설정 우리은행 (말소기준등기)",
   tenantDetail: "임차인: 동일자\n전입: 2015-08-03",
 });
-assert.equal(sameDayTenant.allKnownTenantDatesAfterBaseline, false);
+assert.deepEqual(sameDayTenant.nonPriorTenantDates, ["2015-08-03"]);
+assert.equal(sameDayTenant.allKnownTenantDatesOnOrAfterBaseline, true);
 
 console.log("rights-analysis-context: ok");

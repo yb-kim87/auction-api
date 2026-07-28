@@ -310,11 +310,12 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
       structured.evidence = [...new Set(structured.evidence.filter(Boolean))];
     }
 
-    if (facts.allKnownTenantDatesAfterBaseline && facts.baselineCandidate?.date) {
+    if (facts.allKnownTenantDatesOnOrAfterBaseline && facts.baselineCandidate?.date) {
       const baselineDate = facts.baselineCandidate.date;
-      const moveInDates = facts.postBaselineTenantDates.join(", ");
+      const moveInDates = facts.nonPriorTenantDates.join(", ");
       const conclusion =
-        `확인된 임차인 전입일(${moveInDates})이 말소기준권리일(${baselineDate})보다 늦어 ` +
+        `확인된 임차인 전입일(${moveInDates})이 말소기준권리일(${baselineDate})과 같거나 늦고 ` +
+        "대항력은 전입 다음 날 0시부터 발생하므로 " +
         "해당 임차인은 낙찰자에게 대항할 수 없고, 낙찰자가 인수할 임차보증금은 없습니다.";
 
       const tenantRiskPattern = /임차|대항력|보증금|배당\s*요구/;
