@@ -34,7 +34,10 @@ export function extractRightsAnalysisFacts(input: {
   for (let index = 0; index < registryLines.length; index += 1) {
     const line = registryLines[index];
     const nextLine = registryLines[index + 1] ?? "";
-    if (!line.includes("말소기준등기") && !nextLine.includes("말소기준등기")) {
+    const markerWrappedToNextLine =
+      nextLine.includes("말소기준등기") &&
+      !/^\S+\s+\d{4}-\d{2}-\d{2}\s+/.test(nextLine);
+    if (!line.includes("말소기준등기") && !markerWrappedToNextLine) {
       continue;
     }
     const match = line.match(
@@ -43,7 +46,7 @@ export function extractRightsAnalysisFacts(input: {
     baselineCandidate = {
       date: match?.[1] ?? "",
       type: match?.[2] ?? "",
-      sourceLine: [line, nextLine.includes("말소기준등기") ? nextLine : ""]
+      sourceLine: [line, markerWrappedToNextLine ? nextLine : ""]
         .filter(Boolean)
         .join(" "),
     };

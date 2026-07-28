@@ -26,6 +26,24 @@ assert.deepEqual(facts.claimAmounts, [880_000_000]);
 assert.equal(facts.hasCreditorWaiver, true);
 assert.deepEqual(facts.preBaselineTenantDates, ["2019-08-30"]);
 
+const separateRows = extractRightsAnalysisFacts({
+  buildingRegistry:
+    "갑(1) 2020-06-23 소유권보존 개인\n" +
+    "을(1) 2020-06-23 근저당권설정 은행 1,068,000,000 (말소기준등기)",
+  tenantDetail: "",
+  specialNote: "",
+});
+assert.equal(separateRows.baselineCandidate?.type, "근저당권설정");
+
+const wrappedMarker = extractRightsAnalysisFacts({
+  buildingRegistry:
+    "갑(3) 2025-07-02 강제경매개시결정 채권자 청구금액 50,046,000\n" +
+    "(말소기준등기 2025타경12345)",
+  tenantDetail: "",
+  specialNote: "",
+});
+assert.equal(wrappedMarker.baselineCandidate?.type, "강제경매개시결정");
+
 const missing = extractRightsAnalysisFacts({
   buildingRegistry: "값없음",
   tenantDetail: "",

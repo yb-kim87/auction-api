@@ -287,6 +287,26 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
       structured.missingEvidence.push("배당 결과와 실제 잔존 인수채무");
     }
 
+    const noneHasExplicitBasis =
+      /인수[^.\n]*(?:없|0원)|소멸|포기|전액\s*배당/.test(
+        structured.assumption.reason,
+      );
+    if (structured.assumption.status === "none" && !noneHasExplicitBasis) {
+      structured.assumption.status = "unknown";
+      structured.assumption.estimatedAmount = null;
+      structured.assumption.reason =
+        "인수 없음으로 확정할 구체적인 소멸·배당·채권 포기 근거가 부족합니다.";
+      structured.missingEvidence.push("인수 없음 판단의 구체적인 근거");
+    } else if (
+      structured.assumption.status === "none" &&
+      structured.assumption.estimatedAmount == null
+    ) {
+      structured.assumption.estimatedAmount = 0;
+    }
+
+    if (structured.knowledgeEvidence.length === 0) {
+      structured.missingEvidence.push("분석에 실제 적용한 RAG 지식 근거");
+    }
     structured.missingEvidence = [...new Set(structured.missingEvidence.filter(Boolean))];
     structured.knowledgeEvidence = structured.knowledgeEvidence.filter((item) =>
       knowledgeTitles.has(item.title),
