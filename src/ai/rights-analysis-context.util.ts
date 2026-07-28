@@ -9,6 +9,8 @@ export type RightsAnalysisFacts = {
   claimAmounts: number[];
   hasCreditorWaiver: boolean;
   preBaselineTenantDates: string[];
+  postBaselineTenantDates: string[];
+  allKnownTenantDatesAfterBaseline: boolean;
   investigatedTenantStatus: "none" | "conflict" | "unknown";
   warnings: string[];
 };
@@ -86,11 +88,19 @@ export function extractRightsAnalysisFacts(input: {
     );
 
   const preBaselineTenantDates: string[] = [];
+  const postBaselineTenantDates: string[] = [];
+  const tenantMoveInDates: string[] = [];
   if (baselineCandidate?.date) {
-    for (const match of tenantDetail.matchAll(/전입:(\d{4}-\d{2}-\d{2})/g)) {
+    for (const match of tenantDetail.matchAll(/전입\s*[:：]\s*(\d{4}-\d{2}-\d{2})/g)) {
+      tenantMoveInDates.push(match[1]);
       if (match[1] < baselineCandidate.date) preBaselineTenantDates.push(match[1]);
+      if (match[1] > baselineCandidate.date) postBaselineTenantDates.push(match[1]);
     }
   }
+  const allKnownTenantDatesAfterBaseline =
+    Boolean(baselineCandidate?.date) &&
+    tenantMoveInDates.length > 0 &&
+    tenantMoveInDates.every((date) => date > baselineCandidate!.date);
 
   const explicitlyNoInvestigatedTenant =
     /조사된\s*임차\s*내역(?:이)?\s*(?:없음|없습니다)/.test(tenantDetail);
@@ -120,6 +130,11 @@ export function extractRightsAnalysisFacts(input: {
       "말소기준일보다 빠른 전입일이 있으나 점유·대항요건과 배당 결과 확인 전에는 선순위 또는 인수금액 확정 금지",
     );
   }
+  if (allKnownTenantDatesAfterBaseline) {
+    warnings.push(
+      "확인된 모든 임차인 전입일이 말소기준일보다 늦으므로 해당 임차인의 대항력과 임차보증금 인수권리는 없음",
+    );
+  }
   if (hasCreditorWaiver) {
     warnings.push(
       "잔존 임차보증금반환채권 포기 문구가 있으므로 해당 보증금 전액을 인수금액으로 계산 금지",
@@ -140,6 +155,8 @@ export function extractRightsAnalysisFacts(input: {
     claimAmounts: [...new Set(claimAmounts)],
     hasCreditorWaiver,
     preBaselineTenantDates: [...new Set(preBaselineTenantDates)],
+    postBaselineTenantDates: [...new Set(postBaselineTenantDates)],
+    allKnownTenantDatesAfterBaseline,
     investigatedTenantStatus,
     warnings,
   };
@@ -159,6 +176,8 @@ export function formatRightsAnalysisFacts(facts: RightsAnalysisFacts): string {
 - 청구·채권 관련 금액: ${claims}
 - 잔존 임차보증금반환채권 포기 문구: ${facts.hasCreditorWaiver ? "있음" : "없음"}
 - 말소기준일보다 빠른 전입일: ${facts.preBaselineTenantDates.join(", ") || "없음 또는 비교 불가"}
+- 말소기준일보다 늦은 전입일: ${facts.postBaselineTenantDates.join(", ") || "없음 또는 비교 불가"}
+- 확인된 전입일이 모두 말소기준일 이후: ${facts.allKnownTenantDatesAfterBaseline ? "예(임차인 대항력·보증금 인수 없음)" : "아니오 또는 비교 불가"}
 - 법원 조사 임차내역: ${
     facts.investigatedTenantStatus === "none"
       ? "조사된 임차내역 없음(임차인 대항력·임차보증금 인수권리 없음)"

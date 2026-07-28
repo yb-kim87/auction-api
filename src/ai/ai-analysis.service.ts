@@ -310,6 +310,56 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
       structured.evidence = [...new Set(structured.evidence.filter(Boolean))];
     }
 
+    if (facts.allKnownTenantDatesAfterBaseline && facts.baselineCandidate?.date) {
+      const baselineDate = facts.baselineCandidate.date;
+      const moveInDates = facts.postBaselineTenantDates.join(", ");
+      const conclusion =
+        `확인된 임차인 전입일(${moveInDates})이 말소기준권리일(${baselineDate})보다 늦어 ` +
+        "해당 임차인은 낙찰자에게 대항할 수 없고, 낙찰자가 인수할 임차보증금은 없습니다.";
+
+      const tenantRiskPattern = /임차|대항력|보증금|배당\s*요구/;
+      const assumptionWasTenantRelated = tenantRiskPattern.test(
+        structured.assumption.reason,
+      );
+      const hadOnlyTenantRisks =
+        llm.risks.length > 0 &&
+        llm.risks.every((item) => tenantRiskPattern.test(item));
+      structured.missingEvidence = structured.missingEvidence.filter(
+        (item) => !tenantRiskPattern.test(item) && !/전입/.test(item),
+      );
+      llm.risks = llm.risks.filter(
+        (item) => !tenantRiskPattern.test(item),
+      );
+      structured.tenant.priorityStatus = "none";
+      structured.tenant.opposability = "none";
+      structured.tenant.depositAmount = null;
+      if (
+        structured.assumption.status !== "none" &&
+        (assumptionWasTenantRelated || hadOnlyTenantRisks)
+      ) {
+        structured.assumption.status = "none";
+        structured.assumption.estimatedAmount = 0;
+        structured.assumption.reason = conclusion;
+      }
+      if (
+        structured.assumption.status === "none" &&
+        structured.reviewStatus === "possible"
+      ) {
+        structured.reviewStatus = "none";
+      }
+      llm.summary = conclusion;
+      const nonTenantDetails = llm.rightsAnalysis
+        .split(/(?<=[.!?])\s+/)
+        .filter((sentence) => !/임차|대항력|보증금|배당/.test(sentence))
+        .join(" ")
+        .trim();
+      llm.rightsAnalysis = [conclusion, nonTenantDetails].filter(Boolean).join(" ");
+      structured.evidence.push(
+        `말소기준권리일 ${baselineDate}, 확인 전입일 ${moveInDates}`,
+      );
+      structured.evidence = [...new Set(structured.evidence.filter(Boolean))];
+    }
+
     const possibleAmountWithoutResidualBasis =
       structured.assumption.status === "possible" &&
       structured.assumption.estimatedAmount != null &&

@@ -25,6 +25,8 @@ assert.deepEqual(facts.baselineCandidate, {
 assert.deepEqual(facts.claimAmounts, [880_000_000]);
 assert.equal(facts.hasCreditorWaiver, true);
 assert.deepEqual(facts.preBaselineTenantDates, ["2019-08-30"]);
+assert.deepEqual(facts.postBaselineTenantDates, []);
+assert.equal(facts.allKnownTenantDatesAfterBaseline, false);
 assert.equal(facts.investigatedTenantStatus, "unknown");
 
 const separateRows = extractRightsAnalysisFacts({
@@ -82,5 +84,26 @@ const conflictingNoTenant = extractRightsAnalysisFacts({
   tenantDetail: "조사된 임차내역 없음\n전입: 2020-01-01",
 });
 assert.equal(conflictingNoTenant.investigatedTenantStatus, "conflict");
+
+const allTenantsAfterBaseline = extractRightsAnalysisFacts({
+  buildingRegistry:
+    "을(1) 2015-08-03 근저당권설정 우리은행 (말소기준등기)",
+  tenantDetail:
+    "임차인: 주선희\n전입: 2015-08-04 / 확정: 2015-08-04\n\n" +
+    "임차인: 황종환\n전입: 2025-01-02",
+});
+assert.deepEqual(allTenantsAfterBaseline.preBaselineTenantDates, []);
+assert.deepEqual(allTenantsAfterBaseline.postBaselineTenantDates, [
+  "2015-08-04",
+  "2025-01-02",
+]);
+assert.equal(allTenantsAfterBaseline.allKnownTenantDatesAfterBaseline, true);
+
+const sameDayTenant = extractRightsAnalysisFacts({
+  buildingRegistry:
+    "을(1) 2015-08-03 근저당권설정 우리은행 (말소기준등기)",
+  tenantDetail: "임차인: 동일자\n전입: 2015-08-03",
+});
+assert.equal(sameDayTenant.allKnownTenantDatesAfterBaseline, false);
 
 console.log("rights-analysis-context: ok");
