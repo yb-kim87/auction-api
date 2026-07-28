@@ -188,3 +188,40 @@ select로 로드된 엔티티에서도 크래시하지 않는다(다른 부분 s
 매칭 배치가 크래시 없이 완료되는지, `auction_trade_match`/
 `auctions.resaleMatchedTradeId`에 실제 결과가 쌓이는지 운영 DB 직접
 조회로 확인.
+
+## 追記 (2026-07-28) — 배포 중단 사고(502)와 긴급 복구
+
+### 사고 경위
+위 @AfterLoad 훅 수정을 커밋할 때 `git add src/auctions/auction.entity.ts`로
+파일 전체를 스테이징했는데, 이 파일에는 **다른 세션에서 진행 중이던
+미완성 작업(`rightsReview` 필드, 권리분석 확정값 컬럼)도 이미
+반영돼 있었다.** 그 작업의 대응 마이그레이션
+(`src/migrations/1784254000000-AddAuctionRightsReview.ts`)은 git에
+커밋되지 않은 untracked 상태였으므로, 엔티티만 배포되고 컬럼은
+운영 DB에 없는 상태가 되어 **부팅 즉시 크래시(`column
+Auction.rightsReview does not exist`) → 전체 API 502 다운**이
+발생했다.
+
+### 복구
+누락됐던 마이그레이션 파일을 그대로 커밋·푸시해 긴급 복구(컬럼
+추가만 하는 단순 ALTER라 안전). 재배포 후 정상 부팅 확인.
+
+### 재발 방지
+이후 커밋부터는 `git add <file>` 전에 반드시 `git diff <file>`로
+변경 내용을 직접 확인한 뒤에만 스테이징하도록 절차를 바꿨다 —
+"내가 의도한 변경만 들어있는가"를 매번 확인. 이번처럼 다른
+세션이 같은 파일에 미완성 변경을 남겨둔 상태에서 무심코 전체
+파일을 스테이징하면, 의도치 않게 미완성 기능을 함께 배포시킬
+수 있다는 게 실측으로 확인됐다.
+
+### 실거래 수집 배치 무응답(hang) 발견·수정
+502 복구 후 매칭 배치가 재실행되며 "실거래 수집 시작(288개
+시군구×월 조합)" 로그 이후 **7분 넘게 완료/에러 로그 없이 멈춤**을
+확인. `MolitTradeClientService.fetchTrades()`가 네이티브 `fetch`를
+타임아웃 없이 호출하고 있어, data.go.kr 쪽 응답이 없는 조합
+하나에서 전체 배치가 무한 대기에 빠진 것으로 판단.
+`AbortController` 기반 20초 타임아웃을 추가(`src/resale-match/
+molit-trade-client.service.ts`) — 타임아웃 시 해당 조합만
+스킵하고 배치는 계속 진행하도록 함(`TradeIngestionService.
+ingestOne()`이 이미 개별 실패를 catch해서 계속 진행하는 구조라
+이 수정만으로 충분).

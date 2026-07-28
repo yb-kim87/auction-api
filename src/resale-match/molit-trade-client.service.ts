@@ -3,6 +3,11 @@ import { Injectable, Logger } from "@nestjs/common";
 const ENDPOINT =
   "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade";
 
+/** data.go.kr이 응답 없이 연결을 물고 있는 경우(실측: 288개 조합 순회
+ * 중 하나에서 무한 대기, 2026-07-28) 배치 전체가 멈추지 않도록 개별
+ * 호출에 타임아웃을 둔다. */
+const FETCH_TIMEOUT_MS = 20_000;
+
 /** 국토교통부 공식 실거래가 API(RTMSDataSvcAptTrade) 응답 1건.
  * 실측 확인된 필드만 옮긴다(2026-07-28,
  * docs/auction-resale-matching-data-findings.md 8~9장). */
@@ -57,9 +62,24 @@ export class MolitTradeClientService {
     url.searchParams.set("numOfRows", "1000");
     url.searchParams.set("pageNo", "1");
 
-    const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0" },
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        throw new Error(
+          `국토부 실거래가 API 호출 타임아웃(${FETCH_TIMEOUT_MS / 1000}초, LAWD_CD=${lawdCd}, DEAL_YMD=${dealYm})`,
+        );
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
     if (!res.ok) {
       throw new Error(
         `국토부 실거래가 API 호출 실패: ${res.status} ${res.statusText} (LAWD_CD=${lawdCd}, DEAL_YMD=${dealYm})`,
