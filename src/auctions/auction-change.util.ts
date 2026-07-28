@@ -68,6 +68,11 @@ export const AUCTION_FIELD_LABELS: Record<string, string> = {
   priceDetail: "호가 상세",
   tradingDetail: "실거래 상세",
   recordTime: "기록시간",
+  lawdCd: "법정동코드",
+  umdNm: "읍면동명",
+  jibun: "지번",
+  saleConfirmedAt: "매각허가결정일",
+  paymentCompletedAt: "매각대금완납일",
 };
 
 const TRACKED_FIELDS = Object.keys(AUCTION_FIELD_LABELS);
