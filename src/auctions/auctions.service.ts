@@ -116,12 +116,36 @@ export class AuctionsService implements OnModuleInit {
     });
   }
 
-  findAllAdmin() {
-    return this.auctionRepo
-      .createQueryBuilder("auction")
+  async findAllAdmin(options: { page: number; pageSize: number; search: string }) {
+    const query = this.auctionRepo
+      .createQueryBuilder("auction");
+
+    if (options.search) {
+      query.andWhere(
+        `(
+          LOWER(COALESCE(auction.auctionNo, '')) LIKE :search OR
+          LOWER(COALESCE(auction.address, '')) LIKE :search OR
+          LOWER(COALESCE(auction.court, '')) LIKE :search OR
+          LOWER(COALESCE(auction.submittedBy, '')) LIKE :search
+        )`,
+        { search: `%${options.search.toLocaleLowerCase()}%` },
+      );
+    }
+
+    const [items, total] = await query
       .orderBy("COALESCE(auction.updatedAt, auction.createdAt)", "DESC")
       .addOrderBy("auction.createdAt", "DESC")
-      .getMany();
+      .skip((options.page - 1) * options.pageSize)
+      .take(options.pageSize)
+      .getManyAndCount();
+
+    return {
+      items,
+      total,
+      page: options.page,
+      pageSize: options.pageSize,
+      totalPages: Math.max(1, Math.ceil(total / options.pageSize)),
+    };
   }
 
   findPending() {

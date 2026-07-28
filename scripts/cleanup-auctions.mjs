@@ -91,19 +91,28 @@ async function main() {
 
   console.log(`대상 API: ${base}${DRY_RUN ? " (dry-run)" : ""}`);
 
-  const listRes = await fetch(`${base}/auctions/manage`, {
-    headers: adminHeaders(),
-  });
-  if (!listRes.ok) {
-    throw new Error(
-      `목록 조회 실패 HTTP ${listRes.status}: ${await listRes.text()}`,
+  const items = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const listRes = await fetch(
+      `${base}/auctions/manage?page=${page}&pageSize=100`,
+      { headers: adminHeaders() },
     );
-  }
+    if (!listRes.ok) {
+      throw new Error(
+        `목록 조회 실패 HTTP ${listRes.status}: ${await listRes.text()}`,
+      );
+    }
 
-  const items = await listRes.json();
-  if (!Array.isArray(items)) {
-    throw new Error("목록 응답 형식이 올바르지 않습니다.");
-  }
+    const payload = await listRes.json();
+    if (!Array.isArray(payload.items)) {
+      throw new Error("목록 응답 형식이 올바르지 않습니다.");
+    }
+    items.push(...payload.items);
+    totalPages = payload.totalPages;
+    page += 1;
+  } while (page <= totalPages);
 
   console.log(`전체 ${items.length}건 검사`);
 

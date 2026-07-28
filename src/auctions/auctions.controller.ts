@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Headers,
+  Query,
   UploadedFile,
   UseInterceptors,
   BadRequestException,
@@ -34,9 +35,18 @@ export class AuctionsController {
   }
 
   @Get("manage")
-  findAllAdmin(@Headers() headers: Record<string, string>) {
+  findAllAdmin(
+    @Headers() headers: Record<string, string>,
+    @Query("page") page?: string,
+    @Query("pageSize") pageSize?: string,
+    @Query("search") search?: string,
+  ) {
     requireAdmin(getAuthContext(headers));
-    return this.auctionsService.findAllAdmin();
+    return this.auctionsService.findAllAdmin({
+      page: Math.max(1, Number.parseInt(page ?? "1", 10) || 1),
+      pageSize: Math.min(100, Math.max(10, Number.parseInt(pageSize ?? "20", 10) || 20)),
+      search: search?.trim() ?? "",
+    });
   }
 
   @Get("pending")
