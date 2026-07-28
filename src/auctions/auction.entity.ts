@@ -188,6 +188,44 @@ export class Auction {
   @Column({ default: "" })
   unpaidFeeCheckedAt!: string;
 
+  /** 낙찰물건 매도 추정(재판매 매칭) 기능의 기준일. 매각대금완납일이
+   * 실질적 소유권 취득 시점이라 실거래 매칭의 anchor date로 쓴다(매각
+   * 허가결정일은 참고용). 완납일을 직접 못 구하면 추정치를 쓰고
+   * paymentCompletedAtIsEstimated로 구분한다. 설계:
+   * docs/auction-resale-matching-design.md 1장. */
+  @Column({ type: "date", nullable: true })
+  saleConfirmedAt!: string | null;
+
+  @Column({ type: "date", nullable: true })
+  paymentCompletedAt!: string | null;
+
+  @Column({ default: false })
+  paymentCompletedAtIsEstimated!: boolean;
+
+  /** 국토부 실거래가 API 조회용 지번 식별자(탱크옥션 baseInfo에서 크롤링
+   * 시점에 파싱: lawdCd=si_cd(2자리)+gu_cd(3자리), jibun=m_adrs_no(-s_adrs_no),
+   * umdNm=regn_adrs 텍스트에서 추출). 단지명 텍스트 대신 이 3개로 실거래를
+   * 조인한다(동명이인 단지 오매칭 방지). */
+  @Column({ type: "text", nullable: true })
+  lawdCd!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  umdNm!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  jibun!: string | null;
+
+  /** 매칭 배치(ResaleMatchService)가 계산한 결과를 목록 조회용으로
+   * 비정규화 저장(vatPnu 등과 동일 패턴, 요청마다 재계산하지 않음). */
+  @Column({ type: "uuid", nullable: true })
+  resaleMatchedTradeId!: string | null;
+
+  @Column({ type: "integer", nullable: true })
+  resaleMatchScore!: number | null;
+
+  @Column({ type: "text", nullable: true })
+  resaleMatchTier!: string | null;
+
   @Column({ default: "" })
   priceDetail!: string;
 

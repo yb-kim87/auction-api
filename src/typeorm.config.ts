@@ -32,6 +32,8 @@ import { RequestLog } from "./security-log/request-log.entity";
 import { CrawlerConfigRow } from "./crawler/crawler-config.entity";
 import { CrawlerLogRow } from "./crawler/crawler-log.entity";
 import { LectureSlide } from "./lecture-materials/lecture-slide.entity";
+import { ActualTradeRow } from "./resale-match/entities/actual-trade.entity";
+import { AuctionTradeMatchRow } from "./resale-match/entities/auction-trade-match.entity";
 
 const entities = [
   Auction,
@@ -65,6 +67,8 @@ const entities = [
   CrawlerConfigRow,
   CrawlerLogRow,
   LectureSlide,
+  ActualTradeRow,
+  AuctionTradeMatchRow,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

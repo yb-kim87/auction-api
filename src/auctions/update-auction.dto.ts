@@ -44,6 +44,15 @@ export type UpdateAuctionDto = {
   unpaidFeeAmount?: number;
   unpaidFeeNote?: string;
   unpaidFeeCheckedAt?: string;
+  /** 낙찰물건 매도 추정 기능용 지번 식별자·기준일. lawdCd/umdNm/jibun은
+   * 국토부 실거래가 API 조회에, saleConfirmedAt/paymentCompletedAt은
+   * 실거래 매칭의 anchor date로 쓴다. 설계:
+   * docs/auction-resale-matching-design.md. */
+  lawdCd?: string | null;
+  umdNm?: string | null;
+  jibun?: string | null;
+  saleConfirmedAt?: string | null;
+  paymentCompletedAt?: string | null;
   tenantDetail: string;
   priceDetail: string;
   tradingDetail: string;

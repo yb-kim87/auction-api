@@ -84,6 +84,86 @@ def _parse_unpaid_fee(detail_response: dict) -> dict:
     }
 
 
+def _parse_lawd_jibun(detail_response: dict) -> dict:
+    """baseInfo → 국토부 실거래가 API 조회용 지번 식별자(lawdCd/umdNm/jibun).
+
+    단지명 텍스트 매칭은 동명이인 단지 오매칭 위험이 있어(설계 문서
+    2026-07-28 갱신 사유), 국토부 API와 동일한 지번 체계로 조인한다.
+    실측 확인(2025타경811, tid=2500112): si_cd=28·gu_cd=245 →
+    lawdCd="28245"(인천 계양구), m_adrs_no=178·s_adrs_no=0 →
+    jibun="178", regn_adrs="인천 계양구 서운동 178" → umdNm="서운동"
+    (뒤에서 두 번째 토큰 — 표준 "시도 구 동 지번" 형식 가정, 예외
+    지역 존재 가능성 있어 표본 확대 검증 필요).
+    """
+    base = detail_response.get("baseInfo") if isinstance(detail_response, dict) else None
+    if not isinstance(base, dict):
+        return {"lawd_cd": "", "umd_nm": "", "jibun": ""}
+
+    si_cd = base.get("si_cd")
+    gu_cd = base.get("gu_cd")
+    lawd_cd = ""
+    try:
+        if si_cd is not None and gu_cd is not None:
+            lawd_cd = f"{int(si_cd):02d}{int(gu_cd):03d}"
+    except (TypeError, ValueError):
+        lawd_cd = ""
+
+    m_no = base.get("m_adrs_no")
+    s_no = base.get("s_adrs_no")
+    jibun = ""
+    try:
+        if m_no is not None:
+            m_no_int = int(m_no)
+            s_no_int = int(s_no) if s_no is not None else 0
+            jibun = f"{m_no_int}-{s_no_int}" if s_no_int > 0 else str(m_no_int)
+    except (TypeError, ValueError):
+        jibun = ""
+
+    umd_nm = ""
+    regn_adrs = str(base.get("regn_adrs") or "").strip()
+    tokens = regn_adrs.split()
+    if len(tokens) >= 2:
+        umd_nm = tokens[-2]
+
+    return {"lawd_cd": lawd_cd, "umd_nm": umd_nm, "jibun": jibun}
+
+
+def _parse_resale_match_dates(detail_response: dict) -> dict:
+    """histInfo.items[].sta 시퀀스에서 매각허가결정일(1211)/매각대금완납일
+    (1216)을 추출한다. sta=1216 매핑은 표본 1건(2024타경110655,
+    tid=2341347)으로 실측 확인했다 — 페이지 렌더 텍스트의 "매각 7일
+    매각결정기일 30일 납부 40일 배당종결" 요약과 histInfo 날짜를 대조해
+    확정(2026-07-28, docs/auction-resale-matching-data-findings.md 2장).
+    다른 사건 유형(임의경매/강제경매, 배당 없이 종결 등)에서도 동일한지는
+    표본 확대 검증이 필요하다 — 이 함수는 sta 코드가 없으면 조용히 빈
+    값을 반환한다(크롤링 실패로 취급하지 않음).
+    """
+    hist = detail_response.get("histInfo") if isinstance(detail_response, dict) else None
+    items = hist.get("items") if isinstance(hist, dict) else None
+    if not isinstance(items, list):
+        return {"sale_confirmed_at": "", "payment_completed_at": ""}
+
+    sale_confirmed_at = ""
+    payment_completed_at = ""
+    for row in items:
+        if not isinstance(row, dict):
+            continue
+        sta = row.get("sta")
+        try:
+            sta_int = int(sta)
+        except (TypeError, ValueError):
+            continue
+        bid_dt = str(row.get("bid_dt") or "").strip()
+        if not bid_dt or bid_dt.startswith("0000"):
+            continue
+        if sta_int == 1211:
+            sale_confirmed_at = bid_dt
+        elif sta_int == 1216:
+            payment_completed_at = bid_dt
+
+    return {"sale_confirmed_at": sale_confirmed_at, "payment_completed_at": payment_completed_at}
+
+
 def parse_list_item(raw_item: dict) -> dict:
     """AuctList.php 의 items[] 원소 하나 → 목록 화면에서 쓰던 최소 필드.
 
@@ -172,6 +252,8 @@ def parse_detail_page(
 
     special_note = parse_special_note_from_detail(detail_response)
     unpaid_fee = _parse_unpaid_fee(detail_response)
+    lawd_jibun = _parse_lawd_jibun(detail_response)
+    resale_dates = _parse_resale_match_dates(detail_response)
 
     tid = base.get("tid")
     link = f"https://www.tankauction.com/ca/caView.php?tid={tid}" if tid else ""
@@ -213,6 +295,11 @@ def parse_detail_page(
         "unpaid_fee_amount": unpaid_fee["unpaid_fee_amount"],
         "unpaid_fee_note": unpaid_fee["unpaid_fee_note"],
         "unpaid_fee_checked_at": unpaid_fee["unpaid_fee_checked_at"],
+        "lawd_cd": lawd_jibun["lawd_cd"],
+        "umd_nm": lawd_jibun["umd_nm"],
+        "jibun": lawd_jibun["jibun"],
+        "sale_confirmed_at": resale_dates["sale_confirmed_at"],
+        "payment_completed_at": resale_dates["payment_completed_at"],
         "elevator": elevator,
         "parking": parking,
         "land_area": str(base.get("rt_sqm") or "없음"),

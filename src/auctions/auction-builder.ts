@@ -269,6 +269,17 @@ export function mergeAuctionFromSource(
       (source as Partial<UpdateAuctionDto>).unpaidFeeCheckedAt,
       existing.unpaidFeeCheckedAt,
     ),
+    // 새 값이 있으면(빈 문자열이 아니면) 갱신, 없으면 기존 값 유지 —
+    // 매번 크롤링에서 이 필드들이 전부 파싱된다는 보장이 없으므로
+    // (예: histInfo에 sta=1216이 아직 없는 진행중 물건) 빈 값으로
+    // 덮어써서 이미 확보한 값을 지우지 않는다.
+    lawdCd: (source as Partial<UpdateAuctionDto>).lawdCd || existing.lawdCd,
+    umdNm: (source as Partial<UpdateAuctionDto>).umdNm || existing.umdNm,
+    jibun: (source as Partial<UpdateAuctionDto>).jibun || existing.jibun,
+    saleConfirmedAt:
+      (source as Partial<UpdateAuctionDto>).saleConfirmedAt || existing.saleConfirmedAt,
+    paymentCompletedAt:
+      (source as Partial<UpdateAuctionDto>).paymentCompletedAt || existing.paymentCompletedAt,
     tenantDetail: cleanTenantDetail(
       pickStr(source.tenantDetail, existing.tenantDetail),
     ),
@@ -355,6 +366,11 @@ export function buildAuctionEntity(
     unpaidFeeAmount: (parsed as Partial<UpdateAuctionDto>).unpaidFeeAmount ?? 0,
     unpaidFeeNote: (parsed as Partial<UpdateAuctionDto>).unpaidFeeNote ?? "",
     unpaidFeeCheckedAt: (parsed as Partial<UpdateAuctionDto>).unpaidFeeCheckedAt ?? "",
+    lawdCd: (parsed as Partial<UpdateAuctionDto>).lawdCd ?? null,
+    umdNm: (parsed as Partial<UpdateAuctionDto>).umdNm ?? null,
+    jibun: (parsed as Partial<UpdateAuctionDto>).jibun ?? null,
+    saleConfirmedAt: (parsed as Partial<UpdateAuctionDto>).saleConfirmedAt ?? null,
+    paymentCompletedAt: (parsed as Partial<UpdateAuctionDto>).paymentCompletedAt ?? null,
     tenantDetail: cleanTenantDetail(parsed.tenantDetail ?? ""),
     priceDetail: parsed.priceDetail ?? "",
     tradingDetail: parsed.tradingDetail ?? "",

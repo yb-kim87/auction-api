@@ -16,6 +16,7 @@ import { SecurityLogModule } from "./security-log/security-log.module";
 import { RequestLogMiddleware } from "./security-log/request-log.middleware";
 import { VatModule } from "./vat/vat.module";
 import { LectureMaterialsModule } from "./lecture-materials/lecture-materials.module";
+import { ResaleMatchModule } from "./resale-match/resale-match.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -36,6 +37,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     SecurityLogModule,
     VatModule,
     LectureMaterialsModule,
+    ResaleMatchModule,
   ],
 })
 export class AppModule implements NestModule {

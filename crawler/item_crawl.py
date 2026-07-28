@@ -746,13 +746,27 @@ def _collect_tank_page_fields(
     unpaid_fee_amount = 0
     unpaid_fee_note = ""
     unpaid_fee_checked_at = ""
+    lawd_cd = ""
+    umd_nm = ""
+    jibun = ""
+    sale_confirmed_at = ""
+    payment_completed_at = ""
     if raw_detail:
-        from parsers import _parse_unpaid_fee
+        from parsers import _parse_unpaid_fee, _parse_lawd_jibun, _parse_resale_match_dates
 
         unpaid_fee = _parse_unpaid_fee(raw_detail)
         unpaid_fee_amount = unpaid_fee["unpaid_fee_amount"]
         unpaid_fee_note = unpaid_fee["unpaid_fee_note"]
         unpaid_fee_checked_at = unpaid_fee["unpaid_fee_checked_at"]
+
+        lawd_jibun = _parse_lawd_jibun(raw_detail)
+        lawd_cd = lawd_jibun["lawd_cd"]
+        umd_nm = lawd_jibun["umd_nm"]
+        jibun = lawd_jibun["jibun"]
+
+        resale_dates = _parse_resale_match_dates(raw_detail)
+        sale_confirmed_at = resale_dates["sale_confirmed_at"]
+        payment_completed_at = resale_dates["payment_completed_at"]
 
     try:
         special_note = (
@@ -871,6 +885,11 @@ def _collect_tank_page_fields(
         "unpaid_fee_amount": unpaid_fee_amount,
         "unpaid_fee_note": unpaid_fee_note,
         "unpaid_fee_checked_at": unpaid_fee_checked_at,
+        "lawd_cd": lawd_cd,
+        "umd_nm": umd_nm,
+        "jibun": jibun,
+        "sale_confirmed_at": sale_confirmed_at,
+        "payment_completed_at": payment_completed_at,
         "elevator": elevator,
         "parking": parking,
         "land_area": land_area,
@@ -1155,6 +1174,11 @@ def crawl_item(driver, raw_entry: str, should_stop: ShouldStop = None) -> dict:
         "unpaid_fee_amount": tank_snapshot["unpaid_fee_amount"],
         "unpaid_fee_note": tank_snapshot["unpaid_fee_note"],
         "unpaid_fee_checked_at": tank_snapshot["unpaid_fee_checked_at"],
+        "lawd_cd": tank_snapshot["lawd_cd"],
+        "umd_nm": tank_snapshot["umd_nm"],
+        "jibun": tank_snapshot["jibun"],
+        "sale_confirmed_at": tank_snapshot["sale_confirmed_at"],
+        "payment_completed_at": tank_snapshot["payment_completed_at"],
         "elevator": tank_snapshot["elevator"],
         "parking": tank_snapshot["parking"],
         "land_area": tank_snapshot["land_area"],
