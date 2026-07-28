@@ -7,13 +7,14 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Auction } from "../auctions/auction.entity";
 import { AuctionKnowledge } from "./knowledge.entity";
+import { selectKnowledgeByApplicationPolicy } from "./knowledge-selection.util";
 
 export type UpsertKnowledgeInput = {
   title: string;
   category?: string;
   tags?: string;
   content: string;
-  /** 중요도 등급. 1이 가장 중요, 숫자가 클수록 낮음. 기본값 3. */
+  /** RAG 적용 정책. 1=항상, 2=조건부, 3=참고. 기본값 3. */
   grade?: number;
   active?: boolean;
 };
@@ -37,6 +38,17 @@ const TAG_CANDIDATES = [
   "잔존",
   "포기",
   "유치권",
+  "지분",
+  "사망",
+  "상속",
+  "점유",
+  "확정일자",
+  "배당종기",
+  "전세권",
+  "가등기",
+  "가처분",
+  "대지권",
+  "분묘",
   "갭투자",
   "ltv",
   "명도",
@@ -137,16 +149,23 @@ export class KnowledgeService {
 
     const { keywords, categories } = this.buildSearchContext(auction);
 
-    const scored = items
-      .map((item) => {
+    const allScored = items.map((item) => {
         let score = 0;
         const cat = item.category.trim();
         const tags = item.tags.toLowerCase();
         const title = item.title.toLowerCase();
         const content = item.content.toLowerCase();
 
-        if (cat && categories.includes(cat)) score += 4;
-        score += Math.max(0, 4 - item.grade) * 2;
+        // category가 명시된 검색은 이미 해당 분류만 남겼으므로 분류 점수를
+        // 다시 주지 않는다. 그렇지 않으면 모든 조건부 지식이 관련 문서로
+        // 오인되어 태그·본문 매칭 없이도 선택된다.
+        if (!category && cat && categories.includes(cat)) score += 4;
+        // 권리분석은 아래 적용 정책 선택기에서 grade를 직접 해석한다.
+        // 여기서 등급 점수까지 주면 키워드가 하나도 맞지 않는 조건부·참고
+        // 문서도 관련 문서로 선택되므로 일반 검색에서만 가중한다.
+        if (category?.trim() !== "권리분석") {
+          score += Math.max(0, 4 - item.grade) * 2;
+        }
         for (const kw of keywords) {
           if (tags.includes(kw)) score += 3;
           if (title.includes(kw)) score += 2;
@@ -154,7 +173,17 @@ export class KnowledgeService {
         }
 
         return { item, score };
-      })
+      });
+
+    if (category?.trim() === "권리분석") {
+      return selectKnowledgeByApplicationPolicy(
+        allScored,
+        Number(process.env.RAG_CONDITIONAL_LIMIT ?? 3) || 3,
+        Number(process.env.RAG_REFERENCE_LIMIT ?? 1) || 1,
+      );
+    }
+
+    const scored = allScored
       .filter((row) => row.score > 0)
       .sort((a, b) => b.score - a.score || b.item.updatedAt.getTime() - a.item.updatedAt.getTime());
 

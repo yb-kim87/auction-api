@@ -25,9 +25,8 @@ export class AuctionKnowledge {
   @Column({ type: "text" })
   content!: string;
 
-  /** 관리자가 매기는 중요도 등급. 1이 가장 중요, 숫자가 클수록 낮음.
-   *  기본값 3. 현재는 저장만 하고 검색/필터 로직에서는 아직 사용하지
-   *  않음(추후 1·2등급만 골라 쓰는 용도로 확장 예정). */
+  /** 기존 숫자값을 유지하는 RAG 적용 정책:
+   * 1=항상 적용, 2=관련 물건에 조건부 적용, 3=참고 자료. */
   @Column({ type: "integer", default: 3 })
   grade!: number;
 
