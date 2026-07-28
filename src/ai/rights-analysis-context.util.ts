@@ -17,6 +17,22 @@ function parseWon(raw: string): number | null {
   return Number.isFinite(amount) && amount > 0 ? amount : null;
 }
 
+function normalizeBaselineType(raw: string): string {
+  const candidates = [
+    "근저당권설정",
+    "저당권설정",
+    "강제경매개시결정",
+    "임의경매개시결정",
+    "강제경매",
+    "임의경매",
+    "가압류",
+    "압류",
+    "담보가등기",
+    "전세권",
+  ];
+  return candidates.find((candidate) => raw.includes(candidate)) ?? raw;
+}
+
 export function extractRightsAnalysisFacts(input: {
   buildingRegistry?: string | null;
   tenantDetail?: string | null;
@@ -45,7 +61,7 @@ export function extractRightsAnalysisFacts(input: {
     );
     baselineCandidate = {
       date: match?.[1] ?? "",
-      type: match?.[2] ?? "",
+      type: normalizeBaselineType(match?.[2] ?? ""),
       sourceLine: [line, markerWrappedToNextLine ? nextLine : ""]
         .filter(Boolean)
         .join(" "),

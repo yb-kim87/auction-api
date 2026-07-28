@@ -304,13 +304,13 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
       structured.assumption.estimatedAmount = 0;
     }
 
+    structured.knowledgeEvidence = structured.knowledgeEvidence.filter((item) =>
+      knowledgeTitles.has(item.title),
+    );
     if (structured.knowledgeEvidence.length === 0) {
       structured.missingEvidence.push("분석에 실제 적용한 RAG 지식 근거");
     }
     structured.missingEvidence = [...new Set(structured.missingEvidence.filter(Boolean))];
-    structured.knowledgeEvidence = structured.knowledgeEvidence.filter((item) =>
-      knowledgeTitles.has(item.title),
-    );
     return llm;
   }
 

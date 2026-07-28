@@ -44,6 +44,15 @@ const wrappedMarker = extractRightsAnalysisFacts({
 });
 assert.equal(wrappedMarker.baselineCandidate?.type, "강제경매개시결정");
 
+const prefixedType = extractRightsAnalysisFacts({
+  buildingRegistry:
+    "갑(33) 2025-07-02 29번서명자지분강제경매개시결정 채권자 " +
+    "청구금액 50,046,000 (말소기준등기)",
+  tenantDetail: "",
+  specialNote: "",
+});
+assert.equal(prefixedType.baselineCandidate?.type, "강제경매개시결정");
+
 const missing = extractRightsAnalysisFacts({
   buildingRegistry: "값없음",
   tenantDetail: "",
