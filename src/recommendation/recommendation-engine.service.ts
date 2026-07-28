@@ -246,7 +246,7 @@ export class RecommendationEngineService {
         if (favoriteIds && !favoriteIds.has(row.item.id)) return false;
         if (
           filters?.progressStatus &&
-          !matchesProgressStatus(row.item.bidDate, filters.progressStatus)
+          !matchesProgressStatus(row.item.bidDate, filters.progressStatus, row.item.caseState)
         ) {
           return false;
         }

@@ -189,6 +189,17 @@ export function needsCreditScoreWarning(creditScore: string | undefined): boolea
 
 export type ProgressStatus = "all" | "active" | "ended";
 
+const ENDED_CASE_STATES = new Set([
+  "낙찰",
+  "허가",
+  "매각결정기일",
+  "지급기한",
+  "배당기일",
+  "배당종결",
+  "취하",
+  "종결",
+]);
+
 /** 프런트 lib/progress-status-filter.ts의 parseBidDate와 동일 규칙 */
 function parseBidDate(value: string): Date | null {
   if (!value?.trim()) return null;
@@ -203,8 +214,13 @@ function parseBidDate(value: string): Date | null {
 }
 
 /** 프런트 lib/progress-status-filter.ts의 matchesProgressStatus와 동일 규칙 */
-export function matchesProgressStatus(bidDate: string, status: ProgressStatus): boolean {
+export function matchesProgressStatus(
+  bidDate: string,
+  status: ProgressStatus,
+  caseState?: string,
+): boolean {
   if (status === "all") return true;
+  if (ENDED_CASE_STATES.has((caseState ?? "").trim())) return status === "ended";
   const parsed = parseBidDate(bidDate);
   if (!parsed) return false;
   const today = new Date();
