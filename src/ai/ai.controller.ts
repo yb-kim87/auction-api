@@ -27,6 +27,7 @@ import { KnowledgeService, type UpsertKnowledgeInput } from "./knowledge.service
 import { KnowledgeCategoryService } from "./knowledge-category.service";
 import { OpenAiService } from "./openai.service";
 import type { KnowledgeDraftStatus } from "./knowledge-draft.entity";
+import type { AuctionRightsReview } from "../auctions/auction.entity";
 
 @Controller("ai")
 export class AiController {
@@ -90,6 +91,33 @@ export class AiController {
       ctx.username,
       ctx.role,
       Boolean(body?.refresh),
+    );
+  }
+
+  @Get("auctions/:auctionId/rights-review")
+  async getRightsReview(
+    @Headers() headers: Record<string, string>,
+    @Param("auctionId") auctionId: string,
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAuth(ctx);
+    requireSearchAccess(ctx);
+    return this.aiAnalysisService.getRightsReview(auctionId, ctx.role);
+  }
+
+  @Patch("auctions/:auctionId/rights-review")
+  async saveRightsReview(
+    @Headers() headers: Record<string, string>,
+    @Param("auctionId") auctionId: string,
+    @Body() body: Partial<AuctionRightsReview>,
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAdmin(ctx);
+    return this.aiAnalysisService.saveRightsReview(
+      auctionId,
+      ctx.username,
+      ctx.role,
+      body,
     );
   }
 

@@ -2464,6 +2464,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       category: String(raw.category ?? ""),
       tags: String(raw.tags ?? ""),
       content: String(raw.content ?? ""),
+      grade:
+        raw.grade === undefined || raw.grade === null
+          ? undefined
+          : Number(raw.grade),
       active: raw.active === undefined ? true : Boolean(raw.active),
     });
   }

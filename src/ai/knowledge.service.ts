@@ -244,6 +244,9 @@ ${blocks.join("\n\n---\n\n")}`;
       item.category = input.category?.trim() ?? item.category;
       item.tags = input.tags?.trim() ?? item.tags;
       item.content = content;
+      if (input.grade !== undefined && input.grade >= 1 && input.grade <= 3) {
+        item.grade = input.grade;
+      }
       if (input.active !== undefined) item.active = input.active;
     } else {
       item = this.knowledgeRepo.create({
@@ -251,6 +254,10 @@ ${blocks.join("\n\n---\n\n")}`;
         category: input.category?.trim() ?? "기타",
         tags: input.tags?.trim() ?? "",
         content,
+        grade:
+          input.grade && input.grade >= 1 && input.grade <= 3
+            ? input.grade
+            : 3,
         active: input.active ?? true,
       });
     }

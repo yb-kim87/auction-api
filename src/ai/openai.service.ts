@@ -13,6 +13,26 @@ export type AnalysisLlmResult = {
   checklist: string[];
   recommendation: string;
   risks: string[];
+  structuredRights: {
+    reviewStatus: "unknown" | "possible" | "none";
+    baselineRight: {
+      type: string;
+      date: string;
+      reason: string;
+    };
+    tenant: {
+      priorityStatus: "unknown" | "possible" | "none";
+      opposability: "unknown" | "possible" | "none";
+      depositAmount: number | null;
+    };
+    assumption: {
+      status: "unknown" | "possible" | "none";
+      estimatedAmount: number | null;
+      reason: string;
+    };
+    missingEvidence: string[];
+    evidence: string[];
+  };
 };
 
 @Injectable()
@@ -360,27 +380,44 @@ ${input.rawText.slice(0, 2000)}`;
       );
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: this.model,
-        temperature: 0.3,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: this.model,
+          temperature: 0.3,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      console.error(`[AI rights analysis] OpenAI connection failed: ${reason}`);
+      throw new ServiceUnavailableException(
+        "AI 분석 서비스에 연결할 수 없습니다. API 서버의 외부 네트워크 연결을 확인한 뒤 다시 시도해 주세요.",
+      );
+    }
 
     if (!response.ok) {
-      await response.text().catch(() => "");
-      throw new InternalServerErrorException(
-        `경매코치 AI 분석 요청에 실패했습니다. (${response.status})`,
+      const responseBody = await response.text().catch(() => "");
+      console.error(
+        `[AI rights analysis] OpenAI request failed: ${response.status} ${responseBody.slice(0, 500)}`,
+      );
+      if (response.status === 429) {
+        throw new ServiceUnavailableException(
+          "AI 분석 요청이 일시적으로 많거나 사용 한도에 도달했습니다. 잠시 후 다시 시도해 주세요.",
+        );
+      }
+      throw new ServiceUnavailableException(
+        `AI 분석 요청에 실패했습니다. 잠시 후 다시 시도해 주세요. (${response.status})`,
       );
     }
 
@@ -410,6 +447,55 @@ ${input.rawText.slice(0, 2000)}`;
         : [],
       recommendation: String(parsed.recommendation ?? "검토"),
       risks: Array.isArray(parsed.risks) ? parsed.risks.map((v) => String(v)) : [],
+      structuredRights: (() => {
+        const raw =
+          parsed.structuredRights && typeof parsed.structuredRights === "object"
+            ? (parsed.structuredRights as Record<string, unknown>)
+            : {};
+        const baseline =
+          raw.baselineRight && typeof raw.baselineRight === "object"
+            ? (raw.baselineRight as Record<string, unknown>)
+            : {};
+        const tenant =
+          raw.tenant && typeof raw.tenant === "object"
+            ? (raw.tenant as Record<string, unknown>)
+            : {};
+        const assumption =
+          raw.assumption && typeof raw.assumption === "object"
+            ? (raw.assumption as Record<string, unknown>)
+            : {};
+        const status = (value: unknown): "unknown" | "possible" | "none" =>
+          value === "possible" || value === "none" ? value : "unknown";
+        const nullableAmount = (value: unknown): number | null => {
+          if (value === null || value === undefined || value === "") return null;
+          const amount = Number(value);
+          return Number.isFinite(amount) && amount >= 0 ? Math.round(amount) : null;
+        };
+        return {
+          reviewStatus: status(raw.reviewStatus),
+          baselineRight: {
+            type: String(baseline.type ?? ""),
+            date: String(baseline.date ?? ""),
+            reason: String(baseline.reason ?? ""),
+          },
+          tenant: {
+            priorityStatus: status(tenant.priorityStatus),
+            opposability: status(tenant.opposability),
+            depositAmount: nullableAmount(tenant.depositAmount),
+          },
+          assumption: {
+            status: status(assumption.status),
+            estimatedAmount: nullableAmount(assumption.estimatedAmount),
+            reason: String(assumption.reason ?? ""),
+          },
+          missingEvidence: Array.isArray(raw.missingEvidence)
+            ? raw.missingEvidence.map((value) => String(value))
+            : [],
+          evidence: Array.isArray(raw.evidence)
+            ? raw.evidence.map((value) => String(value))
+            : [],
+        };
+      })(),
     };
   }
 }

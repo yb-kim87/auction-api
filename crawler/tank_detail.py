@@ -1810,21 +1810,49 @@ def parse_bid_info_from_detail(detail: dict | None) -> str:
 
 def _format_rg_info_items(section) -> str:
     """rgBldgInfo/rgLandInfo.items[] — 이미 정제된 필드(sectRank/rcDt/rcNo/
-    rgNm/prsn/note)만 사용해 간결한 한 줄씩 요약. rawRow(원본 dict)는 제외."""
+    rgNm/prsn/cAmt/bAmt/note)만 사용해 간결한 한 줄씩 요약.
+
+    cAmt는 등기 권리의 채권금액, bAmt는 경매개시결정의 청구금액이다.
+    예전 구현은 두 금액을 누락해 상세 화면의 채권금액 열이 항상 비었다.
+    rawRow(원본 dict)는 제외하되 정규화된 camelCase와 원본 snake_case를
+    모두 지원한다.
+    """
     if not isinstance(section, dict):
         return ""
     items = section.get("items")
     if not isinstance(items, list) or not items:
         return ""
     lines: list[str] = []
+
+    def amount_text(value) -> str:
+        try:
+            amount = int(str(value or "0").replace(",", "").strip())
+        except (TypeError, ValueError):
+            return ""
+        return f"{amount:,}" if amount > 0 else ""
+
     for item in items:
         if not isinstance(item, dict):
             continue
+        raw_row = item.get("rawRow")
+        if not isinstance(raw_row, dict):
+            raw_row = {}
+        claim_amount = amount_text(
+            item.get("bAmt")
+            or item.get("b_amt")
+            or raw_row.get("b_amt")
+        )
+        credit_amount = amount_text(
+            item.get("cAmt")
+            or item.get("c_amt")
+            or raw_row.get("c_amt")
+        )
         parts = [
             str(item.get("sectRank") or "").strip(),
             str(item.get("rcDt") or "").strip(),
             str(item.get("rgNm") or "").strip(),
             str(item.get("prsn") or "").strip(),
+            f"청구금액 {claim_amount}" if claim_amount else credit_amount,
         ]
         note = str(item.get("note") or "").strip()
         line = " ".join(p for p in parts if p)
