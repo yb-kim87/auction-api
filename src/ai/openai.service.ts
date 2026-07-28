@@ -32,6 +32,10 @@ export type AnalysisLlmResult = {
     };
     missingEvidence: string[];
     evidence: string[];
+    knowledgeEvidence: Array<{
+      title: string;
+      appliedRule: string;
+    }>;
   };
 };
 
@@ -493,6 +497,18 @@ ${input.rawText.slice(0, 2000)}`;
             : [],
           evidence: Array.isArray(raw.evidence)
             ? raw.evidence.map((value) => String(value))
+            : [],
+          knowledgeEvidence: Array.isArray(raw.knowledgeEvidence)
+            ? raw.knowledgeEvidence
+                .filter((value) => value && typeof value === "object")
+                .map((value) => {
+                  const row = value as Record<string, unknown>;
+                  return {
+                    title: String(row.title ?? "").trim(),
+                    appliedRule: String(row.appliedRule ?? "").trim(),
+                  };
+                })
+                .filter((value) => value.title && value.appliedRule)
             : [],
         };
       })(),

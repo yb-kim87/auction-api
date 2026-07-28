@@ -17,6 +17,11 @@ import { UsersService } from "../users/users.service";
 import { AuctionAnalysis } from "./auction-analysis.entity";
 import { KnowledgeService } from "./knowledge.service";
 import { OpenAiService } from "./openai.service";
+import {
+  extractRightsAnalysisFacts,
+  formatRightsAnalysisFacts,
+  type RightsAnalysisFacts,
+} from "./rights-analysis-context.util";
 
 const ANALYSIS_ENGINE_LABEL = "경매코치 AI";
 
@@ -59,7 +64,13 @@ GPT, OpenAI 등 외부 AI 서비스명은 사용자에게 언급하지 마세요
       "reason": "산정 근거 또는 산정 불가 이유"
     },
     "missingEvidence": ["추가로 필요한 자료"],
-    "evidence": ["실제로 판단에 사용한 물건별 자료"]
+    "evidence": ["실제로 판단에 사용한 물건별 자료"],
+    "knowledgeEvidence": [
+      {
+        "title": "실제로 적용한 내부 경매지식의 정확한 제목",
+        "appliedRule": "이 물건 판단에 적용한 규칙"
+      }
+    ]
   }
 }`;
 
@@ -216,8 +227,14 @@ export class AiAnalysisService {
     };
   }
 
-  private buildUserPrompt(auction: Auction, knowledgeBlock: string) {
+  private buildUserPrompt(
+    auction: Auction,
+    knowledgeBlock: string,
+    facts: RightsAnalysisFacts,
+  ) {
     return `${knowledgeBlock}
+
+${formatRightsAnalysisFacts(facts)}
 
 [물건 식별정보]
 - 사건번호: ${auction.auctionNo}
@@ -237,7 +254,44 @@ export class AiAnalysisService {
 
 위 정보와 [내부 경매지식]만 바탕으로 물건 공통 권리분석을 작성하세요.
 채권금액·채권최고액·경매 청구금액은 그 자체로 낙찰자 인수금액이 아닙니다.
-소멸 여부와 배당 관계를 확인하지 않고 인수금액으로 합산하지 마세요.`;
+소멸 여부와 배당 관계를 확인하지 않고 인수금액으로 합산하지 마세요.
+structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 판단에 적용한 항목만 적고,
+단순히 검색되었지만 사용하지 않은 지식은 적지 마세요.`;
+  }
+
+  private validateStructuredRights(
+    llm: Awaited<ReturnType<OpenAiService["analyzeAuction"]>>,
+    facts: RightsAnalysisFacts,
+    knowledgeTitles: Set<string>,
+  ) {
+    const structured = llm.structuredRights;
+    if (facts.baselineCandidate?.date) {
+      structured.baselineRight.date = facts.baselineCandidate.date;
+      if (facts.baselineCandidate.type) {
+        structured.baselineRight.type = facts.baselineCandidate.type;
+      }
+      structured.baselineRight.reason = `등기 원문에 '(말소기준등기)'로 표시됨: ${facts.baselineCandidate.sourceLine}`;
+    }
+
+    const assumptionReason = structured.assumption.reason;
+    const usesClaimAsAssumption =
+      structured.assumption.estimatedAmount != null &&
+      facts.claimAmounts.includes(structured.assumption.estimatedAmount) &&
+      /청구금액|채권금액|채권최고액/.test(assumptionReason) &&
+      !/배당|미배당|잔존|인수/.test(assumptionReason);
+    if (usesClaimAsAssumption) {
+      structured.assumption.status = "unknown";
+      structured.assumption.estimatedAmount = null;
+      structured.assumption.reason =
+        "청구·채권 금액만으로는 낙찰자 인수금액을 산정할 수 없습니다.";
+      structured.missingEvidence.push("배당 결과와 실제 잔존 인수채무");
+    }
+
+    structured.missingEvidence = [...new Set(structured.missingEvidence.filter(Boolean))];
+    structured.knowledgeEvidence = structured.knowledgeEvidence.filter((item) =>
+      knowledgeTitles.has(item.title),
+    );
+    return llm;
   }
 
   private rightsFingerprint(auction: Auction) {
@@ -262,14 +316,9 @@ export class AiAnalysisService {
       auction &&
       row.auctionSnapshotAt &&
       auctionSnapshotAt(auction).getTime() > row.auctionSnapshotAt.getTime();
-
-    const knowledgeMax = await this.knowledgeService.getActiveKnowledgeMaxUpdatedAt();
-    const knowledgeStale =
-      knowledgeMax &&
-      row.knowledgeMaxUpdatedAt &&
-      knowledgeMax.getTime() > row.knowledgeMaxUpdatedAt.getTime();
-
-    return Boolean(auctionStale || knowledgeStale);
+    // RAG 지식 변경만으로 사용자 결과를 자동 만료시키지 않는다. 관리자가
+    // 명시적으로 refresh=true로 요청할 때만 새 지식으로 다시 분석한다.
+    return Boolean(auctionStale);
   }
 
   private parseResult(row: AuctionAnalysis, extra: { cached?: boolean; stale?: boolean }) {
@@ -375,9 +424,15 @@ export class AiAnalysisService {
       k.category ? `[${k.category}] ${k.title}` : k.title,
     );
 
-    const userPrompt = this.buildUserPrompt(auction, knowledgeBlock);
+    const facts = extractRightsAnalysisFacts(auction);
+    const userPrompt = this.buildUserPrompt(auction, knowledgeBlock, facts);
 
-    const llm = await this.openAi.analyzeAuction(SYSTEM_PROMPT, userPrompt);
+    const rawLlm = await this.openAi.analyzeAuction(SYSTEM_PROMPT, userPrompt);
+    const llm = this.validateStructuredRights(
+      rawLlm,
+      facts,
+      new Set(knowledgeItems.map((item) => item.title)),
+    );
 
     if (!isAdmin && username) {
       await this.usersService.incrementAiAnalysisUsage(username);

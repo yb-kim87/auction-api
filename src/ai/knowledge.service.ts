@@ -23,6 +23,19 @@ const TAG_CANDIDATES = [
   "임차",
   "전세",
   "근저당",
+  "말소기준",
+  "압류",
+  "가압류",
+  "임차권",
+  "선순위",
+  "인수금액",
+  "청구금액",
+  "채권금액",
+  "배당요구",
+  "hug",
+  "주택도시보증공사",
+  "잔존",
+  "포기",
   "유치권",
   "갭투자",
   "ltv",
@@ -133,6 +146,7 @@ export class KnowledgeService {
         const content = item.content.toLowerCase();
 
         if (cat && categories.includes(cat)) score += 4;
+        score += Math.max(0, 4 - item.grade) * 2;
         for (const kw of keywords) {
           if (tags.includes(kw)) score += 3;
           if (title.includes(kw)) score += 2;
