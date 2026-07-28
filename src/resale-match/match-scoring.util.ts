@@ -63,11 +63,13 @@ function areaScore(auctionArea: number, tradeArea: number, areaTypeMatched: bool
   return clamp01(1 - diff / 0.5);
 }
 
+// 층은 이제 후보 조회 단계(resale-match.service.ts의 하드필터)에서 이미
+// 정확히 일치하는 것만 넘어온다 — 낙찰된 "그 물건"인지를 보는 게 목적이라
+// 인접층 매물은 애초에 다른 호실이므로 후보가 될 수 없다(사용자 요청,
+// 2026-07-28). 여기 도달했다면 항상 일치하지만, 방어적으로 재확인한다.
 function floorScore(auctionFloor: number | null, tradeFloor: number | null): number {
   if (auctionFloor == null || tradeFloor == null) return 0;
-  if (auctionFloor === tradeFloor) return 1;
-  if (Math.abs(auctionFloor - tradeFloor) === 1) return 0.5;
-  return 0;
+  return auctionFloor === tradeFloor ? 1 : 0;
 }
 
 function timeScore(anchorDate: Date, contractDate: Date): number {

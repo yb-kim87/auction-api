@@ -10,6 +10,7 @@ import {
   computeScore,
   isAmbiguous,
   parseAuctionExclusiveArea,
+  parseAuctionFloor,
   shouldDisplay,
 } from "./match-scoring.util";
 
@@ -98,6 +99,16 @@ export class ResaleMatchService implements OnModuleInit {
     const auctionArea = parseAuctionExclusiveArea(auction.area);
     if (auctionArea == null) return;
 
+    // 이 기능의 목적은 "실제로 낙찰된 그 물건"이 되팔렸는지 확인하는
+    // 것이라, 층이 다른 실거래는 애초에 다른 호실이므로 후보 자체가
+    // 될 수 없다(사용자 요청, 2026-07-28 — 이전엔 인접층까지 감점 후
+    // 후보로 남겨 스코어링했으나, 그 결과 다른 층 매물이 최상위
+    // 후보와 거의 동점을 만들어 애매 판정을 유발하는 문제가 있었다).
+    // 경매 물건의 층을 특정할 수 없으면 검증 불가능하므로 아예
+    // 매칭을 시도하지 않는다.
+    const auctionFloor = parseAuctionFloor(auction.address);
+    if (auctionFloor == null) return;
+
     const windowStart = new Date();
     windowStart.setMonth(windowStart.getMonth() - CANDIDATE_WINDOW_MONTHS);
 
@@ -107,6 +118,7 @@ export class ResaleMatchService implements OnModuleInit {
       .andWhere("t.umdNm = :umdNm", { umdNm: auction.umdNm })
       .andWhere("t.jibun = :jibun", { jibun: auction.jibun })
       .andWhere("t.isCancelled = false")
+      .andWhere("t.floor = :floor", { floor: auctionFloor })
       .andWhere("ABS(t.exclusiveArea - :area) <= :tolerance", {
         area: auctionArea,
         tolerance: AREA_TOLERANCE_SQM,
@@ -121,12 +133,12 @@ export class ResaleMatchService implements OnModuleInit {
 
     if (candidates.length === 0) return;
 
-    // 3.4절 고유성 보정 — 같은 주소·같은 면적대에서 관측된 서로 다른
-    // 층 수(이 배치 실행 시점까지 수집된 범위 내 근사치).
-    const distinctFloors = new Set(
-      candidates.map((c) => c.floor).filter((f): f is number => f != null),
-    );
-    const candidateUnitCount = Math.max(1, distinctFloors.size || candidates.length);
+    // 3.4절 고유성 보정 — 이제 층까지 하드필터로 고정되므로(같은 주소·
+    // 같은 층·같은 면적) "몇 세대에 걸쳐 후보가 퍼져 있는가"가 아니라
+    // "이 정확히 같은 호실 조건에 거래 기록이 몇 건 잡히는가"가 애매성의
+    // 척도가 된다 — 1건뿐이면 고유성 만점, 여러 건(재거래·중복 신고 등)
+    // 이면 그만큼 확신도를 낮춘다.
+    const candidateUnitCount = Math.max(1, candidates.length);
 
     const auctionBuildingDong = this.parseAuctionDong(auction.address);
 
