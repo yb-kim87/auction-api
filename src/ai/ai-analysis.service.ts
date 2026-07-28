@@ -26,7 +26,7 @@ import {
 import { RightsRuleService } from "./rights-rule.service";
 
 const ANALYSIS_ENGINE_LABEL = "경매코치 AI";
-const RIGHTS_ENGINE_VERSION = 2;
+const RIGHTS_ENGINE_VERSION = 3;
 
 const SYSTEM_PROMPT = `당신은 ${ANALYSIS_ENGINE_LABEL} — 한국 법원 경매 부동산 분석 전문가입니다.
 제공된 [내부 경매지식]을 최우선 기준으로 분석하세요.

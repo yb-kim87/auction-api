@@ -189,4 +189,21 @@ assert.equal(juniorTenantCase.code, "junior_tenant");
 assert.equal(juniorTenantCase.opposability, "none");
 assert.equal(juniorTenantCase.assumptionAmount, 0);
 
+const juniorTenantWithLeaseholdRegistration = buildDeterministicRightsDecision(
+  extractRightsAnalysisFacts({
+    buildingRegistry:
+      "을(1) 2015-08-03 근저당권설정 우리은행 (말소기준등기)\n" +
+      "을(2) 2024-03-18 주택임차권 임차인 주선희",
+    tenantInfo: "임차인 주선희",
+    tenantDetail:
+      "임차인: 주선희 / 전입: 2015-08-04 / 확정: 2015-08-04 / 보증금: 380,000,000원\n" +
+      "임차인: 황종환 / 전입: 2025-01-02",
+  }),
+);
+assert.equal(juniorTenantWithLeaseholdRegistration.code, "junior_tenant");
+assert.equal(juniorTenantWithLeaseholdRegistration.final, true);
+assert.equal(juniorTenantWithLeaseholdRegistration.requiresRag, false);
+assert.equal(juniorTenantWithLeaseholdRegistration.opposability, "none");
+assert.equal(juniorTenantWithLeaseholdRegistration.assumptionAmount, 0);
+
 console.log("deterministic-rights-decisions: ok");

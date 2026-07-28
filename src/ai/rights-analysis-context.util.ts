@@ -238,7 +238,13 @@ export function buildDeterministicRightsDecision(
   const baselineDate = facts.baselineCandidate?.date ?? "";
   const postDates = facts.nonPriorTenantDates.join(", ");
   const priorDates = facts.preBaselineTenantDates.join(", ");
-  const complexReason = facts.complexExceptionSignals.join(", ");
+  // 임차권등기는 이미 취득한 대항력의 기준일을 보존하는 장치다. 확인된
+  // 최초 전입일 자체가 말소기준일과 같거나 늦다면 임차권등기만으로
+  // 선순위 대항력이 새로 생기지 않으므로 후순위 확정 판정을 막지 않는다.
+  const effectiveComplexSignals = facts.allKnownTenantDatesOnOrAfterBaseline
+    ? facts.complexExceptionSignals.filter((signal) => signal !== "임차권등기")
+    : facts.complexExceptionSignals;
+  const complexReason = effectiveComplexSignals.join(", ");
 
   const tenantNoneWithComplexException = (
     code: "owner_occupied" | "no_tenant" | "junior_tenant",
