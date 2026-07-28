@@ -130,18 +130,25 @@ def _parse_lawd_jibun(detail_response: dict) -> dict:
 
 def _parse_resale_match_dates(detail_response: dict) -> dict:
     """histInfo.items[].sta 시퀀스에서 매각허가결정일(1211)/매각대금완납일
-    (1216)을 추출한다. sta=1216 매핑은 표본 1건(2024타경110655,
-    tid=2341347)으로 실측 확인했다 — 페이지 렌더 텍스트의 "매각 7일
-    매각결정기일 30일 납부 40일 배당종결" 요약과 histInfo 날짜를 대조해
-    확정(2026-07-28, docs/auction-resale-matching-data-findings.md 2장).
-    다른 사건 유형(임의경매/강제경매, 배당 없이 종결 등)에서도 동일한지는
-    표본 확대 검증이 필요하다 — 이 함수는 sta 코드가 없으면 조용히 빈
-    값을 반환한다(크롤링 실패로 취급하지 않음).
+    (1216 또는 1217)을 추출한다.
+
+    완납 코드가 사건마다 1216/1217 둘 중 하나로 다르게 쓰인다는 걸
+    표본 4건으로 확인했다 — 최초 표본(tid=2341347)은 1216이었지만,
+    이후 3건(tid=2364607/2389736/2406515)은 전부 1217을 썼고, 구조적
+    위치(1211 매각허가결정 이후, 1218 배당기일 직전)는 두 코드 모두
+    동일하다(2026-07-28, docs/auction-resale-matching-data-findings.md
+    2장 追記). 사건 유형(임의경매/강제경매 등)에 따라 코드가 갈리는
+    것으로 추정되나 정확한 구분 규칙은 확인 못 했다 — 안전하게 두
+    코드를 모두 완납으로 인정한다. 이 함수는 sta 코드가 없으면 조용히
+    빈 값을 반환한다(완납 전 물건에서는 정상 상황이지 크롤링 실패가
+    아님).
     """
     hist = detail_response.get("histInfo") if isinstance(detail_response, dict) else None
     items = hist.get("items") if isinstance(hist, dict) else None
     if not isinstance(items, list):
         return {"sale_confirmed_at": "", "payment_completed_at": ""}
+
+    PAYMENT_COMPLETED_STA_CODES = (1216, 1217)
 
     sale_confirmed_at = ""
     payment_completed_at = ""
@@ -158,7 +165,7 @@ def _parse_resale_match_dates(detail_response: dict) -> dict:
             continue
         if sta_int == 1211:
             sale_confirmed_at = bid_dt
-        elif sta_int == 1216:
+        elif sta_int in PAYMENT_COMPLETED_STA_CODES:
             payment_completed_at = bid_dt
 
     return {"sale_confirmed_at": sale_confirmed_at, "payment_completed_at": payment_completed_at}

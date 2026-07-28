@@ -29,7 +29,7 @@ export class AddActualTradeTable1784250000000 implements MigrationInterface {
         "isCancelled" boolean NOT NULL DEFAULT false,
         "cancelledAt" date NULL,
         "sourceType" text NOT NULL DEFAULT 'MOLIT_API',
-        "sourceRaw" jsonb NULL,
+        "sourceRaw" text NULL,
         "createdAt" timestamp NOT NULL DEFAULT now(),
         CONSTRAINT "PK_actual_trade_id" PRIMARY KEY ("id")
       )

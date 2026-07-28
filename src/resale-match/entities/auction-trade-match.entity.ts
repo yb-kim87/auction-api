@@ -29,7 +29,8 @@ export class AuctionTradeMatchRow {
 
   /** {area, floor, time, price, uniqueness, listingLink, penalties: [...]}
    * — 서브스코어 원본값까지 감사용으로 남긴다. */
-  @Column({ type: "jsonb" })
+  /** simple-json은 운영 PostgreSQL과 로컬 sql.js 양쪽에서 동작한다. */
+  @Column({ type: "simple-json" })
   scoreBreakdown!: Record<string, unknown>;
 
   @Column()
@@ -48,10 +49,10 @@ export class AuctionTradeMatchRow {
   @Column({ type: "text", nullable: true })
   reviewedBy!: string | null;
 
-  @Column({ type: "timestamp", nullable: true })
+  @Column({ type: Date, nullable: true })
   reviewedAt!: Date | null;
 
-  @Column({ type: "timestamp" })
+  @Column({ type: Date })
   computedAt!: Date;
 
   @CreateDateColumn()

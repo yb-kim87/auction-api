@@ -15,7 +15,7 @@ export class AddAuctionTradeMatchTable1784251000000 implements MigrationInterfac
         "listingSnapshotId" uuid NULL,
         "candidateRank" integer NOT NULL,
         "scoreTotal" integer NOT NULL,
-        "scoreBreakdown" jsonb NOT NULL,
+        "scoreBreakdown" text NOT NULL,
         "confidenceTier" text NOT NULL,
         "isPreCompletion" boolean NOT NULL DEFAULT false,
         "isDisplayed" boolean NOT NULL DEFAULT false,

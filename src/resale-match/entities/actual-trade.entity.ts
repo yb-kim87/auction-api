@@ -80,7 +80,8 @@ export class ActualTradeRow {
   @Column({ default: "MOLIT_API" })
   sourceType!: "MOLIT_API" | "NAVER_TRADE" | "MANUAL";
 
-  @Column({ type: "jsonb", nullable: true })
+  /** simple-json은 운영 PostgreSQL과 로컬 sql.js 양쪽에서 동작한다. */
+  @Column({ type: "simple-json", nullable: true })
   sourceRaw!: Record<string, unknown> | null;
 
   @CreateDateColumn()
