@@ -1871,6 +1871,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     if (!schedule.repeatDaily && schedule.oneTimeCompleted) return;
 
     const now = nowPartsInKst();
+    const runDateLabel = `${now.year}.${String(now.month).padStart(2, "0")}.${String(now.date).padStart(2, "0")}`;
     const [hour, minute] = schedule.time.split(":");
     const isScheduledMinute =
       now.hour === parseInt(hour ?? "0", 10) &&
@@ -1977,7 +1978,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
                 "scheduler",
               );
               await this.waitForCrawlIdle();
-              this.appendLog("info", `[매일작업] 완료 (${links.length}건 재조회)`);
+              this.appendLog(
+                "info",
+                `[매일작업] ${runDateLabel} 완료 (${links.length}건 재조회)`,
+              );
             }
           } catch (error) {
             this.appendLog(
@@ -2028,7 +2032,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
           } else {
             this.appendLog("info", "[매일작업] 수집된 URL 없음(조회 생략)");
           }
-          this.appendLog("info", "[매일작업] 완료");
+          this.appendLog("info", `[매일작업] ${runDateLabel} 완료`);
         } catch (error) {
           this.appendLog(
             "error",
