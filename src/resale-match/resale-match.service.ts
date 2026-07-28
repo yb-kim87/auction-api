@@ -53,6 +53,7 @@ export class ResaleMatchService implements OnModuleInit {
     } catch (err) {
       this.logger.error(
         `재판매 매칭 배치 실행 중 오류: ${err instanceof Error ? err.message : err}`,
+        err instanceof Error ? err.stack : undefined,
       );
     } finally {
       this.running = false;
