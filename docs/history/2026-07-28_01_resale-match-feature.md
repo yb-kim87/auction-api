@@ -299,3 +299,16 @@ ingestOne()`이 이미 개별 실패를 catch해서 계속 진행하는 구조�
 
 ### 검증
 `npx tsc --noEmit -p .` 통과.
+
+### 프론트엔드(auction 레포) — 관리자 QA 탭 UI
+`auction` 레포 `src/app/admin/ResaleMatchTab.tsx` 신설, `page.tsx`
+탭 목록에 "재판매 매칭 QA" 추가. `GET /resale-match/matches` 결과를
+표로 보여주고(사건번호/법원/주소/완납일/낙찰가/실거래 층·면적·금액·
+계약일/점수(1위 vs 2위)/등급/애매·완납전계약 배지/노출여부/검토상태),
+행별로 승인/반려 버튼 제공(`PATCH /resale-match/matches/:matchId/review`).
+"지금 바로 매칭 배치 실행" 버튼으로 `POST /resale-match/run-now`도
+호출 가능.
+
+부수적으로 `auction` 레포의 `.husky/pre-commit`에 shebang이 없어
+이 환경에서 커밋 시 훅이 spawn되지 않던 문제를 발견·수정(경고 전용
+훅이라 기능엔 영향 없었으나 훅 자체가 전혀 안 도는 상태였음).
