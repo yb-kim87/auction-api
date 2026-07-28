@@ -16,7 +16,7 @@ import { AuctionStatus, UserRole } from "../common/constants";
 import { UsersService } from "../users/users.service";
 import { AuctionAnalysis } from "./auction-analysis.entity";
 import { KnowledgeService } from "./knowledge.service";
-import { OpenAiService } from "./openai.service";
+import { OpenAiService, type AnalysisLlmResult } from "./openai.service";
 import {
   buildDeterministicRightsDecision,
   extractRightsAnalysisFacts,
@@ -26,6 +26,7 @@ import {
 import { RightsRuleService } from "./rights-rule.service";
 
 const ANALYSIS_ENGINE_LABEL = "경매코치 AI";
+const RIGHTS_ENGINE_VERSION = 2;
 
 const SYSTEM_PROMPT = `당신은 ${ANALYSIS_ENGINE_LABEL} — 한국 법원 경매 부동산 분석 전문가입니다.
 제공된 [내부 경매지식]을 최우선 기준으로 분석하세요.
@@ -262,6 +263,47 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
 단순히 검색되었지만 사용하지 않은 지식은 적지 마세요.`;
   }
 
+  private buildDeterministicResult(facts: RightsAnalysisFacts): AnalysisLlmResult {
+    const decision = buildDeterministicRightsDecision(facts);
+    const baseline = facts.baselineCandidate;
+    return {
+      summary: decision.summary,
+      priceAnalysis: "",
+      rightsAnalysis: `${decision.summary} ${decision.reason}`,
+      loanAnalysis: "",
+      investmentFit: "",
+      checklist: ["최신 등기부 확인하기", "매각물건명세서 확인하기"],
+      recommendation: decision.assumptionAmount === 0 ? "입찰 검토" : "검토",
+      risks: [],
+      structuredRights: {
+        reviewStatus: decision.reviewStatus,
+        baselineRight: {
+          type: baseline?.type ?? "",
+          date: baseline?.date ?? "",
+          reason: baseline
+            ? `등기 원문에 '(말소기준등기)'로 표시됨: ${baseline.sourceLine}`
+            : "말소기준권리 자료를 확인하지 못했습니다.",
+        },
+        tenant: {
+          priorityStatus: decision.tenantPriorityStatus,
+          opposability: decision.opposability,
+          depositAmount: null,
+        },
+        assumption: {
+          status: decision.assumptionStatus,
+          estimatedAmount: decision.assumptionAmount,
+          reason: decision.reason,
+        },
+        missingEvidence: decision.missingEvidence,
+        evidence: [
+          `서버 확정 규칙: ${decision.code}`,
+          decision.reason,
+        ],
+        knowledgeEvidence: [],
+      },
+    };
+  }
+
   private validateStructuredRights(
     llm: Awaited<ReturnType<OpenAiService["analyzeAuction"]>>,
     facts: RightsAnalysisFacts,
@@ -454,6 +496,7 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
 
   private rightsFingerprint(auction: Auction) {
     const rightsSource = {
+      engineVersion: RIGHTS_ENGINE_VERSION,
       auctionNo: auction.auctionNo,
       buildingRegistry: auction.buildingRegistry,
       tenantInfo: auction.tenantInfo,
@@ -470,13 +513,19 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
   }
 
   private async isAnalysisStale(row: AuctionAnalysis, auction: Auction | null) {
+    const payload = JSON.parse(row.resultJson) as {
+      _rightsFingerprint?: string;
+    };
+    const engineOrSourceStale =
+      Boolean(auction) &&
+      payload._rightsFingerprint !== this.rightsFingerprint(auction!);
     const auctionStale =
       auction &&
       row.auctionSnapshotAt &&
       auctionSnapshotAt(auction).getTime() > row.auctionSnapshotAt.getTime();
     // RAG 지식 변경만으로 사용자 결과를 자동 만료시키지 않는다. 관리자가
     // 명시적으로 refresh=true로 요청할 때만 새 지식으로 다시 분석한다.
-    return Boolean(auctionStale);
+    return Boolean(engineOrSourceStale || auctionStale);
   }
 
   private parseResult(row: AuctionAnalysis, extra: { cached?: boolean; stale?: boolean }) {
@@ -560,40 +609,53 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
     this.analysisInFlight.set(auctionId, analysisGate);
 
     try {
-    const user = username
-      ? await this.usersService.findByUsername(username)
-      : null;
-
-    if (!isAdmin) {
-      const limit = user?.aiAnalysisLimit ?? 0;
-      const used = user?.aiAnalysisUsed ?? 0;
-      if (used >= limit) {
-        throw new ForbiddenException(
-          `AI 분석 가능 횟수(${limit}회)를 모두 사용했습니다. 관리자에게 문의해 주세요.`,
-        );
-      }
-    }
-
-    // 물건 상세 "AI에게 물어보기"는 권리분석 전용 AI로 운영한다(물건추천 지식은
-    // 별도 파이프라인에서 다룰 예정 — 두 AI가 같은 컨텍스트를 함께 보지 않도록 분리).
-    const knowledgeItems = await this.knowledgeService.searchForAuction(auction, 5, "권리분석");
-    const knowledgeBlock = this.knowledgeService.formatForPrompt(knowledgeItems);
-    const citations = knowledgeItems.map((k) =>
-      k.category ? `[${k.category}] ${k.title}` : k.title,
-    );
-
     const rightsRuleSettings = await this.rightsRuleService.getSettings();
     const facts = extractRightsAnalysisFacts(auction, rightsRuleSettings);
-    const userPrompt = this.buildUserPrompt(auction, knowledgeBlock, facts);
+    const decision = buildDeterministicRightsDecision(facts);
+    let llm: AnalysisLlmResult;
+    let citations: string[] = [];
+    let knowledgeCount = 0;
+    let usedAi = false;
 
-    const rawLlm = await this.openAi.analyzeAuction(SYSTEM_PROMPT, userPrompt);
-    const llm = this.validateStructuredRights(
-      rawLlm,
-      facts,
-      new Set(knowledgeItems.map((item) => item.title)),
-    );
+    if (!decision.requiresRag) {
+      // 날짜·임차자료만으로 확정되는 기본 사건은 외부 AI를 호출하지 않는다.
+      llm = this.buildDeterministicResult(facts);
+    } else {
+      const user = username
+        ? await this.usersService.findByUsername(username)
+        : null;
+      if (!isAdmin) {
+        const limit = user?.aiAnalysisLimit ?? 0;
+        const used = user?.aiAnalysisUsed ?? 0;
+        if (used >= limit) {
+          throw new ForbiddenException(
+            `AI 분석 가능 횟수(${limit}회)를 모두 사용했습니다. 관리자에게 문의해 주세요.`,
+          );
+        }
+      }
 
-    if (!isAdmin && username) {
+      // 복잡한 예외가 감지된 경우에만 권리분석 RAG와 외부 AI를 사용한다.
+      const knowledgeItems = await this.knowledgeService.searchForAuction(
+        auction,
+        5,
+        "권리분석",
+      );
+      const knowledgeBlock = this.knowledgeService.formatForPrompt(knowledgeItems);
+      citations = knowledgeItems.map((k) =>
+        k.category ? `[${k.category}] ${k.title}` : k.title,
+      );
+      knowledgeCount = knowledgeItems.length;
+      const userPrompt = this.buildUserPrompt(auction, knowledgeBlock, facts);
+      const rawLlm = await this.openAi.analyzeAuction(SYSTEM_PROMPT, userPrompt);
+      llm = this.validateStructuredRights(
+        rawLlm,
+        facts,
+        new Set(knowledgeItems.map((item) => item.title)),
+      );
+      usedAi = true;
+    }
+
+    if (usedAi && !isAdmin && username) {
       await this.usersService.incrementAiAnalysisUsage(username);
     }
 
@@ -605,7 +667,8 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
       investmentFit: "",
       autoRights: this.buildAutoRights(llm),
       citations,
-      knowledgeCount: knowledgeItems.length,
+      knowledgeCount,
+      analysisSource: usedAi ? "ai_with_rag" : "rules_only",
       _rightsFingerprint: fingerprint,
     };
 

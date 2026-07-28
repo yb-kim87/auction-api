@@ -69,6 +69,16 @@ const noTenant = run({
 assert.equal(noTenant.decision.code, "no_tenant");
 assert.equal(noTenant.result.structuredRights.assumption.status, "none");
 assert.equal(noTenant.result.structuredRights.assumption.estimatedAmount, 0);
+const rulesOnlyNoTenant = service.buildDeterministicResult(
+  extractRightsAnalysisFacts({
+    buildingRegistry: baselineRegistry,
+    tenantDetail: "조사된 임차내역 없음",
+  }),
+);
+assert.equal(rulesOnlyNoTenant.structuredRights.tenant.opposability, "none");
+assert.equal(rulesOnlyNoTenant.structuredRights.assumption.estimatedAmount, 0);
+assert.equal(rulesOnlyNoTenant.structuredRights.knowledgeEvidence.length, 0);
+assert.ok(rulesOnlyNoTenant.checklist.includes("매각물건명세서 확인하기"));
 
 const senior = run({
   buildingRegistry: baselineRegistry,
