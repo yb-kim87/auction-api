@@ -150,3 +150,41 @@ diff에 잡혀 저장이 스킵되지 않는다.
 ### 다음 단계
 수정을 배포한 뒤 백필 스크립트를 재실행해 실제로 DB에 값이
 채워지는지 재확인 필요(진행 중).
+
+## 追記 (2026-07-28) — 백필 재확인 성공, 매칭 배치 2차 크래시 발견·수정
+
+### 백필 재실행 결과
+위 저장 스킵 버그 수정을 배포한 뒤 `crawler/backfill_resale_match.py`를
+재실행하고 운영 Postgres를 직접 조회(`railway run --service Postgres
+node`)해 확인한 결과: `lawdCd`/`umdNm`/`jibun`/`saleConfirmedAt` 40건,
+`paymentCompletedAt` 9건 정상 저장 확인(완납 확정 단계인 배당기일/
+배당종결 물건 수와 일치).
+
+### 매칭 배치(Stage A/B) 크래시 — TypeORM @AfterLoad + 부분 select 충돌
+완납일이 채워진 뒤 스케줄러가 최초로 매칭 배치를 실행하자 즉시
+크래시: `TypeError: Cannot read properties of undefined (reading
+'replace') at cleanAddress (address-parser.js:58) at
+Auction.normalizeDisplayFields (auction.entity.js:43) at
+EntityListenerMetadata.execute ...`.
+
+원인: `TradeIngestionService.resolveIngestionScope()`가
+`createQueryBuilder("a").select(["a.lawdCd", "a.bidDate"])`로 일부
+컬럼만 조회하는데, `Auction` 엔티티의 `@AfterLoad() normalizeDisplayFields()`
+훅이 매 로드마다 `this.address`/`education`/`buildingRegistry`/
+`tenantDetail`/`elevator`/`parking`/`factTags`/`strategyTags`를
+무조건 정제(clean) 함수에 넘긴다 — 부분 select라 이 필드들이
+`undefined`인데 `cleanAddress(undefined)`가 `.replace()`를 호출하며
+크래시. 기존 코드에도 부분 select 쿼리가 여럿 있었지만(예:
+`auctions.service.ts`) 이 특정 필드 조합/훅과 부딪힌 적이 없어 지금까지
+드러나지 않았던 잠복 결함이었다.
+
+수정: `src/auctions/auction.entity.ts`의 `normalizeDisplayFields()`에서
+각 필드를 `undefined`가 아닐 때만 정제하도록 방어 코드 추가 — 부분
+select로 로드된 엔티티에서도 크래시하지 않는다(다른 부분 select
+쿼리에도 동일하게 안전).
+
+### 검증
+`npx tsc --noEmit -p .` 통과(무관한 EBUSY 노이즈만). Railway 재배포 후
+매칭 배치가 크래시 없이 완료되는지, `auction_trade_match`/
+`auctions.resaleMatchedTradeId`에 실제 결과가 쌓이는지 운영 DB 직접
+조회로 확인.

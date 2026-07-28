@@ -16,6 +16,28 @@ export interface StrategyTagItem {
   icon: string;
 }
 
+export type RightsReviewStatus =
+  | "uninvestigated"
+  | "in_progress"
+  | "none"
+  | "confirmed"
+  | "unverifiable";
+
+export interface AuctionRightsReview {
+  status: RightsReviewStatus;
+  baselineRightType: string;
+  baselineRightDate: string;
+  seniorTenantStatus: "unknown" | "none" | "possible" | "confirmed";
+  opposabilityStatus: "unknown" | "none" | "possible" | "confirmed";
+  depositAmount: number | null;
+  expectedDividendAmount: number | null;
+  assumptionAmount: number | null;
+  specialRights: string;
+  evidenceNote: string;
+  confirmedAt: string;
+  confirmedBy: string;
+}
+
 /** bigint 컬럼은 pg 드라이버가 문자열로 반환하므로 number로 왕복 변환한다. */
 const bigintNumberTransformer = {
   to: (value: number | null | undefined) => value,
@@ -283,6 +305,11 @@ export class Auction {
   @Column({ type: "simple-json", nullable: true })
   extraData!: Record<string, unknown> | null;
 
+  /** AI가 만든 초안과 분리해 관리자가 근거 자료로 확인한 권리분석 값.
+   * 사용자 화면과 수익계산기에는 이 확정값만 사용한다. */
+  @Column({ type: "simple-json", nullable: true })
+  rightsReview!: AuctionRightsReview | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 
@@ -310,14 +337,26 @@ export class Auction {
 
   @AfterLoad()
   normalizeDisplayFields(): void {
-    this.address = cleanAddress(this.address);
-    this.education = cleanEducation(this.education);
-    this.buildingRegistry = cleanBuildingRegistry(this.buildingRegistry);
-    this.tenantDetail = cleanTenantDetail(this.tenantDetail);
-    const { elevator, parking } = cleanElevatorAndParking(this.elevator, this.parking);
-    this.elevator = elevator;
-    this.parking = parking;
-    this.factTagsList = Auction.parseStringArray(this.factTags);
-    this.strategyTagsList = Auction.parseStrategyItems(this.strategyTags);
+    // createQueryBuilder().select([...])로 일부 컬럼만 조회하는 경우(예:
+    // TradeIngestionService.resolveIngestionScope) 여기서 참조하는 필드가
+    // undefined일 수 있다 — 그런 부분 로드에서도 크래시하지 않도록 각
+    // 필드를 선택된 경우에만 정규화한다(실측 크래시, 2026-07-28).
+    if (this.address !== undefined) this.address = cleanAddress(this.address);
+    if (this.education !== undefined) this.education = cleanEducation(this.education);
+    if (this.buildingRegistry !== undefined) {
+      this.buildingRegistry = cleanBuildingRegistry(this.buildingRegistry);
+    }
+    if (this.tenantDetail !== undefined) this.tenantDetail = cleanTenantDetail(this.tenantDetail);
+    if (this.elevator !== undefined || this.parking !== undefined) {
+      const { elevator, parking } = cleanElevatorAndParking(this.elevator, this.parking);
+      this.elevator = elevator;
+      this.parking = parking;
+    }
+    if (this.factTags !== undefined) {
+      this.factTagsList = Auction.parseStringArray(this.factTags);
+    }
+    if (this.strategyTags !== undefined) {
+      this.strategyTagsList = Auction.parseStrategyItems(this.strategyTags);
+    }
   }
 }
