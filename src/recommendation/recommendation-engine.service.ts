@@ -123,6 +123,31 @@ export class RecommendationEngineService {
   }> {
     const criteria = await this.buildCriteriaForUser(username, options?.overrideInvestableWon);
     if (!criteria) {
+      if (options?.filters?.favoritesOnly) {
+        const favoriteIds = await this.favoritesService.listAuctionIds(username);
+        const favorites =
+          favoriteIds.length > 0
+            ? await this.auctionRepo.find({
+                where: { id: In(favoriteIds), status: AuctionStatus.APPROVED },
+                order: { createdAt: "DESC" },
+              })
+            : [];
+        const offset = options.offset ?? 0;
+        const page =
+          options.limit != null
+            ? favorites.slice(offset, offset + options.limit)
+            : favorites.slice(offset);
+        return {
+          items: page,
+          criteria: null,
+          loanRatio: null,
+          loanPolicyLabel: null,
+          loanInfoByItemId: {},
+          total: favorites.length,
+          hasMore: offset + page.length < favorites.length,
+          creditScoreWarning: false,
+        };
+      }
       return {
         items: [],
         criteria: null,
@@ -140,8 +165,9 @@ export class RecommendationEngineService {
     const incomeLoanMultiplier = await this.loanPolicyService.getIncomeLoanMultiplier();
 
     const filters = options?.filters;
+    const favoritesOnly = filters?.favoritesOnly === true;
     const favoriteIds =
-      filters?.favoritesOnly ? new Set(await this.favoritesService.listAuctionIds(username)) : null;
+      favoritesOnly ? new Set(await this.favoritesService.listAuctionIds(username)) : null;
     const searchQuery = filters?.search?.trim().toLowerCase() || "";
 
     const auctions = await this.auctionRepo.find({
@@ -220,13 +246,19 @@ export class RecommendationEngineService {
         // 되고, 그 값이 투자가능자금 이하일 때만(현금 전액 매수 가능할 때만)
         // 매칭된다.
         (row) =>
-          row.item.minPrice > 0 && row.policy && row.requiredEquity <= criteria.investableWon,
+          favoritesOnly
+            ? favoriteIds!.has(row.item.id)
+            : row.item.minPrice > 0 && row.policy && row.requiredEquity <= criteria.investableWon,
       )
       .filter((row) => {
+        if (favoritesOnly) return true;
         if (criteria.targetReturnWon == null) return true;
         return row.estimatedProfit != null && row.estimatedProfit >= criteria.targetReturnWon;
       })
       .filter((row) => {
+        // 관심물건 모드는 상세 필터·검색 조건과 무관하게 관심 등록한 승인
+        // 물건 전체를 반환한다. 위 필터에서 이미 관심 ID 여부를 확인했다.
+        if (favoritesOnly) return true;
         if (filters?.city && filters.city.length > 0 && !filters.city.includes(row.item.city)) {
           return false;
         }
