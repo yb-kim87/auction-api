@@ -423,6 +423,16 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
       );
       llm.risks = llm.risks.filter((item) => !tenantPattern.test(item));
     }
+    if (!decision.requiresRag) {
+      structured.missingEvidence = structured.missingEvidence.filter(
+        (item) => !/RAG|내부\s*경매지식|지식\s*근거/.test(item),
+      );
+    }
+    // 미납 관리비는 권리 인수 여부와 별개의 비용 참고정보다. 주요 권리
+    // 위험으로 과장하지 않고 상세 화면의 관리비 항목에서 별도로 안내한다.
+    llm.risks = llm.risks.filter(
+      (item) => !/미납\s*관리비|관리비[^.\n]*미납/.test(item),
+    );
     structured.missingEvidence.push(...decision.missingEvidence);
     structured.evidence.push(
       `서버 확정 규칙: ${decision.code}`,
