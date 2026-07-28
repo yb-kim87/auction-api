@@ -158,6 +158,10 @@ ${input.rawContent.slice(0, 6000)}`;
       );
     }
 
+    if (input.category.trim() === "권리분석") {
+      return this.structureRightsKnowledgeInput(input.rawText);
+    }
+
     const systemPrompt = `당신은 경매 투자 플랫폼 "경매코치"의 내부 지식 편집자입니다.
 관리자가 입력한 메모를 경매 분석 AI(RAG)가 참고할 **내부 경매지식** 항목으로 다듬습니다.
 
@@ -216,6 +220,116 @@ ${input.rawText.slice(0, 6000)}`;
       title: String(parsed.title ?? ""),
       tags: String(parsed.tags ?? ""),
       content: String(parsed.content ?? input.rawText),
+    };
+  }
+
+  private async structureRightsKnowledgeInput(
+    rawText: string,
+  ): Promise<{ title: string; tags: string; content: string }> {
+    const systemPrompt = `당신은 한국 부동산 경매 서비스 "경매코치"의 권리분석 RAG 규칙 편집자입니다.
+관리자 메모를 AI가 물건별 권리분석에 정확히 적용할 수 있는 단일 주제의 판정 규칙으로 구조화하세요.
+
+작성 원칙:
+- 원문의 의미와 조건을 유지하고, 원문에 없는 법률·날짜·금액·판례를 만들지 마세요.
+- 한 문서에는 한 가지 판단 주제만 담으세요.
+- 대항력, 우선변제권, 배당, 인수금액을 서로 다른 개념으로 구분하세요.
+- 사실이 부족할 때는 확정하지 말고 unknown 또는 "미확인"으로 끝내세요.
+- 판정 규칙은 "IF 조건 THEN 결과" 형식으로 작성하세요.
+- 청구금액·채권금액·채권최고액·보증금 총액만으로 인수금액을 정하지 마세요.
+- 개인정보는 제거하세요.
+- 법적 근거가 원문에 없으면 "관리자 법령 검토 필요"라고 적으세요.
+- tags는 상위 개념과 원문 검색어를 포함한 쉼표 구분 키워드 4~8개로 작성하세요.
+
+JSON 형식으로만 응답:
+{
+  "title": "대괄호 없이 구체적인 단일 주제 제목",
+  "tags": "말소기준권리,근저당,압류",
+  "scope": "이 규칙을 적용할 물건과 판단 범위",
+  "requiredInputs": ["판단에 반드시 필요한 자료"],
+  "decisionRules": ["IF ... THEN ..."],
+  "prohibitedRules": ["하면 안 되는 판단 또는 단정"],
+  "additionalEvidence": ["미확인일 때 추가로 확인할 자료"],
+  "outputExamples": ["baselineRight.type=...", "assumption.status=unknown"],
+  "legalBasis": ["원문에 명시된 법령·조문 또는 관리자 법령 검토 필요"]
+}`;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: this.model,
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `[관리자 원본 메모]\n${rawText.slice(0, 6000)}`,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new InternalServerErrorException(
+        `경매코치 AI 권리분석 규칙 정리에 실패했습니다. (${response.status})`,
+      );
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const responseText = data.choices?.[0]?.message?.content?.trim();
+    if (!responseText) {
+      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+    }
+
+    const parsed = JSON.parse(responseText) as Record<string, unknown>;
+    const list = (value: unknown, fallback: string) => {
+      const rows = Array.isArray(value)
+        ? value.map((item) => String(item).trim()).filter(Boolean)
+        : [];
+      return rows.length > 0 ? rows : [fallback];
+    };
+    const section = (title: string, rows: string[]) =>
+      `[${title}]\n${rows.map((row) => `- ${row}`).join("\n")}`;
+    const scope = String(parsed.scope ?? "").trim() || "관리자 적용 범위 확인 필요";
+
+    const content = [
+      `[적용 범위]\n${scope}`,
+      section(
+        "필수 입력",
+        list(parsed.requiredInputs, "관리자 필수 입력 자료 확인 필요"),
+      ),
+      section(
+        "판정 규칙",
+        list(parsed.decisionRules, "IF 필수 자료 미확인 THEN 결과=unknown"),
+      ),
+      section(
+        "금지 규칙",
+        list(parsed.prohibitedRules, "근거 없는 사실·금액을 확정하지 않는다."),
+      ),
+      section(
+        "추가 확인 자료",
+        list(parsed.additionalEvidence, "관리자 추가 확인 자료 지정 필요"),
+      ),
+      section(
+        "출력 예",
+        list(parsed.outputExamples, "reviewStatus=unknown"),
+      ),
+      section(
+        "법적 근거 및 검토 기준",
+        list(parsed.legalBasis, "관리자 법령 검토 필요"),
+      ),
+    ].join("\n\n");
+
+    return {
+      title: String(parsed.title ?? "").trim() || "권리분석 규칙",
+      tags: String(parsed.tags ?? "").trim() || "권리분석,확인필요",
+      content,
     };
   }
 
