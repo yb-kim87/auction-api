@@ -287,6 +287,29 @@ structuredRights.knowledgeEvidence에는 위 [내부 경매지식] 중 실제 �
       structured.missingEvidence.push("배당 결과와 실제 잔존 인수채무");
     }
 
+    if (facts.investigatedTenantStatus === "none") {
+      structured.tenant.priorityStatus = "none";
+      structured.tenant.opposability = "none";
+      structured.tenant.depositAmount = null;
+      structured.missingEvidence = structured.missingEvidence.filter(
+        (item) => !/임차|전입|세대열람|대항력|보증금/.test(item),
+      );
+      llm.risks = llm.risks.filter(
+        (item) => !/임차인|대항력|임차보증금/.test(item),
+      );
+      if (
+        structured.assumption.status !== "none" &&
+        /임차|대항력|보증금|점유/.test(structured.assumption.reason)
+      ) {
+        structured.assumption.status = "none";
+        structured.assumption.estimatedAmount = 0;
+        structured.assumption.reason =
+          "법원 조사자료에 '조사된 임차내역 없음'이 명시되어 임차인 관련 인수권리는 없습니다.";
+      }
+      structured.evidence.push("법원 임차인·점유 현황: 조사된 임차내역 없음");
+      structured.evidence = [...new Set(structured.evidence.filter(Boolean))];
+    }
+
     const possibleAmountWithoutResidualBasis =
       structured.assumption.status === "possible" &&
       structured.assumption.estimatedAmount != null &&

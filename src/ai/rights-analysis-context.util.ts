@@ -9,6 +9,7 @@ export type RightsAnalysisFacts = {
   claimAmounts: number[];
   hasCreditorWaiver: boolean;
   preBaselineTenantDates: string[];
+  investigatedTenantStatus: "none" | "conflict" | "unknown";
   warnings: string[];
 };
 
@@ -36,11 +37,13 @@ function normalizeBaselineType(raw: string): string {
 export function extractRightsAnalysisFacts(input: {
   buildingRegistry?: string | null;
   tenantDetail?: string | null;
+  tenantInfo?: string | null;
   specialNote?: string | null;
 }): RightsAnalysisFacts {
   const registry = String(input.buildingRegistry ?? "").trim();
   const tenantDetail = String(input.tenantDetail ?? "").trim();
-  const combined = `${registry}\n${tenantDetail}\n${input.specialNote ?? ""}`;
+  const tenantInfo = String(input.tenantInfo ?? "").trim();
+  const combined = `${registry}\n${tenantInfo}\n${tenantDetail}\n${input.specialNote ?? ""}`;
   const registryLines = registry
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -89,6 +92,18 @@ export function extractRightsAnalysisFacts(input: {
     }
   }
 
+  const explicitlyNoInvestigatedTenant =
+    /조사된\s*임차\s*내역(?:이)?\s*(?:없음|없습니다)/.test(tenantDetail);
+  const conflictingTenantEvidence =
+    /(?:전입|확정|배당)\s*[:：]\s*\d{4}-\d{2}-\d{2}|보증금\s*[/：:]|임차인\s*[:：]\s*[^\s[\]{},]+/.test(
+      `${tenantInfo}\n${tenantDetail}`,
+    );
+  const investigatedTenantStatus = explicitlyNoInvestigatedTenant
+    ? conflictingTenantEvidence
+      ? "conflict"
+      : "none"
+    : "unknown";
+
   const warnings: string[] = [];
   if (!registry || registry === "값없음") {
     warnings.push("등기 원문이 없어 말소기준권리를 확정할 수 없음");
@@ -110,12 +125,22 @@ export function extractRightsAnalysisFacts(input: {
       "잔존 임차보증금반환채권 포기 문구가 있으므로 해당 보증금 전액을 인수금액으로 계산 금지",
     );
   }
+  if (investigatedTenantStatus === "none") {
+    warnings.push(
+      "법원 조사자료에 '조사된 임차내역 없음'이 명시되어 임차인 대항력과 임차보증금 인수권리는 없음으로 판단",
+    );
+  } else if (investigatedTenantStatus === "conflict") {
+    warnings.push(
+      "'조사된 임차내역 없음' 문구와 별도 임차인 자료가 함께 있어 충돌 확인 필요",
+    );
+  }
 
   return {
     baselineCandidate,
     claimAmounts: [...new Set(claimAmounts)],
     hasCreditorWaiver,
     preBaselineTenantDates: [...new Set(preBaselineTenantDates)],
+    investigatedTenantStatus,
     warnings,
   };
 }
@@ -134,6 +159,13 @@ export function formatRightsAnalysisFacts(facts: RightsAnalysisFacts): string {
 - 청구·채권 관련 금액: ${claims}
 - 잔존 임차보증금반환채권 포기 문구: ${facts.hasCreditorWaiver ? "있음" : "없음"}
 - 말소기준일보다 빠른 전입일: ${facts.preBaselineTenantDates.join(", ") || "없음 또는 비교 불가"}
+- 법원 조사 임차내역: ${
+    facts.investigatedTenantStatus === "none"
+      ? "조사된 임차내역 없음(임차인 대항력·임차보증금 인수권리 없음)"
+      : facts.investigatedTenantStatus === "conflict"
+        ? "임차내역 없음 문구와 별도 임차자료가 충돌함"
+        : "명시적 없음 문구 미확인"
+  }
 - 주의사항:
 ${facts.warnings.length > 0 ? facts.warnings.map((warning) => `  - ${warning}`).join("\n") : "  - 없음"}`;
 }

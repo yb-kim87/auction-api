@@ -25,6 +25,7 @@ assert.deepEqual(facts.baselineCandidate, {
 assert.deepEqual(facts.claimAmounts, [880_000_000]);
 assert.equal(facts.hasCreditorWaiver, true);
 assert.deepEqual(facts.preBaselineTenantDates, ["2019-08-30"]);
+assert.equal(facts.investigatedTenantStatus, "unknown");
 
 const separateRows = extractRightsAnalysisFacts({
   buildingRegistry:
@@ -60,5 +61,26 @@ const missing = extractRightsAnalysisFacts({
 });
 assert.equal(missing.baselineCandidate, null);
 assert.ok(missing.warnings.some((warning) => warning.includes("등기 원문이 없어")));
+
+const noInvestigatedTenant = extractRightsAnalysisFacts({
+  buildingRegistry:
+    "을(1) 2020-06-23 근저당권설정 은행 (말소기준등기)",
+  tenantInfo: "",
+  tenantDetail:
+    "조사된 임차내역 없음\n[기타사항]\n현지 조사 방문하였으나 아무도 만나지 못하였고 전입세대 확인서상 등재자가 없음",
+  specialNote: "",
+});
+assert.equal(noInvestigatedTenant.investigatedTenantStatus, "none");
+assert.ok(
+  noInvestigatedTenant.warnings.some((warning) =>
+    warning.includes("임차보증금 인수권리는 없음"),
+  ),
+);
+
+const conflictingNoTenant = extractRightsAnalysisFacts({
+  tenantInfo: "임차인: 홍길동",
+  tenantDetail: "조사된 임차내역 없음\n전입: 2020-01-01",
+});
+assert.equal(conflictingNoTenant.investigatedTenantStatus, "conflict");
 
 console.log("rights-analysis-context: ok");
