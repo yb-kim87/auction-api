@@ -378,8 +378,10 @@ export function buildDeterministicRightsDecision(
   // 잔존채권을 포기한 경우가 실무상 대부분이라 안전한 물건으로
   // 분류하되, 매각물건명세서로 임차권 포기 내용을 직접 확인하라는
   // 문구를 항상 함께 남긴다(사용자 결정, 2026-07-30 — 2025타경8596
-  // 사례로 정책 확정. hasCreditorWaiver처럼 명시적 포기 문구는 아니라
-  // requiresRag는 유지해 RAG 검토·확인 안내를 이어간다).
+  // 사례로 정책 확정). requiresRag:false로 둬서 이 케이스는 외부 AI를
+  // 호출하지 않고 서버 자체 로직(buildDeterministicResult)만으로
+  // 답을 준다 — 어차피 최종 문구는 이 판정으로 덮어써지므로 AI 호출은
+  // 비용·시간 낭비라는 사용자 지적(2026-07-30)에 따라 변경.
   if (facts.preBaselineTenantDates.length > 0 && facts.hasAcquisitionConditionChangeSignal) {
     return {
       code: "senior_tenant_acquisition_condition_change",
@@ -392,7 +394,7 @@ export function buildDeterministicRightsDecision(
       summary: `말소기준권리일(${baselineDate})보다 빠른 전입일(${priorDates})이 있으나, 임차인 현황 조사자료상 대항력 '인수조건변경'(보증기관 승계) 신호가 확인되어 안전한 물건으로 판단됩니다.`,
       reason: "보증기관(HUG·LH 등)이 임차권을 승계하며 잔존 임차보증금반환채권을 포기한 것으로 보입니다. 다만 이는 조사자료의 분석 문구에 근거한 판단이므로, 반드시 매각물건명세서를 통해 임차권 포기 내용을 직접 확인하세요.",
       missingEvidence: ["매각물건명세서상 임차권 포기 내용 확인"],
-      requiresRag: true,
+      requiresRag: false,
     };
   }
 
