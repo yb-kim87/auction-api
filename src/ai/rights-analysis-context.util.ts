@@ -8,6 +8,7 @@ export type RightsAnalysisFacts = {
   baselineCandidate: BaselineCandidate | null;
   claimAmounts: number[];
   hasCreditorWaiver: boolean;
+  hasAcquisitionConditionChangeSignal: boolean;
   preBaselineTenantDates: string[];
   nonPriorTenantDates: string[];
   allKnownTenantDatesOnOrAfterBaseline: boolean;
@@ -115,6 +116,18 @@ export function extractRightsAnalysisFacts(input: {
       combined,
     );
 
+  // 탱크옥션 임차인 현황의 "대항력: 인수조건변경" 표기는 HUG·LH 등
+  // 보증기관이 임차권을 승계하며 대항력 판단 조건이 바뀌었다는 뜻으로,
+  // 잔존채권을 포기한 경우가 실무상 많다(2026-07-29 대항력/분석 필드
+  // 복구로 이 문구를 처음 수집하게 됨). 다만 "포기" 문구처럼 확정적
+  // 근거는 아니고 일부 배당만 받는 경우도 있어(순위배당이 전액 배당을
+  // 뜻하지 않음), 위 hasCreditorWaiver처럼 자동으로 인수금액을 0원
+  // 확정하지는 않는다 — 참고 문구로만 노출해 사용자가 직접 확인하도록
+  // 안내한다(2026-07-30, 사용자 요청).
+  const hasAcquisitionConditionChangeSignal = /대항력\s*[:：]\s*인수조건변경/.test(
+    combined,
+  );
+
   const preBaselineTenantDates: string[] = [];
   const nonPriorTenantDates: string[] = [];
   const tenantMoveInDates: string[] = [];
@@ -211,6 +224,11 @@ export function extractRightsAnalysisFacts(input: {
       "잔존 임차보증금반환채권 포기 문구가 있으므로 해당 보증금 전액을 인수금액으로 계산 금지",
     );
   }
+  if (hasAcquisitionConditionChangeSignal) {
+    warnings.push(
+      "탱크옥션 분석상 대항력 '인수조건변경' 신호가 있음 — HUG·LH 등 보증기관의 잔존채권 포기 여부를 등기·배당표로 직접 확인 필요(자동으로 위험 등급을 낮추지 않음)",
+    );
+  }
   if (investigatedTenantStatus === "none") {
     warnings.push(
       "법원 조사자료에 '조사된 임차내역 없음'이 명시되어 임차인 대항력과 임차보증금 인수권리는 없음으로 판단",
@@ -225,6 +243,7 @@ export function extractRightsAnalysisFacts(input: {
     baselineCandidate,
     claimAmounts: [...new Set(claimAmounts)],
     hasCreditorWaiver,
+    hasAcquisitionConditionChangeSignal,
     preBaselineTenantDates: [...new Set(preBaselineTenantDates)],
     nonPriorTenantDates: [...new Set(nonPriorTenantDates)],
     allKnownTenantDatesOnOrAfterBaseline,
@@ -401,6 +420,7 @@ export function formatRightsAnalysisFacts(facts: RightsAnalysisFacts): string {
 - 명시된 말소기준등기 후보: ${baseline}
 - 청구·채권 관련 금액: ${claims}
 - 잔존 임차보증금반환채권 포기 문구: ${facts.hasCreditorWaiver ? "있음" : "없음"}
+- 탱크옥션 대항력 '인수조건변경' 신호(보증기관 승계 가능성, 확정 근거 아님): ${facts.hasAcquisitionConditionChangeSignal ? "있음 — 등기·배당표로 직접 확인 필요" : "없음"}
 - 말소기준일보다 빠른 전입일: ${facts.preBaselineTenantDates.join(", ") || "없음 또는 비교 불가"}
 - 말소기준일과 같거나 늦은 전입일: ${facts.nonPriorTenantDates.join(", ") || "없음 또는 비교 불가"}
 - 적용 중인 대항력 발생 규칙: ${facts.tenantEffectiveTiming === "next_day" ? "요건 충족 다음 날 0시" : "요건 충족 즉시"}
