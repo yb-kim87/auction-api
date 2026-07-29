@@ -138,6 +138,24 @@ assert.equal(ownerOccupiedCase.opposability, "none");
 assert.equal(ownerOccupiedCase.assumptionAmount, 0);
 assert.equal(ownerOccupiedCase.requiresRag, false);
 
+const ownerOccupiedWithNoTenantPhrase = buildDeterministicRightsDecision(
+  extractRightsAnalysisFacts({
+    buildingRegistry:
+      "을(2) 2014-12-01 근저당권설정 한국자산관리공사 299,800,000 (말소기준등기)\n" +
+      "갑(17) 2025-05-26 가압류 경기신용보증재단 43,700,000\n" +
+      "갑(20) 2026-01-21 가압류 케이비캐피탈(주) 78,938,565",
+    tenantInfo: "임차정보없음",
+    tenantDetail:
+      "임차인이 없으며 전부를 소유자가 점유 사용합니다.\n\n" +
+      "[기타사항]\n전입세대확인서 등에 의하면 채무자 겸 소유자를 세대주로 하는 세대가 전입되어 있음.",
+  }),
+);
+assert.equal(ownerOccupiedWithNoTenantPhrase.code, "owner_occupied");
+assert.equal(ownerOccupiedWithNoTenantPhrase.final, true);
+assert.equal(ownerOccupiedWithNoTenantPhrase.opposability, "none");
+assert.equal(ownerOccupiedWithNoTenantPhrase.assumptionAmount, 0);
+assert.equal(ownerOccupiedWithNoTenantPhrase.requiresRag, false);
+
 const noTenantCase = buildDeterministicRightsDecision(
   extractRightsAnalysisFacts({
     buildingRegistry: baselineRegistry,

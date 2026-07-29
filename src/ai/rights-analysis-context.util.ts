@@ -143,7 +143,9 @@ export function extractRightsAnalysisFacts(input: {
     );
 
   const explicitlyNoInvestigatedTenant =
-    /조사된\s*임차\s*내역(?:이)?\s*(?:없음|없습니다)/.test(tenantDetail);
+    /조사된\s*임차\s*내역(?:이)?\s*(?:없음|없습니다)|임차\s*정보\s*없음|임차인(?:이|은|는)?\s*(?:없|존재하지)/.test(
+      `${tenantInfo}\n${tenantDetail}`,
+    );
   const conflictingTenantEvidence =
     /(?:전입|확정|배당)\s*[:：]\s*\d{4}-\d{2}-\d{2}|보증금\s*[/：:]|임차인\s*[:：]\s*[^\s[\]{},]+/.test(
       `${tenantInfo}\n${tenantDetail}`,
@@ -161,7 +163,10 @@ export function extractRightsAnalysisFacts(input: {
     );
   const tenantEvidence =
     conflictingTenantEvidence ||
-    /임차인|임대차관계|주택임차권|상가임차권/.test(`${tenantInfo}\n${tenantDetail}`);
+    (!explicitlyNoInvestigatedTenant &&
+      /임차인|임대차관계|주택임차권|상가임차권/.test(
+        `${tenantInfo}\n${tenantDetail}`,
+      ));
   const occupancyEvidence = ownerOccupied && !tenantEvidence
     ? "owner"
     : investigatedTenantStatus === "none"
