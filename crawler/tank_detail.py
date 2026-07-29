@@ -1116,11 +1116,45 @@ def _extract_leas_items_and_note(detail: dict) -> tuple[list, str, bool]:
     return items, misc, ls_no_flag
 
 
+def _leas_dstb_id(item: dict) -> str:
+    """leasStatusOverlays와 매칭하기 위한 키. overlay는 dstbId="leas-{idx}"
+    형태로 원본 leas row의 idx를 참조한다(실측, 2026-07-29)."""
+    if not isinstance(item, dict):
+        return ""
+    raw = item.get("rawRow")
+    idx = (raw or {}).get("idx") if isinstance(raw, dict) else None
+    if idx is None:
+        idx = item.get("idx")
+    return f"leas-{idx}" if idx not in (None, "") else ""
+
+
+def _build_dstb_leas_overlay_map(detail: dict | None) -> dict[str, dict]:
+    """대항력(opwr)/분석(analyLines)은 leasInfo.items[] 안에 없고 별도
+    dstbInfo.dstbLeas.leasStatusOverlays[]에 dstbId로 들어있다 — 탱크옥션
+    화면에 보이는 "대항력"/"분석" 컬럼의 실제 출처(실측, 2026-07-29,
+    2025타경8596 사례에서 발견). 기존 파서가 item 내부에서만 dstbOpwr/
+    analy 키를 찾아 늘 빈 값이었던 버그의 원인."""
+    if not isinstance(detail, dict):
+        return {}
+    dstb_leas = (detail.get("dstbInfo") or {}).get("dstbLeas")
+    if not isinstance(dstb_leas, dict):
+        return {}
+    overlays = dstb_leas.get("leasStatusOverlays")
+    if not isinstance(overlays, list):
+        return {}
+    result: dict[str, dict] = {}
+    for entry in overlays:
+        if isinstance(entry, dict) and entry.get("dstbId"):
+            result[str(entry["dstbId"])] = entry
+    return result
+
+
 def _lease_item_to_row(
     item: dict,
     detail: dict | None,
     seq: int,
     ls_no_flag: bool,
+    overlay_map: dict[str, dict] | None = None,
 ) -> dict | None:
     if not isinstance(item, dict):
         return None
@@ -1171,22 +1205,24 @@ def _lease_item_to_row(
         dates = "\n".join(parts)
 
     occupancy_no = str(_pick_leas_field(item, "lsNo", "ls_no") or seq) if ls_no_flag else str(seq)
-    opposability = _strip_html(
-        _pick_leas_field(item, "dstbOpwr", "dstb_opwr", "opwr", "opposability")
-    )
+
+    overlay = (overlay_map or {}).get(_leas_dstb_id(item))
+    if overlay:
+        opposability = _strip_html(str(overlay.get("opwr") or ""))
+        analy_lines = overlay.get("analyLines")
+        analysis = (
+            [str(v).strip() for v in analy_lines if str(v).strip()]
+            if isinstance(analy_lines, list)
+            else []
+        )
+    else:
+        opposability = _strip_html(
+            _pick_leas_field(item, "dstbOpwr", "dstb_opwr", "opwr", "opposability")
+        )
+        analysis = _format_lease_analysis_from_item(item, detail)
     other = _strip_html(_pick_leas_field(item, "note", "rmk", "etc"))
 
-    if not any(
-        (
-            tenant,
-            occupancy,
-            deposit,
-            dates,
-            opposability,
-            other,
-            _format_lease_analysis_from_item(item, detail),
-        )
-    ):
+    if not any((tenant, occupancy, deposit, dates, opposability, other, analysis)):
         return None
 
     return {
@@ -1196,7 +1232,7 @@ def _lease_item_to_row(
         "dates": dates,
         "depositRent": deposit,
         "opposability": opposability,
-        "analysis": _format_lease_analysis_from_item(item, detail),
+        "analysis": analysis,
         "other": other,
         "sectionHeader": False,
     }
@@ -1206,16 +1242,17 @@ def _parse_lease_status_rows_from_detail(detail: dict | None) -> tuple[list[dict
     if not isinstance(detail, dict):
         return [], ""
     items, misc, ls_no_flag = _extract_leas_items_and_note(detail)
+    overlay_map = _build_dstb_leas_overlay_map(detail)
     rows: list[dict] = []
     seq = 0
     for item in items:
         if str(item.get("ownOcpyFlag") or "0").strip().lower() in ("1", "true", "y"):
-            header = _lease_item_to_row(item, detail, seq, ls_no_flag)
+            header = _lease_item_to_row(item, detail, seq, ls_no_flag, overlay_map)
             if header:
                 rows.append(header)
             continue
         seq += 1
-        row = _lease_item_to_row(item, detail, seq, ls_no_flag)
+        row = _lease_item_to_row(item, detail, seq, ls_no_flag, overlay_map)
         if row:
             rows.append(row)
     return rows, misc
