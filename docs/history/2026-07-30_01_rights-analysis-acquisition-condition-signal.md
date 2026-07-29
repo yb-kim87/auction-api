@@ -38,3 +38,27 @@
 
 ## 검증
 `npx tsc --noEmit -p .` 통과.
+
+## 追記 (2026-07-30) — 정책 변경: 안전한 물건으로 확정 판정
+
+사용자가 실제 화면에서 재분석 결과를 보고 정책을 재조정: "인수조건
+변경이고 실제 임차인 채권을 보증공사가 가져간 거라 안전한 거니
+그냥 안전한 물건으로 하고 대신 문구만 써줘 — 매각물건명세서를
+통해서 임차권 포기내용을 제대로 확인하라고" — 참고 문구로만 두지
+말고, 확정 판정(안전한 물건)으로 바꾸되 항상 매각물건명세서 확인
+문구를 달아달라는 요청.
+
+`buildDeterministicRightsDecision`에 `senior_tenant_acquisition_condition_change`
+분기를 신설(기존 `senior_tenant_waiver`와 동일한 필드 구성:
+`final: true`, `opposability: "possible"`, `assumptionStatus: "none"`,
+`assumptionAmount: 0`). `decision.final === true`이면
+`buildDeterministicResult()`가 LLM을 거치지 않고 `risks: []`로
+확정 결과를 바로 만들기 때문에, 프론트(`rights-presentation.ts`)의
+배지 판정에서 `dangerous` 조건(assumption.status==="possible" 또는
+risks 배열에 위험 키워드)이 걸리지 않아 **"권리위험 높음"이 아니라
+"확인 후 입찰 검토"로 표시**된다. `checklist`에 이미 "매각물건명세서
+확인하기"가 포함돼 있어 사용자가 요청한 확인 문구 요건도 별도
+프론트 수정 없이 충족됨.
+
+### 검증
+`npx tsc --noEmit -p .` 통과. Railway 배포 후 API 정상 확인.
