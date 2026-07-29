@@ -107,6 +107,29 @@ async def crawl_one_item_full_httpx(client: httpx.AsyncClient, tid: str) -> dict
     return item
 
 
+async def crawl_one_item_detail_only_httpx(client: httpx.AsyncClient, tid: str) -> dict:
+    """네이버 시세 조회를 건너뛰고 탱크옥션 상세(임차인/등기 등)만 갱신할 때
+    쓰는 경량 버전. auction-builder.ts의 병합 로직이 preserveExistingIfEmpty로
+    동작해 네이버 관련 필드가 비어 있으면 기존 값을 그대로 유지하므로,
+    임차인 정보만 재크롤링하는 백필에서 네이버 API 부하 없이 안전하게
+    쓸 수 있다(2026-07-29 대항력/분석 필드 버그 수정 백필용으로 신설)."""
+    detail = await fetch_detail(client, tid)
+    env_payload = await fetch_env_view_data(client, tid)
+
+    env_bldg_payload = None
+    base = (detail or {}).get("baseInfo") or {}
+    land_items = ((detail or {}).get("landInfo") or {}).get("items") or []
+    title_pk = base.get("apiBldgTitle_Pk")
+    recap_pk = base.get("apiBldgRecap_Pk")
+    pnu = land_items[0].get("pnu") if land_items else None
+    if title_pk and recap_pk and pnu:
+        env_bldg_payload = await fetch_env_bldg(client, tid, title_pk, recap_pk, pnu)
+
+    item = parse_detail_page(detail, env_payload, env_bldg_payload)
+    check_stop(None)
+    return item
+
+
 async def run_full_httpx(
     tids: list[str], *, save_to_db: bool = False
 ) -> list[dict]:
