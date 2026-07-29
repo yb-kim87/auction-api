@@ -1116,24 +1116,33 @@ def _extract_leas_items_and_note(detail: dict) -> tuple[list, str, bool]:
     return items, misc, ls_no_flag
 
 
-def _leas_dstb_id(item: dict) -> str:
-    """leasStatusOverlays와 매칭하기 위한 키. overlay는 dstbId="leas-{idx}"
-    형태로 원본 leas row의 idx를 참조한다(실측, 2026-07-29)."""
+def _leas_item_idx(item: dict) -> int | None:
     if not isinstance(item, dict):
-        return ""
+        return None
     raw = item.get("rawRow")
     idx = (raw or {}).get("idx") if isinstance(raw, dict) else None
     if idx is None:
         idx = item.get("idx")
-    return f"leas-{idx}" if idx not in (None, "") else ""
+    try:
+        return int(idx) if idx not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
 
 
-def _build_dstb_leas_overlay_map(detail: dict | None) -> dict[str, dict]:
+def _build_dstb_leas_overlay_map(detail: dict | None) -> dict[int, dict]:
     """대항력(opwr)/분석(analyLines)은 leasInfo.items[] 안에 없고 별도
-    dstbInfo.dstbLeas.leasStatusOverlays[]에 dstbId로 들어있다 — 탱크옥션
-    화면에 보이는 "대항력"/"분석" 컬럼의 실제 출처(실측, 2026-07-29,
-    2025타경8596 사례에서 발견). 기존 파서가 item 내부에서만 dstbOpwr/
-    analy 키를 찾아 늘 빈 값이었던 버그의 원인."""
+    dstbInfo.dstbLeas.leasStatusOverlays[]에 들어있다 — 탱크옥션 화면에
+    보이는 "대항력"/"분석" 컬럼의 실제 출처(실측, 2026-07-29, 2025타경8596
+    사례에서 발견). 기존 파서가 item 내부에서만 dstbOpwr/analy 키를 찾아
+    늘 빈 값이었던 버그의 원인.
+
+    매칭 키는 dstbId 문자열이 아니라 sourceRef(s).idx로 잡는다 — dstbId는
+    "leas-2685675"처럼 단순한 경우도 있지만, 임차권 양도 등으로 여러
+    leas row가 얽히면 "leas-2688769:leas-2685675"처럼 콜론으로 합쳐진
+    복합 키가 되어 단순 "leas-{idx}" 문자열 조합으로는 못 찾는 사례가
+    실측 확인됨(2025타경8596의 승계 임차인 사례). sourceRefs[].idx는
+    이 경우에도 각 overlay가 어떤 leas row에 대한 것인지 안정적으로
+    가리킨다."""
     if not isinstance(detail, dict):
         return {}
     dstb_leas = (detail.get("dstbInfo") or {}).get("dstbLeas")
@@ -1142,10 +1151,22 @@ def _build_dstb_leas_overlay_map(detail: dict | None) -> dict[str, dict]:
     overlays = dstb_leas.get("leasStatusOverlays")
     if not isinstance(overlays, list):
         return {}
-    result: dict[str, dict] = {}
+    result: dict[int, dict] = {}
     for entry in overlays:
-        if isinstance(entry, dict) and entry.get("dstbId"):
-            result[str(entry["dstbId"])] = entry
+        if not isinstance(entry, dict):
+            continue
+        refs = entry.get("sourceRefs")
+        if not isinstance(refs, list) or not refs:
+            single = entry.get("sourceRef")
+            refs = [single] if isinstance(single, dict) else []
+        for ref in refs:
+            if not isinstance(ref, dict) or ref.get("type") != "leas":
+                continue
+            try:
+                idx = int(ref.get("idx"))
+            except (TypeError, ValueError):
+                continue
+            result.setdefault(idx, entry)
     return result
 
 
@@ -1154,7 +1175,7 @@ def _lease_item_to_row(
     detail: dict | None,
     seq: int,
     ls_no_flag: bool,
-    overlay_map: dict[str, dict] | None = None,
+    overlay_map: dict[int, dict] | None = None,
 ) -> dict | None:
     if not isinstance(item, dict):
         return None
@@ -1206,7 +1227,8 @@ def _lease_item_to_row(
 
     occupancy_no = str(_pick_leas_field(item, "lsNo", "ls_no") or seq) if ls_no_flag else str(seq)
 
-    overlay = (overlay_map or {}).get(_leas_dstb_id(item))
+    idx = _leas_item_idx(item)
+    overlay = (overlay_map or {}).get(idx) if idx is not None else None
     if overlay:
         opposability = _strip_html(str(overlay.get("opwr") or ""))
         analy_lines = overlay.get("analyLines")
