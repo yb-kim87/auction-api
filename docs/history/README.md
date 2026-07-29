@@ -25,6 +25,7 @@
 - [2026-07-29_01 관리자 권리분석 코드 규칙](./2026-07-29_01_rights-rule-admin.md)
 - [2026-07-29_02 권리분석 확정 판정 우선 파이프라인](./2026-07-29_02_deterministic-rights-pipeline.md)
 - [2026-07-29_03 물건 상세 권리분석 UX 및 탭 상태 유지](./2026-07-29_03_auction-detail-rights-ux.md)
+- [2026-07-29_04 임차인 대항력/분석 필드 항상 비어있던 버그 수정](./2026-07-29_04_tenant-opposability-analysis-fix.md)
 
 ## 앞으로의 작업 방식
 
