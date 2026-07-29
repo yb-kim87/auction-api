@@ -117,7 +117,7 @@ export function extractRightsAnalysisFacts(input: {
       combined,
     );
 
-  // 탱크옥션 임차인 현황의 "대항력: 인수조건변경" 표기는 HUG·LH 등
+  // 임차인 현황 조사자료의 "대항력: 인수조건변경" 표기는 HUG·LH 등
   // 보증기관이 임차권을 승계하며 잔존채권을 포기한 경우로 보고, 안전한
   // 물건으로 판정한다(사용자 결정, 2026-07-30, 2025타경8596 사례로
   // 정책 확정 — 처음엔 참고 문구로만 남기고 위험 등급은 그대로 두려
@@ -227,7 +227,7 @@ export function extractRightsAnalysisFacts(input: {
   }
   if (hasAcquisitionConditionChangeSignal) {
     warnings.push(
-      "탱크옥션 분석상 대항력 '인수조건변경' 신호가 있어 보증기관(HUG·LH 등) 승계로 안전한 물건으로 판단하되, 매각물건명세서로 임차권 포기 내용을 반드시 확인",
+      "임차인 현황 조사자료상 대항력 '인수조건변경' 신호가 있어 보증기관(HUG·LH 등) 승계로 안전한 물건으로 판단하되, 매각물건명세서로 임차권 포기 내용을 반드시 확인",
     );
   }
   if (investigatedTenantStatus === "none") {
@@ -389,8 +389,8 @@ export function buildDeterministicRightsDecision(
       opposability: "possible",
       assumptionStatus: "none",
       assumptionAmount: 0,
-      summary: `말소기준권리일(${baselineDate})보다 빠른 전입일(${priorDates})이 있으나, 탱크옥션 분석상 대항력 '인수조건변경'(보증기관 승계) 신호가 확인되어 안전한 물건으로 판단됩니다.`,
-      reason: "보증기관(HUG·LH 등)이 임차권을 승계하며 잔존 임차보증금반환채권을 포기한 것으로 보입니다. 다만 이는 탱크옥션 분석 문구에 근거한 판단이므로, 반드시 매각물건명세서를 통해 임차권 포기 내용을 직접 확인하세요.",
+      summary: `말소기준권리일(${baselineDate})보다 빠른 전입일(${priorDates})이 있으나, 임차인 현황 조사자료상 대항력 '인수조건변경'(보증기관 승계) 신호가 확인되어 안전한 물건으로 판단됩니다.`,
+      reason: "보증기관(HUG·LH 등)이 임차권을 승계하며 잔존 임차보증금반환채권을 포기한 것으로 보입니다. 다만 이는 조사자료의 분석 문구에 근거한 판단이므로, 반드시 매각물건명세서를 통해 임차권 포기 내용을 직접 확인하세요.",
       missingEvidence: ["매각물건명세서상 임차권 포기 내용 확인"],
       requiresRag: true,
     };
@@ -443,7 +443,7 @@ export function formatRightsAnalysisFacts(facts: RightsAnalysisFacts): string {
 - 명시된 말소기준등기 후보: ${baseline}
 - 청구·채권 관련 금액: ${claims}
 - 잔존 임차보증금반환채권 포기 문구: ${facts.hasCreditorWaiver ? "있음" : "없음"}
-- 탱크옥션 대항력 '인수조건변경' 신호(보증기관 승계로 안전 판정, 매각물건명세서 확인 필요): ${facts.hasAcquisitionConditionChangeSignal ? "있음" : "없음"}
+- 임차인 현황 조사자료상 대항력 '인수조건변경' 신호(보증기관 승계로 안전 판정, 매각물건명세서 확인 필요): ${facts.hasAcquisitionConditionChangeSignal ? "있음" : "없음"}
 - 말소기준일보다 빠른 전입일: ${facts.preBaselineTenantDates.join(", ") || "없음 또는 비교 불가"}
 - 말소기준일과 같거나 늦은 전입일: ${facts.nonPriorTenantDates.join(", ") || "없음 또는 비교 불가"}
 - 적용 중인 대항력 발생 규칙: ${facts.tenantEffectiveTiming === "next_day" ? "요건 충족 다음 날 0시" : "요건 충족 즉시"}
