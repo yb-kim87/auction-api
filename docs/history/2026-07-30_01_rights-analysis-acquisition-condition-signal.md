@@ -74,3 +74,15 @@ risks 배열에 위험 키워드)이 걸리지 않아 **"권리위험 높음"이
 크롤링 출처(탱크옥션)가 드러나면 안 된다. 코드 주석이나 관리자
 전용 크롤러 관리 화면(로그인 상태 등 운영 목적)은 내부용이라
 대상이 아니다.
+
+## 追記 (2026-07-30) — 인수조건변경 케이스는 AI 호출 자체를 생략
+
+사용자 지적: "인수조건변경 물건은 굳이 AI 안돌려도 될꺼같아" + "그냥
+자체 로직으로 대답을 주자". 확인해보니 `senior_tenant_acquisition_
+condition_change` 분기가 `final: true`인데도 `requiresRag: true`로
+남아 있어, 매번 OpenAI를 호출하고 있었다 — 어차피 호출 결과는
+`validateStructuredRights()`가 서버 판정값으로 덮어써서 최종
+응답에 거의 반영되지 않는데도 비용·시간만 쓰던 셈. `requiresRag:
+false`로 변경해 `!decision.requiresRag` 경로(이미 존재하던
+`buildDeterministicResult()` 직행 경로)를 타도록 수정 — AI 호출
+완전히 생략, 응답 속도/비용 개선.
