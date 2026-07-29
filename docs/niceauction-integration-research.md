@@ -331,6 +331,25 @@ undergroundElChargerCnt
 - [ ] 실제 전환(탱크옥션 → 나이스옥션) 착수 여부는 사용자 승인 후
       진행
 
+## 追記 (2026-07-30) — 탱크옥션이 나이스옥션에 데이터를 공급하는가?
+
+사용자 질문으로 재확인: **아니다, 공급 관계가 아니라 각자 독립적으로
+크롤링·축적하는 경쟁 관계**로 판단된다.
+
+- 나이스옥션 응답 필드명에 `metadata.crawlerSagunAuctionDtLst`,
+  `isCrawlerObjItemLst`처럼 "crawler"가 그대로 노출돼 있어, 자체
+  크롤러로 수집하고 있음을 시사.
+- `sgis`(통계청 지역통계)/`kapt`(K-apt 단지정보)/`aptTradePriceLst`
+  (실거래가 구조화) 등 탱크옥션에 없는 완전히 별도 소스가 통합돼
+  있음 — 탱크에서 받은 데이터라면 있을 이유가 없음.
+- PDF/미디어 저장 방식(탱크: `tankauction.com/FILE/...` 자체 도메인,
+  나이스: 자체 `mediaId` 미디어 시스템)과 필드 네이밍 체계
+  (탱크: `dstbOpwr`/`leasInfo`, 나이스: `myungseDesc`/`sagunId`)가
+  완전히 달라 공통 코드베이스/공급 관계로 보기 어려움.
+
+상세: [docs/history/2026-07-30_02_courtauction-official-doc-links.md](./history/2026-07-30_02_courtauction-official-doc-links.md)
+§5 참고.
+
 ## 7. 조사 중 확보한 로컬 산출물 (참고용, git 미포함)
 
 `crawler/` 디렉토리에 조사 과정에서 생성된 임시 파일들(git에는

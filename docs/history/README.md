@@ -27,6 +27,7 @@
 - [2026-07-29_03 물건 상세 권리분석 UX 및 탭 상태 유지](./2026-07-29_03_auction-detail-rights-ux.md)
 - [2026-07-29_04 임차인 대항력/분석 필드 항상 비어있던 버그 수정](./2026-07-29_04_tenant-opposability-analysis-fix.md)
 - [2026-07-30_01 권리분석에 탱크옥션 대항력 '인수조건변경' 참고 신호 추가](./2026-07-30_01_rights-analysis-acquisition-condition-signal.md)
+- [2026-07-30_02 대법원 법원경매정보 매각물건명세서 등 원본 문서 링크 확보 조사](./2026-07-30_02_courtauction-official-doc-links.md)
 
 ## 앞으로의 작업 방식
 
