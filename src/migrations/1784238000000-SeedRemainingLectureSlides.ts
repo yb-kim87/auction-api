@@ -16,7 +16,7 @@ export class SeedRemainingLectureSlides1784238000000 implements MigrationInterfa
       { id: "webinar-2607_slide-06", sortOrder: 5, label: "06. 돈많은 사람만", content: { prefix: "그거", emphasisText: "돈많은", suffix: "사람만 하는거 아니야?" } },
       { id: "webinar-2607_slide-07", sortOrder: 6, label: "07. 어렵고 위험", content: { prefix: "경매 그거", emphasisText: "어렵고 위험", suffix: "한거 아니야?" } },
       { id: "webinar-2607_slide-08", sortOrder: 7, label: "08. 오늘 전부 해결", content: { normalText: "오늘 전부", emphasisText: "해결해 드리겠습니다." } },
-      { id: "webinar-2607_slide-09", sortOrder: 8, label: "09. 안녕하세요 경매코치입니다", content: { greeting: "안녕하세요 !", normalText: "경매 코치", emphasisText: "입니다" } },
+      { id: "webinar-2607_slide-09", sortOrder: 8, label: "09. 안녕하세요 코치픽입니다", content: { greeting: "안녕하세요 !", normalText: "코치픽", emphasisText: "입니다" } },
       { id: "webinar-2607_slide-10", sortOrder: 9, label: "10. 저는 누구일까요 (유튜브)", content: { title: "저는 누구일까요?" } },
       { id: "webinar-2607_slide-11", sortOrder: 10, label: "11. 2015년~2023년", content: { line1: "2015년 부동산 투자", tilde: "~", line2: "2023년 경매 시작" } },
       { id: "webinar-2607_slide-12", sortOrder: 11, label: "12. 2015년 부동산 시작", content: { headerTitle: "경매를 찾아서", yearBig: "2015년", yearBig2: "부동산 시작", line1: "시가: 2.3억", line2: "전세: 1.8억", highlight: "투자금: 5천" } },

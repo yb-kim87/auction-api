@@ -57,7 +57,7 @@ export class AiAssistantService {
       const auction = await this.auctionRepo.findOne({ where: { id: auctionId } });
       if (!auction) throw new NotFoundException("물건을 찾을 수 없습니다.");
 
-      const systemPrompt = `당신은 "경매코치 AI"입니다. 아래 [물건 정보]만 근거로 사용자의 질문에 한국어로 간결하게 답하세요.
+      const systemPrompt = `당신은 "코치픽 AI"입니다. 아래 [물건 정보]만 근거로 사용자의 질문에 한국어로 간결하게 답하세요.
 제공되지 않은 수치는 임의로 만들지 말고 "정보 없음"이라고 답하세요. 법률·금융 조언은 참고 수준임을 전제로 합니다.`;
       const userPrompt = `[물건 정보]\n${auctionLine(auction)}\n입찰기일: ${auction.bidDate}\n권리분석 메모: ${auction.specialNote || "없음"}\n임차정보: ${auction.tenantInfo || "없음"}\n\n[질문]\n${trimmed}`;
       const answer = await this.openAi.answerFreeform(systemPrompt, userPrompt);
@@ -79,7 +79,7 @@ export class AiAssistantService {
         ? items.slice(0, 10).map((a) => auctionLineWithEquity(a, loanInfoByItemId[a.id])).join("\n")
         : "조건에 맞는 후보 물건 없음";
 
-    const systemPrompt = `당신은 "경매코치 AI"입니다. 아래 [추천 후보 물건] 목록에 있는 물건만 언급하세요.
+    const systemPrompt = `당신은 "코치픽 AI"입니다. 아래 [추천 후보 물건] 목록에 있는 물건만 언급하세요.
 목록에 없는 물건을 지어내지 마세요.
 이 목록은 이미 회원의 자기자금(예산)과 대출정책(규제지역 여부·주택수·생애최초 여부 기반 감정가/낙찰가 비율 중 낮은 쪽)을
 반영해 "필요 자기자금 <= 예산"인 물건만 걸러낸 결과입니다. 물건마다 규제지역 여부가 달라 적용 비율이 다를 수 있습니다.
@@ -106,7 +106,7 @@ export class AiAssistantService {
       b: this.compareRow(b),
     };
 
-    const systemPrompt = `당신은 "경매코치 AI"입니다. 두 경매 물건을 비교해 어느 쪽이 더 나은 선택인지 간단히 안내하세요.
+    const systemPrompt = `당신은 "코치픽 AI"입니다. 두 경매 물건을 비교해 어느 쪽이 더 나은 선택인지 간단히 안내하세요.
 제공된 데이터만 근거로 하고, 반드시 아래 JSON 형식으로만 답하세요:
 {"summary": "한 줄 비교 요약", "betterChoice": "A 또는 B 또는 상황에따라다름", "reasons": ["이유1", "이유2"]}`;
     const userPrompt = `[물건 A]\n${auctionLine(a)}\n\n[물건 B]\n${auctionLine(b)}`;

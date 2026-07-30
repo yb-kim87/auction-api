@@ -68,11 +68,11 @@ export class OpenAiService {
   }> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException(
-        "경매코치 AI를 사용할 수 없습니다. OPENAI_API_KEY를 확인해 주세요.",
+        "코치픽 AI를 사용할 수 없습니다. OPENAI_API_KEY를 확인해 주세요.",
       );
     }
 
-    const systemPrompt = `당신은 경매 투자 플랫폼 "경매코치"의 내부 지식 편집자입니다.
+    const systemPrompt = `당신은 경매 투자 플랫폼 "코치픽"의 내부 지식 편집자입니다.
 네이버 카페 게시글을 경매 분석 AI(RAG)가 참고할 **내부 경매지식**으로 정리합니다.
 
 규칙:
@@ -119,7 +119,7 @@ ${input.rawContent.slice(0, 6000)}`;
 
     if (!response.ok) {
       throw new InternalServerErrorException(
-        `경매코치 AI 정리 요청에 실패했습니다. (${response.status})`,
+        `코치픽 AI 정리 요청에 실패했습니다. (${response.status})`,
       );
     }
 
@@ -128,7 +128,7 @@ ${input.rawContent.slice(0, 6000)}`;
     };
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
-      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+      throw new InternalServerErrorException("코치픽 AI 응답이 비어 있습니다.");
     }
 
     const parsed = JSON.parse(content) as Record<string, unknown>;
@@ -154,7 +154,7 @@ ${input.rawContent.slice(0, 6000)}`;
   }): Promise<{ title: string; tags: string; content: string }> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException(
-        "경매코치 AI를 사용할 수 없습니다. OPENAI_API_KEY를 확인해 주세요.",
+        "코치픽 AI를 사용할 수 없습니다. OPENAI_API_KEY를 확인해 주세요.",
       );
     }
 
@@ -162,7 +162,7 @@ ${input.rawContent.slice(0, 6000)}`;
       return this.structureRightsKnowledgeInput(input.rawText);
     }
 
-    const systemPrompt = `당신은 경매 투자 플랫폼 "경매코치"의 내부 지식 편집자입니다.
+    const systemPrompt = `당신은 경매 투자 플랫폼 "코치픽"의 내부 지식 편집자입니다.
 관리자가 입력한 메모를 경매 분석 AI(RAG)가 참고할 **내부 경매지식** 항목으로 다듬습니다.
 
 규칙:
@@ -203,7 +203,7 @@ ${input.rawText.slice(0, 6000)}`;
 
     if (!response.ok) {
       throw new InternalServerErrorException(
-        `경매코치 AI 정리 요청에 실패했습니다. (${response.status})`,
+        `코치픽 AI 정리 요청에 실패했습니다. (${response.status})`,
       );
     }
 
@@ -212,7 +212,7 @@ ${input.rawText.slice(0, 6000)}`;
     };
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
-      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+      throw new InternalServerErrorException("코치픽 AI 응답이 비어 있습니다.");
     }
 
     const parsed = JSON.parse(content) as Record<string, unknown>;
@@ -226,7 +226,7 @@ ${input.rawText.slice(0, 6000)}`;
   private async structureRightsKnowledgeInput(
     rawText: string,
   ): Promise<{ title: string; tags: string; content: string }> {
-    const systemPrompt = `당신은 한국 부동산 경매 서비스 "경매코치"의 권리분석 RAG 규칙 편집자입니다.
+    const systemPrompt = `당신은 한국 부동산 경매 서비스 "코치픽"의 권리분석 RAG 규칙 편집자입니다.
 관리자 메모를 AI가 물건별 권리분석에 정확히 적용할 수 있는 단일 주제의 판정 규칙으로 구조화하세요.
 
 작성 원칙:
@@ -275,7 +275,7 @@ JSON 형식으로만 응답:
 
     if (!response.ok) {
       throw new InternalServerErrorException(
-        `경매코치 AI 권리분석 규칙 정리에 실패했습니다. (${response.status})`,
+        `코치픽 AI 권리분석 규칙 정리에 실패했습니다. (${response.status})`,
       );
     }
 
@@ -284,7 +284,7 @@ JSON 형식으로만 응답:
     };
     const responseText = data.choices?.[0]?.message?.content?.trim();
     if (!responseText) {
-      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+      throw new InternalServerErrorException("코치픽 AI 응답이 비어 있습니다.");
     }
 
     const parsed = JSON.parse(responseText) as Record<string, unknown>;
@@ -342,11 +342,11 @@ JSON 형식으로만 응답:
   }): Promise<{ description: string }> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException(
-        "경매코치 AI를 사용할 수 없습니다. OPENAI_API_KEY를 확인해 주세요.",
+        "코치픽 AI를 사용할 수 없습니다. OPENAI_API_KEY를 확인해 주세요.",
       );
     }
 
-    const systemPrompt = `당신은 경매 투자 플랫폼 "경매코치"의 사용자 노출 문구 편집자입니다.
+    const systemPrompt = `당신은 경매 투자 플랫폼 "코치픽"의 사용자 노출 문구 편집자입니다.
 관리자가 입력한 초안을, 물건 상세페이지에 배지와 함께 보여줄 "전략 설명"
 문구로 다듬습니다.
 
@@ -386,7 +386,7 @@ ${input.rawText.slice(0, 2000)}`;
 
     if (!response.ok) {
       throw new InternalServerErrorException(
-        `경매코치 AI 정리 요청에 실패했습니다. (${response.status})`,
+        `코치픽 AI 정리 요청에 실패했습니다. (${response.status})`,
       );
     }
 
@@ -395,7 +395,7 @@ ${input.rawText.slice(0, 2000)}`;
     };
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
-      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+      throw new InternalServerErrorException("코치픽 AI 응답이 비어 있습니다.");
     }
 
     const parsed = JSON.parse(content) as Record<string, unknown>;
@@ -407,7 +407,7 @@ ${input.rawText.slice(0, 2000)}`;
   async answerFreeform(systemPrompt: string, userPrompt: string): Promise<string> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException(
-        "경매코치 AI를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+        "코치픽 AI를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
       );
     }
 
@@ -429,7 +429,7 @@ ${input.rawText.slice(0, 2000)}`;
 
     if (!response.ok) {
       throw new InternalServerErrorException(
-        `경매코치 AI 응답 요청에 실패했습니다. (${response.status})`,
+        `코치픽 AI 응답 요청에 실패했습니다. (${response.status})`,
       );
     }
 
@@ -438,7 +438,7 @@ ${input.rawText.slice(0, 2000)}`;
     };
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
-      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+      throw new InternalServerErrorException("코치픽 AI 응답이 비어 있습니다.");
     }
     return content;
   }
@@ -449,7 +449,7 @@ ${input.rawText.slice(0, 2000)}`;
   ): Promise<{ summary: string; betterChoice: string; reasons: string[] }> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException(
-        "경매코치 AI를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+        "코치픽 AI를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
       );
     }
 
@@ -472,7 +472,7 @@ ${input.rawText.slice(0, 2000)}`;
 
     if (!response.ok) {
       throw new InternalServerErrorException(
-        `경매코치 AI 비교 요청에 실패했습니다. (${response.status})`,
+        `코치픽 AI 비교 요청에 실패했습니다. (${response.status})`,
       );
     }
 
@@ -481,7 +481,7 @@ ${input.rawText.slice(0, 2000)}`;
     };
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
-      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+      throw new InternalServerErrorException("코치픽 AI 응답이 비어 있습니다.");
     }
     const parsed = JSON.parse(content) as Record<string, unknown>;
     return {
@@ -494,7 +494,7 @@ ${input.rawText.slice(0, 2000)}`;
   async analyzeAuction(systemPrompt: string, userPrompt: string): Promise<AnalysisLlmResult> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException(
-        "경매코치 AI를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+        "코치픽 AI를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
       );
     }
 
@@ -544,14 +544,14 @@ ${input.rawText.slice(0, 2000)}`;
     };
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
-      throw new InternalServerErrorException("경매코치 AI 응답이 비어 있습니다.");
+      throw new InternalServerErrorException("코치픽 AI 응답이 비어 있습니다.");
     }
 
     let parsed: Record<string, unknown>;
     try {
       parsed = JSON.parse(content) as Record<string, unknown>;
     } catch {
-      throw new InternalServerErrorException("경매코치 AI 응답 처리에 실패했습니다.");
+      throw new InternalServerErrorException("코치픽 AI 응답 처리에 실패했습니다.");
     }
 
     return {

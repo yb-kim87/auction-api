@@ -25,7 +25,7 @@ import {
 } from "./rights-analysis-context.util";
 import { RightsRuleService } from "./rights-rule.service";
 
-const ANALYSIS_ENGINE_LABEL = "경매코치 AI";
+const ANALYSIS_ENGINE_LABEL = "코치픽 AI";
 const RIGHTS_ENGINE_VERSION = 4;
 
 const SYSTEM_PROMPT = `당신은 ${ANALYSIS_ENGINE_LABEL} — 한국 법원 경매 부동산 분석 전문가입니다.
