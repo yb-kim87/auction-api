@@ -68,7 +68,7 @@ async function bootstrap() {
   await app.listen(port);
   const openAiReady = Boolean(process.env.OPENAI_API_KEY?.trim());
   console.log(`Auction API running on http://localhost:${port}`);
-  console.log(`경매코치 AI: ${openAiReady ? "사용 가능" : "설정 필요 (.env OPENAI_API_KEY)"}`);
+  console.log(`코치픽 AI: ${openAiReady ? "사용 가능" : "설정 필요 (.env OPENAI_API_KEY)"}`);
 }
 
 bootstrap();
