@@ -3,6 +3,8 @@ import { getAuthContext, requireSearchAccess } from "../common/auth-context";
 import { RecommendationEngineService } from "./recommendation-engine.service";
 import { parseMoneyToWon, type ProgressStatus } from "./investment-math.util";
 import { TagsService } from "../tags/tags.service";
+import { UserRole } from "../common/constants";
+import { stripStaffOnlyAuctionFields } from "../auctions/auction-staff-fields.util";
 
 const VALID_PROGRESS_STATUS = new Set(["all", "active", "ended"]);
 
@@ -63,8 +65,13 @@ export class RecommendationController {
       },
     });
 
+    const isStaff = ctx.role === UserRole.ADMIN || ctx.role === UserRole.CONSULTANT;
+    const items = isStaff
+      ? result.items
+      : result.items.map((item) => stripStaffOnlyAuctionFields(item));
+
     return {
-      items: result.items,
+      items,
       hasCriteria: result.criteria != null,
       loanRatio: result.loanRatio,
       loanPolicyLabel: result.loanPolicyLabel,

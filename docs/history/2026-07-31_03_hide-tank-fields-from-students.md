@@ -44,3 +44,27 @@
 
 ## 검증
 - 양쪽 저장소 `npx tsc --noEmit`, `npm run build` 통과.
+
+## 追記 (2026-07-31) — 재검증 후 누락 발견: GET /recommendations
+
+사용자가 "개발자모드 네트워크 탭으로 알아낼 요소가 더 없는지"
+재확인을 요청해 서브에이전트로 더 넓은 범위(STUDENT 권한이 호출 가능한
+전체 엔드포인트)를 재조사한 결과, **`GET /recommendations`(추천 물건
+목록, 관심물건 모드 포함)가 `stripStaffOnlyFields`를 거치지 않고
+`Auction` 엔티티를 그대로 응답에 실어보내는 것을 발견**했다
+(`recommendation-engine.service.ts`가 `AuctionsService.findApproved()`가
+아니라 `auctionRepo.find()`를 직접 호출하는 별도 경로였기 때문).
+
+- 필드 제거 로직을 `auctions.service.ts` 안의 private 메서드에서
+  `src/auctions/auction-staff-fields.util.ts`의 공용 함수
+  `stripStaffOnlyAuctionFields()`로 분리.
+- `recommendation.controller.ts`의 `GET /recommendations`도 동일하게
+  `ctx.role`이 ADMIN/CONSULTANT가 아니면 응답 items를 이 함수로
+  걸러서 반환하도록 수정.
+- 교훈: Auction 엔티티를 반환하는 경로가 여러 개(검색 목록, 추천 목록
+  등)일 수 있으므로, 앞으로 Auction을 새로 노출하는 엔드포인트를
+  추가할 때는 항상 `stripStaffOnlyAuctionFields`를 거치는지 확인해야
+  한다.
+- 재검증 결과 그 외(AI 분석/즐겨찾기/resale-match/lecture-materials
+  등)는 전부 admin 전용이거나 엔티티를 직접 노출하지 않아 문제없음을
+  확인.
