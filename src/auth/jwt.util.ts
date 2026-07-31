@@ -20,28 +20,33 @@ const REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30; // 30일
 export interface AccessTokenPayload {
   sub: string;
   role: UserRole;
+  /** 계정당 동시 로그인 1개 제한에 쓰는 세션 식별자(로그인 시 발급, 없으면 제한 미적용 대상). */
+  sid?: string;
 }
 
 export interface RefreshTokenPayload {
   sub: string;
   role: UserRole;
   type: "refresh";
+  sid?: string;
 }
 
 function jwtSecret(): string {
   return process.env.JWT_SECRET?.trim() || DEFAULT_SECRET;
 }
 
-export function signAccessToken(username: string, role: UserRole): string {
-  return jwt.sign({ sub: username, role }, jwtSecret(), {
+export function signAccessToken(username: string, role: UserRole, sid?: string): string {
+  return jwt.sign({ sub: username, role, ...(sid ? { sid } : {}) }, jwtSecret(), {
     expiresIn: ACCESS_TOKEN_TTL_SECONDS,
   });
 }
 
-export function signRefreshToken(username: string, role: UserRole): string {
-  return jwt.sign({ sub: username, role, type: "refresh" }, jwtSecret(), {
-    expiresIn: REFRESH_TOKEN_TTL_SECONDS,
-  });
+export function signRefreshToken(username: string, role: UserRole, sid?: string): string {
+  return jwt.sign(
+    { sub: username, role, type: "refresh", ...(sid ? { sid } : {}) },
+    jwtSecret(),
+    { expiresIn: REFRESH_TOKEN_TTL_SECONDS },
+  );
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload | null {

@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import type { SignupDto } from "./signup.dto";
 import {
+  AUTH_TOKEN_COOKIE,
   clearAuthCookies,
   parseCookieValue,
   REFRESH_TOKEN_COOKIE,
@@ -40,7 +41,10 @@ export class AuthController {
   }
 
   @Post("logout")
-  logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const cookieHeader = String(req.headers.cookie ?? "");
+    const accessToken = parseCookieValue(cookieHeader, AUTH_TOKEN_COOKIE);
+    await this.authService.logout(accessToken);
     clearAuthCookies(res);
     return { ok: true };
   }

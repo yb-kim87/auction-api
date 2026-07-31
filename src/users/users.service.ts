@@ -279,6 +279,24 @@ export class UsersService implements OnModuleInit {
     await this.userRepo.increment({ username }, "aiAnalysisUsed", 1);
   }
 
+  /** 계정당 동시 로그인 1개 제한: 로그인 시 새 세션을 점유한다. */
+  async setSession(id: string, sessionId: string, activeAt: Date) {
+    await this.userRepo.update(
+      { id },
+      { currentSessionId: sessionId, sessionLastActiveAt: activeAt },
+    );
+  }
+
+  /** 세션 유휴 타이머 갱신(정상 활동 중임을 표시). */
+  async touchSession(id: string, activeAt: Date) {
+    await this.userRepo.update({ id }, { sessionLastActiveAt: activeAt });
+  }
+
+  /** 로그아웃 등으로 세션 점유를 해제한다. */
+  async clearSession(id: string) {
+    await this.userRepo.update({ id }, { currentSessionId: null, sessionLastActiveAt: null });
+  }
+
   sanitize(user: User) {
     const { password: _password, ...rest } = user;
     return rest;
