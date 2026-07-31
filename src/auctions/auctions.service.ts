@@ -109,11 +109,29 @@ export class AuctionsService implements OnModuleInit {
     }
   }
 
-  findApproved() {
-    return this.auctionRepo.find({
+  async findApproved(isStaff: boolean) {
+    const items = await this.auctionRepo.find({
       where: { status: AuctionStatus.APPROVED },
       order: { updatedAt: "DESC", createdAt: "DESC" },
     });
+    if (isStaff) return items;
+    return items.map((item) => this.stripStaffOnlyFields(item));
+  }
+
+  /**
+   * 일반 수강생/비로그인 사용자에게는 크롤링 출처(탱크옥션)가 드러나는
+   * link 필드와, 탱크옥션이 자체 조사한 미납관리비 정보를 감춘다
+   * (관리자/컨설턴트만 열람, 사용자 요청 2026-07-31).
+   */
+  private stripStaffOnlyFields(item: Auction) {
+    const {
+      link: _link,
+      unpaidFeeAmount: _unpaidFeeAmount,
+      unpaidFeeNote: _unpaidFeeNote,
+      unpaidFeeCheckedAt: _unpaidFeeCheckedAt,
+      ...rest
+    } = item;
+    return rest;
   }
 
   async findAllAdmin(options: { page: number; pageSize: number; search: string }) {

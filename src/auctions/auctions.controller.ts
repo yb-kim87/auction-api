@@ -30,8 +30,10 @@ export class AuctionsController {
   constructor(private readonly auctionsService: AuctionsService) {}
 
   @Get()
-  findApproved() {
-    return this.auctionsService.findApproved();
+  findApproved(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    const isStaff = ctx.role === UserRole.ADMIN || ctx.role === UserRole.CONSULTANT;
+    return this.auctionsService.findApproved(isStaff);
   }
 
   @Get("manage")
