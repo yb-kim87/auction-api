@@ -29,4 +29,12 @@ export class KakaoNotifySetting {
   /** variablesJson 중 리드 이름으로 자동 대체할 변수명(기본 "회원명") */
   @Column({ type: "text", default: "회원명" })
   templateNameVar!: string;
+
+  /** 신규 리드 자동발송 시 사용할 채널. "sms"면 templateCode 대신 smsText를 사용한다. */
+  @Column({ type: "text", default: "alimtalk" })
+  channel!: "alimtalk" | "sms";
+
+  /** channel이 sms일 때 사용할 본문 템플릿("#{회원명}" 등 변수 자리표시자 포함) */
+  @Column({ type: "text", default: "" })
+  smsText!: string;
 }

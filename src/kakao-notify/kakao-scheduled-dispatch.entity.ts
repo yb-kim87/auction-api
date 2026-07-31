@@ -34,11 +34,19 @@ export class KakaoScheduledDispatch {
   @Column({ type: "text", default: "" })
   testName!: string;
 
-  @Column({ type: "text" })
+  /** 발송 채널. "sms"면 templateCode/templateName은 비워두고 smsText를 사용한다. */
+  @Column({ type: "text", default: "alimtalk" })
+  channel!: "alimtalk" | "sms";
+
+  @Column({ type: "text", default: "" })
   templateCode!: string;
 
   @Column({ type: "text", default: "" })
   templateName!: string;
+
+  /** channel이 sms일 때 사용할 본문 템플릿("#{변수명}" 자리표시자 포함) */
+  @Column({ type: "text", default: "" })
+  smsText!: string;
 
   @Column({ type: "text", default: "{}" })
   variablesJson!: string;

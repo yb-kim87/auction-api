@@ -2,12 +2,14 @@ import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleDes
 import { InjectRepository } from "@nestjs/typeorm";
 import { LessThanOrEqual, Repository } from "typeorm";
 import { KakaoScheduledDispatch } from "./kakao-scheduled-dispatch.entity";
+import { KakaoDispatchChannel } from "./kakao-dispatch-log.entity";
 import { KakaoLead } from "./kakao-lead.entity";
 import { KakaoNotifyService } from "./kakao-notify.service";
 import { KakaoNotifySettingService } from "./kakao-notify-setting.service";
 import { SolapiService } from "./solapi.service";
 import { normalizePhone } from "./phone.util";
 import { TelegramAlertService } from "./telegram-alert.service";
+import { renderSmsTemplate } from "./message-template.util";
 
 const TICK_INTERVAL_MS = 30_000;
 
@@ -44,15 +46,22 @@ export class KakaoScheduledDispatchService implements OnModuleInit, OnModuleDest
 
   async createBulkSchedule(input: {
     leadIds: string[];
-    templateCode: string;
-    templateName: string;
+    channel?: KakaoDispatchChannel;
+    templateCode?: string;
+    templateName?: string;
+    smsText?: string;
     variables: Record<string, string>;
     templateNameVar?: string;
     scheduledAt: Date;
     adminUsername: string;
   }): Promise<KakaoScheduledDispatch> {
     if (input.leadIds.length === 0) throw new BadRequestException("발송할 고객을 선택해 주세요.");
-    if (!input.templateCode.trim()) throw new BadRequestException("템플릿을 선택해 주세요.");
+    const channel = input.channel ?? "alimtalk";
+    if (channel === "sms") {
+      if (!input.smsText?.trim()) throw new BadRequestException("문자 내용을 입력해 주세요.");
+    } else if (!input.templateCode?.trim()) {
+      throw new BadRequestException("템플릿을 선택해 주세요.");
+    }
     if (input.scheduledAt.getTime() <= Date.now()) {
       throw new BadRequestException("예약 시각은 현재 시각 이후여야 합니다.");
     }
@@ -60,8 +69,10 @@ export class KakaoScheduledDispatchService implements OnModuleInit, OnModuleDest
       this.repo.create({
         kind: "bulk",
         leadIdsJson: JSON.stringify(input.leadIds),
-        templateCode: input.templateCode,
-        templateName: input.templateName,
+        channel,
+        templateCode: input.templateCode ?? "",
+        templateName: input.templateName ?? "",
+        smsText: input.smsText ?? "",
         variablesJson: JSON.stringify(input.variables),
         templateNameVar: input.templateNameVar || "회원명",
         scheduledAt: input.scheduledAt,
@@ -75,15 +86,22 @@ export class KakaoScheduledDispatchService implements OnModuleInit, OnModuleDest
   async createTestSchedule(input: {
     name: string;
     phone: string;
-    templateCode: string;
-    templateName: string;
+    channel?: KakaoDispatchChannel;
+    templateCode?: string;
+    templateName?: string;
+    smsText?: string;
     variables: Record<string, string>;
     scheduledAt: Date;
     adminUsername: string;
   }): Promise<KakaoScheduledDispatch> {
     const phone = normalizePhone(input.phone);
     if (!phone) throw new BadRequestException("전화번호 형식을 확인해 주세요. (예: 010-1234-5678)");
-    if (!input.templateCode.trim()) throw new BadRequestException("템플릿을 선택해 주세요.");
+    const channel = input.channel ?? "alimtalk";
+    if (channel === "sms") {
+      if (!input.smsText?.trim()) throw new BadRequestException("문자 내용을 입력해 주세요.");
+    } else if (!input.templateCode?.trim()) {
+      throw new BadRequestException("템플릿을 선택해 주세요.");
+    }
     if (input.scheduledAt.getTime() <= Date.now()) {
       throw new BadRequestException("예약 시각은 현재 시각 이후여야 합니다.");
     }
@@ -93,8 +111,10 @@ export class KakaoScheduledDispatchService implements OnModuleInit, OnModuleDest
         leadIdsJson: "[]",
         testPhone: phone,
         testName: input.name.trim() || "고객",
-        templateCode: input.templateCode,
-        templateName: input.templateName,
+        channel,
+        templateCode: input.templateCode ?? "",
+        templateName: input.templateName ?? "",
+        smsText: input.smsText ?? "",
         variablesJson: JSON.stringify(input.variables),
         scheduledAt: input.scheduledAt,
         status: "scheduled",
@@ -147,13 +167,20 @@ export class KakaoScheduledDispatchService implements OnModuleInit, OnModuleDest
 
   private async processOne(item: KakaoScheduledDispatch) {
     try {
+      const channel: KakaoDispatchChannel = item.channel || "alimtalk";
       if (item.kind === "test") {
         const variables = JSON.parse(item.variablesJson) as Record<string, string>;
-        const result = await this.solapi.sendAlimtalk({
-          toPhone: item.testPhone,
-          variables,
-          templateCode: item.templateCode,
-        });
+        const result =
+          channel === "sms"
+            ? await this.solapi.sendSms({
+                toPhone: item.testPhone,
+                text: renderSmsTemplate(item.smsText, variables),
+              })
+            : await this.solapi.sendAlimtalk({
+                toPhone: item.testPhone,
+                variables,
+                templateCode: item.templateCode,
+              });
         item.status = result.ok ? "sent" : "failed";
         item.successCount = result.ok ? 1 : 0;
         item.failedCount = result.ok ? 0 : 1;
@@ -162,7 +189,9 @@ export class KakaoScheduledDispatchService implements OnModuleInit, OnModuleDest
         const leadIds = JSON.parse(item.leadIdsJson) as string[];
         const result = await this.kakaoNotifyService.dispatchBulk({
           leadIds,
+          channel,
           templateCode: item.templateCode,
+          smsText: item.smsText,
           variables: JSON.parse(item.variablesJson) as Record<string, string>,
           templateNameVar: item.templateNameVar,
           adminUsername: item.createdByAdmin,

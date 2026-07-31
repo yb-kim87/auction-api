@@ -2,12 +2,13 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
 import { KakaoLead, KakaoLeadSource } from "./kakao-lead.entity";
-import { KakaoDispatchLog, KakaoDispatchTrigger } from "./kakao-dispatch-log.entity";
+import { KakaoDispatchChannel, KakaoDispatchLog, KakaoDispatchTrigger } from "./kakao-dispatch-log.entity";
 import { SolapiService } from "./solapi.service";
 import { KakaoNotifySettingService } from "./kakao-notify-setting.service";
 import { normalizePhone } from "./phone.util";
 import { TelegramAlertService } from "./telegram-alert.service";
 import { KakaoLandingVisit } from "./kakao-landing-visit.entity";
+import { renderSmsTemplate } from "./message-template.util";
 
 /** 연속으로 이 횟수만큼 발송이 실패하면 솔라피 자체 장애로 보고 텔레그램으로 알린다. */
 const DISPATCH_FAILURE_ALERT_THRESHOLD = 3;
@@ -133,42 +134,65 @@ export class KakaoNotifyService {
     }
   }
 
-  /** 리드에 알림톡 발송 시도 + 로그 기록 + 리드 상태 갱신 */
+  /** 리드에 알림톡/문자 발송 시도 + 로그 기록 + 리드 상태 갱신 */
   async dispatchToLead(
     lead: KakaoLead,
     options: {
       triggeredBy: KakaoDispatchTrigger;
       triggeredByAdmin?: string;
-      /** 지정하면 저장된 기본 템플릿 설정 대신 이 템플릿/변수로 발송한다(일괄발송용). */
-      override?: { templateCode: string; variables: Record<string, string>; templateNameVar?: string };
+      /** 지정하면 저장된 기본 설정 대신 이 채널/템플릿(또는 문자 본문)/변수로 발송한다(일괄발송용). */
+      override?: {
+        channel?: KakaoDispatchChannel;
+        templateCode?: string;
+        smsText?: string;
+        variables: Record<string, string>;
+        templateNameVar?: string;
+      };
     } = {
       triggeredBy: "auto",
     },
   ): Promise<KakaoDispatchLog> {
     const prevAttempts = await this.logRepo.count({ where: { leadId: lead.id } });
 
-    const { templateCode, variables } = options.override
-      ? {
-          templateCode: options.override.templateCode,
-          variables: this.settingService.resolveVariablesFor(
-            lead,
-            options.override.variables,
-            options.override.templateNameVar || "회원명",
-          ),
-        }
-      : await this.settingService.resolveVariables(lead);
-    const result = await this.solapi.sendAlimtalk({
-      toPhone: lead.phone,
-      variables,
-      templateCode,
-    });
+    let channel: KakaoDispatchChannel;
+    let templateCode: string;
+    let smsTextTemplate: string;
+    let variables: Record<string, string>;
+    if (options.override) {
+      channel = options.override.channel ?? "alimtalk";
+      templateCode = options.override.templateCode ?? "";
+      smsTextTemplate = options.override.smsText ?? "";
+      variables = this.settingService.resolveVariablesFor(
+        lead,
+        options.override.variables,
+        options.override.templateNameVar || "회원명",
+      );
+    } else {
+      const resolved = await this.settingService.resolveVariables(lead);
+      channel = resolved.channel;
+      templateCode = resolved.templateCode;
+      smsTextTemplate = resolved.smsText;
+      variables = resolved.variables;
+    }
+
+    const messageText = channel === "sms" ? renderSmsTemplate(smsTextTemplate, variables) : null;
+    const result =
+      channel === "sms"
+        ? await this.solapi.sendSms({ toPhone: lead.phone, text: messageText ?? "" })
+        : await this.solapi.sendAlimtalk({ toPhone: lead.phone, variables, templateCode });
 
     const log = await this.logRepo.save(
       this.logRepo.create({
         leadId: lead.id,
         attemptNo: prevAttempts + 1,
+        channel,
         templateCode,
-        requestPayload: JSON.stringify({ toPhone: lead.phone, variables }),
+        messageText,
+        requestPayload: JSON.stringify(
+          channel === "sms"
+            ? { toPhone: lead.phone, text: messageText }
+            : { toPhone: lead.phone, variables },
+        ),
         responsePayload: JSON.stringify(result.responseBody ?? {}),
         result: result.ok ? "success" : "failed",
         errorMessage: result.errorMessage ?? null,
@@ -272,7 +296,9 @@ export class KakaoNotifyService {
    */
   async dispatchBulk(input: {
     leadIds: string[];
-    templateCode: string;
+    channel?: KakaoDispatchChannel;
+    templateCode?: string;
+    smsText?: string;
     variables: Record<string, string>;
     templateNameVar?: string;
     adminUsername: string;
@@ -287,7 +313,9 @@ export class KakaoNotifyService {
         triggeredBy: "bulk_manual",
         triggeredByAdmin: input.adminUsername,
         override: {
+          channel: input.channel ?? "alimtalk",
           templateCode: input.templateCode,
+          smsText: input.smsText,
           variables: input.variables,
           templateNameVar: input.templateNameVar,
         },
@@ -572,12 +600,42 @@ export class KakaoNotifyService {
     name: string;
     rawPhone: string;
     adminUsername: string;
+    channel?: KakaoDispatchChannel;
     templateCode?: string;
+    smsText?: string;
     variables?: Record<string, string>;
   }) {
     const phone = normalizePhone(input.rawPhone);
     if (!phone) {
       throw new BadRequestException("전화번호 형식을 확인해 주세요. (예: 010-1234-5678)");
+    }
+
+    const channel = input.channel ?? "alimtalk";
+
+    if (channel === "sms") {
+      const smsText = input.smsText?.trim() ?? "";
+      if (!smsText) {
+        throw new BadRequestException("문자 내용을 입력해 주세요.");
+      }
+      const variables = input.variables ?? { 회원명: input.name.trim() || "고객" };
+      const messageText = renderSmsTemplate(smsText, variables);
+      const result = await this.solapi.sendSms({ toPhone: phone, text: messageText });
+
+      return this.logRepo.save(
+        this.logRepo.create({
+          leadId: null,
+          attemptNo: 1,
+          channel: "sms",
+          templateCode: "",
+          messageText,
+          requestPayload: JSON.stringify({ toPhone: phone, text: messageText }),
+          responsePayload: JSON.stringify(result.responseBody ?? {}),
+          result: result.ok ? "success" : "failed",
+          errorMessage: result.errorMessage ?? null,
+          triggeredBy: "test",
+          triggeredByAdmin: input.adminUsername,
+        }),
+      );
     }
 
     let templateCode = input.templateCode?.trim() ?? "";
@@ -599,6 +657,7 @@ export class KakaoNotifyService {
       this.logRepo.create({
         leadId: null,
         attemptNo: 1,
+        channel: "alimtalk",
         templateCode,
         requestPayload: JSON.stringify({ toPhone: phone, variables }),
         responsePayload: JSON.stringify(result.responseBody ?? {}),

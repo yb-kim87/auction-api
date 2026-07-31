@@ -8,6 +8,7 @@ import {
 
 export type KakaoDispatchResult = "success" | "failed";
 export type KakaoDispatchTrigger = "auto" | "manual_retry" | "test" | "bulk_manual" | "scheduled";
+export type KakaoDispatchChannel = "alimtalk" | "sms";
 
 @Entity("kakao_dispatch_logs")
 export class KakaoDispatchLog {
@@ -22,8 +23,15 @@ export class KakaoDispatchLog {
   @Column({ type: "integer", default: 1 })
   attemptNo!: number;
 
+  @Column({ type: "text", default: "alimtalk" })
+  channel!: KakaoDispatchChannel;
+
   @Column({ type: "text", default: "" })
   templateCode!: string;
+
+  /** channel이 sms일 때 실제 발송된(변수 치환 완료된) 문자 본문 */
+  @Column({ type: "text", nullable: true })
+  messageText!: string | null;
 
   @Column({ type: "text", default: "" })
   requestPayload!: string;

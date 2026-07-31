@@ -275,8 +275,10 @@ export class KakaoNotifyController {
     body: {
       name?: string;
       phone?: string;
+      channel?: "alimtalk" | "sms";
       templateCode?: string;
       templateName?: string;
+      smsText?: string;
       variables?: Record<string, string>;
       scheduledAt?: string;
     },
@@ -286,15 +288,20 @@ export class KakaoNotifyController {
     if (!body.phone?.trim()) {
       throw new BadRequestException("전화번호를 입력해 주세요.");
     }
+    const channel = body.channel ?? "alimtalk";
     if (body.scheduledAt) {
-      if (!body.templateCode?.trim()) {
+      if (channel === "sms") {
+        if (!body.smsText?.trim()) throw new BadRequestException("문자 내용을 입력해 주세요.");
+      } else if (!body.templateCode?.trim()) {
         throw new BadRequestException("템플릿을 선택해 주세요.");
       }
       return this.scheduledDispatchService.createTestSchedule({
         name: body.name ?? "",
         phone: body.phone,
+        channel,
         templateCode: body.templateCode,
         templateName: body.templateName ?? "",
+        smsText: body.smsText,
         variables: body.variables ?? {},
         scheduledAt: new Date(body.scheduledAt),
         adminUsername: ctx.username,
@@ -304,7 +311,9 @@ export class KakaoNotifyController {
       name: body.name ?? "",
       rawPhone: body.phone,
       adminUsername: ctx.username,
+      channel,
       templateCode: body.templateCode,
+      smsText: body.smsText,
       variables: body.variables,
     });
   }
@@ -336,6 +345,8 @@ export class KakaoNotifyController {
       templateName?: string;
       variables?: Record<string, string>;
       templateNameVar?: string;
+      channel?: "alimtalk" | "sms";
+      smsText?: string;
     },
   ) {
     requireAdmin(getAuthContext(headers));
@@ -344,6 +355,8 @@ export class KakaoNotifyController {
       templateName: body.templateName ?? "",
       variables: body.variables ?? {},
       templateNameVar: body.templateNameVar,
+      channel: body.channel,
+      smsText: body.smsText,
     });
   }
 
@@ -474,8 +487,10 @@ export class KakaoNotifyController {
     @Body()
     body: {
       ids?: string[];
+      channel?: "alimtalk" | "sms";
       templateCode?: string;
       templateName?: string;
+      smsText?: string;
       variables?: Record<string, string>;
       templateNameVar?: string;
       scheduledAt?: string;
@@ -487,14 +502,19 @@ export class KakaoNotifyController {
     if (ids.length === 0) {
       throw new BadRequestException("발송할 고객을 선택해 주세요.");
     }
-    if (!body.templateCode?.trim()) {
+    const channel = body.channel ?? "alimtalk";
+    if (channel === "sms") {
+      if (!body.smsText?.trim()) throw new BadRequestException("문자 내용을 입력해 주세요.");
+    } else if (!body.templateCode?.trim()) {
       throw new BadRequestException("템플릿을 선택해 주세요.");
     }
     if (body.scheduledAt) {
       return this.scheduledDispatchService.createBulkSchedule({
         leadIds: ids,
+        channel,
         templateCode: body.templateCode,
         templateName: body.templateName ?? "",
+        smsText: body.smsText,
         variables: body.variables ?? {},
         templateNameVar: body.templateNameVar,
         scheduledAt: new Date(body.scheduledAt),
@@ -503,7 +523,9 @@ export class KakaoNotifyController {
     }
     return this.kakaoNotifyService.dispatchBulk({
       leadIds: ids,
+      channel,
       templateCode: body.templateCode,
+      smsText: body.smsText,
       variables: body.variables ?? {},
       templateNameVar: body.templateNameVar,
       adminUsername: ctx.username,

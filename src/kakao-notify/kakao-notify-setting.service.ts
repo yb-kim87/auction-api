@@ -37,6 +37,8 @@ export class KakaoNotifySettingService {
         templateName: "",
         variablesJson: "{}",
         templateNameVar: "회원명",
+        channel: "alimtalk",
+        smsText: "",
       })
     );
   }
@@ -46,6 +48,8 @@ export class KakaoNotifySettingService {
     templateName: string;
     variables: Record<string, string>;
     templateNameVar?: string;
+    channel?: "alimtalk" | "sms";
+    smsText?: string;
   }): Promise<KakaoNotifySetting> {
     const setting = await this.getDefault();
     setting.templateCode = input.templateCode.trim();
@@ -53,6 +57,12 @@ export class KakaoNotifySettingService {
     setting.variablesJson = JSON.stringify(input.variables ?? {});
     if (input.templateNameVar !== undefined) {
       setting.templateNameVar = input.templateNameVar.trim() || "회원명";
+    }
+    if (input.channel !== undefined) {
+      setting.channel = input.channel;
+    }
+    if (input.smsText !== undefined) {
+      setting.smsText = input.smsText;
     }
     return this.repo.save(setting);
   }
@@ -67,6 +77,8 @@ export class KakaoNotifySettingService {
   async resolveVariables(lead: Pick<KakaoLead, keyof KakaoLead> | { name: string }): Promise<{
     templateCode: string;
     variables: Record<string, string>;
+    channel: "alimtalk" | "sms";
+    smsText: string;
   }> {
     const setting = await this.getDefault();
     let base: Record<string, string> = {};
@@ -78,6 +90,8 @@ export class KakaoNotifySettingService {
     return {
       templateCode: setting.templateCode,
       variables: this.resolveVariablesFor(lead, base, setting.templateNameVar || "회원명"),
+      channel: setting.channel || "alimtalk",
+      smsText: setting.smsText || "",
     };
   }
 

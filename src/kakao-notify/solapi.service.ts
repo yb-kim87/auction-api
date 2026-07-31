@@ -55,10 +55,13 @@ export class SolapiService {
     return process.env.SOLAPI_TEMPLATE_CODE?.trim() ?? "";
   }
 
+  /** SMS 발송에 필요한 최소 설정(발신번호까지). 카카오 알림톡은 pfId도 추가로 필요하다. */
   isConfigured(): boolean {
-    return Boolean(
-      this.apiKey && this.apiSecret && this.senderPhone && this.pfId,
-    );
+    return Boolean(this.apiKey && this.apiSecret && this.senderPhone);
+  }
+
+  private isKakaoConfigured(): boolean {
+    return this.isConfigured() && Boolean(this.pfId);
   }
 
   private buildAuthHeader(): string {
@@ -79,7 +82,7 @@ export class SolapiService {
     variables: Record<string, string>;
     templateCode?: string;
   }): Promise<SolapiSendResult> {
-    if (!this.isConfigured()) {
+    if (!this.isKakaoConfigured()) {
       throw new ServiceUnavailableException(
         "솔라피 연동이 설정되지 않았습니다. SOLAPI_API_KEY/SOLAPI_API_SECRET/SOLAPI_SENDER/SOLAPI_PFID를 확인해 주세요.",
       );
@@ -135,6 +138,76 @@ export class SolapiService {
           statusCode: res.status,
           responseBody,
           errorMessage: message,
+        };
+      }
+
+      return { ok: true, statusCode: res.status, responseBody };
+    } catch (err) {
+      return {
+        ok: false,
+        statusCode: 0,
+        responseBody: null,
+        errorMessage:
+          err instanceof Error ? err.message : "솔라피 요청 중 알 수 없는 오류",
+      };
+    }
+  }
+
+  /**
+   * 문자(SMS/LMS) 발송. 카카오 알림톡과 달리 템플릿 승인이 필요 없어
+   * 자유 텍스트를 그대로 보낸다. 90바이트(한글 45자 안팎)를 넘으면
+   * 솔라피 규격상 LMS로 자동 전환되며, 이때 subject(제목)가 없으면
+   * 기본 제목을 채워 보낸다(subject 없는 LMS는 발송 실패하기 때문).
+   */
+  async sendSms(input: {
+    toPhone: string;
+    text: string;
+    subject?: string;
+  }): Promise<SolapiSendResult> {
+    if (!this.isConfigured()) {
+      throw new ServiceUnavailableException(
+        "솔라피 연동이 설정되지 않았습니다. SOLAPI_API_KEY/SOLAPI_API_SECRET/SOLAPI_SENDER를 확인해 주세요.",
+      );
+    }
+    const text = input.text.trim();
+    if (!text) {
+      throw new ServiceUnavailableException("문자 내용이 비어있습니다.");
+    }
+
+    const byteLength = Buffer.byteLength(text, "utf-8");
+    const message: Record<string, unknown> = {
+      to: input.toPhone,
+      from: this.senderPhone,
+      text,
+    };
+    if (byteLength > 90) {
+      message.type = "LMS";
+      message.subject = input.subject?.trim() || "안내";
+    }
+
+    try {
+      const res = await fetch("https://api.solapi.com/messages/v4/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: this.buildAuthHeader(),
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      const responseBody = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const errMessage =
+          typeof (responseBody as { errorMessage?: string })?.errorMessage ===
+          "string"
+            ? (responseBody as { errorMessage?: string }).errorMessage
+            : `솔라피 발송 실패 (HTTP ${res.status})`;
+        return {
+          ok: false,
+          statusCode: res.status,
+          responseBody,
+          errorMessage: errMessage,
         };
       }
 
