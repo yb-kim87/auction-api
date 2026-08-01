@@ -13,6 +13,7 @@ import {
   parseAuctionFloor,
   shouldDisplay,
 } from "./match-scoring.util";
+import { matchesPropertyType } from "./property-type.util";
 
 const AREA_TOLERANCE_SQM = 0.5;
 const CANDIDATE_WINDOW_MONTHS = 36;
@@ -202,6 +203,89 @@ export class ResaleMatchService implements OnModuleInit {
         });
       }
     }
+  }
+
+  /**
+   * "물건작업 필터"(지역/물건종류)를 낙찰 완료 물건에 적용해, 그 필터에
+   * 걸리는 주소들이 매도분석 로직상 실제로 얼마나 매도로 연결됐는지
+   * 확인하는 통계(사용자 요청, 2026-08-01). 낙찰 여부는 salePrice
+   * 존재로 판정한다 — caseState보다 신뢰도 높은 신호임이 이미 이
+   * 코드베이스에서 확인된 바 있다(ProfitCalculatorPanel 주석 참고).
+   */
+  async getFilteredResaleStats(filters: {
+    city?: string[];
+    district?: string[];
+    propType?: string[];
+  }) {
+    const qb = this.auctionRepo
+      .createQueryBuilder("a")
+      .where("a.salePrice IS NOT NULL")
+      .andWhere("a.salePrice > 0");
+    if (filters.city && filters.city.length > 0) {
+      qb.andWhere("a.city IN (:...city)", { city: filters.city });
+    }
+    if (filters.district && filters.district.length > 0) {
+      qb.andWhere("a.district IN (:...district)", { district: filters.district });
+    }
+
+    const soldAuctions = await qb
+      .orderBy("a.updatedAt", "DESC")
+      .addOrderBy("a.createdAt", "DESC")
+      .getMany();
+
+    const filtered =
+      filters.propType && filters.propType.length > 0
+        ? soldAuctions.filter((a) => filters.propType!.some((t) => matchesPropertyType(a, t)))
+        : soldAuctions;
+
+    if (filtered.length === 0) {
+      return { total: 0, withCandidate: 0, displayed: 0, items: [] };
+    }
+
+    // 표시 대상(70점+·비애매)이 아니어도 QA 후보(55점+)가 있으면
+    // "매도로 이어졌을 가능성이 있는" 물건으로 함께 집계한다 —
+    // Auction.resaleMatchTier는 표시 대상만 캐싱되어 있어 그것만 보면
+    // 과소집계된다.
+    const auctionIds = filtered.map((a) => a.id);
+    const topCandidates = await this.matchRepo.query(
+      `
+        SELECT m."auctionId", m."scoreTotal", m."confidenceTier", m."isDisplayed"
+        FROM auction_trade_match m
+        WHERE m."candidateRank" = 1 AND m."auctionId" = ANY($1)
+      `,
+      [auctionIds],
+    );
+    interface TopCandidateRow {
+      auctionId: string;
+      scoreTotal: number;
+      confidenceTier: string;
+      isDisplayed: boolean;
+    }
+    const candidateByAuctionId = new Map<string, TopCandidateRow>(
+      (topCandidates as TopCandidateRow[]).map((row) => [row.auctionId, row]),
+    );
+
+    const items = filtered.map((a) => {
+      const candidate = candidateByAuctionId.get(a.id);
+      return {
+        id: a.id,
+        auctionNo: a.auctionNo,
+        court: a.court,
+        address: a.address,
+        city: a.city,
+        district: a.district,
+        usage: a.usage,
+        salePrice: a.salePrice,
+        candidateScore: candidate?.scoreTotal ?? null,
+        candidateTier: candidate?.confidenceTier ?? null,
+        displayed: candidate?.isDisplayed ?? false,
+      };
+    });
+
+    const withCandidate = items.filter((i) => i.candidateScore != null && i.candidateScore >= 55).length;
+    const displayed = items.filter((i) => i.displayed).length;
+
+    return { total: items.length, withCandidate, displayed, items };
   }
 
   private parseBidDate(bidDate: string): string | null {

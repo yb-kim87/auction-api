@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -99,6 +100,31 @@ export class ResaleMatchController {
       reviewedAt: new Date(),
     });
     return { ok: true };
+  }
+
+  /** 지역/물건종류 필터를 낙찰 완료 물건에 적용해, 그 필터에 걸리는
+   * 주소들이 실제로 매도로 이어졌는지 통계를 낸다(물건작업 필터를
+   * 낙찰물건에 재활용, 사용자 요청 2026-08-01). */
+  @Get("sold-stats")
+  async getSoldStats(
+    @Headers() headers: Record<string, string>,
+    @Query("city") city?: string,
+    @Query("district") district?: string,
+    @Query("propType") propType?: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    const parseMulti = (raw?: string) =>
+      raw
+        ? raw
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean)
+        : undefined;
+    return this.resaleMatchService.getFilteredResaleStats({
+      city: parseMulti(city),
+      district: parseMulti(district),
+      propType: parseMulti(propType),
+    });
   }
 
   @Post("run-now")
