@@ -218,6 +218,12 @@ export type ManageUrlsDto = {
 export type CrawlerUrlEntry = {
   label: string;
   url: string;
+  /** 진행상태를 "매각"으로 검색했을 때 목록 응답에 이미 포함된 낙찰가/
+   * 낙찰일(탱크 sucb_amt/bid_dt) — 상세 크롤링 전에도 작업목록에서 바로
+   * 보여줄 수 있어 매도분석 대상을 가늠하기 쉬워진다(사용자 요청,
+   * 2026-08-01). 진행중 물건 등 아직 낙찰 안 됐으면 비어있다. */
+  salePrice?: number;
+  saleDate?: string;
 };
 
 export type CrawlerPhase =

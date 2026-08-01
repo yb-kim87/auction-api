@@ -634,7 +634,19 @@ def list_response_to_url_entries(list_response: dict, *, is_public: bool) -> lis
                 f"&chkNo=1&TotNo={index}"
             )
         label = f"{case_num}_{url}"
-        entries.append({"label": label, "url": label})
+        entry: dict = {"label": label, "url": label}
+        # 진행상태를 "매각"으로 검색했을 때는 목록 응답 자체에 이미 낙찰가/
+        # 낙찰일이 들어있다(sucb_amt/bid_dt, 실측 확인 2026-08-01) — 상세
+        # 크롤링 전에도 작업목록에서 바로 보여줄 수 있어 매도분석 대상을
+        # 가늠하기 쉬워진다(사용자 요청). 값이 0/빈 문자열이면(진행중 물건
+        # 등 아직 낙찰 안 됨) 굳이 포함하지 않는다.
+        sale_amt = raw.get("sucb_amt") or raw.get("sucbAmt")
+        if sale_amt:
+            entry["salePrice"] = sale_amt
+        sale_date = raw.get("bid_dt") or raw.get("bidDt")
+        if sale_date and str(sale_date) not in ("0000-00-00", ""):
+            entry["saleDate"] = sale_date
+        entries.append(entry)
 
     return entries
 
