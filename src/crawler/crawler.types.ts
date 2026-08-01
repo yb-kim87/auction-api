@@ -187,6 +187,12 @@ export type StartCrawlDto = {
   urls?: string[];
   repeatAfterCollect?: boolean;
   crawlerVersion?: CrawlerVersion;
+  /** 주소추가 때 중복이라 재크롤링을 건너뛴 기존 DB 물건들에 대해서도
+   * 매도분석(국토부 실거래가 매칭)을 돌릴지 여부. 사용자가 명시적으로
+   * 체크박스를 켠 경우에만 true — 매번 자동으로 돌리면 진행물건
+   * 조회 시에도 매도분석과 무관하게 수천 건이 매번 재매칭되는 낭비가
+   * 발생함(사용자 지적, 2026-08-01). */
+  runResaleAnalysisForExisting?: boolean;
 };
 
 export type CrawlerLoginDto = {

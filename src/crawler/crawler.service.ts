@@ -1471,8 +1471,14 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
     // 조회(상세 크롤링)와 별개로, "주소 추가" 때 이미 DB에 있어 제외됐던
     // 물건들의 매도분석을 여기서 같이 돌린다(크롤링 흐름을 막지 않도록
-    // await하지 않음).
-    void this.runPendingDuplicateResaleAnalysis().catch(() => {});
+    // await하지 않음). 사용자가 "매도분석" 체크박스를 켠 경우에만 실행 —
+    // 매번 자동으로 돌리면 진행물건 조회 때도 수천 건이 매번 재매칭되는
+    // 낭비가 발생함(사용자 지적, 2026-08-01).
+    if (dto.runResaleAnalysisForExisting) {
+      void this.runPendingDuplicateResaleAnalysis().catch(() => {});
+    } else {
+      this.pendingDuplicateResaleAuctionNos = [];
+    }
 
     try {
       const {

@@ -294,3 +294,24 @@
 상품의 활용신청 상태를 확인해달라고 요청 — 승인 확인되면 매칭 로직
 (주소+층+면적 비교)은 아파트 때와 동일하게 재사용 가능하므로 이어서
 구현 예정(아직 미구현, 진행 중).
+
+## 追記 (2026-08-01) — 기존 DB 중복 물건 매도분석을 체크박스로 옵트인
+
+사용자 지적: "조회 시작" 때마다 진행물건 조회처럼 매도분석과 무관한
+경우에도 "이미 DB에 있던 3661건 확인 시작"이 자동으로 돌아 불필요한
+부하가 발생함. 매번 자동 실행하지 말고, "내가 매도 분석을 요청할
+때만" 하자는 요청 → 최종적으로 "주소추가 후 매도 분석 체크박스
+선택했을 때만 진행"으로 확정.
+
+- `StartCrawlDto`에 `runResaleAnalysisForExisting?: boolean` 추가.
+  `crawler.service.ts`의 `startCrawl()`에서 이 값이 true일 때만
+  `runPendingDuplicateResaleAnalysis()`를 실행하고, false면 대기 중이던
+  `pendingDuplicateResaleAuctionNos`를 그냥 비움(기존 DB 물건 재매칭
+  건너뜀).
+- 이번에 새로 크롤링해서 `importItem()`으로 들어오는 물건의 즉시
+  매칭(`processAuctionForResale`)은 건당 처리라 부하가 적어 그대로
+  자동 유지 — 이번 변경은 "기존 DB에 이미 있던 대량 건"의 일괄
+  재매칭에만 해당.
+- 프론트(`CrawlerWorkPanel.tsx`)에 "기존 DB 물건도 매도분석" 체크박스
+  추가(기본값 꺼짐), "조회 시작" 클릭 시 `crawlerStart()`에
+  `runResaleAnalysisForExisting` 값을 함께 전달.
