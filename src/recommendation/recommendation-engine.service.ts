@@ -245,17 +245,29 @@ export class RecommendationEngineService {
         // 않는다. requiredEquity가 대출한도 0으로 계산돼 필요자금=낙찰가 전액이
         // 되고, 그 값이 투자가능자금 이하일 때만(현금 전액 매수 가능할 때만)
         // 매칭된다.
-        (row) =>
-          favoritesOnly
+        // 검색어(주소/사건번호)가 있으면 예산·상세 필터를 전부 건너뛰고 승인된
+        // 전체 DB에서 찾는다 — "필터에 걸려 안 보인다"는 혼란을 없애기 위함
+        // (사용자 요청, 2026-08-01).
+        (row) => {
+          if (searchQuery) return true;
+          return favoritesOnly
             ? favoriteIds!.has(row.item.id)
-            : row.item.minPrice > 0 && row.policy && row.requiredEquity <= criteria.investableWon,
+            : row.item.minPrice > 0 && row.policy && row.requiredEquity <= criteria.investableWon;
+        },
       )
       .filter((row) => {
-        if (favoritesOnly) return true;
+        if (searchQuery || favoritesOnly) return true;
         if (criteria.targetReturnWon == null) return true;
         return row.estimatedProfit != null && row.estimatedProfit >= criteria.targetReturnWon;
       })
       .filter((row) => {
+        // 검색어가 있으면 주소/사건번호 매칭 여부만 본다(다른 필터는 무시).
+        if (searchQuery) {
+          return (
+            row.item.address?.toLowerCase().includes(searchQuery) ||
+            row.item.auctionNo?.toLowerCase().includes(searchQuery)
+          );
+        }
         // 관심물건 모드는 상세 필터·검색 조건과 무관하게 관심 등록한 승인
         // 물건 전체를 반환한다. 위 필터에서 이미 관심 ID 여부를 확인했다.
         if (favoritesOnly) return true;
@@ -294,12 +306,6 @@ export class RecommendationEngineService {
           if (!Number.isFinite(areaNum)) return false;
           if (filters.minArea != null && areaNum < filters.minArea) return false;
           if (filters.maxArea != null && areaNum > filters.maxArea) return false;
-        }
-        if (searchQuery) {
-          const matchesText =
-            row.item.address?.toLowerCase().includes(searchQuery) ||
-            row.item.auctionNo?.toLowerCase().includes(searchQuery);
-          if (!matchesText) return false;
         }
         return true;
       });
