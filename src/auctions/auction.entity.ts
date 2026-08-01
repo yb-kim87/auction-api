@@ -197,6 +197,12 @@ export class Auction {
   @Column({ default: "" })
   tenantDetail!: string;
 
+  /** tenantDetail 원문(법률 용어 위주)을 AI가 1~2문장으로 쉽게 풀어쓴
+   * 요약. 물건당 한 번만 생성해 캐싱하고(요청마다 재호출하지 않음),
+   * tenantDetail이 바뀌면 재생성이 필요할 수 있다. */
+  @Column({ type: "text", nullable: true })
+  tenantSummary!: string | null;
+
   /** 탱크옥션이 관리사무소에 개별 문의해 조사한 미납 관리비(체납금액).
    * 조사가 안 된 물건은 원본 API(arersInfo.items)가 빈 배열이라 이 필드도
    * 전부 기본값(0/빈 문자열)으로 남는다 — 크롤링 누락이 아니라 원본

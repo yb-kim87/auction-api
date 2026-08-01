@@ -1,5 +1,24 @@
 import { formatTenantStatusText } from "./tenant-status.util";
 
+/**
+ * 크롤링 원문 자유서술 텍스트(임차인 현황 비고, 등기부 요약 등)에 크롤링
+ * 출처(탱크옥션) 관련 문구가 섞여 들어올 가능성에 대한 안전장치. 지금은
+ * 실제로 섞여 있는 걸 확인한 적 없지만, 원문을 가공 없이 그대로 저장하는
+ * 필드라 출처가 문구를 바꾸면 예고 없이 노출될 수 있어 방어적으로
+ * 걸러낸다(사용자 요청, 2026-08-01). @AfterLoad 시점에 항상 적용되므로
+ * 어떤 API 경로로 나가든 동일하게 적용된다.
+ */
+const SOURCE_BRAND_PATTERNS: RegExp[] = [/탱크\s*옥션/gi, /tank\s*auction/gi];
+
+export function stripSourceBrandMentions(text: string): string {
+  if (!text) return text;
+  let result = text;
+  for (const pattern of SOURCE_BRAND_PATTERNS) {
+    result = result.replace(pattern, "");
+  }
+  return result;
+}
+
 const SIDO_NAMES = [
   "서울특별시",
   "부산광역시",
@@ -73,6 +92,7 @@ export function cleanBuildingRegistry(buildingRegistry: string): string {
   if (!buildingRegistry || buildingRegistry === "없음" || buildingRegistry === "값없음") {
     return buildingRegistry;
   }
+  buildingRegistry = stripSourceBrandMentions(buildingRegistry);
   const isHeader = (text: string) => {
     const normalized = text.replace(/\u00a0/g, " ").trim();
     if (!normalized) return true;
@@ -96,6 +116,7 @@ export function cleanBuildingRegistry(buildingRegistry: string): string {
 }
 
 export function cleanTenantDetail(tenantDetail: string): string {
+  tenantDetail = stripSourceBrandMentions(tenantDetail);
   const formatted = formatTenantStatusText(tenantDetail);
   if (formatted) return formatted;
   if (!tenantDetail || tenantDetail === "없음" || tenantDetail === "값없음") {
