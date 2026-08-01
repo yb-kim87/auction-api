@@ -105,6 +105,6 @@ export class ResaleMatchController {
   async runNow(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
     void this.resaleMatchService.runOnce();
-    return { ok: true, message: "재판매 매칭 배치를 백그라운드에서 시작했습니다." };
+    return { ok: true, message: "매도분석 배치를 백그라운드에서 시작했습니다." };
   }
 }
