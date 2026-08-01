@@ -228,7 +228,10 @@ export function parseAddressMeta(address: string, usage?: string) {
   let propType = "아파트";
   if (/오피스텔/.test(usageTrimmed)) {
     propType = "오피스텔";
-  } else if (/빌라|연립|다세대|다가구/.test(usageTrimmed) || /빌라|연립|다세대|다가구/.test(trimmed)) {
+  } else if (
+    /빌라|연립|다세대|다가구|도시형생활주택/.test(usageTrimmed) ||
+    /빌라|연립|다세대|다가구|도시형생활주택/.test(trimmed)
+  ) {
     propType = "빌라";
   }
 
