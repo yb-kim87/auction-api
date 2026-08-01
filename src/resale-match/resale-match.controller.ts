@@ -7,7 +7,6 @@ import {
   Param,
   Patch,
   Post,
-  Query,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -102,29 +101,19 @@ export class ResaleMatchController {
     return { ok: true };
   }
 
-  /** 지역/물건종류 필터를 낙찰 완료 물건에 적용해, 그 필터에 걸리는
-   * 주소들이 실제로 매도로 이어졌는지 통계를 낸다(물건작업 필터를
-   * 낙찰물건에 재활용, 사용자 요청 2026-08-01). */
-  @Get("sold-stats")
+  /** 물건작업 화면(검색 페이지)에서 필터링된 물건 ID 목록을 그대로
+   * 받아, 그중 낙찰된 물건들이 실제로 매도로 이어졌는지 통계를 낸다
+   * (사용자 요청 2026-08-01). */
+  @Post("sold-stats")
   async getSoldStats(
     @Headers() headers: Record<string, string>,
-    @Query("city") city?: string,
-    @Query("district") district?: string,
-    @Query("propType") propType?: string,
+    @Body() body: { auctionIds?: string[] },
   ) {
     requireAdmin(getAuthContext(headers));
-    const parseMulti = (raw?: string) =>
-      raw
-        ? raw
-            .split(",")
-            .map((v) => v.trim())
-            .filter(Boolean)
-        : undefined;
-    return this.resaleMatchService.getFilteredResaleStats({
-      city: parseMulti(city),
-      district: parseMulti(district),
-      propType: parseMulti(propType),
-    });
+    const auctionIds = Array.isArray(body.auctionIds)
+      ? body.auctionIds.filter((id) => typeof id === "string" && id.trim())
+      : [];
+    return this.resaleMatchService.getResaleStatsForAuctionIds(auctionIds);
   }
 
   @Post("run-now")
