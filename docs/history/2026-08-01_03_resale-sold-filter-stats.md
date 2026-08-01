@@ -218,3 +218,27 @@
 
 ## 검증
 - 양쪽 저장소 `npx tsc --noEmit`, `npm run build` 통과.
+
+## 追記 (2026-08-01) — 중복 제외 물건 매도분석을 "조회 시작" 시점으로 이동 + 로그 가시화
+
+처음엔 "주소 추가" 직후 조용히 백그라운드에서 기존 DB 중복 물건의
+매도분석을 돌렸는데, 사용자가 "이게 돌아가고 있다고 안내가 있어야할꺼
+같은데"라고 지적 — 로그에 안 남아 실제로 되고 있는지 확인이 안 되는
+문제가 있었다. 이어서 "아니면 기다리고 있다가 조회시작을 누르면
+진행되게하던가"로 타이밍도 재조정.
+
+- `CrawlerService`에 `pendingDuplicateResaleAuctionNos` 필드 추가 —
+  "주소 추가"(`collectUrls`) 시점엔 이미 DB에 있어 제외된 사건번호
+  목록만 저장해두고, 실제 처리는 **"조회 시작"(`startCrawl`)을 누른
+  시점**에 크롤링과 병행해서 실행.
+- `runPendingDuplicateResaleAnalysis()`(신규): 저장해둔 사건번호로
+  기존 Auction 레코드를 찾아 매도분석을 시도하면서, 실행 로그에
+  "[매도분석] 이미 DB에 있던 N건 확인 시작" → "[매도분석] 완료 — 시도
+  N건 / 후보 발견 N건 / 매도 확정 표시 N건"을 남겨 진행 상황이 보이게
+  함.
+- `ResaleMatchService.processAuctionForResale()`의 반환 타입을
+  `Promise<void>` → `Promise<{attempted, candidateFound, displayed}>`로
+  변경해 위 로그 집계에 사용.
+- 실측 확인: 새 로직 배포 전 `auction_trade_match` 총 13건 →
+  로직 적용 후 자연 증가하며 44건까지 확인(백그라운드 처리가 실제로
+  작동함을 검증).

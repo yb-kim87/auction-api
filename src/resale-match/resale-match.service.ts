@@ -115,7 +115,9 @@ export class ResaleMatchService implements OnModuleInit {
    * 재사용하며, 크롤링 흐름을 막지 않도록 호출부에서 반드시
    * fire-and-forget(void + catch)으로 불러야 한다.
    */
-  async processAuctionForResale(auction: Auction): Promise<void> {
+  async processAuctionForResale(
+    auction: Auction,
+  ): Promise<{ attempted: boolean; candidateFound: boolean; displayed: boolean }> {
     if (
       !auction.paymentCompletedAt ||
       auction.resaleMatchedTradeId ||
@@ -123,15 +125,26 @@ export class ResaleMatchService implements OnModuleInit {
       !auction.umdNm ||
       !auction.jibun
     ) {
-      return;
+      return { attempted: false, candidateFound: false, displayed: false };
     }
     try {
       await this.ensureIngestedForLawdCd(auction.lawdCd);
       await this.matchOne(auction);
+      const candidateCount = await this.matchRepo.count({ where: { auctionId: auction.id } });
+      const updated = await this.auctionRepo.findOne({
+        where: { id: auction.id },
+        select: ["resaleMatchTier"],
+      });
+      return {
+        attempted: true,
+        candidateFound: candidateCount > 0,
+        displayed: Boolean(updated?.resaleMatchTier),
+      };
     } catch (err) {
       this.logger.error(
         `물건별 매도분석 실패(auctionId=${auction.id}): ${err instanceof Error ? err.message : err}`,
       );
+      return { attempted: true, candidateFound: false, displayed: false };
     }
   }
 

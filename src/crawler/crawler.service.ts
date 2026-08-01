@@ -144,6 +144,9 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   private importItemCount = 0;
   private schedulerTimer: ReturnType<typeof setInterval> | null = null;
   private jobRunning = false;
+  /** "주소 추가" 시점에 이미 DB에 있어 작업목록에서 제외된 사건번호들
+   * ("조회 시작"을 누르면 이 목록으로 매도분석을 시도한다). */
+  private pendingDuplicateResaleAuctionNos: string[] = [];
 
   constructor(
     private readonly auctionsService: AuctionsService,
@@ -1308,13 +1311,13 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // 국토부 실거래가 매칭이 가능하므로 재크롤링을 기다릴 필요가 없다
     // (사용자 요청, 2026-08-01: "중복이라 건너뛰지말고 가지고 있는
     // DB정보를 통해서 국토부 실거래가를 주소로 돌려서 매칭을 해야할꺼
-    // 같아"). collectUrls 응답을 늦추지 않도록 await하지 않는다.
-    const rawAuctionNos = rawUrls
+    // 같아"). "주소 추가" 직후 조용히 백그라운드에서 도는 대신,
+    // "조회 시작"을 누른 시점에 실행 로그에 진행상황이 보이도록
+    // startCrawl()에서 소비한다(사용자 요청: "기다리고 있다가 조회시작을
+    // 누르면 진행되게하던가").
+    this.pendingDuplicateResaleAuctionNos = rawUrls
       .map((u) => u.label?.split("_")[0]?.trim())
       .filter((no): no is string => Boolean(no));
-    if (rawAuctionNos.length > 0) {
-      void this.triggerResaleAnalysisForAuctionNos(rawAuctionNos).catch(() => {});
-    }
 
     if (naverRefresh > 0) {
       this.appendLog(
@@ -1466,6 +1469,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       `${submittedBy}님이 조회를 시작합니다 (총 ${urls.length}건).`,
     );
 
+    // 조회(상세 크롤링)와 별개로, "주소 추가" 때 이미 DB에 있어 제외됐던
+    // 물건들의 매도분석을 여기서 같이 돌린다(크롤링 흐름을 막지 않도록
+    // await하지 않음).
+    void this.runPendingDuplicateResaleAnalysis().catch(() => {});
+
     try {
       const {
         callbackUrl,
@@ -1567,15 +1575,37 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return { ok: true };
   }
 
-  /** "주소 추가"로 받은 사건번호들 중 이미 DB에 있는 물건들을 찾아
-   * 매도분석을 시도한다(재크롤링 여부와 무관, 사용자 요청
-   * 2026-08-01 참고). 백그라운드에서 순차 처리 — 국토부 API 호출이
-   * 섞여 있어 병렬로 쏘면 레이트리밋에 걸릴 수 있다. */
-  private async triggerResaleAnalysisForAuctionNos(auctionNos: string[]): Promise<void> {
+  /** "조회 시작"을 누른 시점에, 그전 "주소 추가"에서 이미 DB에 있어
+   * 작업목록에서 제외됐던 사건번호들을 매도분석한다(재크롤링 없이
+   * 기존 DB 정보만 사용). 실행 로그에 진행상황을 남겨 "돌아가고
+   * 있다"는 게 눈에 보이게 한다(사용자 요청, 2026-08-01). */
+  private async runPendingDuplicateResaleAnalysis(): Promise<void> {
+    const auctionNos = this.pendingDuplicateResaleAuctionNos;
+    this.pendingDuplicateResaleAuctionNos = [];
+    if (auctionNos.length === 0) return;
+
     const existing = await this.auctionsService.findByAuctionNos(auctionNos);
+    if (existing.length === 0) return;
+
+    this.appendLog(
+      "info",
+      `[매도분석] 이미 DB에 있던 ${existing.length}건 확인 시작(재크롤링 없이 기존 정보로 매칭)`,
+    );
+    let attempted = 0;
+    let candidateFound = 0;
+    let displayed = 0;
     for (const auction of existing) {
-      await this.resaleMatchService.processAuctionForResale(auction).catch(() => {});
+      const result = await this.resaleMatchService
+        .processAuctionForResale(auction)
+        .catch(() => ({ attempted: false, candidateFound: false, displayed: false }));
+      if (result.attempted) attempted += 1;
+      if (result.candidateFound) candidateFound += 1;
+      if (result.displayed) displayed += 1;
     }
+    this.appendLog(
+      "info",
+      `[매도분석] 완료 — 시도 ${attempted}건 / 후보 발견 ${candidateFound}건 / 매도 확정 표시 ${displayed}건`,
+    );
   }
 
   async importItem(
