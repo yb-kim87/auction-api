@@ -33,7 +33,8 @@ export class AuctionsController {
   findApproved(@Headers() headers: Record<string, string>) {
     const ctx = getAuthContext(headers);
     const isStaff = ctx.role === UserRole.ADMIN || ctx.role === UserRole.CONSULTANT;
-    return this.auctionsService.findApproved(isStaff);
+    const isAdmin = ctx.role === UserRole.ADMIN;
+    return this.auctionsService.findApproved(isStaff, isAdmin);
   }
 
   @Get("manage")

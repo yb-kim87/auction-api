@@ -4,7 +4,7 @@ import { RecommendationEngineService } from "./recommendation-engine.service";
 import { parseMoneyToWon, type ProgressStatus } from "./investment-math.util";
 import { TagsService } from "../tags/tags.service";
 import { UserRole } from "../common/constants";
-import { stripStaffOnlyAuctionFields } from "../auctions/auction-staff-fields.util";
+import { stripResaleMatchFields, stripStaffOnlyAuctionFields } from "../auctions/auction-staff-fields.util";
 
 const VALID_PROGRESS_STATUS = new Set(["all", "active", "ended"]);
 
@@ -66,9 +66,10 @@ export class RecommendationController {
     });
 
     const isStaff = ctx.role === UserRole.ADMIN || ctx.role === UserRole.CONSULTANT;
+    const isAdmin = ctx.role === UserRole.ADMIN;
     const items = isStaff
-      ? result.items
-      : result.items.map((item) => stripStaffOnlyAuctionFields(item));
+      ? result.items.map((item) => (isAdmin ? item : stripResaleMatchFields(item)))
+      : result.items.map((item) => stripResaleMatchFields(stripStaffOnlyAuctionFields(item)));
 
     return {
       items,

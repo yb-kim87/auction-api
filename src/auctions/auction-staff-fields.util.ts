@@ -18,3 +18,21 @@ export function stripStaffOnlyAuctionFields(item: Auction): Record<string, unkno
   } = item;
   return rest;
 }
+
+/**
+ * 매도분석(재판매 매칭) 결과는 아직 내부 검증 중인 신호라 관리자
+ * 전용으로만 노출한다 — 컨설턴트도 제외(사용자 요청, 2026-08-01:
+ * "해당 정보는 관리자만 볼 수 있게 해줘"). link/미납관리비와 달리
+ * ADMIN이 아니면(컨설턴트 포함) 항상 걸러낸다.
+ */
+export function stripResaleMatchFields(
+  item: Auction | Record<string, unknown>,
+): Record<string, unknown> {
+  const {
+    resaleMatchTier: _tier,
+    resaleMatchScore: _score,
+    resaleMatchedTradeId: _tradeId,
+    ...rest
+  } = item as Record<string, unknown>;
+  return rest;
+}

@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { In, IsNull, Repository } from "typeorm";
 import * as XLSX from "xlsx";
 import { Auction } from "./auction.entity";
-import { stripStaffOnlyAuctionFields } from "./auction-staff-fields.util";
+import { stripResaleMatchFields, stripStaffOnlyAuctionFields } from "./auction-staff-fields.util";
 import { AuctionChangeLog } from "./auction-change.entity";
 import {
   EXCEL_HEADERS,
@@ -110,13 +110,15 @@ export class AuctionsService implements OnModuleInit {
     }
   }
 
-  async findApproved(isStaff: boolean) {
+  async findApproved(isStaff: boolean, isAdmin: boolean) {
     const items = await this.auctionRepo.find({
       where: { status: AuctionStatus.APPROVED },
       order: { updatedAt: "DESC", createdAt: "DESC" },
     });
-    if (isStaff) return items;
-    return items.map((item) => stripStaffOnlyAuctionFields(item));
+    if (isStaff) {
+      return isAdmin ? items : items.map((item) => stripResaleMatchFields(item));
+    }
+    return items.map((item) => stripResaleMatchFields(stripStaffOnlyAuctionFields(item)));
   }
 
   async findAllAdmin(options: { page: number; pageSize: number; search: string }) {

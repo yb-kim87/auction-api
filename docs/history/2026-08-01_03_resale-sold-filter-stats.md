@@ -195,3 +195,26 @@
 
 ## 검증
 - 양쪽 저장소 `npx tsc --noEmit`, `npm run build` 통과.
+
+## 追記 (2026-08-01) — 매칭된 물건 상세에도 결과 노출(관리자 전용)
+
+매도분석에서 매칭된 물건이라도 그 물건 자체의 상세정보 화면에서는
+확인할 방법이 없었음(QA 목록에서만 보임) — "매칭된 물건정보에도
+해당 정보를 볼 수 있게 해줘" 요청으로 물건 상세 모달에도 노출.
+단, 아직 내부 검증 중인 신호라 **관리자만**(컨설턴트도 제외 — 사용자
+명시: "해당 정보는 관리자만 볼 수 있게 해줘") 볼 수 있게 함.
+
+- `auction-staff-fields.util.ts`: `stripResaleMatchFields()` 신규 —
+  link/미납관리비(`stripStaffOnlyAuctionFields`, 관리자+컨설턴트 열람)
+  와 별도로, `resaleMatchTier`/`resaleMatchScore`/`resaleMatchedTradeId`
+  는 ADMIN이 아니면(컨설턴트 포함) 항상 제거.
+- `AuctionsService.findApproved(isStaff, isAdmin)`,
+  `RecommendationController`의 `GET /recommendations` 양쪽에 적용.
+- 프론트: `AuctionItem` 타입에 세 필드 추가, `AuctionDetailModal.tsx`
+  "핵심 가격 요약" 카드 상단에 "매도분석: 매도(재판매) 추정됨 — 등급
+  {tier} (점수 {score})" 배지 표시(값이 있을 때만 렌더링 — API가
+  이미 관리자 외에는 필드 자체를 안 내려주므로 프론트에 별도 role
+  체크 불필요).
+
+## 검증
+- 양쪽 저장소 `npx tsc --noEmit`, `npm run build` 통과.
