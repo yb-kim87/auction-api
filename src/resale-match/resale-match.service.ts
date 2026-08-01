@@ -38,7 +38,13 @@ export class ResaleMatchService implements OnModuleInit {
     // 배포 직후 바로 돌지 않도록 약간의 지연을 둔다(다른 스케줄러들과
     // 동일한 안전장치 패턴 — CrawlerService.onModuleInit 참고).
     const READY_DELAY_MS = 60_000;
-    const RUN_INTERVAL_MS = 24 * 60 * 60_000; // 1일
+    // 예전엔 1일 간격이었는데, 물건작업창에서 "매각" 상태로 크롤링해
+    // paymentCompletedAt이 새로 채워지는 물건이 하루 중에도 계속
+    // 생기다 보니, 막 채워진 물건은 다음날 배치까지 최대 24시간
+    // 대기해야 했다(실측: 거제시 150건이 당일 배치 실행 이후에
+    // 새로 채워져서 다음날까지 매칭 시도조차 안 됨, 2026-08-01).
+    // 2시간 간격으로 좁혀 백로그가 오래 쌓이지 않게 한다.
+    const RUN_INTERVAL_MS = 2 * 60 * 60_000; // 2시간
     setTimeout(() => {
       void this.runOnce();
       setInterval(() => void this.runOnce(), RUN_INTERVAL_MS);
