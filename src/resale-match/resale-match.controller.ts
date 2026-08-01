@@ -60,10 +60,12 @@ export class ResaleMatchController {
         a."paymentCompletedAt",
         a."salePrice",
         t."aptNm",
+        t."buildingDong",
         t.floor,
         t."exclusiveArea",
         t."dealAmount",
-        t."contractDate"
+        t."contractDate",
+        t."registeredAt"
       FROM auction_trade_match m
       JOIN auctions a ON a.id = m."auctionId"
       JOIN actual_trade t ON t.id = m."actualTradeId"
