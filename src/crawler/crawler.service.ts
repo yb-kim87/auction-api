@@ -11,6 +11,7 @@ import { join } from "path";
 import * as http from "http";
 import * as https from "https";
 import { AuctionsService } from "../auctions/auctions.service";
+import { ResaleMatchService } from "../resale-match/resale-match.service";
 import { nowPartsInKst } from "../common/kst-time.util";
 import { CafeKnowledgeService } from "../ai/cafe-knowledge.service";
 import type { KnowledgeDraftStatus } from "../ai/knowledge-draft.entity";
@@ -146,6 +147,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly auctionsService: AuctionsService,
+    private readonly resaleMatchService: ResaleMatchService,
     private readonly telegramService: CrawlerTelegramService,
     private readonly cafeKnowledgeService: CafeKnowledgeService,
     private readonly knowledgeService: KnowledgeService,
@@ -1301,6 +1303,19 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       linkExistingMap,
     );
 
+    // 이미 DB에 있어서 작업목록에서 제외된(재크롤링 건너뛴) 물건도
+    // 매도분석은 놓치지 않는다 — 기존 DB 정보(주소/완납일 등)만으로도
+    // 국토부 실거래가 매칭이 가능하므로 재크롤링을 기다릴 필요가 없다
+    // (사용자 요청, 2026-08-01: "중복이라 건너뛰지말고 가지고 있는
+    // DB정보를 통해서 국토부 실거래가를 주소로 돌려서 매칭을 해야할꺼
+    // 같아"). collectUrls 응답을 늦추지 않도록 await하지 않는다.
+    const rawAuctionNos = rawUrls
+      .map((u) => u.label?.split("_")[0]?.trim())
+      .filter((no): no is string => Boolean(no));
+    if (rawAuctionNos.length > 0) {
+      void this.triggerResaleAnalysisForAuctionNos(rawAuctionNos).catch(() => {});
+    }
+
     if (naverRefresh > 0) {
       this.appendLog(
         "info",
@@ -1552,6 +1567,17 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return { ok: true };
   }
 
+  /** "주소 추가"로 받은 사건번호들 중 이미 DB에 있는 물건들을 찾아
+   * 매도분석을 시도한다(재크롤링 여부와 무관, 사용자 요청
+   * 2026-08-01 참고). 백그라운드에서 순차 처리 — 국토부 API 호출이
+   * 섞여 있어 병렬로 쏘면 레이트리밋에 걸릴 수 있다. */
+  private async triggerResaleAnalysisForAuctionNos(auctionNos: string[]): Promise<void> {
+    const existing = await this.auctionsService.findByAuctionNos(auctionNos);
+    for (const auction of existing) {
+      await this.resaleMatchService.processAuctionForResale(auction).catch(() => {});
+    }
+  }
+
   async importItem(
     raw: Record<string, unknown>,
     submittedBy: string,
@@ -1649,6 +1675,16 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       } else {
         this.localStatus.updated += 1;
       }
+    }
+
+    // 물건 데이터를 방금 수집했으니, 바로 이어서 국토부 실거래가로
+    // 매도분석을 시도한다(주기 배치를 기다리지 않음, 사용자 요청
+    // 2026-08-01: "실행되는건 물건 데이터 수집을하고 거기서 바로
+    // 국토부 실거래 api돌려서 매칭시키고 다음꺼 돌리고"). 완납일이
+    // 아직 없거나 조건 미충족이면 내부에서 조용히 스킵된다. 크롤링
+    // 흐름을 막지 않도록 절대 await하지 않는다.
+    if (result.item) {
+      void this.resaleMatchService.processAuctionForResale(result.item).catch(() => {});
     }
 
     if (!options.mirror) {

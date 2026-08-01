@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, ForbiddenException, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { IsNull, Repository } from "typeorm";
+import { In, IsNull, Repository } from "typeorm";
 import * as XLSX from "xlsx";
 import { Auction } from "./auction.entity";
 import { stripStaffOnlyAuctionFields } from "./auction-staff-fields.util";
@@ -1190,6 +1190,14 @@ export class AuctionsService implements OnModuleInit {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, "경매물건");
     return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer;
+  }
+
+  /** 사건번호로 기존 물건을 조회한다 — "주소 추가" 시 이미 DB에 있어
+   * 재크롤링을 건너뛴 물건도 매도분석은 놓치지 않기 위해 사용
+   * (사용자 요청, 2026-08-01). */
+  async findByAuctionNos(auctionNos: string[]): Promise<Auction[]> {
+    if (auctionNos.length === 0) return [];
+    return this.auctionRepo.find({ where: { auctionNo: In(auctionNos) } });
   }
 
   async getLinkCollectFilterMap(): Promise<

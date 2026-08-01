@@ -49,7 +49,7 @@ export class TradeIngestionService {
     return scope;
   }
 
-  private recentMonths(count: number): string[] {
+  recentMonths(count: number): string[] {
     const months: string[] = [];
     const now = new Date();
     for (let i = 0; i < count; i++) {

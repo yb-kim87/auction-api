@@ -14,5 +14,6 @@ import { ResaleMatchController } from "./resale-match.controller";
   imports: [TypeOrmModule.forFeature([Auction, ActualTradeRow, AuctionTradeMatchRow])],
   controllers: [ResaleMatchController],
   providers: [MolitTradeClientService, TradeIngestionService, ResaleMatchService],
+  exports: [ResaleMatchService],
 })
 export class ResaleMatchModule {}

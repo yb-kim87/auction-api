@@ -34,6 +34,12 @@ export class ResaleMatchService implements OnModuleInit {
     private readonly ingestion: TradeIngestionService,
   ) {}
 
+  /** 같은 프로세스 안에서 이미 실거래를 수집한 lawdCd는 다시 국토부 API를
+   * 부르지 않는다(같은 지역 물건을 연달아 크롤링할 때 매번 36개월치를
+   * 재수집하면 낭비가 크다). 배포마다 초기화되며, 주기 배치가 별도로
+   * 계속 갱신하므로 오래된 캐시로 인한 데이터 누락 걱정은 없다. */
+  private readonly ingestedLawdCds = new Set<string>();
+
   onModuleInit() {
     // 배포 직후 바로 돌지 않도록 약간의 지연을 둔다(다른 스케줄러들과
     // 동일한 안전장치 패턴 — CrawlerService.onModuleInit 참고).
@@ -99,6 +105,44 @@ export class ResaleMatchService implements OnModuleInit {
     for (const auction of pending) {
       await this.matchOne(auction);
     }
+  }
+
+  /**
+   * 물건 상세 크롤링(조회 시작)으로 이 물건이 방금 저장/갱신된 직후
+   * 곧바로 호출한다 — 주기 배치(2시간 간격)를 기다리지 않고 "수집하고
+   * 바로 국토부 실거래 API 돌려서 매칭하고 다음 물건으로" 흐름으로
+   * 처리하기 위함(사용자 요청, 2026-08-01). 배치와 동일한 로직을
+   * 재사용하며, 크롤링 흐름을 막지 않도록 호출부에서 반드시
+   * fire-and-forget(void + catch)으로 불러야 한다.
+   */
+  async processAuctionForResale(auction: Auction): Promise<void> {
+    if (
+      !auction.paymentCompletedAt ||
+      auction.resaleMatchedTradeId ||
+      !auction.lawdCd ||
+      !auction.umdNm ||
+      !auction.jibun
+    ) {
+      return;
+    }
+    try {
+      await this.ensureIngestedForLawdCd(auction.lawdCd);
+      await this.matchOne(auction);
+    } catch (err) {
+      this.logger.error(
+        `물건별 매도분석 실패(auctionId=${auction.id}): ${err instanceof Error ? err.message : err}`,
+      );
+    }
+  }
+
+  private async ensureIngestedForLawdCd(lawdCd: string): Promise<void> {
+    if (this.ingestedLawdCds.has(lawdCd)) return;
+    const months = this.ingestion.recentMonths(CANDIDATE_WINDOW_MONTHS);
+    for (const dealYm of months) {
+      await this.ingestion.ingestOne(lawdCd, dealYm);
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    this.ingestedLawdCds.add(lawdCd);
   }
 
   private async matchOne(auction: Auction): Promise<void> {
