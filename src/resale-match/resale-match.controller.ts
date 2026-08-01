@@ -116,6 +116,21 @@ export class ResaleMatchController {
     return this.resaleMatchService.getResaleStatsForAuctionIds(auctionIds);
   }
 
+  /** 물건작업창에서 "주소 추가"로 가져온 사건번호 목록을 그대로 받아
+   * 매도분석한다(auctionId를 아직 모르는 시점이라 사건번호로 조회).
+   * 사용자 요청 2026-08-01. */
+  @Post("sold-stats-by-case-no")
+  async getSoldStatsByCaseNo(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { auctionNos?: string[] },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    const auctionNos = Array.isArray(body.auctionNos)
+      ? body.auctionNos.filter((no) => typeof no === "string" && no.trim())
+      : [];
+    return this.resaleMatchService.getResaleStatsForAuctionNos(auctionNos);
+  }
+
   @Post("run-now")
   async runNow(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));

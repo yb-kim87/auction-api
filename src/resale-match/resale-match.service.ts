@@ -217,15 +217,37 @@ export class ResaleMatchService implements OnModuleInit {
     if (auctionIds.length === 0) {
       return { total: 0, withCandidate: 0, displayed: 0, items: [] };
     }
-
     const soldAuctions = await this.auctionRepo
       .createQueryBuilder("a")
       .where("a.id IN (:...ids)", { ids: auctionIds })
       .andWhere("a.salePrice IS NOT NULL")
       .andWhere("a.salePrice > 0")
       .getMany();
+    return this.buildResaleStats(soldAuctions);
+  }
 
-    const filtered = soldAuctions;
+  /**
+   * 물건작업창(CrawlerWorkPanel)에서 "주소 추가"로 가져온 사건번호
+   * 목록을 그대로 받아 매도분석한다 — 그 시점엔 아직 auctionId(UUID)를
+   * 모르고 탱크옥션 사건번호(예: "2023타경25614")만 있으므로 사건번호
+   * 기준으로 조회한다. 낙찰 안 된 물건은 자동으로 제외된다(salePrice
+   * 없는 건 buildResaleStats에서 걸러짐 — 사용자 요청: "낙찰된게
+   * 아니면 매도분석하지 않고 낙찰된것만 분석").
+   */
+  async getResaleStatsForAuctionNos(auctionNos: string[]) {
+    if (auctionNos.length === 0) {
+      return { total: 0, withCandidate: 0, displayed: 0, items: [] };
+    }
+    const soldAuctions = await this.auctionRepo
+      .createQueryBuilder("a")
+      .where("a.auctionNo IN (:...nos)", { nos: auctionNos })
+      .andWhere("a.salePrice IS NOT NULL")
+      .andWhere("a.salePrice > 0")
+      .getMany();
+    return this.buildResaleStats(soldAuctions);
+  }
+
+  private async buildResaleStats(filtered: Auction[]) {
     if (filtered.length === 0) {
       return { total: 0, withCandidate: 0, displayed: 0, items: [] };
     }
