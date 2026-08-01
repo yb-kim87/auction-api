@@ -122,17 +122,6 @@ export class AiController {
     );
   }
 
-  @Post("auctions/:auctionId/tenant-summary")
-  async getTenantSummary(
-    @Headers() headers: Record<string, string>,
-    @Param("auctionId") auctionId: string,
-  ) {
-    const ctx = getAuthContext(headers);
-    requireAuth(ctx);
-    requireSearchAccess(ctx);
-    return this.aiAnalysisService.getOrCreateTenantSummary(auctionId, ctx.role);
-  }
-
   @Get("auctions/:auctionId/rights-review")
   async getRightsReview(
     @Headers() headers: Record<string, string>,

@@ -100,46 +100,6 @@ export class AiAnalysisService {
     private readonly rightsRuleService: RightsRuleService,
   ) {}
 
-  /**
-   * 임차인 점유현황 원문(법률 용어 위주)을 초보자가 이해하기 쉬운 1~2문장
-   * 요약으로 바꾼다. 물건당 한 번만 OpenAI를 호출하고 결과를
-   * tenantSummary에 캐싱한다(재요청 시 캐시 재사용, 사용자 요청
-   * 2026-08-01 — 볼 때마다 호출하면 비용이 쌓이는 걸 우려함).
-   */
-  async getOrCreateTenantSummary(auctionId: string, role: UserRole | ""): Promise<{ summary: string }> {
-    const auction = await this.findAuction(auctionId, role);
-    if (auction.tenantSummary) {
-      return { summary: auction.tenantSummary };
-    }
-    const tenantDetail = String(auction.tenantDetail ?? "").trim();
-    if (!tenantDetail || tenantDetail === "없음" || tenantDetail === "값없음") {
-      return { summary: "" };
-    }
-
-    const systemPrompt = `당신은 부동산 경매 초보 투자자를 돕는 "코치픽 AI"입니다.
-아래는 법원 현황조사서/매각물건명세서에서 발췌한 임차인 점유현황 원문입니다.
-전문 법률 용어가 많아 초보자가 이해하기 어려우므로, 핵심만 1~2문장으로 쉽게 요약하세요.
-
-규칙:
-- "~할 것으로 보입니다", "~인 것 같습니다" 같은 모호한 표현 대신 원문에 근거해 명확하게 서술
-- 원문에 없는 내용을 추측해서 지어내지 말 것(불확실하면 "확인 필요"라고만 표현)
-- "대항력:" 값(없음/있음/인수조건변경 등)은 원문에 이미 명시된 값을 그대로
-  인용할 것 — 절대 스스로 재판단하거나 다른 값으로 바꿔 쓰지 말 것. 특히
-  "대항력 없음"과 "인수조건변경"은 서로 다른 상태이므로 절대 혼동하지 말 것
-- 같은 임차인이 여러 "임차인:" 블록(예: 양도인/승계인, 원 임차인/HUG 등
-  보증기관 승계)으로 나뉘어 있으면, 서로 다른 블록의 대항력/조건을 하나로
-  뭉뚱그리지 말고 블록별로 구분해서 정확히 언급할 것(가장 최근/최종 상태를
-  우선 언급)
-- 입찰자가 실제로 취해야 할 행동이 있으면 마지막에 짧게 덧붙이기(예: "입찰 전 현장 확인 권장")
-- 존댓말, 2~3문장 이내, 불릿 없이 자연스러운 문장으로
-- 크롤링 출처(사이트명)는 절대 언급하지 말 것`;
-
-    const summary = await this.openAi.answerFreeform(systemPrompt, tenantDetail);
-    auction.tenantSummary = summary;
-    await this.auctionRepo.save(auction);
-    return { summary };
-  }
-
   private async findAuction(id: string, role: UserRole | "") {
     const item = await this.auctionRepo.findOne({ where: { id } });
     if (!item) {
