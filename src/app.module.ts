@@ -17,6 +17,7 @@ import { RequestLogMiddleware } from "./security-log/request-log.middleware";
 import { VatModule } from "./vat/vat.module";
 import { LectureMaterialsModule } from "./lecture-materials/lecture-materials.module";
 import { ResaleMatchModule } from "./resale-match/resale-match.module";
+import { BidPlanModule } from "./bid-plan/bid-plan.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -38,6 +39,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     VatModule,
     LectureMaterialsModule,
     ResaleMatchModule,
+    BidPlanModule,
   ],
 })
 export class AppModule implements NestModule {
