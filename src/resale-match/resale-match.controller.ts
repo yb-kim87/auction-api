@@ -56,6 +56,7 @@ export class ResaleMatchController {
         m2."scoreTotal" AS "runnerUpScore",
         a."auctionNo",
         a.court,
+        a."propType",
         a.address,
         a."paymentCompletedAt",
         a."salePrice",
