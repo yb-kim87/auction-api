@@ -6,9 +6,12 @@ import { SecurityLogIpExclusion } from "./security-log-ip-exclusion.entity";
 import { OpenAiService } from "../ai/openai.service";
 import { TelegramAlertService } from "../kakao-notify/telegram-alert.service";
 
-const ANALYZE_INTERVAL_MINUTES = 10;
+/** OpenAI 호출 빈도를 줄이기 위해 10분→30분으로 늘림(사용자 요청, 2026-08-01:
+ *  10분 간격 자동 분석이 크레딧을 계속 소모해 정작 필요한 AI 권리분석이
+ *  429로 막히는 문제가 있었음). */
+const ANALYZE_INTERVAL_MINUTES = 30;
 /** 이 시간 이전 로그는 통계에서 제외한다(매 주기 최근 구간만 본다) */
-const WINDOW_MINUTES = 10;
+const WINDOW_MINUTES = 30;
 /** 로그 라인이 너무 많으면 AI 프롬프트가 비대해지므로 통계로 압축해서 넘긴다 */
 const TOP_N = 20;
 /** 오래된 로그 삭제(purgeOld)를 이 간격으로 실행한다 — AI 분석과 달리
