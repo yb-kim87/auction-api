@@ -109,6 +109,26 @@ export class LectureReplayService {
     return this.videoRepo.find({ where: { sectionId }, order: { sortOrder: "ASC" } });
   }
 
+  /** Bunny Stream Video API로 영상의 실제 재생시간(초)을 조회한다.
+   * BUNNY_STREAM_API_KEY가 없거나 API 호출이 실패하면 null을 반환하고
+   * 조용히 넘어간다 — 관리자가 직접 입력한 값이 있으면 그걸 쓰고,
+   * 없으면 화면에 "-"로 표시될 뿐 영상 등록 자체를 막지 않는다. */
+  private async fetchBunnyVideoDurationSeconds(bunnyVideoId: string): Promise<number | null> {
+    const libraryId = process.env.BUNNY_STREAM_LIBRARY_ID?.trim();
+    const apiKey = process.env.BUNNY_STREAM_API_KEY?.trim();
+    if (!libraryId || !apiKey) return null;
+    try {
+      const res = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${bunnyVideoId}`, {
+        headers: { AccessKey: apiKey, accept: "application/json" },
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as { length?: number };
+      return typeof data.length === "number" && data.length > 0 ? Math.round(data.length) : null;
+    } catch {
+      return null;
+    }
+  }
+
   async createVideo(
     sectionId: string,
     body: {
@@ -125,12 +145,14 @@ export class LectureReplayService {
     const section = await this.sectionRepo.findOne({ where: { id: sectionId } });
     if (!section) throw new NotFoundException("섹션을 찾을 수 없습니다.");
     const count = await this.videoRepo.count({ where: { sectionId } });
+    const durationSeconds =
+      body.durationSeconds ?? (await this.fetchBunnyVideoDurationSeconds(bunnyVideoId));
     const video = this.videoRepo.create({
       sectionId,
       title,
       description: body.description?.trim() || null,
       bunnyVideoId,
-      durationSeconds: body.durationSeconds ?? null,
+      durationSeconds,
       sortOrder: count,
       // 등록하면 바로 재생 가능하도록 기본 공개(2026-08-02, 직원이 영상
       // 등록만 하면 별도로 "공개로" 누르지 않아도 되게 해달라는 요청).
@@ -157,7 +179,14 @@ export class LectureReplayService {
     if (body.title !== undefined) video.title = body.title.trim();
     if (body.description !== undefined) video.description = body.description.trim() || null;
     if (body.bunnyVideoId !== undefined) video.bunnyVideoId = body.bunnyVideoId.trim();
-    if (body.durationSeconds !== undefined) video.durationSeconds = body.durationSeconds;
+    if (body.durationSeconds !== undefined) {
+      video.durationSeconds = body.durationSeconds;
+    } else if (!video.durationSeconds && video.bunnyVideoId) {
+      // 재생시간이 비어있는 기존 영상을 다른 필드만 고쳐서 저장할 때도
+      // 이 기회에 자동으로 채워준다(관리자가 매번 "재조회" 버튼을 누를
+      // 필요 없이 그냥 저장만 하면 채워지도록).
+      video.durationSeconds = await this.fetchBunnyVideoDurationSeconds(video.bunnyVideoId);
+    }
     if (body.sortOrder !== undefined) video.sortOrder = body.sortOrder;
     if (body.isPublished !== undefined) video.isPublished = body.isPublished;
     if (body.isOtVideo !== undefined) video.isOtVideo = body.isOtVideo;
