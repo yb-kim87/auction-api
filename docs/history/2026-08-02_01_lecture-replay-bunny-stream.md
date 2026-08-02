@@ -493,3 +493,63 @@ Railway에 아직 설정되어 있지 않아(확인함, `BUNNY_STREAM_LIBRARY_ID
 있음) 실제로 채워지려면 사용자가 Bunny 대시보드에서 Video API 키를
 발급해 등록해야 함** — 키가 없으면 조용히 null 반환하고 등록/수정
 자체는 막지 않음.
+
+## 追記 (2026-08-02) — 회원 삭제, 관리자 UI 정리, 로고 통일
+
+**회원 삭제 기능**: "회원 권한 관리에서 필요없는 회원은 지우고
+싶은데 삭제 가능하게 해줘" + "삭제할때 쉽게 삭제 못되게 여러분
+누르게 구조를 만들어주고" — 단순 브라우저 confirm()이 아니라 2단계
+클릭 확인 UX로 구현.
+- 백엔드: `UsersService.deleteUser(id)`(admin 계정은 삭제 불가,
+  `ConflictException`) + `DELETE /users/:id`(`requireAdmin`) 컨트롤러
+  추가.
+- 프론트: `src/lib/api.ts`에 `deleteUser()` 추가. `admin/page.tsx`
+  "회원 권한 관리" 테이블에 "삭제" 컬럼 추가 — 첫 클릭 시
+  `confirmingDeleteUserId` state로 "정말 삭제?"/"취소" 버튼으로
+  전환, 같은 행을 다시 클릭해야 실제 `DELETE` 요청 발생. admin
+  role 행은 삭제 버튼 자체를 숨김(백엔드 보호와 일치).
+
+**관리자 UI 정리(명시적 요청, 모두 즉시 반영)**:
+- "매도분석 탭은 없애도 될꺼같아 어차피 물건작업에 들어가있으니까"
+  → `admin/page.tsx`의 `ADMIN_TABS` 배열에서 해당 항목 제거(타입/
+  렌더 분기는 기존 컨벤션대로 유지, 완전 삭제 안 함).
+- "강의 이름도 수정할 수 있게 해줘" → `LectureReplayTab.tsx` 강의
+  목록에 인라인 제목 수정(수정/저장/취소 버튼) 추가.
+- "일반강의 이부분도 필요없고 섹션에서 선택하면 되니까" → 강의
+  레벨 "OT강의로 지정" 토글 UI를 `LectureReplayTab.tsx`에서 제거
+  (백엔드 `isOtCourse` 필드/로직 자체는 유지 — 이미 지정된 기존
+  데이터와 API는 그대로 두고 UI만 정리, 영상 단위 OT 지정으로
+  대체 완료된 상태이므로 UI 노출만 없앰).
+
+**로고 "강" 아이콘 → "코치픽" 단일 배지 통일**: 여러 라운드에
+걸쳐 "강 지우고 코치픽으로", "검은색글씨 코치픽은 지워줘" 등 반복
+지적 → 최종적으로 아이콘+텍스트 조합을 없애고 보라 그라데이션
+배지 하나에 "코치픽" 텍스트만 넣는 형태로 3개 페이지 모두 통일:
+- `src/app/courses/page.tsx`(강의실 목록) — 기존에 이미 배지 형태로
+  돼 있었음(변경 없음, `homeHref` 링크 유지).
+- `src/app/courses/[courseId]/MyCourseClient.tsx`(강의상세) — "코치픽
+  저 버튼을 누르면 코치픽 추천물건페이지로 넘어가는게 못넘어가게
+  해줘" 요청에 따라 `<Link href="/">` 래퍼를 제거하고 클릭 불가능한
+  `<div>`로 변경(OT수강생은 "/"에 접근 권한이 없어 링크가 있으면
+  안 됐음).
+- `src/app/account/page.tsx`(내 정보) — 기존엔 "강" 아이콘 박스 +
+  별도 검은 글씨 "코치픽" 텍스트가 나란히 있던 것을 다른 페이지와
+  동일한 단일 배지로 교체(`Link href={homeHref}`는 유지 — 이 페이지는
+  OT수강생 접근 제한과 무관).
+
+### 변경 파일
+**auction-api**: `src/users/users.service.ts`(`deleteUser`),
+`src/users/users.controller.ts`(`DELETE /users/:id`).
+
+**auction**: `src/lib/api.ts`(`deleteUser`), `src/app/admin/page.tsx`
+(삭제 컬럼/2단계 확인 핸들러, 매도분석 탭 제거),
+`src/app/admin/LectureReplayTab.tsx`(강의명 인라인 수정, 강의레벨
+OT토글 UI 제거 — 이 파일은 이전 세션에서 이미 수정, 이번엔 그
+상태 그대로 커밋에 포함되지 않음, 별도 커밋 이력 확인 필요),
+`src/app/courses/[courseId]/MyCourseClient.tsx`(로고 비클릭화),
+`src/app/account/page.tsx`(로고 단일 배지화).
+
+### 테스트 결과
+`auction`/`auction-api` 모두 `npx tsc --noEmit` + `npm run build`
+클린 확인. 배포 후 `npx vercel inspect https://auction-seven-tan.vercel.app`
+로 alias가 최신 배포를 가리키는지 확인 예정(이 문서에 追記).

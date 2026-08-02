@@ -285,6 +285,18 @@ export class UsersService implements OnModuleInit {
     return this.userRepo.save(user);
   }
 
+  async deleteUser(id: string) {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException("회원을 찾을 수 없습니다.");
+    }
+    if (user.username === "admin") {
+      throw new ConflictException("관리자 계정은 삭제할 수 없습니다.");
+    }
+    await this.userRepo.delete(id);
+    return { ok: true };
+  }
+
   async updateAiAnalysisLimit(id: string, limit: number) {
     if (!Number.isInteger(limit) || limit < 0) {
       throw new BadRequestException(

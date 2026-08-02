@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -64,6 +65,15 @@ export class UsersController {
     }
     const user = await this.usersService.updateRole(id, body.role);
     return this.usersService.sanitize(user);
+  }
+
+  @Delete(":id")
+  async deleteUser(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.usersService.deleteUser(id);
   }
 
   @Patch(":id/ai-limit")
