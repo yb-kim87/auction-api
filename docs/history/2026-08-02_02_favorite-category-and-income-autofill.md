@@ -150,3 +150,35 @@ status`/헬스체크, `npx vercel inspect`로 정상 기동 확인 예정(이
 `tsc --noEmit` + `npm run build` 클린. 배포 후 실제 브라우저에서
 Enter로 카테고리가 등록되는지, `/favorites` 페이지가 정상 렌더링되는지
 직접 확인하지 못함 — 배포 확인 후 사용자 확인 필요.
+
+## 追記 (2026-08-02) — /favorites 페이지 로딩 속도 문제(전체 물건 목록을 다 받던 버그)
+
+사용자 피드백: "관심물건 불러오는 속도가 너무 느린데??" (스크린샷: 관심
+0건인데도 "불러오는 중..."이 오래 유지됨).
+
+**원인**: `/favorites` 페이지가 `fetchAuctions()`(승인된 전체 물건
+목록, `GET /auctions`)를 그대로 재사용해 관심물건이 몇 건 안 되는데도
+매번 DB의 전체 물건을 다 내려받고 있었다. `search` 페이지는 검색/필터
+용도라 전체 목록이 필요하지만, 관심물건 페이지는 사용자가 찜한 소수
+건만 있으면 되므로 불필요한 낭비였다.
+
+**해결**: id 목록으로만 좁혀 조회하는 새 엔드포인트를 추가.
+- `AuctionsService.findByIds(ids, isStaff, isAdmin)`(신규): `In(ids)`로
+  좁혀 조회 후 기존 `findApproved()`와 동일한 role별 필드 스트립 로직
+  재사용(`stripResaleMatchFields`/`stripStaffOnlyAuctionFields`).
+- `GET /auctions/by-ids?ids=id1,id2,...`(신규) 컨트롤러 — 기존
+  `@Get(":id/changes")`류와 경로 충돌 없음(바로 아래 리터럴 경로).
+- 프론트 `fetchAuctionsByIds(ids)`(신규, `lib/api.ts`) — `/favorites`
+  페이지가 `fetchFavorites()`로 즐겨찾기 id를 먼저 받은 뒤, 그 id들만
+  `fetchAuctionsByIds()`로 조회하도록 교체(`fetchAuctions()` 호출 제거).
+
+### 변경 파일(추가분)
+**auction-api**: `src/auctions/auctions.service.ts`(`findByIds`),
+`src/auctions/auctions.controller.ts`(`GET /auctions/by-ids`).
+
+**auction**: `src/lib/api.ts`(`fetchAuctionsByIds`),
+`src/app/favorites/page.tsx`(전체 목록 대신 by-ids 사용).
+
+### 테스트 결과
+`tsc --noEmit` + `npm run build` 클린(양쪽 모두). 배포 후 실제 로딩
+속도 개선 여부는 이 세션에서 직접 측정하지 못함 — 사용자 확인 필요.

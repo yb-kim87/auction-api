@@ -121,6 +121,18 @@ export class AuctionsService implements OnModuleInit {
     return items.map((item) => stripResaleMatchFields(stripStaffOnlyAuctionFields(item)));
   }
 
+  /** 관심물건 페이지 등에서, 전체 목록을 내려받지 않고 필요한 물건만 콕
+   * 집어 조회할 때 쓴다(성능: 관심물건이 몇 건 안 되는데도 전체 물건을
+   * 다 불러오면 느려지는 문제, 2026-08-02). */
+  async findByIds(ids: string[], isStaff: boolean, isAdmin: boolean) {
+    if (ids.length === 0) return [];
+    const items = await this.auctionRepo.find({ where: { id: In(ids) } });
+    if (isStaff) {
+      return isAdmin ? items : items.map((item) => stripResaleMatchFields(item));
+    }
+    return items.map((item) => stripResaleMatchFields(stripStaffOnlyAuctionFields(item)));
+  }
+
   async findAllAdmin(options: { page: number; pageSize: number; search: string }) {
     const query = this.auctionRepo
       .createQueryBuilder("auction");

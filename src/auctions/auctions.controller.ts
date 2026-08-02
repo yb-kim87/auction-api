@@ -37,6 +37,23 @@ export class AuctionsController {
     return this.auctionsService.findApproved(isStaff, isAdmin);
   }
 
+  /** 관심물건 페이지처럼 특정 id 몇 건만 필요할 때 전체 목록을 내려받지
+   * 않도록 하는 조회. `?ids=id1,id2,...` */
+  @Get("by-ids")
+  findByIds(
+    @Headers() headers: Record<string, string>,
+    @Query("ids") idsParam: string,
+  ) {
+    const ctx = getAuthContext(headers);
+    const isStaff = ctx.role === UserRole.ADMIN || ctx.role === UserRole.CONSULTANT;
+    const isAdmin = ctx.role === UserRole.ADMIN;
+    const ids = (idsParam ?? "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+    return this.auctionsService.findByIds(ids, isStaff, isAdmin);
+  }
+
   @Get("manage")
   findAllAdmin(
     @Headers() headers: Record<string, string>,
