@@ -415,3 +415,29 @@ isOtCourse를 false로 UPDATE — 스크립트는 작업 후 삭제.
 `src/lecture-replay/lecture-replay.service.ts`(isAuto 필드),
 `src/users/users.service.ts`(OT_AUTO_UPGRADE_NAMES 자동등업),
 프론트 `src/lib/api.ts`/`src/app/courses/page.tsx`(isAuto 반영).
+
+## 追記 (2026-08-02) — 헤더 "강의실" 메뉴 + 시청 페이지 디자인 개편
+
+**헤더 메뉴**: `/courses`로 갈 방법이 주소 직접 입력밖에 없다는
+지적 → 홈(`/`)/검색(`/search`)/관리자(`/admin`)/컨설턴트
+(`/consultant`) 헤더에 "강의실" 링크 추가.
+
+**시청 페이지 디자인**: 사용자가 피그마에서 만든 강의상세 디자인
+("바로일본어" 스타일, Vite+React 코드로 내보낸 프로젝트)을
+`C:\Users\young\Downloads\내 강의실 디자인`에 저장 → 직접 파일로
+읽어 확인 후, 백엔드 지원 범위(Q&A/후기/노트/강사정보/진도율 저장
+전부 미구현)를 먼저 짚고 사용자에게 이번 범위를 확인(AskUserQuestion)
+→ "커리큘럼 탭 + 레이아웃만" 선택.
+
+- `src/app/courses/[courseId]/MyCourseClient.tsx`를 피그마 디자인
+  팔레트(#5244d4 액센트 등)와 레이아웃(헤더+진행표시/영상+제목배지
+  오버레이/이전·다음 강의 이동바/통계 카드+섹션 리스트/우측 사이드바
+  아코디언)로 전면 재구성.
+- Bunny iframe 위에 커스텀 재생 컨트롤을 얹을 수 없어(외부 iframe이라
+  내부 클릭 이벤트를 가로챌 수 없음), 디자인의 커스텀 시크바/재생버튼은
+  구현하지 않고 제목 배지(pointerEvents:none, 클릭 통과)만 오버레이.
+- "완료/재생중" 상태(초록 체크)는 진도 저장 기능이 없어 구현 불가 →
+  단순히 "선택됨(재생중)" 강조 + "공개/준비중(잠김)" 2가지 상태만
+  표시.
+- 강사 정보 바, Q&A/후기/노트 탭은 이번 범위에서 제외(백엔드 데이터
+  없음) — 추후 별도 요청 시 진행.
