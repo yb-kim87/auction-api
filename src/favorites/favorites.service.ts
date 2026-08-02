@@ -32,17 +32,32 @@ export class FavoritesService {
     return rows.map((row) => row.auctionId);
   }
 
-  async add(username: string, auctionId: string) {
+  /** 관심등록 목록을 분류(category)까지 포함해 반환한다. */
+  async list(username: string): Promise<{ auctionId: string; category: string | null }[]> {
     const userId = await this.resolveUserId(username);
+    const rows = await this.favoriteRepo.find({
+      where: { userId },
+      order: { createdAt: "DESC" },
+    });
+    return rows.map((row) => ({ auctionId: row.auctionId, category: row.category }));
+  }
+
+  async add(username: string, auctionId: string, category?: string | null) {
+    const userId = await this.resolveUserId(username);
+    const normalizedCategory = category?.trim() || null;
     const existing = await this.favoriteRepo.findOne({
       where: { userId, auctionId },
     });
     if (existing) {
+      if (normalizedCategory !== null && existing.category !== normalizedCategory) {
+        existing.category = normalizedCategory;
+        await this.favoriteRepo.save(existing);
+      }
       return { ok: true, auctionId, alreadyExists: true };
     }
 
     await this.favoriteRepo.save(
-      this.favoriteRepo.create({ userId, auctionId }),
+      this.favoriteRepo.create({ userId, auctionId, category: normalizedCategory }),
     );
     return { ok: true, auctionId };
   }

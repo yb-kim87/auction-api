@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -21,17 +22,19 @@ export class FavoritesController {
     const ctx = getAuthContext(headers);
     requireAuth(ctx);
     const auctionIds = await this.favoritesService.listAuctionIds(ctx.username);
-    return { auctionIds };
+    const items = await this.favoritesService.list(ctx.username);
+    return { auctionIds, items };
   }
 
   @Post(":auctionId")
   async add(
     @Headers() headers: Record<string, string>,
     @Param("auctionId") auctionId: string,
+    @Body() body: { category?: string | null },
   ) {
     const ctx = getAuthContext(headers);
     requireAuth(ctx);
-    return this.favoritesService.add(ctx.username, auctionId);
+    return this.favoritesService.add(ctx.username, auctionId, body?.category);
   }
 
   @Delete(":auctionId")
