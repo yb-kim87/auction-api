@@ -441,3 +441,19 @@ isOtCourse를 false로 UPDATE — 스크립트는 작업 후 삭제.
   표시.
 - 강사 정보 바, Q&A/후기/노트 탭은 이번 범위에서 제외(백엔드 데이터
   없음) — 추후 별도 요청 시 진행.
+
+## 追記 (2026-08-02) — Bunny 플레이어 강조색은 URL 파라미터로 불가
+
+사용자가 재생 화면 스크린샷을 보내며 Bunny 플레이어 자체(재생버튼/
+시크바)의 주황색을 사이트 보라 톤(#5244d4)으로 바꿔달라고 요청.
+
+- 1차 시도: embed URL에 `&color=5244d4` 쿼리 파라미터 추가 후 배포 →
+  사용자가 "색상이 그대로"라고 재확인.
+- WebFetch로 bunny.net 공식 문서(`stream-embedding-videos`,
+  `stream/player-settings`)를 직접 확인한 결과, **embed URL에는
+  `color` 파라미터가 존재하지 않음**(지원 파라미터는 autoplay/
+  captions/preload/t/chromecast/muted/loop 등). 플레이어 색상은
+  **Bunny 대시보드 > Stream > 해당 라이브러리 > Player 설정에서
+  라이브러리 단위로만 지정 가능**.
+- 잘못 추가했던 `&color=` 파라미터를 제거(`buildEmbedUrl()`)하고,
+  사용자에게 대시보드에서 직접 설정하는 방법 안내로 전환.
