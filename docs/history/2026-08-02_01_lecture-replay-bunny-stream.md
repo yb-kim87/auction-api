@@ -301,3 +301,19 @@ page.tsx`+`MyCourseClient.tsx`(신규), `src/middleware.ts`(matcher 추가),
 OT수강생 계정으로 로그인해 `/courses`에 OT강의가 자동으로 뜨는지는
 이 세션에서 직접 확인하지 못함 — 배포 후 관리자가 테스트 계정으로
 확인 권장.
+
+## 追記 (2026-08-02) — 관리자는 모든 강의를 수강권 없이 자동 열람
+
+사용자 요청: "관리자는 모든 강의를 볼 수 있게 해줘". OT수강생 자동
+접근 로직(`hasOtCourseAccess`)을 `hasAutoAccess`로 일반화해서, role이
+ADMIN이면 강의별 enrollment/OT플래그와 무관하게 항상 통과하도록 수정.
+
+- `listMyCourses()`: role이 ADMIN이면 (공개 여부 무관) 전체 강의를
+  자동 항목으로 `/courses` 목록에 포함.
+- `requireActiveEnrollment()` → `hasAutoAccess()`가 ADMIN이면 무조건
+  true 반환(OT수강생 조건보다 먼저 체크).
+- `getMyCourseAccessInfo()`: 기존엔 `!course.isPublished`면 무조건
+  404였는데, 요청자가 ADMIN이면 비공개 강의도 미리보기 가능하도록
+  예외 처리(영상 자체의 공개 여부는 기존과 동일하게 유지 — 비공개
+  영상은 관리자에게도 재생 URL을 안 줌, 이 부분은 이번 요청 범위
+  밖이라 건드리지 않음).

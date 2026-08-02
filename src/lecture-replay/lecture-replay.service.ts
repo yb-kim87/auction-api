@@ -414,42 +414,45 @@ export class LectureReplayService {
       };
     });
 
-    // OT수강생은 개별 수강권 없이도 "OT강의"로 지정된 공개 강의를 자동으로
-    // 볼 수 있다(2026-08-02). 이미 개별 수강권이 있는 강의는 중복 표시하지 않는다.
+    // OT수강생은 개별 수강권 없이도 "OT강의"로 지정된 공개 강의를, 관리자는
+    // 모든 강의를(비공개 포함, 관리 목적) 자동으로 볼 수 있다(2026-08-02).
+    // 이미 개별 수강권이 있는 강의는 중복 표시하지 않는다.
     const user = await this.usersService.findByUsername(username);
-    if (user?.role === UserRole.OT_STUDENT) {
-      const otCourses = await this.courseRepo.find({
-        where: { isOtCourse: true, isPublished: true },
+    let autoCourses: Course[] = [];
+    if (user?.role === UserRole.ADMIN) {
+      autoCourses = await this.courseRepo.find({ order: { createdAt: "DESC" } });
+    } else if (user?.role === UserRole.OT_STUDENT) {
+      autoCourses = await this.courseRepo.find({ where: { isOtCourse: true, isPublished: true } });
+    }
+    for (const course of autoCourses) {
+      if (items.some((i) => i.courseId === course.id)) continue;
+      items.unshift({
+        enrollmentId: `auto-${course.id}`,
+        courseId: course.id,
+        courseTitle: course.title,
+        courseDescription: course.description,
+        startsAt: new Date(0),
+        expiresAt: new Date("2999-12-31"),
+        remainingDays: Number.MAX_SAFE_INTEGER,
+        effectiveStatus: "ACTIVE",
       });
-      for (const course of otCourses) {
-        if (items.some((i) => i.courseId === course.id)) continue;
-        items.unshift({
-          enrollmentId: `ot-${course.id}`,
-          courseId: course.id,
-          courseTitle: course.title,
-          courseDescription: course.description,
-          startsAt: new Date(0),
-          expiresAt: new Date("2999-12-31"),
-          remainingDays: Number.MAX_SAFE_INTEGER,
-          effectiveStatus: "ACTIVE",
-        });
-      }
     }
 
     return items;
   }
 
-  /** OT수강생이 "OT강의"로 지정된 공개 강의에 자동으로 접근 가능한지
-   * 확인한다(개별 enrollment 없이도 통과). */
-  private async hasOtCourseAccess(username: string, courseId: string): Promise<boolean> {
+  /** 관리자는 모든 강의(비공개 포함)를, OT수강생은 "OT강의"로 지정된
+   * 공개 강의를 개별 enrollment 없이도 자동으로 볼 수 있다. */
+  private async hasAutoAccess(username: string, courseId: string): Promise<boolean> {
     const user = await this.usersService.findByUsername(username);
+    if (user?.role === UserRole.ADMIN) return true;
     if (user?.role !== UserRole.OT_STUDENT) return false;
     const course = await this.courseRepo.findOne({ where: { id: courseId } });
     return Boolean(course?.isOtCourse && course.isPublished);
   }
 
   private async requireActiveEnrollment(username: string, courseId: string) {
-    if (await this.hasOtCourseAccess(username, courseId)) return null;
+    if (await this.hasAutoAccess(username, courseId)) return null;
 
     const enrollment = await this.enrollmentRepo.findOne({ where: { username, courseId } });
     if (!enrollment) {
@@ -471,7 +474,8 @@ export class LectureReplayService {
   async getMyCourseAccessInfo(username: string, courseId: string) {
     await this.requireActiveEnrollment(username, courseId);
     const course = await this.courseRepo.findOne({ where: { id: courseId } });
-    if (!course || !course.isPublished) {
+    const user = await this.usersService.findByUsername(username);
+    if (!course || (!course.isPublished && user?.role !== UserRole.ADMIN)) {
       throw new NotFoundException("강의를 찾을 수 없습니다.");
     }
     return {
