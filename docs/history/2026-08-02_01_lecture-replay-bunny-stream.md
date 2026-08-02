@@ -553,3 +553,27 @@ OT토글 UI 제거 — 이 파일은 이전 세션에서 이미 수정, 이번�
 `auction`/`auction-api` 모두 `npx tsc --noEmit` + `npm run build`
 클린 확인. 배포 후 `npx vercel inspect https://auction-seven-tan.vercel.app`
 로 alias가 최신 배포를 가리키는지 확인 예정(이 문서에 追記).
+
+## 追記 (2026-08-02) — 강의/영상 등록 기본값을 다시 "비공개"로 되돌림
+
+앞서(§"강의/영상 등록 시 기본 공개로 변경") 직원 편의를 위해 기본값을
+공개로 바꿨었는데, 사용자가 다시 "새로운 강의를 추가하면 기본적으로
+비공개로 해줘"라고 요청 — `createCourse()`/`createVideo()`의
+`isPublished` 기본값을 `true`→`false`로 재변경. 영상도 같이 비공개로
+할지 확인(AskUserQuestion)한 결과 "영상도 비공개로 변경" 선택 —
+`createVideo()`도 동일하게 기본 비공개로 변경. 등록 후 관리자가
+목록에서 "공개로"를 눌러야 노출된다(강의/영상 둘 다).
+
+같은 대화에서 확인된 사실: `CourseSection` 엔티티에는 공개/비공개
+컬럼이 아예 없다(제목+정렬순서만 있는 순수 그룹). 접근 판정은 강의
+단위(`course.isPublished`)에서 먼저 막히므로, **강의가 비공개면
+그 안 섹션/영상이 전부 공개 상태여도 수강생에게는 안 보인다**
+(관리자만 비공개 강의도 미리보기 가능한 예외 유지).
+
+### 변경 파일
+`src/lecture-replay/lecture-replay.service.ts`(`createCourse`/
+`createVideo`의 `isPublished` 기본값).
+
+### 테스트 결과
+`npx tsc --noEmit` + `npm run build` 클린 확인. 배포 후 `railway
+status`/헬스체크로 정상 기동 확인 예정(이 문서에 追記).
