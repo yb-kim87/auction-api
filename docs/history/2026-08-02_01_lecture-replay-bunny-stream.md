@@ -247,3 +247,57 @@ page.tsx`+`MyCourseClient.tsx`(신규), `src/middleware.ts`(matcher 추가),
   `/courses/[courseId]` 흐름을 한 번 테스트해보는 것을 권장.
 - 배포 후 `railway status`/헬스체크와 `npx vercel ls`로 정상 기동
   확인 예정(이 문서에 追記).
+
+## 追記 (2026-08-02) — "OT수강생" 등급 추가
+
+사용자가 다시 요청: 기존 "회원 권한 관리"의 권한 변경 드롭다운에
+"OT수강생" 등급을 직접 추가해서, 그 등급이면 OT강의를 (개별 수강권
+부여 없이) 자동으로 볼 수 있게 해달라는 명시적 요청 — 앞서 "역할을
+새로 추가하지 않고 enrollment만으로 처리"를 추천했었지만, 사용자가
+기존 권한 관리 화면에 직접 노출되는 형태를 원해 이번엔 그대로 구현.
+
+- `UserRole.OT_STUDENT = "ot_student"` 추가(백엔드 `constants.ts` +
+  프론트 `types/auction.ts`/`lib/auth.ts`/`lib/roles.ts` 3곳,
+  `ROLE_LABELS`에 "OT수강생" 라벨).
+- `Course` 엔티티에 `isOtCourse: boolean`(default false) 추가 —
+  마이그레이션 `1784264000000-AddCourseIsOtCourse.ts`(컬럼 추가만,
+  `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`).
+- `LectureReplayService`:
+  - `listMyCourses()`가 로그인한 회원의 role이 OT_STUDENT면, 개별
+    enrollment 목록에 더해 `isOtCourse && isPublished`인 강의를
+    가상 항목(자동 ACTIVE, 무제한 기간)으로 추가 표시(이미 개별
+    수강권이 있는 강의는 중복 표시 안 함).
+  - `requireActiveEnrollment()` 진입 전에 `hasOtCourseAccess()`로
+    OT수강생+OT강의 조합이면 enrollment 조회 없이 즉시 통과시킴.
+  - `updateCourse()`가 `isOtCourse` 필드도 받도록 확장.
+- 프론트: `admin/page.tsx`의 "회원 권한 관리" 드롭다운에 `<option
+  value="ot_student">OT수강생</option>` 추가. `LectureReplayTab.tsx`
+  강의 목록 각 행에 "OT강의"/"일반강의" 뱃지 + "OT강의로 지정"/
+  "OT강의 해제" 토글 버튼 추가. `middleware.ts`/`lib/roles.ts`의
+  `getLoginRedirect()`가 OT수강생을 `/pending` 대신 `/courses`로
+  보내도록 수정(로그인 목적이 강의 시청이므로).
+- `SEARCH_ACCESS_ROLES`(물건 검색/AI분석 권한)에는 OT_STUDENT를
+  추가하지 않음 — OT수강생은 강의만 볼 수 있고 물건 검색은 여전히
+  막혀 있음(의도된 동작).
+
+### 변경 파일(추가분)
+**auction-api**: `src/common/constants.ts`, `src/lecture-replay/entities/course.entity.ts`,
+`src/lecture-replay/lecture-replay.service.ts`, `src/lecture-replay/lecture-replay.controller.ts`,
+`src/migrations/1784264000000-AddCourseIsOtCourse.ts`(신규).
+
+**auction**: `src/types/auction.ts`, `src/lib/auth.ts`, `src/lib/roles.ts`,
+`src/middleware.ts`, `src/app/admin/page.tsx`, `src/app/admin/LectureReplayTab.tsx`,
+`src/lib/api.ts`.
+
+### 관리자 사용 방법
+1. 영상업로드 탭에서 원하는 강의 옆 "OT강의로 지정" 클릭
+2. 회원권한 관리 탭에서 대상 회원의 권한을 "OT수강생"으로 변경
+3. 그 회원이 로그인하면 자동으로 `/courses`로 이동하고, OT강의가
+   수강권 부여 없이 바로 보임(추후 "수강생"으로 등급을 올리면 그때
+   개별 강의에 대해 회원 수강권을 정식으로 부여하면 됨)
+
+### 테스트 결과
+백엔드/프론트 모두 `tsc --noEmit` + `npm run build` 클린 확인. 실제
+OT수강생 계정으로 로그인해 `/courses`에 OT강의가 자동으로 뜨는지는
+이 세션에서 직접 확인하지 못함 — 배포 후 관리자가 테스트 계정으로
+확인 권장.

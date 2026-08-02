@@ -8,6 +8,7 @@ import { CourseVideo } from "./entities/course-video.entity";
 import { LectureAccessLink } from "./entities/lecture-access-link.entity";
 import { LectureEnrollment, LectureEnrollmentStatus } from "./entities/lecture-enrollment.entity";
 import { UsersService } from "../users/users.service";
+import { UserRole } from "../common/constants";
 
 /** Bunny Stream 서명 재생 URL 유효시간. 짧게 잡아 URL 유출로 인한
  * 재사용 여지를 줄인다(재생 화면에서 필요할 때마다 새로 발급받음). */
@@ -48,13 +49,14 @@ export class LectureReplayService {
 
   async updateCourse(
     id: string,
-    body: { title?: string; description?: string; isPublished?: boolean },
+    body: { title?: string; description?: string; isPublished?: boolean; isOtCourse?: boolean },
   ) {
     const course = await this.courseRepo.findOne({ where: { id } });
     if (!course) throw new NotFoundException("강의를 찾을 수 없습니다.");
     if (body.title !== undefined) course.title = body.title.trim();
     if (body.description !== undefined) course.description = body.description.trim() || null;
     if (body.isPublished !== undefined) course.isPublished = body.isPublished;
+    if (body.isOtCourse !== undefined) course.isOtCourse = body.isOtCourse;
     return this.courseRepo.save(course);
   }
 
@@ -391,9 +393,9 @@ export class LectureReplayService {
       order: { createdAt: "DESC" },
     });
     const courseIds = enrollments.map((e) => e.courseId);
-    if (courseIds.length === 0) return [];
-    const courses = await this.courseRepo.find({ where: { id: In(courseIds) } });
-    return enrollments.map((e) => {
+    const courses = courseIds.length > 0 ? await this.courseRepo.find({ where: { id: In(courseIds) } }) : [];
+
+    const items = enrollments.map((e) => {
       const course = courses.find((c) => c.id === e.courseId);
       const now = Date.now();
       const remainingDays = Math.max(
@@ -411,9 +413,44 @@ export class LectureReplayService {
         effectiveStatus: this.computeEffectiveStatus(e),
       };
     });
+
+    // OT수강생은 개별 수강권 없이도 "OT강의"로 지정된 공개 강의를 자동으로
+    // 볼 수 있다(2026-08-02). 이미 개별 수강권이 있는 강의는 중복 표시하지 않는다.
+    const user = await this.usersService.findByUsername(username);
+    if (user?.role === UserRole.OT_STUDENT) {
+      const otCourses = await this.courseRepo.find({
+        where: { isOtCourse: true, isPublished: true },
+      });
+      for (const course of otCourses) {
+        if (items.some((i) => i.courseId === course.id)) continue;
+        items.unshift({
+          enrollmentId: `ot-${course.id}`,
+          courseId: course.id,
+          courseTitle: course.title,
+          courseDescription: course.description,
+          startsAt: new Date(0),
+          expiresAt: new Date("2999-12-31"),
+          remainingDays: Number.MAX_SAFE_INTEGER,
+          effectiveStatus: "ACTIVE",
+        });
+      }
+    }
+
+    return items;
+  }
+
+  /** OT수강생이 "OT강의"로 지정된 공개 강의에 자동으로 접근 가능한지
+   * 확인한다(개별 enrollment 없이도 통과). */
+  private async hasOtCourseAccess(username: string, courseId: string): Promise<boolean> {
+    const user = await this.usersService.findByUsername(username);
+    if (user?.role !== UserRole.OT_STUDENT) return false;
+    const course = await this.courseRepo.findOne({ where: { id: courseId } });
+    return Boolean(course?.isOtCourse && course.isPublished);
   }
 
   private async requireActiveEnrollment(username: string, courseId: string) {
+    if (await this.hasOtCourseAccess(username, courseId)) return null;
+
     const enrollment = await this.enrollmentRepo.findOne({ where: { username, courseId } });
     if (!enrollment) {
       throw new ForbiddenException("수강 권한이 없는 강의입니다.");

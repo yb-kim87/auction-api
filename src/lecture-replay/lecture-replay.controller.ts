@@ -27,7 +27,8 @@ export class LectureReplayController {
   updateCourse(
     @Headers() headers: Record<string, string>,
     @Param("id") id: string,
-    @Body() body: { title?: string; description?: string; isPublished?: boolean },
+    @Body()
+    body: { title?: string; description?: string; isPublished?: boolean; isOtCourse?: boolean },
   ) {
     requireAdmin(getAuthContext(headers));
     return this.service.updateCourse(id, body);
