@@ -111,6 +111,7 @@ export class LectureReplayController {
       durationSeconds?: number | null;
       sortOrder?: number;
       isPublished?: boolean;
+      isOtVideo?: boolean;
     },
   ) {
     requireAdmin(getAuthContext(headers));

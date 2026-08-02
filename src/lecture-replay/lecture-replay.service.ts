@@ -149,6 +149,7 @@ export class LectureReplayService {
       durationSeconds?: number | null;
       sortOrder?: number;
       isPublished?: boolean;
+      isOtVideo?: boolean;
     },
   ) {
     const video = await this.videoRepo.findOne({ where: { id } });
@@ -159,6 +160,7 @@ export class LectureReplayService {
     if (body.durationSeconds !== undefined) video.durationSeconds = body.durationSeconds;
     if (body.sortOrder !== undefined) video.sortOrder = body.sortOrder;
     if (body.isPublished !== undefined) video.isPublished = body.isPublished;
+    if (body.isOtVideo !== undefined) video.isOtVideo = body.isOtVideo;
     return this.videoRepo.save(video);
   }
 
@@ -225,7 +227,10 @@ export class LectureReplayService {
     return link;
   }
 
-  private async buildSectionsWithVideos(courseId: string) {
+  /** restrictToOtVideos: true면 OT강의로 지정되지 않은 강의를 "OT영상"
+   * 단위로만 여는 경우 — isOtVideo가 아닌 영상은 실제 공개 여부와
+   * 무관하게 "준비 중"으로 보이게(재생 불가) 만든다. */
+  private async buildSectionsWithVideos(courseId: string, restrictToOtVideos = false) {
     const sections = await this.sectionRepo.find({
       where: { courseId },
       order: { sortOrder: "ASC" },
@@ -244,7 +249,7 @@ export class LectureReplayService {
             title: v.title,
             description: v.description,
             durationSeconds: v.durationSeconds,
-            isPublished: v.isPublished,
+            isPublished: restrictToOtVideos ? v.isPublished && v.isOtVideo : v.isPublished,
           })),
         };
       }),
@@ -419,15 +424,22 @@ export class LectureReplayService {
       };
     });
 
-    // OT수강생은 개별 수강권 없이도 "OT강의"로 지정된 공개 강의를, 관리자는
-    // 모든 강의를(비공개 포함, 관리 목적) 자동으로 볼 수 있다(2026-08-02).
-    // 이미 개별 수강권이 있는 강의는 중복 표시하지 않는다.
+    // OT수강생은 개별 수강권 없이도 "OT강의"로 지정된 공개 강의 전체를,
+    // 또는 OT강의로 지정되진 않았지만 "OT영상"으로 지정된 영상이 하나라도
+    // 있는 공개 강의를 자동으로 볼 수 있다. 관리자는 모든 강의를(비공개
+    // 포함, 관리 목적) 자동으로 볼 수 있다(2026-08-02). 이미 개별 수강권이
+    // 있는 강의는 중복 표시하지 않는다.
     const user = await this.usersService.findByUsername(username);
     let autoCourses: Course[] = [];
     if (user?.role === UserRole.ADMIN) {
       autoCourses = await this.courseRepo.find({ order: { createdAt: "DESC" } });
     } else if (user?.role === UserRole.OT_STUDENT) {
-      autoCourses = await this.courseRepo.find({ where: { isOtCourse: true, isPublished: true } });
+      const publishedCourses = await this.courseRepo.find({ where: { isPublished: true } });
+      for (const course of publishedCourses) {
+        if (course.isOtCourse || (await this.courseHasOtVideo(course.id))) {
+          autoCourses.push(course);
+        }
+      }
     }
     for (const course of autoCourses) {
       if (items.some((i) => i.courseId === course.id)) continue;
@@ -446,18 +458,32 @@ export class LectureReplayService {
     return items;
   }
 
-  /** 관리자는 모든 강의(비공개 포함)를, OT수강생은 "OT강의"로 지정된
-   * 공개 강의를 개별 enrollment 없이도 자동으로 볼 수 있다. */
-  private async hasAutoAccess(username: string, courseId: string): Promise<boolean> {
-    const user = await this.usersService.findByUsername(username);
-    if (user?.role === UserRole.ADMIN) return true;
-    if (user?.role !== UserRole.OT_STUDENT) return false;
-    const course = await this.courseRepo.findOne({ where: { id: courseId } });
-    return Boolean(course?.isOtCourse && course.isPublished);
+  private async courseHasOtVideo(courseId: string): Promise<boolean> {
+    const sections = await this.sectionRepo.find({ where: { courseId } });
+    if (sections.length === 0) return false;
+    const count = await this.videoRepo.count({
+      where: { sectionId: In(sections.map((s) => s.id)), isOtVideo: true, isPublished: true },
+    });
+    return count > 0;
   }
 
-  private async requireActiveEnrollment(username: string, courseId: string) {
-    if (await this.hasAutoAccess(username, courseId)) return null;
+  /** "full": 강의 전체 시청 가능(관리자 / 정상 수강권 / 강의 전체가
+   * OT강의로 지정된 경우). "ot-videos-only": 개별 수강권은 없지만
+   * OT수강생이고 이 강의 안에 isOtVideo로 지정된 영상이 있어 그
+   * 영상만 볼 수 있는 경우 — 이 경우 나머지 영상은 buildSectionsWithVideos
+   * 에서 "준비 중"으로 가려지고, getMyPlayUrl에서도 그 영상만 재생 허용. */
+  private async getAccessMode(
+    username: string,
+    courseId: string,
+  ): Promise<"full" | "ot-videos-only"> {
+    const user = await this.usersService.findByUsername(username);
+    if (user?.role === UserRole.ADMIN) return "full";
+
+    if (user?.role === UserRole.OT_STUDENT) {
+      const course = await this.courseRepo.findOne({ where: { id: courseId } });
+      if (course?.isOtCourse && course.isPublished) return "full";
+      if (await this.courseHasOtVideo(courseId)) return "ot-videos-only";
+    }
 
     const enrollment = await this.enrollmentRepo.findOne({ where: { username, courseId } });
     if (!enrollment) {
@@ -473,11 +499,11 @@ export class LectureReplayService {
     if (status === "EXPIRED") {
       throw new ForbiddenException("수강 기간이 종료되었습니다.");
     }
-    return enrollment;
+    return "full";
   }
 
   async getMyCourseAccessInfo(username: string, courseId: string) {
-    await this.requireActiveEnrollment(username, courseId);
+    const mode = await this.getAccessMode(username, courseId);
     const course = await this.courseRepo.findOne({ where: { id: courseId } });
     const user = await this.usersService.findByUsername(username);
     if (!course || (!course.isPublished && user?.role !== UserRole.ADMIN)) {
@@ -485,12 +511,12 @@ export class LectureReplayService {
     }
     return {
       course: { id: course.id, title: course.title, description: course.description },
-      sections: await this.buildSectionsWithVideos(course.id),
+      sections: await this.buildSectionsWithVideos(course.id, mode === "ot-videos-only"),
     };
   }
 
   async getMyPlayUrl(username: string, courseId: string, videoId: string) {
-    await this.requireActiveEnrollment(username, courseId);
+    const mode = await this.getAccessMode(username, courseId);
     const video = await this.videoRepo.findOne({ where: { id: videoId } });
     if (!video || video.sectionId == null) {
       throw new NotFoundException("영상을 찾을 수 없습니다.");
@@ -498,6 +524,9 @@ export class LectureReplayService {
     const section = await this.sectionRepo.findOne({ where: { id: video.sectionId } });
     if (!section || section.courseId !== courseId) {
       throw new NotFoundException("영상을 찾을 수 없습니다.");
+    }
+    if (mode === "ot-videos-only" && !video.isOtVideo) {
+      throw new ForbiddenException("수강 권한이 없는 강의입니다.");
     }
     if (!video.isPublished) {
       throw new BadRequestException("아직 공개되지 않은 영상입니다.");

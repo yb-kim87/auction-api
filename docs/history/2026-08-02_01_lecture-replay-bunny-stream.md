@@ -331,3 +331,58 @@ ADMIN이면 강의별 enrollment/OT플래그와 무관하게 항상 통과하도
 같은 대화에서 확인된 별개 이슈: 사이드바에 영상이 "중복"으로 보인
 문제는 실제 DB 중복이 아니라 섹션명과 영상명을 동일하게 지어서 생긴
 착시였음(직접 운영 DB 조회로 확인, 코드 수정 없음).
+
+## 追記 (2026-08-02) — 강의 재구성(OT 전용 코스 분리) + 영상 단위 OT 지정
+
+**운영 DB 직접 재구성**: 사용자가 OT수강생 테스트 중 "OT강의로
+지정"이 강의(코스) 전체 단위라는 걸 이해하고, 기존 "경매코치
+밀착코칭반" 코스 안에 앞으로 1강/2강/3강 섹션도 함께 넣을 계획이라
+전체를 OT로 열어두면 안 된다고 판단 → "OT 오리엔테이션"이라는 새
+코스를 만들어 기존 OT 섹션/영상을 그쪽으로 옮기고, "경매코치
+밀착코칭반"의 OT강의 지정은 해제해달라고 요청. `railway run
+--service Postgres`로 운영 DB에 직접 접속해 (1) 새 코스 INSERT,
+(2) 기존 섹션의 courseId를 새 코스로 UPDATE, (3) 기존 코스의
+isOtCourse를 false로 UPDATE — 스크립트는 작업 후 삭제.
+
+**영상 단위 OT 지정 추가**: 이후 사용자가 "영상 하나하나씩 선택할 수
+있게" 요청 — 강의 전체를 OT로 여는 것 말고, 같은 강의 안에서 특정
+영상만 OT수강생에게 공개할 수 있어야 한다는 요구.
+
+- `CourseVideo`에 `isOtVideo: boolean`(default false) 추가 —
+  마이그레이션 `1784265000000-AddCourseVideoIsOtVideo.ts`.
+- `LectureReplayService`에 `getAccessMode(username, courseId):
+  "full" | "ot-videos-only"` 도입:
+  - ADMIN → "full"
+  - OT_STUDENT + course.isOtCourse(전체 지정) → "full"
+  - OT_STUDENT + 강의 안에 공개된 isOtVideo 영상이 하나라도 있으면
+    → "ot-videos-only"(그 영상들만 재생 가능, 나머지는 실제 공개
+    여부와 무관하게 "준비 중"으로 표시)
+  - 그 외에는 기존 enrollment 상태 판정 로직(REVOKED/NOT_STARTED/
+    EXPIRED) 그대로 유지 후 "full"
+  - 아무 조건도 안 맞으면 "수강 권한이 없는 강의입니다." 예외
+- `buildSectionsWithVideos(courseId, restrictToOtVideos)`: mode가
+  "ot-videos-only"일 때 `isOtVideo`가 아닌 영상의 `isPublished`를
+  응답에서 강제로 false로 덮어써서(실제 DB 값은 안 건드림) 프론트가
+  그 영상을 "준비 중"으로 렌더링하게 함.
+- `getMyPlayUrl`도 mode가 "ot-videos-only"인데 요청한 videoId가
+  `isOtVideo`가 아니면 재생 URL을 내주지 않고 Forbidden.
+- `listMyCourses`: OT수강생에게 자동 표시되는 강의 목록을
+  "isOtCourse인 강의" 뿐 아니라 "공개 상태이고 isOtVideo 영상이
+  하나라도 있는 강의"까지 포함하도록 확장.
+- 프론트: 영상 목록 각 행에 "OT영상"/"일반영상" 토글 버튼 추가
+  (`isPublished`/`수정` 버튼 옆), `updateLectureVideo` body에
+  `isOtVideo` 추가.
+
+### 변경 파일(추가분)
+**auction-api**: `src/lecture-replay/entities/course-video.entity.ts`,
+`src/lecture-replay/lecture-replay.service.ts`,
+`src/lecture-replay/lecture-replay.controller.ts`,
+`src/migrations/1784265000000-AddCourseVideoIsOtVideo.ts`(신규).
+
+**auction**: `src/lib/api.ts`, `src/app/admin/LectureReplayTab.tsx`.
+
+### 테스트 결과
+백엔드/프론트 `tsc --noEmit` + `npm build` 클린. 운영 DB 재구성은
+쿼리 후 재조회로 결과 확인(새 코스/섹션 이동/OT지정 해제 모두 반영
+확인). 영상 단위 OT 지정 기능은 배포 후 실제 UI 클릭 테스트는
+아직 못함.

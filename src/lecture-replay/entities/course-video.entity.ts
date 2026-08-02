@@ -29,6 +29,12 @@ export class CourseVideo {
   @Column({ default: false })
   isPublished!: boolean;
 
+  /** true면 강의 전체가 OT강의(isOtCourse)로 지정돼 있지 않아도, 이
+   * 영상 하나만 OT수강생에게 자동 공개된다(2026-08-02, 영상 단위
+   * 선택 요청). */
+  @Column({ default: false })
+  isOtVideo!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
 }
