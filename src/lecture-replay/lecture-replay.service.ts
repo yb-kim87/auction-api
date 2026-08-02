@@ -539,7 +539,9 @@ export class LectureReplayService {
   /** Bunny Stream 임베드 URL을 만든다. BUNNY_STREAM_TOKEN_KEY가 설정돼
    * 있으면 라이브러리의 Token Authentication 규격(SHA256(security_key +
    * video_id + expires))으로 서명해 URL 탈취/직접 공유를 어렵게 하고,
-   * 없으면(라이브러리가 공개 모드인 경우) 서명 없는 기본 URL을 쓴다. */
+   * 없으면(라이브러리가 공개 모드인 경우) 서명 없는 기본 URL을 쓴다.
+   * `color`는 Bunny 플레이어 자체(재생버튼/시크바 등)의 강조색으로,
+   * 사이트 전체에서 쓰는 보라 톤(#5244d4)에 맞춘다(2026-08-02). */
   private buildEmbedUrl(bunnyVideoId: string): string {
     const libraryId = process.env.BUNNY_STREAM_LIBRARY_ID?.trim();
     if (!libraryId) {
@@ -547,11 +549,12 @@ export class LectureReplayService {
     }
     const tokenKey = process.env.BUNNY_STREAM_TOKEN_KEY?.trim();
     const base = `https://iframe.mediadelivery.net/embed/${libraryId}/${bunnyVideoId}`;
+    const accentColor = "5244d4";
     if (!tokenKey) {
-      return `${base}?autoplay=false`;
+      return `${base}?autoplay=false&color=${accentColor}`;
     }
     const expires = Math.floor(Date.now() / 1000) + PLAY_URL_TTL_SECONDS;
     const token = createHash("sha256").update(`${tokenKey}${bunnyVideoId}${expires}`).digest("hex");
-    return `${base}?token=${token}&expires=${expires}&autoplay=false`;
+    return `${base}?token=${token}&expires=${expires}&autoplay=false&color=${accentColor}`;
   }
 }
