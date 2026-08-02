@@ -42,7 +42,9 @@ export class LectureReplayService {
     const course = this.courseRepo.create({
       title,
       description: body.description?.trim() || null,
-      isPublished: false,
+      // 등록하면 바로 보이도록 기본 공개. 준비 안 된 강의를 숨기고
+      // 싶으면 목록에서 "비공개로"를 눌러 직접 끄면 된다(2026-08-02).
+      isPublished: true,
     });
     return this.courseRepo.save(course);
   }
@@ -130,7 +132,10 @@ export class LectureReplayService {
       bunnyVideoId,
       durationSeconds: body.durationSeconds ?? null,
       sortOrder: count,
-      isPublished: false,
+      // 등록하면 바로 재생 가능하도록 기본 공개(2026-08-02, 직원이 영상
+      // 등록만 하면 별도로 "공개로" 누르지 않아도 되게 해달라는 요청).
+      // 준비 안 된 영상은 목록에서 "비공개"로 직접 끄면 된다.
+      isPublished: true,
     });
     return this.videoRepo.save(video);
   }
