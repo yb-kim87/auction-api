@@ -12,6 +12,13 @@ import { User } from "./user.entity";
 import { UserRole } from "../common/constants";
 import type { UpdateProfileDto } from "./update-profile.dto";
 
+/** 임시 조치(2026-08-02): 이 명단으로 가입하는 회원은 가입과 동시에
+ * "OT수강생" 등급을 자동 부여해 OT영상을 바로 볼 수 있게 한다(관리자가
+ * 수동으로 등급을 바꿔줄 필요 없이). 이름이 완전히 일치해야 하며,
+ * 용도가 끝나면(대상자들이 전부 가입 완료되면) 이 목록/분기를 지워도
+ * 된다 — 회원권한 관리 화면에서 언제든 수동으로도 등급을 줄 수 있다. */
+const OT_AUTO_UPGRADE_NAMES = new Set(["현영근", "권오상", "김동우", "정혜원", "김수진"]);
+
 @Injectable()
 export class UsersService implements OnModuleInit {
   constructor(
@@ -250,7 +257,9 @@ export class UsersService implements OnModuleInit {
         password: input.password,
         name: input.name,
         phone: input.phone,
-        role: UserRole.MEMBER,
+        role: OT_AUTO_UPGRADE_NAMES.has(input.name.trim())
+          ? UserRole.OT_STUDENT
+          : UserRole.MEMBER,
         investableFunds: input.investableFunds,
         existingLoanAmount: input.existingLoanAmount,
         housingCount: input.housingCount,
