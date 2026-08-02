@@ -40,6 +40,7 @@ import { Course } from "./lecture-replay/entities/course.entity";
 import { CourseSection } from "./lecture-replay/entities/course-section.entity";
 import { CourseVideo } from "./lecture-replay/entities/course-video.entity";
 import { LectureAccessLink } from "./lecture-replay/entities/lecture-access-link.entity";
+import { LectureEnrollment } from "./lecture-replay/entities/lecture-enrollment.entity";
 
 const entities = [
   Auction,
@@ -81,6 +82,7 @@ const entities = [
   CourseSection,
   CourseVideo,
   LectureAccessLink,
+  LectureEnrollment,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

@@ -121,3 +121,129 @@ Railway 환경변수에 위 3개를 추가해야 실제 재생이 동작한다(�
 ## 추후 확장 예정 (이번 범위 아님)
 - 회원가입/로그인 연동, 회원별 90일 수강권, 진도율 저장/이어보기,
   동시 접속 제한, 사용자 워터마크.
+
+## 追記 (2026-08-02) — 토큰 방식 → 회원 로그인 + 수강권(enrollment) 방식 전환
+
+사용자 요청: "OT수강생 등급"을 만들어 OT영상만 보게 하고, 일반 수강생은
+기본 강의를 보게 하고 싶다는 요청에서 출발 → 상세 스펙으로 "기존
+토큰 방식을 회원 로그인 + 회원별 수강권 방식으로 전면 교체"를 요청.
+작업 전 기존 인증 구조를 Explore 서브에이전트로 조사 후 계획을
+먼저 보고, 사용자 확인 후 진행(사용자 지시사항 준수).
+
+### 결정 사항 (사용자 확인)
+- "OT수강생" 구분은 **UserRole에 새 값을 추가하지 않고 enrollment
+  기반으로만 처리** — "OT강의"라는 course를 만들어 그 course에만
+  enrollment를 부여하면 그 회원은 `/courses`에 OT강의만 보이고,
+  나중에 기본 강의 enrollment를 추가하면 그만큼 더 보이는 방식.
+  기존 UserRole 체계(admin/consultant/consulting_student/student/
+  member)와 충돌하지 않음.
+- 관리자 "수강권 관리" UI는 별도 라우트가 아니라 **기존 "영상업로드"
+  탭 안에 섹션으로 추가**(이 프로젝트의 관리자 화면은 `/admin` 단일
+  페이지 + 탭 전환 구조이기 때문).
+
+### 조사 결과 중 설계에 반영한 것
+- 이 프로젝트는 FK를 uuid가 아니라 **User.username 문자열**로 참조하는
+  컨벤션(예: `AuctionBidPlan`)이라, `lecture_enrollments.user_id`를
+  스펙 그대로 uuid로 쓰지 않고 **`username` 컬럼**으로 구현.
+- User 엔티티에 email 컬럼이 없어(username/name/phone만 존재), 관리자
+  회원 검색은 이름/아이디/전화번호 기준으로 구현(`GET /users/search?q=`).
+- Bunny API Key/Token Key는 기존에도 프론트에 노출되지 않고 있었음(재조사로
+  재확인) — 검증 통과 후 서버가 조립한 embedUrl만 프론트에 내려가는
+  구조를 그대로 재사용.
+
+### 구현
+**백엔드**
+- 신규 entity `LectureEnrollment`(`lecture_enrollments`, username+courseId
+  unique, status: ACTIVE/EXPIRED/REVOKED) — 마이그레이션
+  `1784263000000-CreateLectureEnrollments.ts`.
+- `LectureReplayService`: status 컬럼은 관리자가 명시적으로 REVOKED로
+  바꾸는 경우만 저장값 의미가 있고, ACTIVE/시작전/만료는 배치 없이
+  조회 시점마다 `startsAt`/`expiresAt`을 현재 시각과 비교해 실시간
+  계산(`computeEffectiveStatus`)하도록 구현 — 별도 배치 작업 불필요.
+  관리자용 `listEnrollments/grantEnrollment/grantEnrollmentQuick90(90일
+  빠른 버튼)/updateEnrollment/revokeEnrollment`와 회원용
+  `listMyCourses/getMyCourseAccessInfo/getMyPlayUrl` 추가. 회원용 접근
+  검증은 스펙 5번 그대로 로그인→enrollment 존재→상태별 메시지("수강
+  권한이 없는 강의입니다."/"아직 수강 기간이 시작되지 않았습니다."/
+  "수강 기간이 종료되었습니다."/"강의 접근 권한이 종료되었습니다.")
+  순으로 `ForbiddenException`을 던짐. 실패 시 bunny_video_id/embed
+  URL을 전혀 응답하지 않음(검증 통과 후에만 `buildEmbedUrl` 호출).
+- 신규 컨트롤러 `LectureCoursesController`(`/courses`, `requireAuth`,
+  role 무관 — 로그인만 요구, 실제 강의별 접근은 enrollment로 판정):
+  `GET /courses`(내 강의), `GET /courses/:courseId`(시청 정보),
+  `GET /courses/:courseId/videos/:videoId/play`(재생 URL).
+- `UsersService.searchUsers()`/`UsersController GET /users/search?q=`
+  신규 추가(이름/아이디/전화번호 ILIKE, admin 전용).
+- 기존 토큰 방식(`LectureAccessLink`, `LectureReplayPublicController`,
+  `resolveActiveLink/getAccessInfo/getPlayUrl`)은 **삭제하지 않고
+  "deprecated" 주석만 추가**해 그대로 유지 — 이미 공유된 링크가 있을 수
+  있어 안전하게 남겨둠.
+
+**프론트**
+- 신규 `/courses`(내 강의 카드: 제목/기간/남은 일수/상태뱃지/강의보기
+  버튼, 수강권 0건이면 "현재 수강 가능한 강의가 없습니다."),
+  `/courses/[courseId]`(기존 `LectureReplayClient.tsx`의 플레이어/목록
+  UI를 재사용한 `MyCourseClient.tsx`).
+- `middleware.ts`에 `/courses/:path*` matcher 추가(로그인만 요구,
+  role 제한 없음 — `/account`와 동일 패턴). 기존 분기는 손대지 않음.
+- `/lecture/[token]/page.tsx`는 기존 `LectureReplayClient` 렌더 대신
+  `/courses`로 서버 리다이렉트하도록 축소(컴포넌트 파일 자체는 삭제
+  안 함).
+- `LectureReplayTab.tsx`에 `EnrollmentsBlock`(회원 검색→선택→시작일/
+  만료일 지정 또는 "90일 권한 부여" 버튼→목록에서 회수) 추가. 기존
+  `LinksBlock`(토큰 링크 발급 UI)은 `<details>`로 접어서 "예전 링크
+  방식(사용 중단)"이라는 라벨로 필요시에만 펼쳐 쓰도록 남김(삭제 안 함).
+
+### 변경 파일
+**auction-api**: `src/lecture-replay/entities/lecture-enrollment.entity.ts`(신규),
+`src/lecture-replay/lecture-courses.controller.ts`(신규),
+`src/lecture-replay/lecture-replay.service.ts`(enrollment 메서드 추가),
+`src/lecture-replay/lecture-replay.controller.ts`(enrollment 관리자
+엔드포인트 추가), `src/lecture-replay/lecture-replay.module.ts`(엔티티/
+컨트롤러 등록), `src/typeorm.config.ts`(엔티티 등록),
+`src/users/users.service.ts`/`users.controller.ts`(검색 API 추가),
+`src/migrations/1784263000000-CreateLectureEnrollments.ts`(신규).
+
+**auction**: `src/app/courses/page.tsx`(신규), `src/app/courses/[courseId]/
+page.tsx`+`MyCourseClient.tsx`(신규), `src/middleware.ts`(matcher 추가),
+`src/app/lecture/[token]/page.tsx`(리다이렉트로 축소),
+`src/app/admin/LectureReplayTab.tsx`(EnrollmentsBlock 추가, LinksBlock
+접기), `src/lib/api.ts`(enrollment/회원용 courses API 타입·함수 추가).
+
+### 추가된 API
+- 회원(로그인 필요, role 무관): `GET /courses`, `GET /courses/:courseId`,
+  `GET /courses/:courseId/videos/:videoId/play`
+- 관리자: `GET /users/search?q=`, `GET /lecture-replay/enrollments`,
+  `POST /lecture-replay/enrollments`, `POST
+  /lecture-replay/enrollments/quick-90`, `PATCH
+  /lecture-replay/enrollments/:id`, `POST
+  /lecture-replay/enrollments/:id/revoke`
+
+### 관리자 권한 부여 방법
+`/admin` → "영상업로드" 탭 → 강의 선택 → "회원 수강권" 섹션에서 회원
+검색(이름/아이디/전화번호) → 선택 → 시작일/만료일 지정 후 "수강권
+부여", 또는 별도 날짜 지정 없이 "90일 권한 부여" 버튼으로 즉시
+시작일=오늘/만료일=+90일 부여. 같은 회원+같은 강의 조합은 unique
+제약이 있어 다시 부여하면 기존 행이 갱신됨(중복 생성 안 됨). 회수는
+목록에서 "회수" 버튼(status=REVOKED로 전환, 행은 삭제 안 됨).
+
+### 수강생 이용 방법
+로그인 후 `/courses`에서 본인에게 부여된 강의 카드 확인(기간/남은
+일수/상태) → "수강 중" 상태인 강의만 "강의 보기" 클릭 가능 →
+`/courses/[courseId]`에서 섹션/영상 목록 보고 클릭해 시청. 수강권이
+없거나 시작 전/만료/회수 상태면 스펙에 명시된 안내 문구가 그대로
+표시됨.
+
+### 환경변수 변경 사항
+없음(기존 `BUNNY_STREAM_*` 3종 그대로 사용).
+
+### 테스트 결과
+- 백엔드/프론트 모두 `npx tsc --noEmit`, `npm run build`(ESLint 포함)
+  클린 확인.
+- **실제 브라우저 E2E(회원가입→관리자 수강권 부여→로그인→시청)는
+  이 세션에서 수행하지 못함** — 로컬에 테스트 계정/실제 Bunny 영상이
+  없어 코드 정적 검증(빌드)까지만 완료. 배포 후 관리자가 직접
+  회원 하나에 수강권을 부여하고 그 계정으로 로그인해 `/courses`→
+  `/courses/[courseId]` 흐름을 한 번 테스트해보는 것을 권장.
+- 배포 후 `railway status`/헬스체크와 `npx vercel ls`로 정상 기동
+  확인 예정(이 문서에 追記).

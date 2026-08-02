@@ -4,6 +4,7 @@ import {
   Patch,
   Body,
   Param,
+  Query,
   Headers,
   ForbiddenException,
 } from "@nestjs/common";
@@ -39,6 +40,16 @@ export class UsersController {
     requireAdmin(getAuthContext(headers));
     const users = await this.usersService.findAll();
     return users.map((user) => this.usersService.sanitize(user));
+  }
+
+  /** 강의 수강권 부여 화면에서 이름/아이디/전화번호로 회원을 찾는다. */
+  @Get("search")
+  async search(
+    @Headers() headers: Record<string, string>,
+    @Query("q") q: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.usersService.searchUsers(q ?? "");
   }
 
   @Patch(":id/role")

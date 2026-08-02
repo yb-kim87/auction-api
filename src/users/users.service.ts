@@ -69,6 +69,22 @@ export class UsersService implements OnModuleInit {
     return this.userRepo.findOne({ where: { username } });
   }
 
+  /** 관리자가 이름/아이디/전화번호로 회원을 찾는 검색(email 컬럼이 없어
+   * 이 세 가지만 지원). 강의 수강권 부여 화면에서 사용. */
+  async searchUsers(query: string) {
+    const q = query.trim();
+    if (!q) return [];
+    const users = await this.userRepo
+      .createQueryBuilder("user")
+      .where("user.username ILIKE :q", { q: `%${q}%` })
+      .orWhere("user.name ILIKE :q", { q: `%${q}%` })
+      .orWhere("user.phone ILIKE :q", { q: `%${q}%` })
+      .orderBy("user.createdAt", "DESC")
+      .limit(20)
+      .getMany();
+    return users.map((u) => this.sanitize(u));
+  }
+
   async getProfileByUsername(username: string) {
     const user = await this.findByUsername(username);
     if (!user) {

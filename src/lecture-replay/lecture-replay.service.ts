@@ -1,15 +1,20 @@
 import { randomBytes, createHash } from "crypto";
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { Course } from "./entities/course.entity";
 import { CourseSection } from "./entities/course-section.entity";
 import { CourseVideo } from "./entities/course-video.entity";
 import { LectureAccessLink } from "./entities/lecture-access-link.entity";
+import { LectureEnrollment, LectureEnrollmentStatus } from "./entities/lecture-enrollment.entity";
+import { UsersService } from "../users/users.service";
 
 /** Bunny Stream 서명 재생 URL 유효시간. 짧게 잡아 URL 유출로 인한
  * 재사용 여지를 줄인다(재생 화면에서 필요할 때마다 새로 발급받음). */
 const PLAY_URL_TTL_SECONDS = 6 * 60 * 60;
+
+/** 관리자 "90일 권한 부여" 빠른 버튼의 기본 수강 기간. */
+const DEFAULT_ENROLLMENT_DAYS = 90;
 
 @Injectable()
 export class LectureReplayService {
@@ -19,6 +24,9 @@ export class LectureReplayService {
     @InjectRepository(CourseVideo) private readonly videoRepo: Repository<CourseVideo>,
     @InjectRepository(LectureAccessLink)
     private readonly linkRepo: Repository<LectureAccessLink>,
+    @InjectRepository(LectureEnrollment)
+    private readonly enrollmentRepo: Repository<LectureEnrollment>,
+    private readonly usersService: UsersService,
   ) {}
 
   // ---------- 관리자: 강의 ----------
@@ -193,7 +201,12 @@ export class LectureReplayService {
     return { ok: true };
   }
 
-  // ---------- 공개: 토큰 기반 시청 ----------
+  // ---------- 공개: 토큰 기반 시청 (deprecated) ----------
+  // 2026-08-02부로 회원 로그인 + 수강권(enrollment) 기반 접근으로 전환했다
+  // (아래 "회원 수강권 기반 시청" 섹션 참고). 이 토큰 방식은 관리자 화면의
+  // 링크 발급 UI에서는 더 이상 노출하지 않지만, 이미 공유된 링크가 있을
+  // 수 있어 코드/엔드포인트/테이블은 삭제하지 않고 그대로 남겨둔다
+  // (사용자 요청: "바로 삭제하지 말고 안전하게 정리").
 
   private async resolveActiveLink(token: string): Promise<LectureAccessLink> {
     const link = await this.linkRepo.findOne({ where: { token } });
@@ -205,19 +218,12 @@ export class LectureReplayService {
     return link;
   }
 
-  async getAccessInfo(token: string) {
-    const link = await this.resolveActiveLink(token);
-    const course = await this.courseRepo.findOne({ where: { id: link.courseId } });
-    if (!course) {
-      throw new NotFoundException(
-        "접근할 수 없는 강의입니다. 링크가 만료되었거나 유효하지 않습니다.",
-      );
-    }
+  private async buildSectionsWithVideos(courseId: string) {
     const sections = await this.sectionRepo.find({
-      where: { courseId: course.id },
+      where: { courseId },
       order: { sortOrder: "ASC" },
     });
-    const sectionsWithVideos = await Promise.all(
+    return Promise.all(
       sections.map(async (section) => {
         const videos = await this.videoRepo.find({
           where: { sectionId: section.id },
@@ -236,10 +242,20 @@ export class LectureReplayService {
         };
       }),
     );
+  }
+
+  async getAccessInfo(token: string) {
+    const link = await this.resolveActiveLink(token);
+    const course = await this.courseRepo.findOne({ where: { id: link.courseId } });
+    if (!course) {
+      throw new NotFoundException(
+        "접근할 수 없는 강의입니다. 링크가 만료되었거나 유효하지 않습니다.",
+      );
+    }
     return {
       linkTitle: link.title,
       course: { id: course.id, title: course.title, description: course.description },
-      sections: sectionsWithVideos,
+      sections: await this.buildSectionsWithVideos(course.id),
     };
   }
 
@@ -251,6 +267,190 @@ export class LectureReplayService {
     }
     const section = await this.sectionRepo.findOne({ where: { id: video.sectionId } });
     if (!section || section.courseId !== link.courseId) {
+      throw new NotFoundException("영상을 찾을 수 없습니다.");
+    }
+    if (!video.isPublished) {
+      throw new BadRequestException("아직 공개되지 않은 영상입니다.");
+    }
+    return { embedUrl: this.buildEmbedUrl(video.bunnyVideoId) };
+  }
+
+  // ---------- 관리자: 수강권(enrollment) ----------
+
+  async listEnrollments(courseId?: string) {
+    const enrollments = await this.enrollmentRepo.find({
+      where: courseId ? { courseId } : {},
+      order: { createdAt: "DESC" },
+    });
+    return Promise.all(
+      enrollments.map(async (e) => {
+        const user = await this.usersService.findByUsername(e.username);
+        return {
+          id: e.id,
+          username: e.username,
+          userName: user?.name ?? null,
+          userPhone: user?.phone ?? null,
+          courseId: e.courseId,
+          startsAt: e.startsAt,
+          expiresAt: e.expiresAt,
+          status: e.status,
+          effectiveStatus: this.computeEffectiveStatus(e),
+          createdAt: e.createdAt,
+        };
+      }),
+    );
+  }
+
+  async grantEnrollment(body: {
+    username?: string;
+    courseId?: string;
+    startsAt?: string;
+    expiresAt?: string;
+  }) {
+    const username = body.username?.trim();
+    const courseId = body.courseId?.trim();
+    if (!username) throw new BadRequestException("회원을 선택해주세요.");
+    if (!courseId) throw new BadRequestException("강의를 선택해주세요.");
+    const user = await this.usersService.findByUsername(username);
+    if (!user) throw new NotFoundException("회원을 찾을 수 없습니다.");
+    const course = await this.courseRepo.findOne({ where: { id: courseId } });
+    if (!course) throw new NotFoundException("강의를 찾을 수 없습니다.");
+
+    const startsAt = body.startsAt ? new Date(body.startsAt) : new Date();
+    const expiresAt = body.expiresAt
+      ? new Date(body.expiresAt)
+      : new Date(startsAt.getTime() + DEFAULT_ENROLLMENT_DAYS * 24 * 60 * 60 * 1000);
+
+    // username+courseId unique 제약이 있으므로, 이미 있으면 갱신(중복 생성 방지).
+    const existing = await this.enrollmentRepo.findOne({ where: { username, courseId } });
+    if (existing) {
+      existing.startsAt = startsAt;
+      existing.expiresAt = expiresAt;
+      existing.status = LectureEnrollmentStatus.ACTIVE;
+      return this.enrollmentRepo.save(existing);
+    }
+    const enrollment = this.enrollmentRepo.create({
+      username,
+      courseId,
+      startsAt,
+      expiresAt,
+      status: LectureEnrollmentStatus.ACTIVE,
+    });
+    return this.enrollmentRepo.save(enrollment);
+  }
+
+  /** 관리자 화면의 "90일 권한 부여" 빠른 버튼. */
+  grantEnrollmentQuick90(body: { username?: string; courseId?: string }) {
+    const startsAt = new Date();
+    const expiresAt = new Date(startsAt.getTime() + DEFAULT_ENROLLMENT_DAYS * 24 * 60 * 60 * 1000);
+    return this.grantEnrollment({
+      username: body.username,
+      courseId: body.courseId,
+      startsAt: startsAt.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+    });
+  }
+
+  async updateEnrollment(
+    id: string,
+    body: { startsAt?: string; expiresAt?: string; status?: LectureEnrollmentStatus },
+  ) {
+    const enrollment = await this.enrollmentRepo.findOne({ where: { id } });
+    if (!enrollment) throw new NotFoundException("수강권을 찾을 수 없습니다.");
+    if (body.startsAt !== undefined) enrollment.startsAt = new Date(body.startsAt);
+    if (body.expiresAt !== undefined) enrollment.expiresAt = new Date(body.expiresAt);
+    if (body.status !== undefined) enrollment.status = body.status;
+    return this.enrollmentRepo.save(enrollment);
+  }
+
+  async revokeEnrollment(id: string) {
+    const enrollment = await this.enrollmentRepo.findOne({ where: { id } });
+    if (!enrollment) throw new NotFoundException("수강권을 찾을 수 없습니다.");
+    enrollment.status = LectureEnrollmentStatus.REVOKED;
+    return this.enrollmentRepo.save(enrollment);
+  }
+
+  /** 저장된 status가 REVOKED가 아니어도, 배치 없이 조회 시점의 날짜로
+   * ACTIVE/시작전/만료를 매번 다시 계산한다(스펙: starts_at/expires_at
+   * 기준 실시간 판정). REVOKED는 날짜와 무관하게 항상 우선한다. */
+  private computeEffectiveStatus(
+    e: LectureEnrollment,
+  ): "ACTIVE" | "NOT_STARTED" | "EXPIRED" | "REVOKED" {
+    if (e.status === LectureEnrollmentStatus.REVOKED) return "REVOKED";
+    const now = Date.now();
+    if (now < e.startsAt.getTime()) return "NOT_STARTED";
+    if (now > e.expiresAt.getTime()) return "EXPIRED";
+    return "ACTIVE";
+  }
+
+  // ---------- 회원: 수강권 기반 시청 ----------
+
+  async listMyCourses(username: string) {
+    const enrollments = await this.enrollmentRepo.find({
+      where: { username },
+      order: { createdAt: "DESC" },
+    });
+    const courseIds = enrollments.map((e) => e.courseId);
+    if (courseIds.length === 0) return [];
+    const courses = await this.courseRepo.find({ where: { id: In(courseIds) } });
+    return enrollments.map((e) => {
+      const course = courses.find((c) => c.id === e.courseId);
+      const now = Date.now();
+      const remainingDays = Math.max(
+        0,
+        Math.ceil((e.expiresAt.getTime() - now) / (24 * 60 * 60 * 1000)),
+      );
+      return {
+        enrollmentId: e.id,
+        courseId: e.courseId,
+        courseTitle: course?.title ?? "(삭제된 강의)",
+        courseDescription: course?.description ?? null,
+        startsAt: e.startsAt,
+        expiresAt: e.expiresAt,
+        remainingDays,
+        effectiveStatus: this.computeEffectiveStatus(e),
+      };
+    });
+  }
+
+  private async requireActiveEnrollment(username: string, courseId: string) {
+    const enrollment = await this.enrollmentRepo.findOne({ where: { username, courseId } });
+    if (!enrollment) {
+      throw new ForbiddenException("수강 권한이 없는 강의입니다.");
+    }
+    const status = this.computeEffectiveStatus(enrollment);
+    if (status === "REVOKED") {
+      throw new ForbiddenException("강의 접근 권한이 종료되었습니다.");
+    }
+    if (status === "NOT_STARTED") {
+      throw new ForbiddenException("아직 수강 기간이 시작되지 않았습니다.");
+    }
+    if (status === "EXPIRED") {
+      throw new ForbiddenException("수강 기간이 종료되었습니다.");
+    }
+    return enrollment;
+  }
+
+  async getMyCourseAccessInfo(username: string, courseId: string) {
+    await this.requireActiveEnrollment(username, courseId);
+    const course = await this.courseRepo.findOne({ where: { id: courseId } });
+    if (!course || !course.isPublished) {
+      throw new NotFoundException("강의를 찾을 수 없습니다.");
+    }
+    return {
+      course: { id: course.id, title: course.title, description: course.description },
+      sections: await this.buildSectionsWithVideos(course.id),
+    };
+  }
+
+  async getMyPlayUrl(username: string, courseId: string, videoId: string) {
+    await this.requireActiveEnrollment(username, courseId);
+    const video = await this.videoRepo.findOne({ where: { id: videoId } });
+    if (!video || video.sectionId == null) {
+      throw new NotFoundException("영상을 찾을 수 없습니다.");
+    }
+    const section = await this.sectionRepo.findOne({ where: { id: video.sectionId } });
+    if (!section || section.courseId !== courseId) {
       throw new NotFoundException("영상을 찾을 수 없습니다.");
     }
     if (!video.isPublished) {
