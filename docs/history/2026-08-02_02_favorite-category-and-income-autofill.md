@@ -109,3 +109,44 @@ status`/헬스체크, `npx vercel inspect`로 정상 기동 확인 예정(이
 `tsc --noEmit` + `npm run build` 클린(양쪽 모두). 배포 후 실제 다이얼로그
 동작(카테고리 선택→등록, 새 카테고리 추가 후 목록에 반영되는지)은 이
 세션에서 직접 확인하지 못함.
+
+## 追記 (2026-08-02) — 새 카테고리 Enter 미동작 버그 수정 + "관심물건" 전용 페이지 신설
+
+사용자 피드백: "카테고리를 추가하고 저장하면 카테고리 리스트에 안뜨지??
+그리고 카테고리로 추가한 물건은 카테고리별로 어떻게 관심물건을 구분해서
+보지?"
+
+**버그 원인**: 새 카테고리 입력창(`<input>`)이 `<form>`으로 감싸여
+있지 않고 Enter 키 핸들러도 없어서, 사용자가 이름을 입력하고 Enter를
+눌러도 아무 일도 일어나지 않았다(등록되려면 "추가" 버튼을 직접 클릭
+해야 했음). 사용자가 등록됐다고 착각하고 다이얼로그를 닫으면 실제로는
+저장이 안 돼 있어 "카테고리가 안 뜬다"는 문제로 이어졌다. `onKeyDown`
+핸들러를 추가해 Enter로도 `confirmAddFavorite()`가 호출되도록 수정
+(`AuctionDetailModal.tsx`).
+
+**"카테고리별 관심물건 보기" 신설**: 지금까지는 카테고리를 저장은
+하면서도 조회/필터링하는 화면이 전혀 없었다(이전 追記에서 이미 지적한
+한계). AskUserQuestion으로 "별도 페이지로 새로 만들기"를 선택받아
+`src/app/favorites/page.tsx`를 신규 제작:
+- `fetchAuctions()`(전체 물건, 기존 search 페이지와 동일하게 클라이언트
+  필터링 방식 재사용) + `fetchFavorites()`(카테고리 포함)를 조합해
+  카테고리별로 그룹화.
+- 상단에 "전체"/각 카테고리 칩 버튼으로 필터링, 카드 그리드로 물건
+  표시(주소/유형/사건상태뱃지/최저가/입찰기일 + 카테고리 뱃지).
+- 카드 클릭 시 기존 `AuctionDetailModal`을 그대로 재사용해 상세 확인 +
+  관심해제/카테고리 재등록 가능.
+- `middleware.ts`에 `/favorites` matcher 추가 — `/`, `/search`와 동일하게
+  로그인 + `canAccessSearch(role)` 요구(물건 검색 권한이 없는 회원은
+  접근 불가, 기존 정책과 일관).
+- 홈(`/`)과 전체검색(`/search`) 헤더 nav에 "관심물건" 링크 추가.
+
+### 변경 파일(추가분)
+**auction**: `src/app/favorites/page.tsx`(신규),
+`src/components/AuctionDetailModal.tsx`(Enter 키 수정),
+`src/middleware.ts`, `src/app/page.tsx`, `src/app/search/page.tsx`
+(헤더 nav 링크 추가).
+
+### 테스트 결과
+`tsc --noEmit` + `npm run build` 클린. 배포 후 실제 브라우저에서
+Enter로 카테고리가 등록되는지, `/favorites` 페이지가 정상 렌더링되는지
+직접 확인하지 못함 — 배포 확인 후 사용자 확인 필요.
