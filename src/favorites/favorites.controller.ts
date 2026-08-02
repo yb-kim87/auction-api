@@ -26,6 +26,15 @@ export class FavoritesController {
     return { auctionIds, items };
   }
 
+  /** 이 회원이 이전에 등록한 분류명 목록(관심등록 시 재사용용). */
+  @Get("categories")
+  async listCategories(@Headers() headers: Record<string, string>) {
+    const ctx = getAuthContext(headers);
+    requireAuth(ctx);
+    const categories = await this.favoritesService.listCategories(ctx.username);
+    return { categories };
+  }
+
   @Post(":auctionId")
   async add(
     @Headers() headers: Record<string, string>,

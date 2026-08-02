@@ -42,6 +42,19 @@ export class FavoritesService {
     return rows.map((row) => ({ auctionId: row.auctionId, category: row.category }));
   }
 
+  /** 이 회원이 이전에 만들어 쓴 분류명 목록(중복 제거, 가나다순). 관심등록
+   * 시 매번 새로 타이핑하지 않고 기존 분류 중에서 골라 쓸 수 있게 한다. */
+  async listCategories(username: string): Promise<string[]> {
+    const userId = await this.resolveUserId(username);
+    const rows = await this.favoriteRepo
+      .createQueryBuilder("fav")
+      .select("DISTINCT fav.category", "category")
+      .where("fav.userId = :userId", { userId })
+      .andWhere("fav.category IS NOT NULL")
+      .getRawMany<{ category: string }>();
+    return rows.map((r) => r.category).sort((a, b) => a.localeCompare(b, "ko"));
+  }
+
   async add(username: string, auctionId: string, category?: string | null) {
     const userId = await this.resolveUserId(username);
     const normalizedCategory = category?.trim() || null;

@@ -71,3 +71,41 @@
 직접 확인하지 못함 — 배포 후 확인 권장. 배포 후 `railway
 status`/헬스체크, `npx vercel inspect`로 정상 기동 확인 예정(이
 문서에 追記).
+
+## 追記 (2026-08-02) — 관심물건 카테고리를 자유입력→재사용 목록 선택 방식으로 변경
+
+사용자 피드백: "관심물건 등록하면 카테고리 쓰라고 나오는데... 현재는
+카테고리 입력후 어떻게 처리되는지 모르겠어. 생성된 카테고리를
+생성해서 추가하는 방식으로 하면 좋을꺼같아" — 매번 `window.prompt`로
+새로 타이핑하게 했던 최초 구현을, 이전에 만든 카테고리 목록에서
+버튼으로 바로 고르거나 새 이름을 입력해 추가하는 다이얼로그로 교체.
+
+- `FavoritesService.listCategories(username)`(신규): 해당 회원이
+  등록한 관심물건들의 `category` 중 null이 아닌 값만 중복 제거해
+  가나다순으로 반환(`DISTINCT` 쿼리).
+- `GET /favorites/categories`(신규, `requireAuth`) 컨트롤러 추가.
+- 프론트 `fetchFavoriteCategories()`(`lib/api.ts`) 추가.
+- `AuctionDetailModal.tsx`: "관심등록" 클릭 시 `window.prompt` 대신
+  `favoritePickerOpen` 다이얼로그를 띄우고, 열리는 시점에
+  `fetchFavoriteCategories()`로 기존 카테고리 목록을 불러와 버튼
+  칩(chip) 형태로 표시. 목록에서 클릭하면 바로 등록되고, 하단
+  입력창에 새 이름을 넣고 "추가"를 누르면 그 이름으로 신규 등록(다음
+  번엔 자동으로 목록에 포함됨 — 별도의 "카테고리 생성" API는 따로
+  두지 않고, 관심물건에 실제로 쓰인 category 값 자체가 곧 카테고리
+  목록이 되는 구조). "미분류로 등록"/"취소" 버튼도 유지.
+- 참고: 카테고리 값 자체는 이전 追記에서 이미 저장되고 있었지만
+  ("입력 후 어떻게 처리되는지 모르겠다"는 지적대로) 지금까지는 이를
+  보여주거나 필터링하는 UI가 전혀 없었다 — 이번 변경은 저장 로직이
+  아니라 입력 UX만 개선한 것이고, 카테고리별로 관심물건을 모아보는
+  화면은 아직 없음(추후 요청 시 별도 작업 필요).
+
+### 변경 파일(추가분)
+**auction-api**: `src/favorites/favorites.service.ts`,
+`src/favorites/favorites.controller.ts`.
+
+**auction**: `src/lib/api.ts`, `src/components/AuctionDetailModal.tsx`.
+
+### 테스트 결과
+`tsc --noEmit` + `npm run build` 클린(양쪽 모두). 배포 후 실제 다이얼로그
+동작(카테고리 선택→등록, 새 카테고리 추가 후 목록에 반영되는지)은 이
+세션에서 직접 확인하지 못함.
