@@ -36,6 +36,10 @@ import { LectureSlide } from "./lecture-materials/lecture-slide.entity";
 import { ActualTradeRow } from "./resale-match/entities/actual-trade.entity";
 import { AuctionTradeMatchRow } from "./resale-match/entities/auction-trade-match.entity";
 import { AuctionBidPlan } from "./bid-plan/bid-plan.entity";
+import { Course } from "./lecture-replay/entities/course.entity";
+import { CourseSection } from "./lecture-replay/entities/course-section.entity";
+import { CourseVideo } from "./lecture-replay/entities/course-video.entity";
+import { LectureAccessLink } from "./lecture-replay/entities/lecture-access-link.entity";
 
 const entities = [
   Auction,
@@ -73,6 +77,10 @@ const entities = [
   ActualTradeRow,
   AuctionTradeMatchRow,
   AuctionBidPlan,
+  Course,
+  CourseSection,
+  CourseVideo,
+  LectureAccessLink,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

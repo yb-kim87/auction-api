@@ -18,6 +18,7 @@ import { VatModule } from "./vat/vat.module";
 import { LectureMaterialsModule } from "./lecture-materials/lecture-materials.module";
 import { ResaleMatchModule } from "./resale-match/resale-match.module";
 import { BidPlanModule } from "./bid-plan/bid-plan.module";
+import { LectureReplayModule } from "./lecture-replay/lecture-replay.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -40,6 +41,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     LectureMaterialsModule,
     ResaleMatchModule,
     BidPlanModule,
+    LectureReplayModule,
   ],
 })
 export class AppModule implements NestModule {
