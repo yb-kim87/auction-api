@@ -421,6 +421,7 @@ export class LectureReplayService {
         expiresAt: e.expiresAt,
         remainingDays,
         effectiveStatus: this.computeEffectiveStatus(e),
+        isAuto: false,
       };
     });
 
@@ -452,6 +453,7 @@ export class LectureReplayService {
         expiresAt: new Date("2999-12-31"),
         remainingDays: Number.MAX_SAFE_INTEGER,
         effectiveStatus: "ACTIVE",
+        isAuto: true,
       });
     }
 
