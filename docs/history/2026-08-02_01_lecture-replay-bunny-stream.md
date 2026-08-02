@@ -457,3 +457,39 @@ isOtCourse를 false로 UPDATE — 스크립트는 작업 후 삭제.
   라이브러리 단위로만 지정 가능**.
 - 잘못 추가했던 `&color=` 파라미터를 제거(`buildEmbedUrl()`)하고,
   사용자에게 대시보드에서 직접 설정하는 방법 안내로 전환.
+
+## 追記 (2026-08-02) — 사이드바 정렬 버그(원인: sticky+overflow-y-auto 이중 오프셋) + 재생시간 자동조회
+
+**사이드바 상단 정렬 버그의 진짜 원인**: 사용자가 5차례 넘게 "사이드바
+상단이 영상 상단과 안 맞는다"고 재현 스크린샷을 보내와 flex→grid
+전환 등 여러 시도를 했지만 해결이 안 됐음. 최종 원인은
+`aside`(강의 목록 사이드바)가 `position: sticky; top: 76px`와
+`overflow-y: auto`를 동시에 갖고 있었던 것 — `aside`의 sticky는
+가장 가까운 "스크롤 컨테이너"(`overflow-y: auto` div, 여기선 body
+전체를 감싸는 바깥 div)를 기준으로 계산되는데, 그 스크롤 컨테이너
+자체가 이미 헤더 아래에서 시작하고 있어 `top: 76px`이 오프셋을
+중복 적용해 빈 여백을 만들고 있었다. 이번엔 프론트 배포는 정상이었
+음을 `npx vercel inspect <프로덕션 도메인>`으로 매번 직접 확인해서
+"배포가 안 됐다"는 오해는 배제한 뒤 코드 자체를 정독해서 찾음.
+`sticky`/`overflow-y-auto`를 제거해 일반 문서 흐름에 맡기는 것으로
+해결(스크롤 시 목록이 화면에 고정되는 기능은 이번엔 희생 — 강의가
+많아져 다시 필요해지면 스크롤 컨테이너 구조를 다시 설계해야 함).
+
+**교훈**: `npx vercel ls`의 "Ready" 상태만으로는 실제 서비스 도메인
+(`auction-seven-tan.vercel.app`)에 반영됐는지 보장 못 함 — 반드시
+`npx vercel inspect <실제 도메인>`으로 alias가 최신 배포를 가리키는지
+확인해야 한다(이 프로젝트는 Git 연동으로 자동 aliasing되고 있었음이
+이번에 확인됨, 별도 수동 aliasing은 불필요했음 — 그럼에도 매번 직접
+확인하는 습관이 필요).
+
+**영상 재생시간 자동조회**: 관리자가 "총 재생시간"이 "-"로 나오는
+것을 보고 Bunny에서 자동으로 가져와 달라고 요청. `LectureReplayService`
+에 `fetchBunnyVideoDurationSeconds()` 추가(Bunny Video API,
+`GET https://video.bunnycdn.com/library/{id}/videos/{videoId}`,
+`AccessKey` 헤더로 `BUNNY_STREAM_API_KEY` 사용) — 영상 생성 시
+자동 조회해 채우고, 기존 영상도 재생시간이 비어있으면 아무 필드나
+수정 저장할 때 자동으로 채워지도록 함. **`BUNNY_STREAM_API_KEY`가
+Railway에 아직 설정되어 있지 않아(확인함, `BUNNY_STREAM_LIBRARY_ID`만
+있음) 실제로 채워지려면 사용자가 Bunny 대시보드에서 Video API 키를
+발급해 등록해야 함** — 키가 없으면 조용히 null 반환하고 등록/수정
+자체는 막지 않음.
