@@ -63,37 +63,75 @@ export class TradeIngestionService {
    * 국토부 API가 시군구+월 전체를 반환하므로, umdNm+jibun이 실제로
    * 우리 관심 단지와 일치하는지는 매칭 단계(Stage B)의 하드필터에서
    * 최종 판단한다 — 여기선 전량 저장해 향후 다른 물건에도 재사용
-   * 가능하게 한다(같은 단지에 여러 물건이 걸릴 수 있음). */
+   * 가능하게 한다(같은 단지에 여러 물건이 걸릴 수 있음).
+   *
+   * 아파트/빌라(연립다세대) 두 API를 항상 함께 수집한다 — 이 (lawdCd,
+   * dealYm) 조합에 어떤 propType의 물건이 걸려있는지 여기서 미리 알 수
+   * 없고, 같은 지역에 아파트/빌라 물건이 섞여 있을 수도 있어 매번 둘 다
+   * 조회하는 편이 propType별로 갈라 호출하는 것보다 단순하고 누락이
+   * 없다(2026-08-03, 빌라 매도분석 확장). */
   async ingestOne(lawdCd: string, dealYm: string): Promise<number> {
-    let items: MolitTradeItem[];
+    const [aptItems, villaItems] = await Promise.all([
+      this.fetchSafely(() => this.molitClient.fetchTrades(lawdCd, dealYm), "아파트", lawdCd, dealYm),
+      this.fetchSafely(
+        () => this.molitClient.fetchVillaTrades(lawdCd, dealYm),
+        "빌라",
+        lawdCd,
+        dealYm,
+      ),
+    ]);
+
+    let saved = 0;
+    for (const item of aptItems) {
+      saved += await this.trySaveTrade(lawdCd, item, "APT");
+    }
+    for (const item of villaItems) {
+      saved += await this.trySaveTrade(lawdCd, item, "RH");
+    }
+    return saved;
+  }
+
+  private async fetchSafely(
+    fn: () => Promise<MolitTradeItem[]>,
+    label: string,
+    lawdCd: string,
+    dealYm: string,
+  ): Promise<MolitTradeItem[]> {
     try {
-      items = await this.molitClient.fetchTrades(lawdCd, dealYm);
+      return await fn();
     } catch (err) {
       this.logger.error(
-        `국토부 API 수집 실패(lawdCd=${lawdCd}, dealYm=${dealYm}): ${
+        `국토부 ${label} API 수집 실패(lawdCd=${lawdCd}, dealYm=${dealYm}): ${
+          err instanceof Error ? err.message : err
+        }`,
+      );
+      return [];
+    }
+  }
+
+  private async trySaveTrade(
+    lawdCd: string,
+    item: MolitTradeItem,
+    houseType: "APT" | "RH",
+  ): Promise<number> {
+    try {
+      await this.upsertTrade(lawdCd, item, houseType);
+      return 1;
+    } catch (err) {
+      this.logger.warn(
+        `실거래 저장 실패(lawdCd=${lawdCd}, aptNm=${item.aptNm}): ${
           err instanceof Error ? err.message : err
         }`,
       );
       return 0;
     }
-
-    let saved = 0;
-    for (const item of items) {
-      try {
-        await this.upsertTrade(lawdCd, item);
-        saved++;
-      } catch (err) {
-        this.logger.warn(
-          `실거래 저장 실패(lawdCd=${lawdCd}, aptNm=${item.aptNm}): ${
-            err instanceof Error ? err.message : err
-          }`,
-        );
-      }
-    }
-    return saved;
   }
 
-  private async upsertTrade(lawdCd: string, item: MolitTradeItem): Promise<void> {
+  private async upsertTrade(
+    lawdCd: string,
+    item: MolitTradeItem,
+    houseType: "APT" | "RH",
+  ): Promise<void> {
     const exclusiveArea = Number(item.excluUseAr);
     if (!Number.isFinite(exclusiveArea) || exclusiveArea <= 0) return;
 
@@ -110,6 +148,7 @@ export class TradeIngestionService {
         exclusiveArea,
         contractDate,
         dealAmount: dealAmountWon,
+        houseType,
       },
     });
     if (existing) {
@@ -143,6 +182,7 @@ export class TradeIngestionService {
       cancelledAt: item.cdealDay ? this.toIsoDate(item.cdealDay) : null,
       sourceType: "MOLIT_API",
       sourceRaw: item,
+      houseType,
     });
     await this.tradeRepo.save(row);
   }

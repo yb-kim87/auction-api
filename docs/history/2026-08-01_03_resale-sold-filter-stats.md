@@ -315,3 +315,65 @@
 - 프론트(`CrawlerWorkPanel.tsx`)에 "기존 DB 물건도 매도분석" 체크박스
   추가(기본값 꺼짐), "조회 시작" 클릭 시 `crawlerStart()`에
   `runResaleAnalysisForExisting` 값을 함께 전달.
+
+## 追記 (2026-08-03) — 빌라(연립다세대) 실거래 API 승인 확인 + 매도분석 연동 구현
+
+사용자가 data.go.kr에서 "연립다세대매매 실거래자료"(RTMSDataSvcRHTrade)
+활용신청을 완료 → 실측 재확인 결과 이전(2026-08-01)엔 403이었던 응답이
+`resultCode=000`(정상)으로 바뀌어 승인 완료 확인. 이어서 계획 보고 후
+빌라 매도분석 확장 구현.
+
+### 조사 결과
+기존 매칭 파이프라인(`resale-match.service.ts`/`match-scoring.util.ts`)은
+애초에 propType을 전혀 보지 않고 `lawdCd+umdNm(동)+jibun(지번)+floor+
+area`로만 후보를 좁히고 면적/층/시점/가격/고유성으로 스코어링한다 —
+**아파트 전용으로 설계된 게 아니라, 유일하게 아파트 전용이었던 지점은
+실거래 수집 단계(`molit-trade-client.service.ts`가 RTMSDataSvcAptTrade만
+호출)뿐**이었다. 즉 지금까지 빌라 물건도 파이프라인 자체는 통과했지만
+빌라 실거래 데이터가 애초에 안 모여 매칭될 수 없었던 것.
+
+### 구현
+- `MolitTradeClientService.fetchVillaTrades(lawdCd, dealYm)`(신규):
+  `RTMSDataSvcRHTrade` 호출. 응답 필드가 아파트와 달라(`mhouseNm`
+  단지명 필드, `aptDong`/`landLeaseholdGbn` 없음, `houseType`/`landAr`/
+  `estateAgentSggNm` 추가) 기존 `MolitTradeItem` 형태로 어댑팅
+  (`mhouseNm`→`aptNm`, 없는 필드는 빈 문자열)해 반환 — 호출부가
+  아파트/빌라를 구분할 필요 없이 동일하게 처리 가능. XML 파싱 로직은
+  제네릭(`parseItems<T>`)으로 공용화.
+- `ActualTradeRow`에 `houseType: "APT" | "RH" | null`(기본 "APT")
+  컬럼 추가 — 마이그레이션
+  `1784267000000-AddActualTradeHouseType.ts`. 매칭 조건에는 안 쓰지만
+  (지번+층+면적만으로 이미 충분히 좁혀짐) QA에서 실거래 출처 구분용.
+- `TradeIngestionService.ingestOne(lawdCd, dealYm)`이 아파트+빌라 두
+  API를 항상 함께(Promise.all) 수집하도록 변경 — 이 조합에 어떤
+  propType 물건이 걸려있는지 미리 알 수 없고, 같은 지역에 아파트/빌라가
+  섞여 있을 수 있어 매번 둘 다 수집하는 게 propType별로 갈라 호출하는
+  것보다 단순하고 누락이 없다고 판단. 각 API 개별 실패는 서로 영향을
+  주지 않도록 분리 처리(`fetchSafely`). 저장 시 dedup 키에도
+  `houseType`을 추가해(기존엔 lawdCd+umdNm+jibun+floor+area+
+  contractDate+dealAmount만 봤음) 이론상의 아파트/빌라 동일값 충돌을
+  방지.
+- 새 환경변수 불필요(`BUILDING_REGISTER_API_KEY` 재사용, 이미 승인).
+- 관리자 QA 화면(`resale-match.controller.ts`의 `GET
+  /resale-match/matches`)은 원래도 `propType`을 응답에 포함하고
+  있어서 프론트 변경 불필요.
+
+### 실측 테스트
+- curl로 `RTMSDataSvcRHTrade`에 실제 서비스키로 호출 → `resultCode=000`,
+  강남구 일원동/개포동 다세대 실거래 데이터 정상 수신 확인(승인 확인).
+- 운영 DB에서 완납일이 찍힌 빌라 물건 5건 조회(`propType='빌라' AND
+  paymentCompletedAt IS NOT NULL`) — 거제시 고현동 신원리츠빌라 등 확보.
+  이 중 한 건(거제시 고현동 721-14)의 최근 4개월치 빌라 실거래를
+  직접 조회했으나 정확히 그 지번의 재거래 기록은 아직 없음(정상 —
+  완납 후 며칠 내 재매도는 드묾, 파이프라인 자체의 문제는 아님).
+- `npx tsc --noEmit` + `npm run build` 클린.
+- **미확인**: 실제 배포 후 2시간 주기 배치가 돌면서 `actual_trade`에
+  `houseType='RH'` 행이 실제로 쌓이는지, 빌라 물건이 매칭까지 되는
+  실사례는 아직 못 봄(데이터가 쌓일 시간이 필요 — 배포 후 운영 DB로
+  주기적 확인 권장).
+
+### 변경 파일
+`src/resale-match/molit-trade-client.service.ts`,
+`src/resale-match/trade-ingestion.service.ts`,
+`src/resale-match/entities/actual-trade.entity.ts`,
+`src/migrations/1784267000000-AddActualTradeHouseType.ts`(신규).

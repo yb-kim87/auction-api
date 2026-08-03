@@ -33,6 +33,13 @@ export class ActualTradeRow {
   @Column()
   aptNm!: string;
 
+  /** 실거래 출처 상품 구분("APT"/"RH"=연립다세대). 매칭 조건에는 쓰지
+   * 않지만(지번+층+면적만으로 이미 충분히 좁혀짐) QA 화면에서 이 실거래가
+   * 아파트/빌라 어느 API에서 왔는지 확인할 수 있게 태깅한다(2026-08-03,
+   * 빌라 매도분석 확장). */
+  @Column({ type: "text", nullable: true, default: "APT" })
+  houseType!: "APT" | "RH" | null;
+
   @Column({ type: "text", nullable: true })
   naverComplexId!: string | null;
 
