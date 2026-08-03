@@ -40,6 +40,12 @@ export class ActualTradeRow {
   @Column({ type: "text", nullable: true, default: "APT" })
   houseType!: "APT" | "RH" | null;
 
+  /** 대지면적(㎡) — 빌라(RH) 실거래에만 있음(아파트는 항상 null). 빌라는
+   * "동" 정보가 없어 대신 대지권과 비교하는 보조 확증 신호로 쓴다(작은
+   * 가중치, 2026-08-03). */
+  @Column({ type: "numeric", precision: 8, scale: 4, nullable: true })
+  landArea!: number | null;
+
   @Column({ type: "text", nullable: true })
   naverComplexId!: string | null;
 

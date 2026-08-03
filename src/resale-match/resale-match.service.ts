@@ -11,6 +11,7 @@ import {
   isAmbiguous,
   parseAuctionExclusiveArea,
   parseAuctionFloor,
+  parseAuctionLandArea,
   shouldDisplay,
 } from "./match-scoring.util";
 
@@ -216,6 +217,7 @@ export class ResaleMatchService implements OnModuleInit {
     const candidateUnitCount = Math.max(1, candidates.length);
 
     const auctionBuildingDong = this.parseAuctionDong(auction.address);
+    const auctionLandArea = parseAuctionLandArea(auction.landShare);
 
     const scored = candidates.map((trade) => {
       const breakdown = computeScore({
@@ -225,6 +227,7 @@ export class ResaleMatchService implements OnModuleInit {
         areaTypeMatched: false,
         auctionBuildingDong,
         paymentCompletedAtIsFallback: auction.paymentCompletedAtIsEstimated,
+        auctionLandArea,
       });
       return { trade, breakdown };
     });

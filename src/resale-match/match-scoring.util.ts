@@ -46,6 +46,16 @@ export function parseAuctionExclusiveArea(area: string): number | null {
   return Number.isFinite(num) && num > 0 ? num : null;
 }
 
+/** Auction.landShare(대지권, "36.67" 같은 자유 텍스트)에서 숫자만 추출.
+ * 빌라(RH) 매칭에서 "동" 정보가 없는 대신 쓰는 보조 확증 신호용
+ * (2026-08-03). */
+export function parseAuctionLandArea(landShare: string | null | undefined): number | null {
+  const match = (landShare ?? "").match(/[\d]+(\.[\d]+)?/);
+  if (!match) return null;
+  const num = Number(match[0]);
+  return Number.isFinite(num) && num > 0 ? num : null;
+}
+
 /** auction 주소 텍스트에서 층수를 추출한다(예: "...12층1203호" → 12).
  * 이미 크롤러 주소 파싱 유틸이 있다면 재사용하는 게 이상적이나, 이
  * 함수는 스코어링 계층의 의존성을 최소화하기 위해 자체적으로 가볍게
@@ -99,7 +109,7 @@ export type ScoreInput = {
   auction: Pick<Auction, "area" | "address" | "minPrice" | "salePrice" | "paymentCompletedAt">;
   trade: Pick<
     ActualTradeRow,
-    "exclusiveArea" | "floor" | "contractDate" | "dealAmount" | "buildingDong"
+    "exclusiveArea" | "floor" | "contractDate" | "dealAmount" | "buildingDong" | "landArea"
   >;
   /** 3.4절 사전확률 보정용 — 같은 단지·같은 면적·같은 층 후보 세대 수. */
   candidateUnitCount: number;
@@ -108,6 +118,9 @@ export type ScoreInput = {
   areaTypeMatched?: boolean;
   auctionBuildingDong?: string | null;
   paymentCompletedAtIsFallback?: boolean;
+  /** 빌라(RH) 전용 보조 신호 — Auction.landShare에서 파싱한 대지권
+   * 면적(㎡). 아파트는 항상 null이라 이 블록 자체가 스킵된다. */
+  auctionLandArea?: number | null;
 };
 
 export function computeScore(input: ScoreInput): ScoreBreakdown {
@@ -119,6 +132,7 @@ export function computeScore(input: ScoreInput): ScoreBreakdown {
     areaTypeMatched = false,
     auctionBuildingDong = null,
     paymentCompletedAtIsFallback = false,
+    auctionLandArea = null,
   } = input;
 
   const auctionArea = parseAuctionExclusiveArea(auction.area) ?? trade.exclusiveArea;
@@ -187,6 +201,23 @@ export function computeScore(input: ScoreInput): ScoreBreakdown {
     } else {
       factor *= 0;
       penalties.push({ name: "DONG_MISMATCH", factor: 0, reason: "동 불일치(반증 — 즉시 탈락)" });
+    }
+  }
+
+  // 빌라(RH)는 실거래에 "동" 정보가 없어 위 블록이 항상 스킵된다 — 대신
+  // 대지권 면적을 보조 신호로 쓴다. 동 일치(+15%)보다 훨씬 약하게(+3%)
+  // 반영하고, 불일치는 탈락시키지 않는다(대지권 값이 크롤링/등기 기준
+  // 오차로 살짝 다를 수 있어 "동 불일치"만큼 확실한 반증은 아니기
+  // 때문 — 사용자 요청: "너무 큰 비중은 안둬도 될거같아", 2026-08-03).
+  if (auctionLandArea != null && trade.landArea != null) {
+    const landAreaDiff = Math.abs(auctionLandArea - trade.landArea);
+    if (landAreaDiff <= 0.5) {
+      factor *= 1.03;
+      penalties.push({
+        name: "LAND_AREA_MATCH",
+        factor: 1.03,
+        reason: "대지권 면적 일치(보조 확증 신호)",
+      });
     }
   }
 

@@ -377,3 +377,82 @@ area`로만 후보를 좁히고 면적/층/시점/가격/고유성으로 스코�
 `src/resale-match/trade-ingestion.service.ts`,
 `src/resale-match/entities/actual-trade.entity.ts`,
 `src/migrations/1784267000000-AddActualTradeHouseType.ts`(신규).
+
+## 追記 (2026-08-03) — 빌라 매칭에 대지면적(landAr) 보조 신호 추가
+
+사용자 질문에서 이어짐: "빌라는 동에 대한 정보가 없자나" → 코드 확인
+결과 "동 일치" 보너스/탈락 로직(`match-scoring.util.ts`)은 양쪽 다 값이
+있을 때만 작동해 빌라는 이 블록이 조용히 스킵될 뿐 문제는 없었음.
+이어서 "api에서 더 매칭하기 좋은 데이터는 없었어?"라는 질문에 빌라
+API 전용 필드 `landAr`(대지면적)을 제안 — 아파트에는 없는 필드지만
+우리 `Auction.landShare`(대지권, 크롤러가 이미 수집 중)와 비교 가능해
+"동" 공백을 메울 보조 신호로 쓸 수 있음. 사용자가 "너무 큰 비중은
+안둬도 될거같아"라는 조건으로 진행 승인.
+
+### 구현
+- `ActualTradeRow.landArea`(numeric, nullable) 추가 — 마이그레이션
+  `1784268000000-AddActualTradeLandArea.ts`. 아파트 실거래는 항상
+  null(API에 필드 자체가 없음), 빌라만 채워짐.
+- `MolitTradeItem`에 선택적 `landAr?: string` 필드 추가,
+  `fetchVillaTrades()`가 원본 `landAr`을 그대로 실어 보냄.
+  `TradeIngestionService.parseLandArea()`로 숫자 파싱 후 저장.
+- `match-scoring.util.ts`에 `parseAuctionLandArea()`(Auction.landShare
+  파싱) 추가. `computeScore()`에 "동 일치"(+15%) 블록 바로 아래
+  "대지면적 일치"(+3%, 0.5㎡ 이내 일치 시)를 추가 — **동 일치보다
+  훨씬 작은 가중치**이고, 불일치는 탈락시키지 않음(동 불일치와 달리
+  대지권 값이 크롤링/등기 오차로 살짝 다를 수 있어 확실한 반증으로
+  보기 어렵다고 판단, 사용자 요청 반영).
+- `resale-match.service.ts`가 매칭 시 `auction.landShare`를 파싱해
+  `computeScore()`에 `auctionLandArea`로 전달.
+- 관리자 QA 화면 응답(`GET /resale-match/matches`)에 `houseType`,
+  `landArea` 컬럼 추가(디버깅/확인용).
+
+### 변경 파일(추가분)
+`src/resale-match/molit-trade-client.service.ts`,
+`src/resale-match/trade-ingestion.service.ts`,
+`src/resale-match/entities/actual-trade.entity.ts`,
+`src/resale-match/match-scoring.util.ts`,
+`src/resale-match/resale-match.service.ts`,
+`src/resale-match/resale-match.controller.ts`,
+`src/migrations/1784268000000-AddActualTradeLandArea.ts`(신규).
+
+### 테스트 결과
+`npx tsc --noEmit` + `npm run build` 클린. 실제 빌라 재거래 매칭
+사례로 이 보너스가 적용되는지는 데이터가 쌓여야 확인 가능(미확인).
+
+## 追記 (2026-08-03) — "기존 DB도 매도분석" 동작 확인 + 후보 희소성 원인 확인
+
+사용자 질문: "241건 중 8건이 DB중복으로 빠졌는데 기존 DB 8건도
+조사하나??" → "방금 돌렸는데 234건만 한거같은데?? 기존 db 안한거같아,
+후보가 2건뿐이 안나오는데?? 제대로 된거 맞나".
+
+**둘 다 정상 동작으로 확인**(운영 `crawler_log` 테이블 직접 조회):
+```
+[매도분석] 이미 DB에 있던 28건 확인 시작(재크롤링 없이 기존 정보로 매칭)
+[매도분석] 완료 — 시도 0건 / 후보 발견 0건 / 매도 확정 표시 0건
+```
+- 프론트 "방금 가져온 물건의 매도분석 결과" 패널은 **방금 크롤링한
+  배치(233~234건)만** 반영하고, `runResaleAnalysisForExisting`으로
+  트리거되는 "기존 DB 중복건" 분석(28건)은 백그라운드에서 별도로
+  돌아 이 패널에 안 뜬다 — UI 설계상 원래 그런 것이지 안 돈 게 아님.
+  "시도 0건"인 이유는 그 28건 전부 아직 `paymentCompletedAt`(완납일)이
+  비어 있었기 때문(`processAuctionForResale`의 첫 가드에서 즉시
+  `attempted: false`로 걸러짐).
+- 후보가 거의 안 나온 이유: 스크린샷의 실제 물건들을 DB에서 직접
+  조회해 확인 — `caseState`가 "지급기한"/"매각결정기일"인 물건은
+  `paymentCompletedAt`이 아직 null(대금납부 전이라 당연함), "배당기일"/
+  "배당종결"에 도달한 물건만 채워져 있었음. 매도분석은 완납일이 있는
+  물건만 대상이 되므로, 방금 낙찰된 234건 대부분이 애초에 분석 대상이
+  아니었던 것 — 버그가 아니라 설계대로 동작. 참고로 전체 DB 기준
+  "완납일 있고 미매칭"인 물건은 총 307건뿐(주기 배치 로그 기준)이라,
+  234건 중 실제 대상이 된 건 소수였을 것으로 추정.
+
+### 확인 방법
+`railway logs`(Nest 표준 로거)에는 이 로그가 안 잡힌다 — `appendLog()`가
+Nest Logger가 아니라 인메모리 배열 + `crawler_log` 테이블에 직접
+`insert`하는 구조라, 실제 확인은 `railway run --service Postgres`로
+운영 DB의 `crawler_log` 테이블을 직접 조회해야 한다(`WHERE message
+LIKE '%매도분석%'`). 이번에 이 방법으로 확인.
+
+### 변경 파일
+없음(조사만, 코드 변경 없음).

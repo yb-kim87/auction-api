@@ -37,6 +37,10 @@ export type MolitTradeItem = {
   sggCd: string;
   slerGbn: string;
   umdNm: string;
+  /** 아파트 API엔 없는 필드(빌라 전용) — 대지면적. 빌라는 실거래에 "동"
+   * 정보가 없어 대신 이 값으로 동 일치 확증 신호를 보조한다(2026-08-03,
+   * 사용자 요청 — 단, 비중은 작게). */
+  landAr?: string;
 };
 
 /** 연립다세대매매(RTMSDataSvcRHTrade) 응답 1건 원본 필드(실측,
@@ -120,6 +124,7 @@ export class MolitTradeClientService {
       sggCd: item.sggCd,
       slerGbn: item.slerGbn,
       umdNm: item.umdNm,
+      landAr: item.landAr,
     }));
   }
 

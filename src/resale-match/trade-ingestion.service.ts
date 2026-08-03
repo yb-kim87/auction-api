@@ -183,8 +183,15 @@ export class TradeIngestionService {
       sourceType: "MOLIT_API",
       sourceRaw: item,
       houseType,
+      landArea: this.parseLandArea(item.landAr),
     });
     await this.tradeRepo.save(row);
+  }
+
+  private parseLandArea(raw: string | undefined): number | null {
+    if (!raw) return null;
+    const num = Number(raw.trim());
+    return Number.isFinite(num) && num > 0 ? num : null;
   }
 
   /** 국토부 API는 만원 단위 문자열("42,000")로 금액을 준다 → 원 단위로. */
