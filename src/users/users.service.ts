@@ -15,8 +15,11 @@ import type { UpdateProfileDto } from "./update-profile.dto";
 /** 임시 조치(2026-08-02): 이 명단으로 가입하는 회원은 가입과 동시에
  * "OT수강생" 등급을 자동 부여해 OT영상을 바로 볼 수 있게 한다(관리자가
  * 수동으로 등급을 바꿔줄 필요 없이). 이름이 완전히 일치해야 하며,
- * 용도가 끝나면(대상자들이 전부 가입 완료되면) 이 목록/분기를 지워도
- * 된다 — 회원권한 관리 화면에서 언제든 수동으로도 등급을 줄 수 있다. */
+ * 이름당 딱 1번만 부여된다(동일 이름 회원이 이미 존재하면 자동 부여
+ * 안 함 — 2026-08-04: 명단 인원이 다 가입한 뒤에도 계속 남아있으면
+ * 같은 이름으로 또 가입하는 사람에게까지 자동 부여될 수 있어서). 용도가
+ * 끝나면(대상자들이 전부 가입 완료되면) 이 목록/분기를 지워도 된다 —
+ * 회원권한 관리 화면에서 언제든 수동으로도 등급을 줄 수 있다. */
 const OT_AUTO_UPGRADE_NAMES = new Set(["현영근", "권오상", "김동우", "정혜원", "김수진"]);
 
 @Injectable()
@@ -251,15 +254,26 @@ export class UsersService implements OnModuleInit {
       throw new ConflictException("이미 사용 중인 아이디입니다.");
     }
 
+    // 이름당 1회만 자동 부여한다 — 동일한 이름으로 가입한 회원이 이미
+    // 있으면(본인이 이미 가입 완료했거나, 다른 사람이 같은 이름을 도용해
+    // 가입) 더 이상 자동으로 등급을 주지 않는다(사용자 요청, 2026-08-04:
+    // "계속 누군가 저이름으로 가입하게되면 자동으로 될 수도 있으니까
+    // 한번만").
+    const trimmedName = input.name.trim();
+    const alreadyUsed =
+      OT_AUTO_UPGRADE_NAMES.has(trimmedName) &&
+      (await this.userRepo.exists({ where: { name: trimmedName } }));
+
     return this.userRepo.save(
       this.userRepo.create({
         username: input.username,
         password: input.password,
         name: input.name,
         phone: input.phone,
-        role: OT_AUTO_UPGRADE_NAMES.has(input.name.trim())
-          ? UserRole.OT_STUDENT
-          : UserRole.MEMBER,
+        role:
+          OT_AUTO_UPGRADE_NAMES.has(trimmedName) && !alreadyUsed
+            ? UserRole.OT_STUDENT
+            : UserRole.MEMBER,
         investableFunds: input.investableFunds,
         existingLoanAmount: input.existingLoanAmount,
         housingCount: input.housingCount,
