@@ -116,9 +116,15 @@ export class ResaleMatchService implements OnModuleInit {
    * 재사용하며, 크롤링 흐름을 막지 않도록 호출부에서 반드시
    * fire-and-forget(void + catch)으로 불러야 한다.
    */
-  async processAuctionForResale(
-    auction: Auction,
-  ): Promise<{ attempted: boolean; candidateFound: boolean; displayed: boolean }> {
+  async processAuctionForResale(auction: Auction): Promise<{
+    attempted: boolean;
+    candidateFound: boolean;
+    displayed: boolean;
+    /** 1위 후보 점수/등급 — 물건작업창 매도분석 결과 목록에 표시용
+     * (2026-08-03). 후보가 없으면 둘 다 null. */
+    score: number | null;
+    tier: string | null;
+  }> {
     if (
       !auction.paymentCompletedAt ||
       auction.resaleMatchedTradeId ||
@@ -126,7 +132,7 @@ export class ResaleMatchService implements OnModuleInit {
       !auction.umdNm ||
       !auction.jibun
     ) {
-      return { attempted: false, candidateFound: false, displayed: false };
+      return { attempted: false, candidateFound: false, displayed: false, score: null, tier: null };
     }
     try {
       await this.ensureIngestedForLawdCd(auction.lawdCd);
@@ -136,16 +142,25 @@ export class ResaleMatchService implements OnModuleInit {
         where: { id: auction.id },
         select: ["resaleMatchTier"],
       });
+      const topMatch =
+        candidateCount > 0
+          ? await this.matchRepo.findOne({
+              where: { auctionId: auction.id, candidateRank: 1 },
+              select: ["scoreTotal", "confidenceTier"],
+            })
+          : null;
       return {
         attempted: true,
         candidateFound: candidateCount > 0,
         displayed: Boolean(updated?.resaleMatchTier),
+        score: topMatch?.scoreTotal ?? null,
+        tier: topMatch?.confidenceTier ?? null,
       };
     } catch (err) {
       this.logger.error(
         `물건별 매도분석 실패(auctionId=${auction.id}): ${err instanceof Error ? err.message : err}`,
       );
-      return { attempted: true, candidateFound: false, displayed: false };
+      return { attempted: true, candidateFound: false, displayed: false, score: null, tier: null };
     }
   }
 

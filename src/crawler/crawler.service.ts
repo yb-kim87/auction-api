@@ -144,9 +144,32 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   private importItemCount = 0;
   private schedulerTimer: ReturnType<typeof setInterval> | null = null;
   private jobRunning = false;
-  /** "주소 추가" 시점에 이미 DB에 있어 작업목록에서 제외된 사건번호들
-   * ("조회 시작"을 누르면 이 목록으로 매도분석을 시도한다). */
-  private pendingDuplicateResaleAuctionNos: string[] = [];
+  /** "주소 추가" 시점에 이미 DB에 있어 작업목록에서 제외된 물건들의 URL
+   * ("조회 시작"을 누르면 이 목록으로 매도분석을 시도한다). 사건번호
+   * 텍스트 대신 URL로 들고 있어야 법원 간 사건번호 중복으로 엉뚱한
+   * 물건이 섞이지 않는다(2026-08-03). */
+  private pendingSkipCrawlResaleLinks: string[] = [];
+
+  /** "요청한 N건 중 매도분석이 몇 건 됐는지" — 크롤링이 필요했던 물건
+   * (importItem 콜백에서 각각 도착)과 건너뛴 중복 물건(즉시 처리)을
+   * 하나의 결과로 합쳐서 보여주기 위한 진행 중 요약. "매도분석"
+   * 체크박스를 켜고 "조회 시작"을 누른 시점에 새로 초기화되고, 프론트가
+   * 이 값을 폴링해 하나의 카드로 보여준다(사용자 요청, 2026-08-03:
+   * "241건을 요청하면... 같이 돌리는걸로... 총 결과는 241건 중 몇개가
+   * 매칭되었다 나오게"). */
+  private resaleRunSummary: {
+    totalRequested: number;
+    attempted: number;
+    candidateFound: number;
+    displayed: number;
+    items: Array<{
+      auctionNo: string;
+      address: string;
+      score: number | null;
+      tier: string | null;
+      displayed: boolean;
+    }>;
+  } | null = null;
 
   constructor(
     private readonly auctionsService: AuctionsService,
@@ -1301,10 +1324,8 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     if (result.message) this.appendLog("info", result.message);
 
     const rawUrls = result.urls ?? [];
-    const { urls, excluded, deduped, naverRefresh, beforeResultTime } = filterCollectedUrls(
-      rawUrls,
-      linkExistingMap,
-    );
+    const { urls, excluded, deduped, naverRefresh, beforeResultTime, skippedEntries } =
+      filterCollectedUrls(rawUrls, linkExistingMap);
 
     // 이미 DB에 있어서 작업목록에서 제외된(재크롤링 건너뛴) 물건도
     // 매도분석은 놓치지 않는다 — 기존 DB 정보(주소/완납일 등)만으로도
@@ -1314,10 +1335,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // 같아"). "주소 추가" 직후 조용히 백그라운드에서 도는 대신,
     // "조회 시작"을 누른 시점에 실행 로그에 진행상황이 보이도록
     // startCrawl()에서 소비한다(사용자 요청: "기다리고 있다가 조회시작을
-    // 누르면 진행되게하던가").
-    this.pendingDuplicateResaleAuctionNos = rawUrls
-      .map((u) => u.label?.split("_")[0]?.trim())
-      .filter((no): no is string => Boolean(no));
+    // 누르면 진행되게하던가"). URL로 들고 있어야 사건번호 중복 문제가
+    // 없다(2026-08-03).
+    this.pendingSkipCrawlResaleLinks = skippedEntries
+      .map((e) => e.url)
+      .filter((url): url is string => Boolean(url));
 
     if (naverRefresh > 0) {
       this.appendLog(
@@ -1474,10 +1496,24 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // await하지 않음). 사용자가 "매도분석" 체크박스를 켠 경우에만 실행 —
     // 매번 자동으로 돌리면 진행물건 조회 때도 수천 건이 매번 재매칭되는
     // 낭비가 발생함(사용자 지적, 2026-08-01).
+    //
+    // "요청한 N건 중 몇 건이 매칭됐다"를 하나로 보여주기 위해(사용자 요청,
+    // 2026-08-03), 크롤링이 필요한 물건(urls.length)과 건너뛴 물건
+    // (pendingSkipCrawlResaleLinks.length)을 합쳐 totalRequested로 미리
+    // 잡아두고, 크롤링된 물건은 importItem 콜백에서, 건너뛴 물건은 여기서
+    // 바로 같은 카운터에 결과를 채워 넣는다.
     if (dto.runResaleAnalysisForExisting) {
-      void this.runPendingDuplicateResaleAnalysis().catch(() => {});
+      this.resaleRunSummary = {
+        totalRequested: urls.length + this.pendingSkipCrawlResaleLinks.length,
+        attempted: 0,
+        candidateFound: 0,
+        displayed: 0,
+        items: [],
+      };
+      void this.runSkipCrawlResaleAnalysis().catch(() => {});
     } else {
-      this.pendingDuplicateResaleAuctionNos = [];
+      this.resaleRunSummary = null;
+      this.pendingSkipCrawlResaleLinks = [];
     }
 
     try {
@@ -1581,16 +1617,43 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return { ok: true };
   }
 
-  /** "조회 시작"을 누른 시점에, 그전 "주소 추가"에서 이미 DB에 있어
-   * 작업목록에서 제외됐던 사건번호들을 매도분석한다(재크롤링 없이
-   * 기존 DB 정보만 사용). 실행 로그에 진행상황을 남겨 "돌아가고
-   * 있다"는 게 눈에 보이게 한다(사용자 요청, 2026-08-01). */
-  private async runPendingDuplicateResaleAnalysis(): Promise<void> {
-    const auctionNos = this.pendingDuplicateResaleAuctionNos;
-    this.pendingDuplicateResaleAuctionNos = [];
-    if (auctionNos.length === 0) return;
+  /** 크롤링 필요 여부와 무관하게 이 실행의 매도분석 결과를 하나의
+   * 카운터에 합산한다 — importItem 콜백(크롤링된 물건)과
+   * runSkipCrawlResaleAnalysis(건너뛴 물건) 양쪽에서 공통으로 호출
+   * (사용자 요청, 2026-08-03: "241건 중 몇 개가 매칭되었다"를 하나로). */
+  private recordResaleOutcome(
+    auction: { auctionNo: string; address: string },
+    result: { attempted: boolean; candidateFound: boolean; displayed: boolean; score: number | null; tier: string | null },
+  ): void {
+    if (!this.resaleRunSummary) return;
+    if (!result.attempted) return;
+    this.resaleRunSummary.attempted += 1;
+    if (result.candidateFound) this.resaleRunSummary.candidateFound += 1;
+    if (result.displayed) this.resaleRunSummary.displayed += 1;
+    this.resaleRunSummary.items.push({
+      auctionNo: auction.auctionNo,
+      address: auction.address,
+      score: result.score,
+      tier: result.tier,
+      displayed: result.displayed,
+    });
+  }
 
-    const existing = await this.auctionsService.findByAuctionNos(auctionNos);
+  getResaleRunSummary() {
+    return this.resaleRunSummary;
+  }
+
+  /** "조회 시작"을 누른 시점에, 그전 "주소 추가"에서 이미 DB에 있어
+   * 작업목록에서 제외됐던 물건들을 매도분석한다(재크롤링 없이 기존 DB
+   * 정보만 사용). URL로 정확히 찾아 사건번호 중복 문제를 피한다
+   * (2026-08-03). 실행 로그에 진행상황을 남겨 "돌아가고 있다"는 게
+   * 눈에 보이게 한다(사용자 요청, 2026-08-01). */
+  private async runSkipCrawlResaleAnalysis(): Promise<void> {
+    const links = this.pendingSkipCrawlResaleLinks;
+    this.pendingSkipCrawlResaleLinks = [];
+    if (links.length === 0) return;
+
+    const existing = await this.auctionsService.findByLinks(links);
     if (existing.length === 0) return;
 
     this.appendLog(
@@ -1603,14 +1666,15 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     for (const auction of existing) {
       const result = await this.resaleMatchService
         .processAuctionForResale(auction)
-        .catch(() => ({ attempted: false, candidateFound: false, displayed: false }));
+        .catch(() => ({ attempted: false, candidateFound: false, displayed: false, score: null, tier: null }));
+      this.recordResaleOutcome(auction, result);
       if (result.attempted) attempted += 1;
       if (result.candidateFound) candidateFound += 1;
       if (result.displayed) displayed += 1;
     }
     this.appendLog(
       "info",
-      `[매도분석] 완료 — 시도 ${attempted}건 / 후보 발견 ${candidateFound}건 / 매도 확정 표시 ${displayed}건`,
+      `[매도분석] 건너뛴 물건 완료 — 시도 ${attempted}건 / 후보 발견 ${candidateFound}건 / 매도 확정 표시 ${displayed}건`,
     );
   }
 
@@ -1719,8 +1783,12 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // 국토부 실거래 api돌려서 매칭시키고 다음꺼 돌리고"). 완납일이
     // 아직 없거나 조건 미충족이면 내부에서 조용히 스킵된다. 크롤링
     // 흐름을 막지 않도록 절대 await하지 않는다.
-    if (result.item) {
-      void this.resaleMatchService.processAuctionForResale(result.item).catch(() => {});
+    if (result.item && !options.mirror) {
+      const item = result.item;
+      void this.resaleMatchService
+        .processAuctionForResale(item)
+        .then((outcome) => this.recordResaleOutcome(item, outcome))
+        .catch(() => {});
     }
 
     if (!options.mirror) {

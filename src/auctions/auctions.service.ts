@@ -1214,6 +1214,27 @@ export class AuctionsService implements OnModuleInit {
     return this.auctionRepo.find({ where: { auctionNo: In(auctionNos) } });
   }
 
+  /** URL(링크) 기준으로 정확히 찾는다 — 사건번호(auctionNo)는 법원이
+   * 다르면 같은 번호가 중복될 수 있어(실측: 2026-08-03, 운영 DB에서
+   * 238개 사건번호가 서로 다른 법원 사건과 겹침) 매도분석처럼 "이 물건,
+   * 정확히 이거" 매칭이 중요한 곳에는 auctionNo 대신 link로 찾는다. */
+  async findByLinks(links: string[]): Promise<Auction[]> {
+    if (links.length === 0) return [];
+    const keys = new Set<string>();
+    for (const link of links) {
+      keys.add(link.split("&")[0].trim());
+      const normalized = normalizeTankLink(link);
+      if (normalized) keys.add(normalized);
+    }
+    if (keys.size === 0) return [];
+    return this.auctionRepo
+      .createQueryBuilder("a")
+      .where("split_part(a.link, '&', 1) IN (:...keys) OR a.link IN (:...keys)", {
+        keys: Array.from(keys),
+      })
+      .getMany();
+  }
+
   async getLinkCollectFilterMap(): Promise<
     Map<
       string,

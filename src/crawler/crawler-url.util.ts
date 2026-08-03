@@ -164,9 +164,15 @@ export function filterCollectedUrls(
   deduped: number;
   naverRefresh: number;
   beforeResultTime: number;
+  /** 재크롤링 없이 건너뛴(=이미 DB에 있는) 항목들 원본 — 매도분석을
+   * "요청한 전체 건수" 기준으로 통합하기 위해, 사건번호 텍스트가 아니라
+   * URL(정확한 1:1 식별자)로 나중에 다시 찾아 쓸 수 있게 그대로 넘긴다
+   * (2026-08-03, 사건번호가 법원 간 겹칠 수 있어 텍스트 매칭은 부정확). */
+  skippedEntries: CrawlerUrlEntry[];
 } {
   const seen = new Set<string>();
   const filtered: CrawlerUrlEntry[] = [];
+  const skippedEntries: CrawlerUrlEntry[] = [];
   let excluded = 0;
   let deduped = 0;
   let naverRefresh = 0;
@@ -192,11 +198,13 @@ export function filterCollectedUrls(
     // 처리됐는데도 검색 결과에 계속 남아 재조회되던 문제, 2026-07-20).
     if (isClosedCaseState(existing.caseState)) {
       excluded += 1;
+      skippedEntries.push(entry);
       continue;
     }
 
     if (isTodayBidDateBeforeResultTime(existing.bidDate, now)) {
       beforeResultTime += 1;
+      skippedEntries.push(entry);
       continue;
     }
 
@@ -210,10 +218,11 @@ export function filterCollectedUrls(
       filtered.push(entry);
     } else {
       excluded += 1;
+      skippedEntries.push(entry);
     }
   }
 
-  return { urls: filtered, excluded, deduped, naverRefresh, beforeResultTime };
+  return { urls: filtered, excluded, deduped, naverRefresh, beforeResultTime, skippedEntries };
 }
 
 export function normalizeTankLink(link: string): string {

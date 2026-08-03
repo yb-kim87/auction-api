@@ -36,6 +36,15 @@ export class CrawlerController {
     return this.crawlerService.getStatus();
   }
 
+  /** "매도분석" 체크박스를 켜고 "조회 시작"을 눌렀을 때 진행 중인 실행의
+   * 매도분석 결과 합계(요청한 전체 건수 기준). 크롤링이 필요했던 물건과
+   * 건너뛴 중복 물건을 하나로 합쳐서 보여준다(2026-08-03). */
+  @Get("resale-run-summary")
+  resaleRunSummary(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.crawlerService.getResaleRunSummary();
+  }
+
   @Get("config")
   getConfig(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));

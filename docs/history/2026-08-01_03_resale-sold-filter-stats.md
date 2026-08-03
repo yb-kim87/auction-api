@@ -472,3 +472,64 @@ lawdCd(=시/군/구)로만 매칭되므로 경매물건의 city/district를 그�
 ### 변경 파일
 `src/resale-match/resale-match.controller.ts`(추가분),
 `src/lib/api.ts`, `src/app/admin/ResaleMatchTab.tsx`(프론트).
+
+## 追記 (2026-08-03) — 매도분석을 "요청 전체 건수" 기준 하나로 통합
+
+사용자 요청: "그냥 내생각엔 차라리 매도분석 체크박스를 하나 만드는게
+좋을꺼같아... 241건을 요청하면 이미있는것도 순차적으로 241건 다같이
+돌리는걸로... 같은 로직으로 돌아가게... 총 결과는 241건 중 몇개가
+매도가 되었다 매칭되었다 결과가 나오게".
+
+기존 구조는 (1) "조회 시작" 즉시 발동하는 기존-DB-중복건 매도분석과
+(2) 크롤링 완료마다 개별 발동하는 신규/갱신 물건 매도분석이 서로
+다른 트리거·다른 판별기준(URL vs 사건번호 텍스트)·다른 표시 위치
+(카드 vs 로그)로 완전히 분리돼 있어 혼란을 유발했음(바로 위 追記
+참고). 이번엔 이 둘을 "같은 로직, 하나의 결과"로 합쳤다.
+
+### 구현
+- `filterCollectedUrls()`가 제외된 항목들의 원본 `CrawlerUrlEntry`
+  (`skippedEntries`)도 함께 반환하도록 확장 — 기존엔 개수만 반환.
+- `AuctionsService.findByLinks(links)`(신규): URL(정확한 1:1 식별자)
+  기준으로 기존 Auction을 찾는다. 기존 `findByAuctionNos`는 사건번호
+  텍스트로만 찾아 법원 간 사건번호 충돌(운영 DB 실측 238건) 위험이
+  있었음 — 건너뛴 물건 매칭은 이제 이 메서드를 쓴다.
+- `CrawlerService`:
+  - `pendingDuplicateResaleAuctionNos`(사건번호 문자열 배열) →
+    `pendingSkipCrawlResaleLinks`(URL 배열)로 교체.
+  - `resaleRunSummary`(신규, 인스턴스 필드): `{totalRequested,
+    attempted, candidateFound, displayed, items}` — "조회 시작"
+    시점에 `totalRequested = 크롤링대상 + 건너뛴대상`으로 초기화.
+  - `recordResaleOutcome(auction, result)`(신규): 크롤링된 물건
+    (`importItem` 콜백)과 건너뛴 물건(`runSkipCrawlResaleAnalysis`,
+    기존 `runPendingDuplicateResaleAnalysis`를 이름까지 바꿔 URL 기반
+    조회로 재작성) 양쪽에서 공통 호출해 같은 카운터에 합산.
+  - `importItem`의 기존 무조건 발동 매도분석 호출에 `!options.mirror`
+    가드 추가 — mirror 콜백까지 집계되면 중복 카운트가 생김.
+  - `getResaleRunSummary()` + `GET /crawler/resale-run-summary`
+    (신규 엔드포인트)로 프론트에 노출.
+- `ResaleMatchService.processAuctionForResale()` 반환값에
+  `score`/`tier`(1위 후보 점수·등급) 추가 — 결과 목록 표시용.
+- 프론트 `CrawlerWorkPanel.tsx`:
+  - "기존 DB 물건도 매도분석" 체크박스 → "매도분석"으로 라벨/설명 변경.
+  - "조회 시작" 클릭 시 이 체크박스가 켜져 있으면 플래그만 남겨두고,
+    크롤링이 끝나는 시점(`justFinished`)에 새 `GET
+    /crawler/resale-run-summary`를 조회해 하나의 카드로 표시(요청/
+    시도/후보/확정 4개 지표 + 물건별 목록).
+  - 기존 `fetchResaleSoldStatsByCaseNo` 경로는 더 이상 호출하지
+    않음(사건번호 충돌 문제도 있고 두 갈래로 나뉘어 있던 근본 원인이라
+    폐기 — 함수/엔드포인트 자체는 당장 지우지 않고 남겨둠, 다른 용도로
+    재사용될 수 있어 완전 삭제는 보류).
+
+### 변경 파일
+**auction-api**: `src/crawler/crawler-url.util.ts`,
+`src/crawler/crawler.service.ts`, `src/crawler/crawler.controller.ts`,
+`src/auctions/auctions.service.ts`,
+`src/resale-match/resale-match.service.ts`.
+
+**auction**: `src/lib/api.ts`, `src/app/admin/CrawlerWorkPanel.tsx`.
+
+### 테스트 결과
+`tsc --noEmit` + `npm run build` 클린(양쪽 모두). 실제 "매도분석"
+체크박스로 대량 조회를 돌려 결과 카드에 정확한 합계가 뜨는지는 이
+세션에서 직접 확인하지 못함(코드 리뷰 + 빌드까지만) — 배포 후 실사용
+확인 권장.
