@@ -456,3 +456,19 @@ LIKE '%매도분석%'`). 이번에 이 방법으로 확인.
 
 ### 변경 파일
 없음(조사만, 코드 변경 없음).
+
+## 追記 (2026-08-03) — QA 화면에 실거래 전체 주소 표시
+
+사용자 피드백: "매도된거 보면 경매지주소와 비교해서 보기엔 거래된
+주소가 빌라명만 나와있어서 매칭해서 보기가 힘들어 주소가 다 나오게
+해줘". `actual_trade`에는 도로명 전체주소가 없고 동(umdNm)+지번(jibun)
++건물명(aptNm)만 있는데, 매칭된 경매물건과 실거래는 항상 같은
+lawdCd(=시/군/구)로만 매칭되므로 경매물건의 city/district를 그대로
+재사용해 "시/군/구+동+지번+건물명" 형태의 전체 주소를 조합해 표시하도록
+`GET /resale-match/matches` 응답에 `city`/`district`/`umdNm`/`jibun`
+필드를 추가하고, `ResaleMatchTab.tsx` "실거래(층/면적)" 컬럼에 주소
+줄을 추가.
+
+### 변경 파일
+`src/resale-match/resale-match.controller.ts`(추가분),
+`src/lib/api.ts`, `src/app/admin/ResaleMatchTab.tsx`(프론트).
