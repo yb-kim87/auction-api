@@ -533,3 +533,52 @@ lawdCd(=시/군/구)로만 매칭되므로 경매물건의 city/district를 그�
 체크박스로 대량 조회를 돌려 결과 카드에 정확한 합계가 뜨는지는 이
 세션에서 직접 확인하지 못함(코드 리뷰 + 빌드까지만) — 배포 후 실사용
 확인 권장.
+
+## 追記 (2026-08-03) — 매도분석 완료 시점을 정확히 판정 + 진행 로그 추가
+
+사용자 지적: "1번이미지(24건 누적)와 2번이미지(1건)가 다른 이유가
+뭐야??" → "그러면 1건이 나올리가 없는데" → "매도분석이 끝나는 시점을
+우리가 알 수는 없어?" → "어차피 api호출보내고 응답받아서 비교하는건
+우리가 하는거자나".
+
+**근본 원인(DB 직접 조사로 확인)**: 크롤링 234건은 22:42경 끝났는데,
+매도분석(국토부 API 호출 포함)은 물건마다 비동기로 따로 돌아 실제
+완료는 22:43~23:02 UTC에 걸쳐 흩어져 있었다(`auction_trade_match.
+computedAt` 실측). "크롤링 끝났다" 신호가 뜨는 순간 딱 한 번만 결과를
+재조회했던 게 "1건"의 원인 — 대부분 아직 진행 중이었음. 바로 앞
+追記에서 "값이 더 안 바뀌면 완료"로 추측하는 폴링을 붙였었는데,
+사용자가 "우리가 직접 API 호출하고 비교하는 거니까 정확히 알 수
+있지 않냐"고 재차 지적 — 맞는 말이라 추측이 아닌 **정확한 카운터**로
+교체.
+
+### 구현
+- `resaleRunSummary`에 `processed` 필드 추가 — "요청한 건을 실제로
+  검토 완료했는지"를 완납일 없어 스킵된 건까지 포함해 정확히 센다.
+  `processed >= totalRequested`가 되는 순간이 곧 100% 완료.
+- `markResaleProcessed()`(신규): `processed` 증가 + 20건마다 진행
+  로그(`[매도분석] 진행 중 N/총건수...`) + 완료 시 최종 로그
+  (`[매도분석] 전체 완료... 매도 건수는 N건입니다`, 사용자가 요청한
+  정확한 문구 반영).
+- `recordResaleOutcome()`이 내부에서 `markResaleProcessed()`를
+  호출하도록 재구성(기존엔 `attempted`인 경우에만 카운트해서, 완납일
+  없어 스킵된 건은 영원히 안 세어져 processed가 totalRequested에
+  도달 못 하는 문제가 있었음).
+- `importItem()`의 "저장 스킵"(잘못된 데이터/변경 없음) 분기에도
+  `markResaleProcessed()` 호출 추가 — 매도분석을 시도할 데이터 자체가
+  없는 건도 "검토 끝"으로 즉시 표시.
+- `runSkipCrawlResaleAnalysis()`: URL로 못 찾은 건(정상적으론 거의
+  없음)도 즉시 `markResaleProcessed()` 호출해 누락 방지.
+- 프론트 폴링(`CrawlerWorkPanel.tsx`)이 "2번 연속 값 안 바뀜" 추측
+  대신 `processed >= totalRequested`를 완료 신호로 사용하도록 변경
+  (타임아웃은 15분으로 늘려 안전장치로만 유지). 진행 중 배지에
+  `processed/totalRequested` 진행률도 표시.
+
+### 변경 파일
+**auction-api**: `src/crawler/crawler.service.ts`.
+
+**auction**: `src/lib/api.ts`(`processed` 필드), `src/app/admin/CrawlerWorkPanel.tsx`.
+
+### 테스트 결과
+`tsc --noEmit` + `npm run build` 클린(양쪽 모두). 실제 대량 조회로
+`processed`가 정확히 `totalRequested`에 도달해 폴링이 멈추는지는 이
+세션에서 직접 확인하지 못함 — 배포 후 실사용 확인 권장.

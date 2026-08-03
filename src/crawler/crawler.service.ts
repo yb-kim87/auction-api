@@ -159,6 +159,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
    * 매칭되었다 나오게"). */
   private resaleRunSummary: {
     totalRequested: number;
+    /** 요청한 물건을 실제로 끝까지 검토(완납일 없어서 스킵된 경우 포함)한
+     * 건수 — 이게 totalRequested에 도달하면 매도분석이 100% 끝났다는
+     * 뜻이라, 프론트가 이 값으로 정확히 "완료"를 판정한다(사용자 요청,
+     * 2026-08-03: "매도분석이 끝나는 시점을 우리가 알 수는 없어?"). */
+    processed: number;
     attempted: number;
     candidateFound: number;
     displayed: number;
@@ -1505,6 +1510,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     if (dto.runResaleAnalysisForExisting) {
       this.resaleRunSummary = {
         totalRequested: urls.length + this.pendingSkipCrawlResaleLinks.length,
+        processed: 0,
         attempted: 0,
         candidateFound: 0,
         displayed: 0,
@@ -1626,17 +1632,43 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     result: { attempted: boolean; candidateFound: boolean; displayed: boolean; score: number | null; tier: string | null },
   ): void {
     if (!this.resaleRunSummary) return;
-    if (!result.attempted) return;
-    this.resaleRunSummary.attempted += 1;
-    if (result.candidateFound) this.resaleRunSummary.candidateFound += 1;
-    if (result.displayed) this.resaleRunSummary.displayed += 1;
-    this.resaleRunSummary.items.push({
-      auctionNo: auction.auctionNo,
-      address: auction.address,
-      score: result.score,
-      tier: result.tier,
-      displayed: result.displayed,
-    });
+    if (result.attempted) {
+      this.resaleRunSummary.attempted += 1;
+      if (result.candidateFound) this.resaleRunSummary.candidateFound += 1;
+      if (result.displayed) this.resaleRunSummary.displayed += 1;
+      this.resaleRunSummary.items.push({
+        auctionNo: auction.auctionNo,
+        address: auction.address,
+        score: result.score,
+        tier: result.tier,
+        displayed: result.displayed,
+      });
+    }
+    this.markResaleProcessed();
+  }
+
+  /** 요청한 건 중 하나를 "검토 끝"으로 표시한다(실제 분석을 시도했든,
+   * 완납일이 없어 스킵했든 상관없이) — processed가 totalRequested에
+   * 도달하는 순간이 곧 "이번 매도분석이 100% 끝났다"는 정확한 신호다.
+   * 진행 중에는 20건마다, 다 끝나면 반드시 로그를 남겨 실행 로그에서
+   * 그냥 DB 저장 로그만 보이지 않고 매도분석 진행 상황도 보이게 한다
+   * (사용자 요청, 2026-08-03). */
+  private markResaleProcessed(): void {
+    if (!this.resaleRunSummary) return;
+    this.resaleRunSummary.processed += 1;
+    const { processed, totalRequested, attempted, candidateFound, displayed } = this.resaleRunSummary;
+    if (processed < totalRequested && processed % 20 === 0) {
+      this.appendLog(
+        "info",
+        `[매도분석] 진행 중 ${processed}/${totalRequested}건 (분석시도 ${attempted}건 · 후보 ${candidateFound}건 · 확정 ${displayed}건)`,
+      );
+    }
+    if (processed >= totalRequested) {
+      this.appendLog(
+        "info",
+        `[매도분석] 전체 완료(${totalRequested}건 검토, 분석시도 ${attempted}건) — 매도 건수는 ${displayed}건입니다(QA 후보 포함 ${candidateFound}건)`,
+      );
+    }
   }
 
   getResaleRunSummary() {
@@ -1654,6 +1686,12 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     if (links.length === 0) return;
 
     const existing = await this.auctionsService.findByLinks(links);
+    // 링크로도 못 찾은 물건(정상적으로는 거의 없어야 함)은 더 분석할 방법이
+    // 없으니 즉시 "검토 끝"으로 표시해 processed가 totalRequested에
+    // 영원히 못 도달하는 일이 없게 한다.
+    for (let i = 0; i < links.length - existing.length; i++) {
+      this.markResaleProcessed();
+    }
     if (existing.length === 0) return;
 
     this.appendLog(
@@ -1752,6 +1790,9 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       } else if (!options.mirror) {
         this.appendLog("warn", `${progressPrefix}${label} 저장 스킵 (${reason || "unknown"})`);
       }
+      // 저장 자체가 스킵된 물건은 매도분석을 시도할 데이터가 없으니(또는
+      // 이미 최신 상태라 변경이 없으니) 곧바로 "검토 끝"으로 표시한다.
+      if (!options.mirror) this.markResaleProcessed();
       return result;
     }
 
