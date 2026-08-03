@@ -1507,18 +1507,32 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // (pendingSkipCrawlResaleLinks.length)을 합쳐 totalRequested로 미리
     // 잡아두고, 크롤링된 물건은 importItem 콜백에서, 건너뛴 물건은 여기서
     // 바로 같은 카운터에 결과를 채워 넣는다.
+    //
+    // 매도분석은 DB 저장(크롤링)과 별개로 끝날 때까지 독립적으로 돌아가야
+    // 한다(사용자 요청, 2026-08-03) — 이전 실행이 아직 안 끝났는데
+    // "조회 시작"을 또 누르면 여기서 무조건 새 객체로 덮어써버려서, 이전
+    // 실행에서 아직 진행 중이던(백그라운드에서 여전히 도는) 항목들의
+    // 결과가 이 새 객체에 잘못 합산되거나 통째로 유실되는 버그가 있었다
+    // (실측: 552건 실행 도중 소규모 추가 실행을 걸었더니 진행률이 19건에서
+    // "멈춘 것처럼" 보임 — 실제로는 이전 실행 진행분이 사라진 것).
+    // 이전 실행이 아직 끝나지 않았으면(processed < totalRequested) 새로
+    // 만들지 않고 총 요청 건수만 늘려서 이어붙인다.
     if (dto.runResaleAnalysisForExisting) {
-      this.resaleRunSummary = {
-        totalRequested: urls.length + this.pendingSkipCrawlResaleLinks.length,
-        processed: 0,
-        attempted: 0,
-        candidateFound: 0,
-        displayed: 0,
-        items: [],
-      };
+      const addedTotal = urls.length + this.pendingSkipCrawlResaleLinks.length;
+      if (this.resaleRunSummary && this.resaleRunSummary.processed < this.resaleRunSummary.totalRequested) {
+        this.resaleRunSummary.totalRequested += addedTotal;
+      } else {
+        this.resaleRunSummary = {
+          totalRequested: addedTotal,
+          processed: 0,
+          attempted: 0,
+          candidateFound: 0,
+          displayed: 0,
+          items: [],
+        };
+      }
       void this.runSkipCrawlResaleAnalysis().catch(() => {});
     } else {
-      this.resaleRunSummary = null;
       this.pendingSkipCrawlResaleLinks = [];
     }
 

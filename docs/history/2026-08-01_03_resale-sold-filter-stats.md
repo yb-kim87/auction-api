@@ -614,3 +614,55 @@ computedAt` 실측). "크롤링 끝났다" 신호가 뜨는 순간 딱 한 번�
 `tsc --noEmit` + `npm run build` 클린. curl로 API 승인 상태만
 실측했고, 실제 배포 후 오피스텔 물건이 매칭되는 사례는 데이터가
 쌓여야 확인 가능(미확인).
+
+## 追記 (2026-08-03): resaleRunSummary 동시성 버그 — 새 크롤링 시작 시 진행 중이던 매도분석 요약이 덮어써짐
+
+### 문제
+사용자가 552건 매도분석을 돌리던 중 "19/552건"에서 멈춘 것처럼 보인다고
+보고. 로그 타임스탬프를 대조한 결과, 진행 중이던 552건 분석과 정확히
+같은 시각에 사용자가 별도로 3건짜리 소규모 조회("조회 시작")를 추가로
+실행한 것을 발견. 사용자가 직접 원인을 진단: "방금 돌릴때 3건만
+돌아가는거였는데 이게 돌아가니까 매도 분석이 그시점에 맞춰서
+멈춰버려 이게 문제야 19개부터 안되자나".
+
+원인: `CrawlerService.startCrawl()`이 `runResaleAnalysisForExisting`
+옵션이 켜져 있을 때마다 `this.resaleRunSummary`를 무조건 새 객체로
+덮어썼다. 이전 실행(552건)이 아직 백그라운드에서 진행 중이어도, 새
+실행(3건)이 시작되는 순간 `resaleRunSummary`가 `{totalRequested: 3,
+processed: 0, ...}`로 초기화되어 버림 — 이전 실행의 비동기 콜백들은
+계속 살아있어서 새 객체에 결과를 잘못 누적시키고, `processed`가
+새 `totalRequested`(3)에 금방 도달해버려 완료로 오판됨.
+
+사용자의 명시적 설계 요구사항: "매도 분석은 db쌓는것과는 별개로
+다될때까지 독립적으로 돌아가야돼".
+
+### 수정
+`startCrawl()`에서 `resaleRunSummary`가 없거나 이미 완료된 경우
+(`processed >= totalRequested`)에만 새로 초기화하고, 아직 진행 중이면
+기존 객체를 유지한 채 `totalRequested`만 이번에 추가된 건수만큼
+증가시켜 계속 누적되게 함. 또한 체크박스를 끄고 크롤링만 할 때
+`resaleRunSummary`를 `null`로 리셋하던 기존 로직도 제거 —
+`pendingSkipCrawlResaleLinks`만 비우고 진행 중인 요약은 그대로 둔다.
+
+### 프론트엔드: 결과 박스가 "완료 시점" 값만 보여주도록 분리
+추가로 사용자가 스크린샷에서 지적: "여기 빨간박스 안에 결과값도
+db쌓는거에 맞춘 시점으로 나오는게 아니라 매도 분석이 종료되었을때
+수치로 나와야 맞는거 같아" — `CrawlerWorkPanel.tsx`가 3초마다 폴링한
+중간 결과를 그대로 `resaleStats`에 반영해서, DB 저장은 끝났는데
+매도분석은 안 끝난 시점에 요청 건수/분석 시도/QA 후보/매도 확정
+박스가 전부 0건으로 보여 혼란을 줌.
+
+수정: `resaleProgress`(processed/totalRequested만 담는 경량 상태)를
+새로 두어 폴링마다 갱신하고, "매도분석 진행 중... N/M건" 배지로만
+노출. 4개 통계 박스(`resaleStats`)는 `processed >= totalRequested`로
+완료가 확정된 시점에 딱 한 번만 채워 넣는다 — 진행 중에는 박스 대신
+진행률 배지만 있는 축약 패널을 보여준다.
+
+### 변경 파일
+`auction-api/src/crawler/crawler.service.ts`,
+`auction/src/app/admin/CrawlerWorkPanel.tsx`.
+
+### 테스트 결과
+양쪽 `tsc --noEmit` 클린, `auction-api`는 `npm run build`(nest build)도
+클린. 실제 동시 실행 시나리오(진행 중에 추가 조회 시작)로 재현
+테스트는 배포 후 다음 매도분석 실행 시 확인 필요(미확인).
