@@ -86,8 +86,14 @@ export type LinkExistingRecord = {
   caseState: string;
 };
 
-/** 크롤러가 네이버 호가·실거래를 수집하는 대상인지 (item_crawl.py와 동일) */
+/** 크롤러가 네이버 호가·실거래를 수집하는 대상인지 (item_crawl.py와 동일).
+ * 이미 낙찰이 확정된(종결) 물건은 네이버 시세와 비교해 입찰가를 판단할
+ * 필요가 없어 애초에 수집 대상에서 제외한다 — 그전엔 이런 물건도
+ * "네이버 정보가 비어있다"는 이유로 매번 재조회 작업목록에 올라갔다
+ * (사용자 요청, 2026-08-03: "낙찰된 물건을 작업할때 굳이 단지 정보를
+ * 안 돌려도 될꺼같아"). */
 export function isNaverCollectTarget(record: LinkExistingRecord): boolean {
+  if (isClosedCaseState(record.caseState)) return false;
   if (record.usage.trim() !== "아파트") return false;
   const area = record.area.trim();
   return Boolean(area) && area !== "0" && area !== "없음";
