@@ -582,3 +582,35 @@ computedAt` 실측). "크롤링 끝났다" 신호가 뜨는 순간 딱 한 번�
 `tsc --noEmit` + `npm run build` 클린(양쪽 모두). 실제 대량 조회로
 `processed`가 정확히 `totalRequested`에 도달해 폴링이 멈추는지는 이
 세션에서 직접 확인하지 못함 — 배포 후 실사용 확인 권장.
+
+## 追記 (2026-08-03) — 오피스텔 매도분석 확장
+
+사용자 요청: "작업 다 마무리하면 오피스텔도 매도 분석 할 수 있도록
+검토해서 내용 추가해줘". 빌라 때와 동일한 패턴으로 실측 확인 —
+`RTMSDataSvcOffiTrade`(오피스텔매매) API를 `BUILDING_REGISTER_API_KEY`로
+직접 호출해보니 이미 `resultCode=000`(승인됨), 강남구 대치동
+오피스텔 실거래 데이터 정상 수신 확인. `AuctionItem.propType`에
+"오피스텔"이 이미 존재하고 매칭 로직 자체는 propType-무관이라(빌라 때
+확인한 것과 동일한 구조), 수집 단계만 추가하면 됨.
+
+### 구현
+- `MolitTradeClientService.fetchOfficetelTrades(lawdCd, dealYm)`(신규):
+  `RTMSDataSvcOffiTrade` 호출. 단지명 필드는 `offiNm`(→`aptNm`으로
+  매핑), `landAr`/`houseType` 필드가 없다는 점에서 빌라 응답과 다름 —
+  `landArea`는 자연히 null로 남음(빌라만 채워짐, 기존 동작 유지).
+- `ActualTradeRow.houseType`/`TradeIngestionService`의 houseType 타입을
+  `"APT" | "RH"` → `"APT" | "RH" | "OFFI"`로 확장(컬럼이 `text` 타입이라
+  DB 마이그레이션은 불필요, TS 타입만 넓힘).
+- `TradeIngestionService.ingestOne()`이 아파트+빌라+오피스텔 세 API를
+  항상 함께(Promise.all) 수집하도록 확장 — 이유는 빌라 때와 동일(어떤
+  propType이 그 지역에 걸려있는지 미리 알 수 없어 매번 다 수집).
+
+### 변경 파일
+`src/resale-match/molit-trade-client.service.ts`,
+`src/resale-match/trade-ingestion.service.ts`,
+`src/resale-match/entities/actual-trade.entity.ts`.
+
+### 테스트 결과
+`tsc --noEmit` + `npm run build` 클린. curl로 API 승인 상태만
+실측했고, 실제 배포 후 오피스텔 물건이 매칭되는 사례는 데이터가
+쌓여야 확인 가능(미확인).

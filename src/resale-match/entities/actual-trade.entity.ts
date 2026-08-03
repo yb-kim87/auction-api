@@ -38,7 +38,7 @@ export class ActualTradeRow {
    * 아파트/빌라 어느 API에서 왔는지 확인할 수 있게 태깅한다(2026-08-03,
    * 빌라 매도분석 확장). */
   @Column({ type: "text", nullable: true, default: "APT" })
-  houseType!: "APT" | "RH" | null;
+  houseType!: "APT" | "RH" | "OFFI" | null;
 
   /** 대지면적(㎡) — 빌라(RH) 실거래에만 있음(아파트는 항상 null). 빌라는
    * "동" 정보가 없어 대신 대지권과 비교하는 보조 확증 신호로 쓴다(작은

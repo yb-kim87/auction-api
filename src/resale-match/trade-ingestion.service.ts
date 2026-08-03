@@ -65,17 +65,23 @@ export class TradeIngestionService {
    * 최종 판단한다 — 여기선 전량 저장해 향후 다른 물건에도 재사용
    * 가능하게 한다(같은 단지에 여러 물건이 걸릴 수 있음).
    *
-   * 아파트/빌라(연립다세대) 두 API를 항상 함께 수집한다 — 이 (lawdCd,
-   * dealYm) 조합에 어떤 propType의 물건이 걸려있는지 여기서 미리 알 수
-   * 없고, 같은 지역에 아파트/빌라 물건이 섞여 있을 수도 있어 매번 둘 다
-   * 조회하는 편이 propType별로 갈라 호출하는 것보다 단순하고 누락이
-   * 없다(2026-08-03, 빌라 매도분석 확장). */
+   * 아파트/빌라(연립다세대)/오피스텔 세 API를 항상 함께 수집한다 — 이
+   * (lawdCd, dealYm) 조합에 어떤 propType의 물건이 걸려있는지 여기서
+   * 미리 알 수 없고, 같은 지역에 여러 propType 물건이 섞여 있을 수도
+   * 있어 매번 다 조회하는 편이 propType별로 갈라 호출하는 것보다
+   * 단순하고 누락이 없다(2026-08-03, 빌라·오피스텔 매도분석 확장). */
   async ingestOne(lawdCd: string, dealYm: string): Promise<number> {
-    const [aptItems, villaItems] = await Promise.all([
+    const [aptItems, villaItems, officetelItems] = await Promise.all([
       this.fetchSafely(() => this.molitClient.fetchTrades(lawdCd, dealYm), "아파트", lawdCd, dealYm),
       this.fetchSafely(
         () => this.molitClient.fetchVillaTrades(lawdCd, dealYm),
         "빌라",
+        lawdCd,
+        dealYm,
+      ),
+      this.fetchSafely(
+        () => this.molitClient.fetchOfficetelTrades(lawdCd, dealYm),
+        "오피스텔",
         lawdCd,
         dealYm,
       ),
@@ -87,6 +93,9 @@ export class TradeIngestionService {
     }
     for (const item of villaItems) {
       saved += await this.trySaveTrade(lawdCd, item, "RH");
+    }
+    for (const item of officetelItems) {
+      saved += await this.trySaveTrade(lawdCd, item, "OFFI");
     }
     return saved;
   }
@@ -112,7 +121,7 @@ export class TradeIngestionService {
   private async trySaveTrade(
     lawdCd: string,
     item: MolitTradeItem,
-    houseType: "APT" | "RH",
+    houseType: "APT" | "RH" | "OFFI",
   ): Promise<number> {
     try {
       await this.upsertTrade(lawdCd, item, houseType);
@@ -130,7 +139,7 @@ export class TradeIngestionService {
   private async upsertTrade(
     lawdCd: string,
     item: MolitTradeItem,
-    houseType: "APT" | "RH",
+    houseType: "APT" | "RH" | "OFFI",
   ): Promise<void> {
     const exclusiveArea = Number(item.excluUseAr);
     if (!Number.isFinite(exclusiveArea) || exclusiveArea <= 0) return;

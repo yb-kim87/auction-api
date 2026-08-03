@@ -9,6 +9,11 @@ const APT_ENDPOINT =
 const RH_ENDPOINT =
   "https://apis.data.go.kr/1613000/RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade";
 
+/** 오피스텔매매 실거래자료. 아파트/빌라와도 별개 상품이라 개별 승인이
+ * 필요했다(2026-08-03 확인 시 이미 승인 완료 상태였음). */
+const OFFI_ENDPOINT =
+  "https://apis.data.go.kr/1613000/RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade";
+
 /** data.go.kr이 응답 없이 연결을 물고 있는 경우(실측: 288개 조합 순회
  * 중 하나에서 무한 대기, 2026-07-28) 배치 전체가 멈추지 않도록 개별
  * 호출에 타임아웃을 둔다. */
@@ -70,6 +75,30 @@ type MolitVillaTradeItemRaw = {
   umdNm: string;
 };
 
+/** 오피스텔매매(RTMSDataSvcOffiTrade) 응답 1건 원본 필드(실측,
+ * 2026-08-03). 단지명은 offiNm, 빌라 응답과 달리 landAr/houseType이
+ * 없고 sggNm(시군구명)이 추가로 온다. */
+type MolitOfficetelTradeItemRaw = {
+  buildYear: string;
+  buyerGbn: string;
+  cdealDay: string;
+  cdealType: string;
+  dealAmount: string;
+  dealDay: string;
+  dealMonth: string;
+  dealYear: string;
+  dealingGbn: string;
+  estateAgentSggNm: string;
+  excluUseAr: string;
+  floor: string;
+  jibun: string;
+  offiNm: string;
+  sggCd: string;
+  sggNm: string;
+  slerGbn: string;
+  umdNm: string;
+};
+
 /** BUILDING_REGISTER_API_KEY(부가세계산기용으로 이미 등록된 data.go.kr
  * 계정 키)를 그대로 재사용한다 — "아파트매매 실거래가 자료" API 상품만
  * 추가 활용신청하면 신규 키 발급 없이 그대로 호출 가능함을 실측
@@ -125,6 +154,34 @@ export class MolitTradeClientService {
       slerGbn: item.slerGbn,
       umdNm: item.umdNm,
       landAr: item.landAr,
+    }));
+  }
+
+  /** 오피스텔 실거래 조회. 단지명 필드(offiNm)를 기존 파이프라인이
+   * 기대하는 aptNm으로 맞춰 `MolitTradeItem` 형태로 정규화해 반환한다. */
+  async fetchOfficetelTrades(lawdCd: string, dealYm: string): Promise<MolitTradeItem[]> {
+    const xml = await this.fetchXml(OFFI_ENDPOINT, lawdCd, dealYm, "오피스텔");
+    const raw = this.parseItems<MolitOfficetelTradeItemRaw>(xml);
+    return raw.map((item) => ({
+      aptDong: "",
+      aptNm: item.offiNm,
+      buildYear: item.buildYear,
+      buyerGbn: item.buyerGbn,
+      cdealDay: item.cdealDay,
+      cdealType: item.cdealType,
+      dealAmount: item.dealAmount,
+      dealDay: item.dealDay,
+      dealMonth: item.dealMonth,
+      dealYear: item.dealYear,
+      dealingGbn: item.dealingGbn,
+      excluUseAr: item.excluUseAr,
+      floor: item.floor,
+      jibun: item.jibun,
+      landLeaseholdGbn: "",
+      rgstDate: "",
+      sggCd: item.sggCd,
+      slerGbn: item.slerGbn,
+      umdNm: item.umdNm,
     }));
   }
 
