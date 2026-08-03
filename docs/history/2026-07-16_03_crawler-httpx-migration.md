@@ -1384,3 +1384,44 @@ httpx 파이프라인(`crawl_one_item_full_httpx` → `post_item_to_api`)으로
 
 ### 변경 파일
 `src/crawler/crawler-url.util.ts`(`isNaverCollectTarget`).
+
+## 追記 (2026-08-03) — 실제 활성 워커(full_httpx_worker.py)에 낙찰 확정 물건 네이버 스킵 반영
+
+앞선 두 追記(`crawler-url.util.ts` 수정)는 auction-api(TS, 이 저장소의 백엔드)
+쪽 "재조회 작업목록에 다시 올릴지" 판단 로직만 고친 것이었는데, 사용자가
+실제로 크롤링을 돌려보고 "네이버 돌아가는거 같은데?"라고 재확인 — 실행 로그에
+"(네이버: 단지ID 없음)" 등이 여전히 찍히는 게 확인됨. 원인은 **네이버 조회
+여부를 최종 결정하는 코드가 크롤러 워커(Python) 쪽에 별도로 있고, TS 수정은
+그쪽에 전혀 영향을 못 준다**는 점(이전 追記에서 이미 "이 저장소 밖이라 못
+고침"이라고 적었으나, 실제로는 `crawler/` 폴더 안에 파이썬 워커 코드 자체가
+포함되어 있었음 — 재확인 필요했음).
+
+**주의(실수 정정)**: 처음엔 `crawler/item_crawl.py`(`item_crawl.py`와 동일
+필드명 사용)를 고쳤으나, 이 파일은 Selenium 기반 v1 구버전이고 **실제로는
+호출되는 곳이 없는 죽은 코드**였다(`full_httpx_worker.py` 자체 docstring:
+"이 파일은 selenium을 전혀 import하지 않는다(item_crawl 대신
+item_validation을 사용)" — v3가 기본 경로임을 재확인). `server_v3.py`가
+`full_httpx_worker.full_httpx_crawl_worker`만 import하는 것까지 확인 후,
+잘못 수정한 `item_crawl.py`는 `git checkout`으로 되돌리고 진짜 사용되는
+`full_httpx_worker.py`의 `_apply_naver_part_httpx()`를 수정했다.
+
+### 구현
+- `full_httpx_worker.py`에 `_CLOSED_CASE_STATES`/`_is_closed_case_state()`
+  추가(auction-api `crawl-item-validation.util.ts`의 `CLOSED_CASE_STATES`와
+  동일 목록 — 취하/매각/허가/기각/각하/취소/매각결정기일/지급기한/배당기일/
+  배당종결).
+- `_apply_naver_part_httpx()`가 `item.get("caseState")`(이미
+  `parse_detail_page()`가 채워서 넘겨줌)를 함께 확인해, 이미 종결된 물건은
+  아파트/오피스텔이어도 네이버 조회를 건너뛰도록 조건 추가.
+- 디버그 로그(`[DEBUG naver] ... skipped: ...`)에 `case_state`도 함께
+  찍어서, 다음에 같은 문제가 생기면 로그만 보고 원인(용도 불일치인지
+  종결 상태인지)을 바로 구분할 수 있게 함.
+
+### 변경 파일
+`crawler/full_httpx_worker.py`. (`crawler/item_crawl.py`는 실수로 건드렸다가
+되돌림 — 실제 미사용 파일이라 최종 diff 없음.)
+
+### 테스트 결과
+`python -m py_compile crawler/full_httpx_worker.py` 통과(문법 확인만).
+실제 배포 후 낙찰 확정 물건을 다시 크롤링해서 네이버 조회가 진짜로
+스킵되는지는 이 세션에서 직접 확인하지 못함 — 사용자 재테스트 필요.

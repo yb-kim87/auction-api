@@ -35,9 +35,33 @@ def _is_apartment_usage(usage: str) -> bool:
     )
 
 
+# auction-api의 crawl-item-validation.util.ts CLOSED_CASE_STATES와 동일 기준
+# (auction-api와 이 워커 양쪽에서 같은 종결 상태 목록을 써야 함). 이미 낙찰이
+# 확정된 물건은 더 이상 네이버 시세와 비교해 입찰가를 판단할 필요가 없어
+# 네이버 조회를 건너뛴다(사용자 요청, 2026-08-03: "낙찰된게 아니라
+# 진행중인것만 네이버로직 돌아가고 낙찰물건은 안돌아가게 해줘").
+_CLOSED_CASE_STATES = {
+    "취하",
+    "매각",
+    "허가",
+    "기각",
+    "각하",
+    "취소",
+    "매각결정기일",
+    "지급기한",
+    "배당기일",
+    "배당종결",
+}
+
+
+def _is_closed_case_state(case_state: str | None) -> bool:
+    return (case_state or "").strip() in _CLOSED_CASE_STATES
+
+
 def _apply_naver_part_httpx(item: dict, naver_complex_id: str | None) -> dict:
     usage = item.get("usage") or "없음"
     building_area = item.get("area") or "0"
+    case_state = item.get("caseState") or ""
 
     naver = {
         "naver_price_detail": "",
@@ -49,7 +73,11 @@ def _apply_naver_part_httpx(item: dict, naver_complex_id: str | None) -> dict:
         "real_trade_count": "",
         "complex_id": None,
     }
-    if _is_apartment_usage(usage) and building_area not in ("0", "없음"):
+    if (
+        _is_apartment_usage(usage)
+        and building_area not in ("0", "없음")
+        and not _is_closed_case_state(case_state)
+    ):
         naver = extract_naver_prices_httpx(
             building_area, complex_id=naver_complex_id
         )
@@ -71,7 +99,8 @@ def _apply_naver_part_httpx(item: dict, naver_complex_id: str | None) -> dict:
             naver["new_case_gap_margin"] = naver["naver_lowest_price"] - appraisal_price
     else:
         print(
-            f"[DEBUG naver] tid={item.get('tid')} skipped: usage={usage!r} area={building_area!r}",
+            f"[DEBUG naver] tid={item.get('tid')} skipped: usage={usage!r} area={building_area!r} "
+            f"case_state={case_state!r}",
             flush=True,
         )
 
