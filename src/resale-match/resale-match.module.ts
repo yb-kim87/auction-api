@@ -7,13 +7,14 @@ import { MolitTradeClientService } from "./molit-trade-client.service";
 import { TradeIngestionService } from "./trade-ingestion.service";
 import { ResaleMatchService } from "./resale-match.service";
 import { ResaleMatchController } from "./resale-match.controller";
+import { GeocodeService } from "./geocode.service";
 
 /** 낙찰물건 매도 추정(재판매 매칭) 기능. 설계:
  * docs/auction-resale-matching-design.md. */
 @Module({
   imports: [TypeOrmModule.forFeature([Auction, ActualTradeRow, AuctionTradeMatchRow])],
   controllers: [ResaleMatchController],
-  providers: [MolitTradeClientService, TradeIngestionService, ResaleMatchService],
+  providers: [MolitTradeClientService, TradeIngestionService, ResaleMatchService, GeocodeService],
   exports: [ResaleMatchService],
 })
 export class ResaleMatchModule {}

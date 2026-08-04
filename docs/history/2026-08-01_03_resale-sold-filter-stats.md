@@ -666,3 +666,58 @@ db쌓는거에 맞춘 시점으로 나오는게 아니라 매도 분석이 종�
 양쪽 `tsc --noEmit` 클린, `auction-api`는 `npm run build`(nest build)도
 클린. 실제 동시 실행 시나리오(진행 중에 추가 조회 시작)로 재현
 테스트는 배포 후 다음 매도분석 실행 시 확인 필요(미확인).
+
+## 追記 (2026-08-04) — 매도분석 결과를 카카오맵 위에 표시
+
+사용자 요청: "매도분석된 리스트를 지도위에 표시하게 하고 싶은데 어떻게
+하면 좋을까? 기획안을 알려줘" → 기획안 제시(좌표 확보 방법, 지도
+라이브러리 선택, 백엔드/프론트 구성, 리스크) → "카카오맵으로 우선
+진행할께"로 확정.
+
+### 좌표 확보
+`auctions` 테이블에 `latitude`/`longitude`(numeric(9,6), nullable)
+컬럼 추가. `city+district+umdNm+jibun` 조합("서울특별시 강서구 화곡동
+380-3")을 VWorld PARCEL 지오코딩으로 좌표 변환 — VatController가 이미
+같은 API를 백엔드(Railway)에서 직접 호출해 정상 동작 중이므로(주소→PNU
+조회, `VWORLD_API_KEY` 재사용) 프론트 API Route(Vercel icn1 리전 강제
+우회)를 거칠 필요 없이 백엔드에서 바로 호출(`GeocodeService`, 신규).
+PARCEL 실패 시 VWorld search API로 도로명주소를 찾아 ROAD로 재시도.
+
+한 번 지오코딩한 좌표는 `auctions.latitude/longitude`에 캐싱해 재조회
+안 함(주소가 안 바뀌는 한 유효 — vatPnu 등 기존 캐싱 패턴과 동일).
+
+### API
+`GET /resale-match/matches/map`(신규) — `listMatches`와 같은 대상(1위
+후보, 55점 이상)에 좌표를 붙여 반환. 좌표 없는 항목은 그 자리에서
+지오코딩(동시 5개, 요청당 최대 80건 상한 — VWorld 호출 부하/응답
+시간 제한)해 채우고 즉시 캐싱, 남은 건은 다음 조회에서 이어서 채워짐
+(`geocodedNow`/`pendingCount`로 진행 상황 안내).
+
+### 프론트(관리자 화면)
+`ResaleMatchTab.tsx`에 "테이블/지도" 토글 추가 — 기존 지역/용도 필터를
+그대로 공유. 지도는 신규 `ResaleMatchMapView.tsx`가 담당:
+- 카카오맵 JS SDK를 `NEXT_PUBLIC_KAKAO_MAP_APP_KEY`로 동적 로드(클러스터러
+  라이브러리 포함, 이번엔 클러스터링 UI까진 안 붙임 — v1은 마커만).
+- 등급(confidenceTier)별 마커 색 구분(VERY_HIGH 초록/HIGH 파랑/MEDIUM
+  주황), 클릭 시 인포윈도우로 사건번호·주소·낙찰가·실거래가·매도차익·
+  점수 표시.
+- 좌표 있는 건만 지도에 표시, 없는 건 상단에 "N건/전체 M건" 안내.
+
+### 남은 작업(사용자 액션 필요)
+카카오 디벨로퍼스에서 JavaScript 키 발급 후 Vercel 환경변수
+`NEXT_PUBLIC_KAKAO_MAP_APP_KEY`로 등록 + 카카오 콘솔에 서비스 도메인
+(`auction-seven-tan.vercel.app` 등) 등록 필요 — 이게 없으면 지도 탭에
+"카카오맵 API 키가 설정되어 있지 않습니다" 안내만 뜨고 렌더링 안 됨.
+
+### 변경 파일
+`src/migrations/1784270000000-AddAuctionLatLng.ts`,
+`src/auctions/auction.entity.ts`, `src/resale-match/geocode.service.ts`
+(신규), `src/resale-match/resale-match.module.ts`,
+`src/resale-match/resale-match.controller.ts` (auction-api);
+`src/lib/api.ts`, `src/app/admin/ResaleMatchMapView.tsx`(신규),
+`src/app/admin/ResaleMatchTab.tsx` (auction).
+
+### 테스트 결과
+양쪽 `tsc --noEmit` + `npm run build` 클린. 실제 지도 렌더링/마커
+표시는 카카오 API 키 발급 전이라 미확인 — 키 등록 후 사용자가 직접
+확인 필요.

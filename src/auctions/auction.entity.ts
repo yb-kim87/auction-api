@@ -44,6 +44,11 @@ const bigintNumberTransformer = {
   from: (value: string | null) => (value == null ? value : Number(value)),
 };
 
+const numericTransformer = {
+  to: (value: number | null | undefined) => value,
+  from: (value: string | null) => (value == null ? value : Number(value)),
+};
+
 @Entity("auctions")
 export class Auction {
   @PrimaryGeneratedColumn("uuid")
@@ -242,6 +247,15 @@ export class Auction {
 
   @Column({ type: "text", nullable: true })
   jibun!: string | null;
+
+  /** 매도분석 결과 지도 표시용 좌표. city+district+umdNm+jibun을 VWorld
+   * API로 지오코딩해 한 번만 구해 캐싱한다(주소가 안 바뀌는 한 재조회할
+   * 필요 없음, 2026-08-04). */
+  @Column({ type: "numeric", precision: 9, scale: 6, nullable: true, transformer: numericTransformer })
+  latitude!: number | null;
+
+  @Column({ type: "numeric", precision: 9, scale: 6, nullable: true, transformer: numericTransformer })
+  longitude!: number | null;
 
   /** 매칭 배치(ResaleMatchService)가 계산한 결과를 목록 조회용으로
    * 비정규화 저장(vatPnu 등과 동일 패턴, 요청마다 재계산하지 않음). */
