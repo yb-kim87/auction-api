@@ -365,3 +365,51 @@ export class RedevelopmentZone {
   확정할 수 있음. 명세서 없이는 실제 호출로 응답 전체를 한 번 받아
   확인하는 방법도 가능(제가 curl로 직접 확인 가능, 인증키만 있으면 됨).
 - 위 확인이 끝나면 §9 구현 순서대로 착수 가능 — 진행 원하시면 말씀해주세요.
+
+## 追記 (2026-08-04) — 서울 구역 자동 수집 1차 구현
+
+사용자 승인("서울 구역만 한번 해볼까?")으로 §2(upisRebuild) 경로를
+구현했다. 국토부 통합 데이터 조인(§2.3~2.4)은 이번 1차 구현 범위에서
+제외(서울 단독 파이프라인만 먼저 검증).
+
+### 구현 내용
+- **백엔드**: `RedevelopmentZone`에 `projectType`/`source`/
+  `sourceDatasetId`/`sourceKey`/`asOfDate`/`boundaryType`/
+  `lastAutoSyncedAt` 컬럼 추가(마이그레이션
+  `1784274000000-AddRedevelopmentZoneSourceFields`, `(source,
+  sourceDatasetId, sourceKey)` 유니크 인덱스로 중복 방지, §6.1/6.2
+  그대로 구현). `RedevelopmentService.bulkUpsertFromSource()`: 프론트가
+  지오코딩까지 마친 완성 레코드를 배치로 받아 upsert — 관리자가 MANUAL로
+  마지막 수정한 구역은 자동 갱신이 건너뛴다(수기 보정 보호).
+  `POST /redevelopment/zones/bulk-upsert` 신규.
+- **프론트 — Seoul API 프록시**: `src/app/api/redevelopment/seoul-upis/route.ts`
+  (Vercel icn1, VWorld 프록시와 동일 이유로 신설 — Railway가 한국 공공
+  API에 직접 연결 못 함). `SEOUL_OPENDATA_API_KEY` env로 인증키 보관.
+- **프론트 — 좌표 근사**: `src/lib/convex-hull.ts`(신규) — Graham scan
+  convex hull + 점 1~2개일 때 원(circle polygon)으로 대체하는
+  `buildApproxPolygon()`. 원본 데이터가 프로젝트당 위치 텍스트 1개뿐이라
+  실제로는 대부분 원 근사(`POINT_ONLY`)로 저장됨(설계 문서에서 이미
+  예상한 한계).
+- **프론트 — 수집 UI**: `RedevelopmentSeoulCollector.tsx`(신규,
+  재개발물건 탭에 임베드) — "서울시 데이터 가져오기 시작" 버튼 →
+  upisRebuild 전량(6,584행) 페이지네이션 수집 → `PRJC_CD`별 최신
+  이력만 남김(`RPT_MNG_CD` 문자열 비교로 최신 판별) → `PSTN_NM` 정제
+  (`일대`/`일원`/`(N필지)` 제거) → 지오코딩(동시 5개, 배치당 최대
+  200건, 남은 건 "이어서 수집" 버튼으로 계속) → `bulkUpsertRedevelopmentZones()`로
+  저장. `RPT_TYPE`(신설/변경/폐지) → `stage`("지정됨"/"해제됨") 매핑.
+
+### 변경 파일
+`src/migrations/1784274000000-AddRedevelopmentZoneSourceFields.ts`(신규),
+`src/redevelopment/entities/redevelopment-zone.entity.ts`,
+`src/redevelopment/redevelopment.service.ts`,
+`src/redevelopment/redevelopment.controller.ts` (auction-api);
+`src/app/api/redevelopment/seoul-upis/route.ts`(신규),
+`src/lib/convex-hull.ts`(신규),
+`src/app/admin/RedevelopmentSeoulCollector.tsx`(신규),
+`src/app/admin/RedevelopmentTab.tsx`, `src/lib/api.ts` (auction).
+
+### 테스트 결과
+양쪽 `tsc --noEmit` + `npm run build` 클린. `SEOUL_OPENDATA_API_KEY`를
+로컬 `.env.local`과 Vercel production env에 등록. 실제 대량 수집(수천
+건 지오코딩)은 배포 후 관리자가 버튼을 눌러 직접 실행/확인 필요
+(미확인 — API 프록시 자체는 curl로 직접 호출해 정상 응답 확인함).

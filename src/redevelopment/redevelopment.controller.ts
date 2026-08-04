@@ -59,4 +59,33 @@ export class RedevelopmentController {
     requireAdmin(getAuthContext(headers));
     return this.service.getAuctionsInZone(id);
   }
+
+  /** 공공데이터 자동 수집(서울 upisRebuild 등) 결과를 배치로 저장한다.
+   * 지오코딩은 프론트(Vercel)에서 처리해 완성된 폴리곤을 넘겨준다 —
+   * Railway가 VWorld API에 직접 연결 못 하는 문제(2026-08-04, 매도분석
+   * 지도에서 확인된 것과 동일)와 같은 이유로 백엔드에서 직접 수집하지
+   * 않는다. */
+  @Post("zones/bulk-upsert")
+  async bulkUpsertZones(
+    @Headers() headers: Record<string, string>,
+    @Body()
+    body: {
+      items?: Array<{
+        name?: string;
+        region?: string;
+        stage?: string;
+        projectType?: string;
+        polygon?: unknown;
+        boundaryType?: string;
+        source?: string;
+        sourceDatasetId?: string;
+        sourceKey?: string;
+        asOfDate?: string | null;
+      }>;
+    },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    const items = Array.isArray(body.items) ? body.items : [];
+    return this.service.bulkUpsertFromSource(items);
+  }
 }

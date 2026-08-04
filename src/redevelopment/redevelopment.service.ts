@@ -119,4 +119,91 @@ export class RedevelopmentService {
       isPointInPolygon({ lat: a.latitude as number, lng: a.longitude as number }, zone.polygon),
     );
   }
+
+  /** 공공데이터 자동 수집 결과를 upsert한다(설계 §6.2) — 프론트에서
+   * 지오코딩까지 마친 완성된 구역 레코드를 배치로 받는다. 같은
+   * (source, sourceDatasetId, sourceKey) 조합이 이미 있으면 갱신, 없으면
+   * 신규 생성한다. 단, 관리자가 그 구역을 MANUAL 경계로 마지막에 직접
+   * 수정한 경우(lastAutoSyncedAt보다 updatedAt이 나중이고 boundaryType이
+   * MANUAL)는 자동 수집이 덮어쓰지 않고 건너뛴다(수기 보정 보호,
+   * 사용자 요청, 2026-08-04: "동일 구역의 신규 파일 업데이트 시 중복
+   * 생성하지 말고 갱신"). */
+  async bulkUpsertFromSource(
+    items: Array<{
+      name?: string;
+      region?: string;
+      stage?: string;
+      projectType?: string;
+      polygon?: unknown;
+      boundaryType?: string;
+      source?: string;
+      sourceDatasetId?: string;
+      sourceKey?: string;
+      asOfDate?: string | null;
+    }>,
+  ) {
+    let created = 0;
+    let updated = 0;
+    let skippedManualOverride = 0;
+    let failed = 0;
+
+    for (const item of items) {
+      try {
+        const source = (item.source ?? "MANUAL") as RedevelopmentZone["source"];
+        const sourceDatasetId = item.sourceDatasetId ?? null;
+        const sourceKey = item.sourceKey ?? null;
+        const name = item.name?.trim();
+        if (!name || !sourceKey) {
+          failed += 1;
+          continue;
+        }
+        const polygon = normalizePolygon(item.polygon);
+
+        const existing = sourceKey
+          ? await this.zoneRepo.findOne({ where: { source, sourceDatasetId: sourceDatasetId ?? undefined, sourceKey } })
+          : null;
+
+        if (existing) {
+          const manuallyOverridden =
+            existing.boundaryType === "MANUAL" &&
+            existing.lastAutoSyncedAt != null &&
+            existing.updatedAt > existing.lastAutoSyncedAt;
+          if (manuallyOverridden) {
+            skippedManualOverride += 1;
+            continue;
+          }
+          existing.name = name;
+          existing.region = item.region?.trim() ?? existing.region;
+          existing.stage = item.stage?.trim() ?? existing.stage;
+          existing.projectType = item.projectType?.trim() || existing.projectType;
+          existing.polygon = polygon;
+          existing.boundaryType = (item.boundaryType as RedevelopmentZone["boundaryType"]) ?? existing.boundaryType;
+          existing.asOfDate = item.asOfDate ?? existing.asOfDate;
+          existing.lastAutoSyncedAt = new Date();
+          await this.zoneRepo.save(existing);
+          updated += 1;
+        } else {
+          const zone = this.zoneRepo.create({
+            name,
+            region: item.region?.trim() ?? "",
+            stage: item.stage?.trim() ?? "",
+            projectType: item.projectType?.trim() || null,
+            polygon,
+            source,
+            sourceDatasetId,
+            sourceKey,
+            asOfDate: item.asOfDate ?? null,
+            boundaryType: (item.boundaryType as RedevelopmentZone["boundaryType"]) ?? "CONVEX_HULL_APPROX",
+            lastAutoSyncedAt: new Date(),
+          });
+          await this.zoneRepo.save(zone);
+          created += 1;
+        }
+      } catch {
+        failed += 1;
+      }
+    }
+
+    return { created, updated, skippedManualOverride, failed };
+  }
 }

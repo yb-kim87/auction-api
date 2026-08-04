@@ -34,6 +34,38 @@ export class RedevelopmentZone {
   @Column({ type: "text", nullable: true })
   color!: string | null;
 
+  /** 사업유형(재개발/재건축/신속통합기획/모아타운 등) — 자유 텍스트,
+   * 원본 데이터 표기가 소스마다 달라 정규화는 프론트/수집 로직에서 처리. */
+  @Column({ type: "text", nullable: true })
+  projectType!: string | null;
+
+  /** 이 구역을 만든 파이프라인(설계: docs/redevelopment-zone-data-pipeline-design.md §1). */
+  @Column({ type: "text", default: "MANUAL" })
+  source!: "PUBLIC_GIS" | "PUBLIC_API" | "NOTICE_PDF" | "IMAGE_EXTRACTION" | "MANUAL";
+
+  /** 원본 데이터셋 식별자(예: "seoul-upisRebuild") — 중복판별 키의 일부. */
+  @Column({ type: "text", nullable: true })
+  sourceDatasetId!: string | null;
+
+  /** 원본 데이터의 고유 식별 키(예: PRJC_CD) — 중복판별 키의 일부.
+   * MANUAL 구역은 null로 두며, source/sourceDatasetId/sourceKey가 전부
+   * null인 행끼리는 유니크 인덱스에 안 걸린다(Postgres NULL 특성). */
+  @Column({ type: "text", nullable: true })
+  sourceKey!: string | null;
+
+  /** 원본 데이터 기준일자(고시일 등). */
+  @Column({ type: "date", nullable: true })
+  asOfDate!: string | null;
+
+  /** 폴리곤이 실제 경계인지, 지오코딩+근사인지, 관리자가 직접 그린 것인지. */
+  @Column({ type: "text", default: "MANUAL" })
+  boundaryType!: "EXACT" | "CONVEX_HULL_APPROX" | "POINT_ONLY" | "MANUAL";
+
+  /** 자동 수집 파이프라인이 마지막으로 이 구역을 갱신한 시각 — 관리자가
+   * MANUAL로 마지막 수정한 뒤에는 자동 갱신이 덮어쓰지 않게 판단하는 데 쓴다. */
+  @Column({ type: Date, nullable: true })
+  lastAutoSyncedAt!: Date | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 
