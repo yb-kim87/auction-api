@@ -938,3 +938,33 @@ WebSearch/WebFetch로 Bunny 공식 문서를 재확인한 결과:
 있어(OneDrive 동기화 환경, EINVAL readlink) 로컬 확인은 실패했지만
 타입체크가 클린해 코드 자체의 문제는 아님 — 배포 파이프라인(Vercel)
 빌드에서는 별도 환경이라 문제없이 빌드될 것으로 예상, 배포 후 확인 필요.
+
+## 追記 (2026-08-04) — 강의실 학습 흐름, 진도 저장, Q&A와 노트 연결
+
+초기 피그마 참조 작업에서 범위 밖으로 남겼던 진도율, Q&A, 노트 기능을
+후속 작업으로 실제 데이터와 연결했다.
+
+- `LectureProgress`와 `lecture_progress` 테이블을 추가해 회원·강의 영상별
+  마지막 시청 위치, 완료 여부와 갱신 시각을 저장한다. 강의실 목록과
+  시청 페이지는 저장된 진도를 이용해 이어보기와 전체 진행률을 표시한다.
+- 강의 재생 화면 하단을 `커리큘럼`, `Q&A`, `수강후기`, `노트` 탭 구조로
+  정리하고 기존 디자인의 헤더·강사 정보·이전/다음 강의 이동 흐름과
+  일관되게 배치했다.
+- `LectureQuestion`/`LectureNote` 엔티티와
+  `lecture_questions`/`lecture_notes` 테이블을 추가했다. 수강생은 현재
+  강의에서 질문을 등록하고 질문 목록을 확인할 수 있으며, 개인 노트는
+  회원·강의 단위로 저장하고 다시 불러온다.
+- 수강후기는 현재 별도 저장 API가 없어 탭과 안내 상태까지만 제공하며,
+  데이터가 없는 기능을 실제 후기처럼 임의 생성하지 않는다.
+
+### 변경 파일 및 커밋
+- `auction-api`: lecture progress/question/note 엔티티·서비스·컨트롤러,
+  마이그레이션 `1784272000000-CreateLectureProgress.ts`,
+  `1784273000000-CreateLectureQuestionsAndNotes.ts` — `b62e971`, `ecb872c`.
+- `auction`: `src/app/courses/[courseId]/MyCourseClient.tsx`,
+  `src/app/courses/page.tsx`, `src/lib/api.ts`, `src/lib/bunny-playerjs.ts` —
+  `4873ee6`, `685e5fd`.
+
+### 검증
+각 구현 시 프론트와 API 타입 검사를 통과했고 관련 커밋을 양쪽 `main`에
+반영했다.
