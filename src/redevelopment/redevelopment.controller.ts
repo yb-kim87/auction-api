@@ -18,7 +18,16 @@ export class RedevelopmentController {
   async createZone(
     @Headers() headers: Record<string, string>,
     @Body()
-    body: { name?: string; region?: string; stage?: string; memo?: string; polygon?: unknown; color?: string },
+    body: {
+      name?: string;
+      region?: string;
+      stage?: string;
+      memo?: string;
+      polygon?: unknown;
+      color?: string;
+      boundaryType?: string;
+      referenceImageUrl?: string | null;
+    },
   ) {
     requireAdmin(getAuthContext(headers));
     return this.service.createZone(body);
@@ -36,6 +45,8 @@ export class RedevelopmentController {
       memo?: string;
       polygon?: unknown;
       color?: string | null;
+      boundaryType?: string;
+      referenceImageUrl?: string | null;
     },
   ) {
     requireAdmin(getAuthContext(headers));
@@ -81,6 +92,7 @@ export class RedevelopmentController {
         sourceDatasetId?: string;
         sourceKey?: string;
         asOfDate?: string | null;
+        referenceImageUrl?: string | null;
       }>;
     },
   ) {

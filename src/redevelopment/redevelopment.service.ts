@@ -52,7 +52,16 @@ export class RedevelopmentService {
     return this.zoneRepo.find({ order: { createdAt: "ASC" } });
   }
 
-  async createZone(body: { name?: string; region?: string; stage?: string; memo?: string; polygon?: unknown; color?: string }) {
+  async createZone(body: {
+    name?: string;
+    region?: string;
+    stage?: string;
+    memo?: string;
+    polygon?: unknown;
+    color?: string;
+    boundaryType?: string;
+    referenceImageUrl?: string | null;
+  }) {
     const name = body.name?.trim();
     if (!name) throw new BadRequestException("구역명을 입력해주세요.");
     const zone = this.zoneRepo.create({
@@ -62,13 +71,24 @@ export class RedevelopmentService {
       memo: body.memo?.trim() || null,
       polygon: normalizePolygon(body.polygon),
       color: body.color?.trim() || null,
+      boundaryType: (body.boundaryType as RedevelopmentZone["boundaryType"]) ?? "MANUAL",
+      referenceImageUrl: body.referenceImageUrl?.trim() || null,
     });
     return this.zoneRepo.save(zone);
   }
 
   async updateZone(
     id: string,
-    body: { name?: string; region?: string; stage?: string; memo?: string; polygon?: unknown; color?: string | null },
+    body: {
+      name?: string;
+      region?: string;
+      stage?: string;
+      memo?: string;
+      polygon?: unknown;
+      color?: string | null;
+      boundaryType?: string;
+      referenceImageUrl?: string | null;
+    },
   ) {
     const zone = await this.zoneRepo.findOne({ where: { id } });
     if (!zone) throw new NotFoundException("구역을 찾을 수 없습니다.");
@@ -78,6 +98,8 @@ export class RedevelopmentService {
     if (body.memo !== undefined) zone.memo = body.memo.trim() || null;
     if (body.polygon !== undefined) zone.polygon = normalizePolygon(body.polygon);
     if (body.color !== undefined) zone.color = body.color?.trim() || null;
+    if (body.boundaryType !== undefined) zone.boundaryType = body.boundaryType as RedevelopmentZone["boundaryType"];
+    if (body.referenceImageUrl !== undefined) zone.referenceImageUrl = body.referenceImageUrl?.trim() || null;
     return this.zoneRepo.save(zone);
   }
 
@@ -140,6 +162,7 @@ export class RedevelopmentService {
       sourceDatasetId?: string;
       sourceKey?: string;
       asOfDate?: string | null;
+      referenceImageUrl?: string | null;
     }>,
   ) {
     let created = 0;
@@ -179,6 +202,7 @@ export class RedevelopmentService {
           existing.polygon = polygon;
           existing.boundaryType = (item.boundaryType as RedevelopmentZone["boundaryType"]) ?? existing.boundaryType;
           existing.asOfDate = item.asOfDate ?? existing.asOfDate;
+          existing.referenceImageUrl = item.referenceImageUrl ?? existing.referenceImageUrl;
           existing.lastAutoSyncedAt = new Date();
           await this.zoneRepo.save(existing);
           updated += 1;
@@ -193,6 +217,7 @@ export class RedevelopmentService {
             sourceDatasetId,
             sourceKey,
             asOfDate: item.asOfDate ?? null,
+            referenceImageUrl: item.referenceImageUrl ?? null,
             boundaryType: (item.boundaryType as RedevelopmentZone["boundaryType"]) ?? "CONVEX_HULL_APPROX",
             lastAutoSyncedAt: new Date(),
           });

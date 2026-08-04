@@ -66,6 +66,13 @@ export class RedevelopmentZone {
   @Column({ type: Date, nullable: true })
   lastAutoSyncedAt!: Date | null;
 
+  /** 원본(지자체 홈페이지 등) 위치도/조감도 이미지 URL — 있으면 "이미지로
+   * 구역 그리기" 도구에서 업로드 없이 이 이미지를 바로 불러와 정밀 경계로
+   * 보정할 수 있다(사용자 요청, 2026-08-04: "은평구청 데이터를 기반으로
+   * 정밀 경계를 통한 구역도 적용해보는거 어때"). */
+  @Column({ type: "text", nullable: true })
+  referenceImageUrl!: string | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 
