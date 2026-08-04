@@ -5,6 +5,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { AuctionFavorite } from "./auction-favorite.entity";
+import { FavoriteCategory } from "./favorite-category.entity";
 import { UsersService } from "../users/users.service";
 
 @Injectable()
@@ -12,6 +13,8 @@ export class FavoritesService {
   constructor(
     @InjectRepository(AuctionFavorite)
     private readonly favoriteRepo: Repository<AuctionFavorite>,
+    @InjectRepository(FavoriteCategory)
+    private readonly categoryRepo: Repository<FavoriteCategory>,
     private readonly usersService: UsersService,
   ) {}
 
@@ -46,23 +49,39 @@ export class FavoritesService {
    * 시 매번 새로 타이핑하지 않고 기존 분류 중에서 골라 쓸 수 있게 한다. */
   async listCategories(username: string): Promise<string[]> {
     const userId = await this.resolveUserId(username);
-    const rows = await this.favoriteRepo
-      .createQueryBuilder("fav")
-      .select("DISTINCT fav.category", "category")
-      .where("fav.userId = :userId", { userId })
-      .andWhere("fav.category IS NOT NULL")
-      .getRawMany<{ category: string }>();
-    return rows.map((r) => r.category).sort((a, b) => a.localeCompare(b, "ko"));
+    const [saved, used] = await Promise.all([
+      this.categoryRepo.find({ where: { userId }, order: { createdAt: "ASC" } }),
+      this.favoriteRepo
+        .createQueryBuilder("fav")
+        .select("DISTINCT fav.category", "category")
+        .where("fav.userId = :userId", { userId })
+        .andWhere("fav.category IS NOT NULL")
+        .getRawMany<{ category: string }>(),
+    ]);
+    return Array.from(new Set([...saved.map((row) => row.name), ...used.map((row) => row.category)]))
+      .sort((a, b) => a.localeCompare(b, "ko"));
+  }
+
+  async createCategory(username: string, name: string): Promise<{ name: string }> {
+    const userId = await this.resolveUserId(username);
+    const normalized = name.trim();
+    if (!normalized) return { name: "" };
+    const existing = await this.categoryRepo.findOne({ where: { userId, name: normalized } });
+    if (!existing) {
+      await this.categoryRepo.save(this.categoryRepo.create({ userId, name: normalized }));
+    }
+    return { name: normalized };
   }
 
   async add(username: string, auctionId: string, category?: string | null) {
     const userId = await this.resolveUserId(username);
     const normalizedCategory = category?.trim() || null;
+    if (normalizedCategory) await this.createCategory(username, normalizedCategory);
     const existing = await this.favoriteRepo.findOne({
       where: { userId, auctionId },
     });
     if (existing) {
-      if (normalizedCategory !== null && existing.category !== normalizedCategory) {
+      if (existing.category !== normalizedCategory) {
         existing.category = normalizedCategory;
         await this.favoriteRepo.save(existing);
       }

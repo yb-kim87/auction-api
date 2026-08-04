@@ -35,6 +35,16 @@ export class FavoritesController {
     return { categories };
   }
 
+  @Post("categories")
+  async createCategory(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { name?: string },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAuth(ctx);
+    return this.favoritesService.createCategory(ctx.username, body?.name ?? "");
+  }
+
   @Post(":auctionId")
   async add(
     @Headers() headers: Record<string, string>,
