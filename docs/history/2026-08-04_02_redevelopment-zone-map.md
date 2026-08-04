@@ -76,3 +76,12 @@
 양쪽 `tsc --noEmit` + `npm run build` 클린. 실제 다각형 그리기/저장/
 포함 판별 동작은 배포 후 관리자가 직접 구역을 하나 그려서 확인
 필요(미확인).
+
+## 追記 (2026-08-04) — 배포 확인
+
+`auction-api`: `railway status`로 Online 확인, `curl .../users` → 401
+(정상 헬스체크). `auction`: `git push` 후 `vercel --prod --yes`
+CLI가 배포 완료 후 후속 프롬프트에서 5분 타임아웃으로 멎었으나,
+`vercel ls`/`vercel inspect auction-seven-tan.vercel.app`로 확인한 결과
+실제 배포(`auction-881rreo9z...`)는 Ready 상태였고 프로덕션 alias도
+이미 그 배포를 가리키고 있어 정상 반영 확인(curl 307).
