@@ -723,3 +723,62 @@ Bunny Stream이 Player.js(postMessage 기반 재생 제어/이벤트 API)를
 스크립트 로드 자체는 제약이 없지만, 실제 브라우저에서 타임업데이트
 이벤트가 기대대로 오는지는 관리자가 챕터를 등록한 뒤 직접 재생해
 확인 필요(미확인 — Bunny 공식 문서 예시 코드를 그대로 따랐음).
+
+## 追記 (2026-08-04) — 챕터를 "완전히 별도 영상처럼" 보이게(자체 진행바로 교체)
+
+Player.js 자동정지 적용 직후 사용자가 스크린샷과 함께 지적: "종료되는게
+아니라 아예 그때까지 빨간박스 영상재생길이가 딱 저기까지만 나오고
+다음영상도 게이지가 다시 처음부터 시작하게 이런식으로는 안될까?" →
+"아예 영상이 따로따로 올라간거처럼" → "보이게". 즉 자동 정지만으론
+부족하고, **재생바(스크러버) 자체가 챕터 길이 기준으로 0부터 시작해서
+그 챕터 길이에서 끝나야** 진짜 "따로 업로드한 영상"처럼 보인다는 요구.
+
+Bunny 공식 문서/블로그를 WebFetch로 확인한 결과, Bunny Stream엔 이미
+"Chapters" 기능이 있지만
+([Chapters and Moments 소개](https://bunny.net/blog/introducing-bunny-stream-chapters-and-moments/))
+이건 YouTube 챕터처럼 **영상 전체 재생바 위에 구간 마커만 얹는 방식**이라
+(공식 문구: "Each Chapter is shown in the video timeline and highlights
+the current section and title") 사용자가 원하는 "0부터 시작하는 별도
+게이지"와는 다름. 또한 iframe embed 쿼리 파라미터 목록
+([embedding 문서](https://bunny.net/docs/stream-embedding-videos))에
+네이티브 컨트롤을 숨기는 파라미터(`controls=false` 등)가 공식적으로
+없어, 기본 재생바를 진짜로 챕터 길이만 반영하게 바꿀 방법이 없음을 확인.
+
+### 해결 방식
+Bunny의 기본 하단 컨트롤(재생바/시간)을 불투명 오버레이로 완전히
+가리고, 그 위에 챕터 전용 자체 컨트롤(재생/일시정지 버튼 + 진행바 +
+시간 표시)을 새로 그린다 — 진행률은 `Player.js`의 `timeupdate`로 받은
+`currentTime`에서 챕터 `startSeconds`를 뺀 값 기준으로 계산해 항상
+0부터 시작하고, `endSeconds`(다음 챕터 시작 또는 관리자가 직접 지정한
+값)에서 100%가 되도록 만든다. 클릭 seek도 이 상대 좌표를 실제 영상
+시각으로 환산해 `player.setCurrentTime()`으로 이동시킨다.
+
+- 신규 컴포넌트 `src/components/BunnyChapterPlayer.tsx`: iframe +
+  하단 오버레이(검은 바 h-12) + 자체 진행바/재생버튼/시간(mm:ss 형식).
+- `src/lib/bunny-playerjs.ts`: 기존 `attachChapterAutoPause`(단순
+  자동정지용)를 제거하고, `PlayerJsPlayer` 타입에 `play`/`pause`/
+  `setCurrentTime`을 추가해 `BunnyChapterPlayer`가 직접 제어하도록 정리.
+- `MyCourseClient.tsx`/`LectureReplayClient.tsx`: 선택된 행이 챕터면
+  (`selectedRow.startSeconds != null`) `BunnyChapterPlayer`를, 챕터
+  없는 일반 영상이면 기존 그대로 순정 `<iframe>`(네이티브 컨트롤 유지 —
+  화질/자막/속도 등 고급 기능 보존)을 렌더링하도록 분기.
+
+### 트레이드오프(사용자에게 공유 필요)
+자체 컨트롤은 재생/일시정지/탐색만 지원 — Bunny 네이티브 컨트롤의
+화질 선택, 자막, 배속, 전체화면 버튼(iframe allowFullScreen 자체는
+살아있어 iframe 더블클릭/네이티브 버튼이 남아있다면 동작 가능성은
+있으나 검증 안 됨) 등은 챕터 영상에서는 제공되지 않는다. 이 부분은
+"보기엔 별도 영상처럼" 요구사항 달성을 위해 의도적으로 포기한 기능.
+
+### 변경 파일
+`src/lib/bunny-playerjs.ts`, `src/components/BunnyChapterPlayer.tsx`
+(신규), `src/app/courses/[courseId]/MyCourseClient.tsx`,
+`src/app/lecture/[token]/LectureReplayClient.tsx` (auction).
+
+### 테스트 결과
+`tsc --noEmit` + `npm run build` 클린. Vercel 자동배포(GitHub 웹훅)가
+이번엔 몇 분간 트리거되지 않아 `vercel --prod --yes`로 직접 배포해
+`auction-seven-tan.vercel.app`에 alias 반영 확인(HTTP 307, 로그인
+리다이렉트로 정상). 실제 브라우저에서 커스텀 진행바가 정확히 챕터
+길이만큼만 채워지는지, 하단 오버레이가 Bunny 컨트롤을 빈틈없이
+가리는지는 관리자가 직접 확인 필요(미확인).
