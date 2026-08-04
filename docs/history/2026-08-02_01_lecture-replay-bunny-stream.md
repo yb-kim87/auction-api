@@ -885,3 +885,28 @@ WebSearch/WebFetch로 Bunny 공식 문서를 재확인한 결과:
 ### 테스트 결과
 `tsc --noEmit` + `npm run build` 클린. `vercel --prod --yes` 배포 후
 정상 응답(307) 확인.
+
+## 追記 (2026-08-04) — 섹션(강의) 순서 변경 버튼 추가
+
+사용자 지적: "강의 나오는 순서를 바꿀 수 있으면 좋겠는데 관리자
+페이지에서 위아래 저 화살표가 그 기능 같기는한데 동작을 안하네" —
+스크린샷 확인 결과 기존 ▲▼는 `SectionBlock` 내부 `handleMove`로 같은
+섹션 안 영상끼리만 sortOrder를 바꾸는 기능이었다. 그런데 섹션마다
+영상이 1개뿐이라 바꿀 대상이 없어 사실상 항상 비활성 상태였던 것 —
+사용자가 실제로 원한 건 "2강/1강/3강..."처럼 순서가 뒤죽박죽인 섹션
+자체의 노출 순서 변경이었는데, 그 기능은 애초에 없었다(백엔드
+`updateSection`은 `sortOrder`를 이미 받을 수 있었지만 이 화면에서
+호출하는 곳이 없었음).
+
+`CourseDetail`(섹션 목록을 들고 있는 부모 컴포넌트)에
+`handleMoveSection()`을 추가해 섹션 헤더에 별도 ▲▼ 버튼을 배치 —
+클릭 시 인접 섹션과 `sortOrder`를 서로 바꿔 `updateLectureSection()`
+2번 호출. 섹션 목록은 항상 `sortOrder` 오름차순으로 정렬해서 렌더링
+(`sortedSections`).
+
+### 변경 파일
+`src/app/admin/LectureReplayTab.tsx` (auction).
+
+### 테스트 결과
+`tsc --noEmit` + `npm run build` 클린. `vercel --prod --yes` 배포 후
+정상 응답(307) 확인.
