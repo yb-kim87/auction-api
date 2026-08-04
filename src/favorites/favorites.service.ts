@@ -35,14 +35,14 @@ export class FavoritesService {
     return rows.map((row) => row.auctionId);
   }
 
-  /** 관심등록 목록을 분류(category)까지 포함해 반환한다. */
-  async list(username: string): Promise<{ auctionId: string; category: string | null }[]> {
+  /** 관심등록 목록을 분류(category)·메모까지 포함해 반환한다. */
+  async list(username: string): Promise<{ auctionId: string; category: string | null; memo: string | null }[]> {
     const userId = await this.resolveUserId(username);
     const rows = await this.favoriteRepo.find({
       where: { userId },
       order: { createdAt: "DESC" },
     });
-    return rows.map((row) => ({ auctionId: row.auctionId, category: row.category }));
+    return rows.map((row) => ({ auctionId: row.auctionId, category: row.category, memo: row.memo }));
   }
 
   /** 이 회원이 이전에 만들어 쓴 분류명 목록(중복 제거, 가나다순). 관심등록
@@ -73,23 +73,30 @@ export class FavoritesService {
     return { name: normalized };
   }
 
-  async add(username: string, auctionId: string, category?: string | null) {
+  async add(username: string, auctionId: string, category?: string | null, memo?: string | null) {
     const userId = await this.resolveUserId(username);
     const normalizedCategory = category?.trim() || null;
+    const normalizedMemo = memo?.trim() || null;
     if (normalizedCategory) await this.createCategory(username, normalizedCategory);
     const existing = await this.favoriteRepo.findOne({
       where: { userId, auctionId },
     });
     if (existing) {
+      let changed = false;
       if (existing.category !== normalizedCategory) {
         existing.category = normalizedCategory;
-        await this.favoriteRepo.save(existing);
+        changed = true;
       }
+      if (existing.memo !== normalizedMemo) {
+        existing.memo = normalizedMemo;
+        changed = true;
+      }
+      if (changed) await this.favoriteRepo.save(existing);
       return { ok: true, auctionId, alreadyExists: true };
     }
 
     await this.favoriteRepo.save(
-      this.favoriteRepo.create({ userId, auctionId, category: normalizedCategory }),
+      this.favoriteRepo.create({ userId, auctionId, category: normalizedCategory, memo: normalizedMemo }),
     );
     return { ok: true, auctionId };
   }

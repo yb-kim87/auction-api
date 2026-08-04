@@ -49,11 +49,11 @@ export class FavoritesController {
   async add(
     @Headers() headers: Record<string, string>,
     @Param("auctionId") auctionId: string,
-    @Body() body: { category?: string | null },
+    @Body() body: { category?: string | null; memo?: string | null },
   ) {
     const ctx = getAuthContext(headers);
     requireAuth(ctx);
-    return this.favoritesService.add(ctx.username, auctionId, body?.category);
+    return this.favoritesService.add(ctx.username, auctionId, body?.category, body?.memo);
   }
 
   @Delete(":auctionId")
