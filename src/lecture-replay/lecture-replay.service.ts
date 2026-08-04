@@ -704,8 +704,12 @@ export class LectureReplayService {
     }
     const tokenKey = process.env.BUNNY_STREAM_TOKEN_KEY?.trim();
     const base = `https://iframe.mediadelivery.net/embed/${libraryId}/${bunnyVideoId}`;
+    // startSeconds가 0이어도(챕터가 0:00부터 시작) t=0을 명시적으로 붙여야
+    // 한다 — 0을 "값 없음"으로 취급해 생략하면 Bunny 플레이어가 "이어보기
+    // (마지막 시청 위치)"로 재생을 시작해버린다(사용자 보고, 2026-08-04:
+    // "경매기본지식이 00:00부터 시작을 안해").
     const tParam =
-      typeof startSeconds === "number" && startSeconds > 0 ? `&t=${Math.round(startSeconds)}` : "";
+      typeof startSeconds === "number" && startSeconds >= 0 ? `&t=${Math.round(startSeconds)}` : "";
     if (!tokenKey) {
       return `${base}?autoplay=false${tParam}`;
     }
