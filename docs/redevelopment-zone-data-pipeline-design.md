@@ -458,3 +458,41 @@ Vercel 배포 후 프로덕션 API 자체 호출까지는 관리자 로그인 �
 같은 CMS(구축업체가 같은 경우 많음) 패턴을 다른 구청에도 적용해볼 수
 있으나, 구청마다 홈페이지 CMS/레이아웃이 달라 사이트별로 파서를 따로
 만들어야 한다(설계 §1에서 이미 "자동화 난이도 높음"으로 표시한 이유).
+
+## 追記 (2026-08-04) — 위치도 이미지 URL 저장 + 이미지 트레이싱 도구 연결(정밀 경계 보정)
+
+사용자 요청: "은평구청 데이터를 기반으로 정밀 경계를 통한 구역도 적용해보는거
+어때". 은평구청 스크레이핑이 구역 상세 페이지의 위치도 이미지 URL
+(`imageUrl`)까지 확보해두고 있었는데, 지금까지는 수집 로직에서 버려지고
+있었다. 이를 구역 레코드에 저장해두고, 기존에 만들어둔
+`RedevelopmentImageTraceTool`(3점 좌표 보정 + 클릭 트레이싱 도구, §8 관련)에
+바로 연결해 관리자가 이미지를 다시 업로드할 필요 없이 원클릭으로 정밀 보정에
+들어갈 수 있게 했다.
+
+- `RedevelopmentZone` 엔티티에 `referenceImageUrl`(nullable text) 컬럼 추가
+  (마이그레이션 `1784275000000-AddRedevelopmentZoneReferenceImageUrl`).
+- `RedevelopmentService.createZone/updateZone/bulkUpsertFromSource` 모두
+  `referenceImageUrl`을 받아 저장/갱신하도록 확장. `bulkUpsertFromSource`에서
+  기존 구역 갱신 시에도 반영(단, 수기 보정 보호 로직에 걸리면 전체 필드와
+  함께 건너뜀).
+- `RedevelopmentEunpyeongCollector.tsx`: `detail.imageUrl`을 각 구역의
+  `referenceImageUrl`로 함께 업서트.
+- `RedevelopmentImageTraceTool.tsx`: `initialImageUrl` prop 추가 — 값이
+  있으면 업로드 단계를 건너뛰고 바로 그 이미지로 1단계(좌표 보정)를
+  시작한다. 이미지가 마음에 안 들면 상단의 "다른 이미지 업로드"로 교체
+  가능. (크로스 오리진 이미지를 `<img>`로 표시만 하고 캔버스로 픽셀을
+  읽지 않으므로 CORS 문제 없음 — 클릭 좌표는 `getBoundingClientRect()`
+  기준.)
+- `RedevelopmentTab.tsx`: 구역 목록에 `referenceImageUrl`이 있는 구역만
+  "정밀 보정(위치도)" 버튼을 노출 → 클릭 시 그 구역의 이미지로 트레이싱
+  도구를 바로 연다. 그리기/트레이싱으로 완성한 폴리곤은 저장 시
+  `boundaryType: "MANUAL"`로 명시(기존에는 지정 안 해서 CONVEX_HULL_APPROX/
+  POINT_ONLY로 남아있는 문제가 있었음 — 관리자가 직접 그린 폴리곤은 항상
+  MANUAL이어야 수기 보정 보호 로직(§6.2)이 정상 작동한다).
+
+### 한계
+은평구청 위치도 이미지는 자체 기준 축척/방위이며 위성지도와 정확히 겹치는
+좌표계 이미지가 아니라서, 3점 보정의 정확도는 관리자가 이미지 안에서 얼마나
+멀리 떨어진 랜드마크 3곳을 정확히 골라 지도와 매칭하느냐에 좌우된다(도구
+설명에 이미 안내되어 있음). 완전 자동 정밀 경계는 아니고 "반자동 보정"이다.
+
