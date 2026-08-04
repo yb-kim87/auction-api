@@ -8,6 +8,8 @@ import { CourseVideo } from "./entities/course-video.entity";
 import { LectureAccessLink } from "./entities/lecture-access-link.entity";
 import { LectureEnrollment, LectureEnrollmentStatus } from "./entities/lecture-enrollment.entity";
 import { LectureProgress } from "./entities/lecture-progress.entity";
+import { LectureQuestion } from "./entities/lecture-question.entity";
+import { LectureNote } from "./entities/lecture-note.entity";
 import { UsersService } from "../users/users.service";
 import { UserRole } from "../common/constants";
 
@@ -30,6 +32,10 @@ export class LectureReplayService {
     private readonly enrollmentRepo: Repository<LectureEnrollment>,
     @InjectRepository(LectureProgress)
     private readonly progressRepo: Repository<LectureProgress>,
+    @InjectRepository(LectureQuestion)
+    private readonly questionRepo: Repository<LectureQuestion>,
+    @InjectRepository(LectureNote)
+    private readonly noteRepo: Repository<LectureNote>,
     private readonly usersService: UsersService,
   ) {}
 
@@ -662,6 +668,85 @@ export class LectureReplayService {
       completedAt: saved.completedAt,
       updatedAt: saved.updatedAt,
     };
+  }
+
+  private async requireCourseVideo(courseId: string, videoId: string) {
+    const video = await this.videoRepo.findOne({ where: { id: videoId } });
+    if (!video) throw new NotFoundException("영상을 찾을 수 없습니다.");
+    const section = await this.sectionRepo.findOne({ where: { id: video.sectionId } });
+    if (!section || section.courseId !== courseId) throw new NotFoundException("영상을 찾을 수 없습니다.");
+    return video;
+  }
+
+  async listMyQuestions(username: string, courseId: string, videoId?: string) {
+    await this.getAccessMode(username, courseId);
+    return this.questionRepo.find({
+      where: videoId ? { courseId, videoId } : { courseId },
+      order: { createdAt: "DESC" },
+    });
+  }
+
+  async createMyQuestion(
+    username: string,
+    courseId: string,
+    body: { videoId?: string; chapterStartSeconds?: number; positionSeconds?: number; question?: string },
+  ) {
+    await this.getAccessMode(username, courseId);
+    const videoId = body.videoId?.trim();
+    const question = body.question?.trim();
+    if (!videoId || !question) throw new BadRequestException("질문 내용을 입력해주세요.");
+    if (question.length > 3000) throw new BadRequestException("질문은 3,000자까지 입력할 수 있습니다.");
+    await this.requireCourseVideo(courseId, videoId);
+    return this.questionRepo.save(this.questionRepo.create({
+      username, courseId, videoId, question,
+      chapterStartSeconds: Math.max(0, Math.round(body.chapterStartSeconds ?? 0)),
+      positionSeconds: Math.max(0, Math.round(body.positionSeconds ?? 0)),
+      answer: null, answeredAt: null,
+    }));
+  }
+
+  async answerQuestion(id: string, answerValue?: string) {
+    const question = await this.questionRepo.findOne({ where: { id } });
+    if (!question) throw new NotFoundException("질문을 찾을 수 없습니다.");
+    const answer = answerValue?.trim();
+    if (!answer) throw new BadRequestException("답변 내용을 입력해주세요.");
+    question.answer = answer;
+    question.answeredAt = new Date();
+    return this.questionRepo.save(question);
+  }
+
+  async listMyNotes(username: string, courseId: string, videoId?: string) {
+    await this.getAccessMode(username, courseId);
+    return this.noteRepo.find({
+      where: videoId ? { username, courseId, videoId } : { username, courseId },
+      order: { createdAt: "DESC" },
+    });
+  }
+
+  async createMyNote(
+    username: string,
+    courseId: string,
+    body: { videoId?: string; chapterStartSeconds?: number; positionSeconds?: number; content?: string },
+  ) {
+    await this.getAccessMode(username, courseId);
+    const videoId = body.videoId?.trim();
+    const content = body.content?.trim();
+    if (!videoId || !content) throw new BadRequestException("노트 내용을 입력해주세요.");
+    if (content.length > 5000) throw new BadRequestException("노트는 5,000자까지 입력할 수 있습니다.");
+    await this.requireCourseVideo(courseId, videoId);
+    return this.noteRepo.save(this.noteRepo.create({
+      username, courseId, videoId, content,
+      chapterStartSeconds: Math.max(0, Math.round(body.chapterStartSeconds ?? 0)),
+      positionSeconds: Math.max(0, Math.round(body.positionSeconds ?? 0)),
+    }));
+  }
+
+  async deleteMyNote(username: string, courseId: string, noteId: string) {
+    await this.getAccessMode(username, courseId);
+    const note = await this.noteRepo.findOne({ where: { id: noteId, username, courseId } });
+    if (!note) throw new NotFoundException("노트를 찾을 수 없습니다.");
+    await this.noteRepo.delete(note.id);
+    return { ok: true };
   }
 
   async getMyPlayUrl(username: string, courseId: string, videoId: string, startSeconds?: number) {

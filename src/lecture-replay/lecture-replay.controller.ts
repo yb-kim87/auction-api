@@ -205,4 +205,10 @@ export class LectureReplayController {
     requireAdmin(getAuthContext(headers));
     return this.service.revokeEnrollment(id);
   }
+
+  @Patch("questions/:id/answer")
+  answerQuestion(@Headers() headers: Record<string, string>, @Param("id") id: string, @Body() body: { answer?: string }) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.answerQuestion(id, body.answer);
+  }
 }

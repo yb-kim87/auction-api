@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Headers, Param, Post, Query } from "@nestjs/common";
 import { getAuthContext, requireAuth } from "../common/auth-context";
 import { LectureReplayService } from "./lecture-replay.service";
 
@@ -54,5 +54,35 @@ export class LectureCoursesController {
     const ctx = getAuthContext(headers);
     requireAuth(ctx);
     return this.service.saveMyProgress(ctx.username, courseId, videoId, body);
+  }
+
+  @Get(":courseId/questions")
+  listQuestions(@Headers() headers: Record<string, string>, @Param("courseId") courseId: string, @Query("videoId") videoId?: string) {
+    const ctx = getAuthContext(headers); requireAuth(ctx);
+    return this.service.listMyQuestions(ctx.username, courseId, videoId);
+  }
+
+  @Post(":courseId/questions")
+  createQuestion(@Headers() headers: Record<string, string>, @Param("courseId") courseId: string, @Body() body: { videoId?: string; chapterStartSeconds?: number; positionSeconds?: number; question?: string }) {
+    const ctx = getAuthContext(headers); requireAuth(ctx);
+    return this.service.createMyQuestion(ctx.username, courseId, body);
+  }
+
+  @Get(":courseId/notes")
+  listNotes(@Headers() headers: Record<string, string>, @Param("courseId") courseId: string, @Query("videoId") videoId?: string) {
+    const ctx = getAuthContext(headers); requireAuth(ctx);
+    return this.service.listMyNotes(ctx.username, courseId, videoId);
+  }
+
+  @Post(":courseId/notes")
+  createNote(@Headers() headers: Record<string, string>, @Param("courseId") courseId: string, @Body() body: { videoId?: string; chapterStartSeconds?: number; positionSeconds?: number; content?: string }) {
+    const ctx = getAuthContext(headers); requireAuth(ctx);
+    return this.service.createMyNote(ctx.username, courseId, body);
+  }
+
+  @Delete(":courseId/notes/:noteId")
+  deleteNote(@Headers() headers: Record<string, string>, @Param("courseId") courseId: string, @Param("noteId") noteId: string) {
+    const ctx = getAuthContext(headers); requireAuth(ctx);
+    return this.service.deleteMyNote(ctx.username, courseId, noteId);
   }
 }
