@@ -787,3 +787,36 @@ Railway 로그로 원인만 확정, 수정 사항은 아직 실사용 검증 전
 다른(미커밋) 진행 중인 작업이 섞여 있어 `vercel --prod` CLI 배포
 대신 GitHub 웹훅 자동배포를 기다려 확인(정상 트리거됨, Ready 확인,
 production alias가 새 배포를 가리키는 것 확인).
+
+## 追記 (2026-08-04) — 지도에서 원치 않는 물건 반려/삭제 + 로컬 서버 기동 오류 수정
+
+사용자가 지도 화면 스크린샷과 함께 "리스트 원하지않는거 지도에
+노출안되게 할 수 잇나?? 선택하는게 없네" → "아니면 데이터를 지울 수
+있거나"로 요청. 지도 마커 팝업에 "지도에서 제외(반려)"/"삭제" 버튼을
+추가하고, `GET /resale-match/matches/map`이 `status='REJECTED'`인
+항목을 아예 응답에서 빼도록 SQL WHERE 절 수정. 완전 삭제용
+`DELETE /resale-match/matches/:matchId` 신설(테이블 뷰에도 삭제
+버튼 추가).
+
+같은 세션에서 "로컬 api좀 켜줘" 요청 처리 중 로컬 sql.js 개발 서버가
+`DataTypeNotSupportedError: Data type "timestamptz"... is not
+supported by "sqljs"`로 기동 자체가 안 되는 걸 발견 — `User.
+sessionLastActiveAt`, `LectureAccessLink.expiresAt`,
+`LectureEnrollment.startsAt/expiresAt` 컬럼이 Postgres 전용
+`type: "timestamptz"`로 선언돼 있었음. 크로스 드라이버 호환
+타입(`type: Date`, 이 코드베이스에서 이미 쓰이던 패턴)으로 변경 —
+Postgres는 `synchronize:false`+마이그레이션으로 실제 스키마를 따로
+관리해 영향 없고, 로컬 sql.js만 정상화됨.
+
+### 변경 파일
+`src/resale-match/resale-match.controller.ts`,
+`src/users/user.entity.ts`,
+`src/lecture-replay/entities/lecture-access-link.entity.ts`,
+`src/lecture-replay/entities/lecture-enrollment.entity.ts` (auction-api);
+`src/lib/api.ts`, `src/app/admin/ResaleMatchMapView.tsx`,
+`src/app/admin/ResaleMatchTab.tsx` (auction).
+
+### 테스트 결과
+양쪽 `tsc --noEmit` + `npm run build` 클린. 로컬 sql.js 서버가
+실제로 정상 기동해 라우트가 전부 매핑되는 것 확인(`nest start
+--watch` 로그로 확인). 운영 배포 확인은 이 追記 이후 진행 예정.
