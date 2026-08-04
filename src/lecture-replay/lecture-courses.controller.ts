@@ -1,4 +1,4 @@
-import { Controller, Get, Headers, Param, Query } from "@nestjs/common";
+import { Body, Controller, Get, Headers, Param, Post, Query } from "@nestjs/common";
 import { getAuthContext, requireAuth } from "../common/auth-context";
 import { LectureReplayService } from "./lecture-replay.service";
 
@@ -42,5 +42,17 @@ export class LectureCoursesController {
       videoId,
       Number.isFinite(startSeconds) ? startSeconds : undefined,
     );
+  }
+
+  @Post(":courseId/videos/:videoId/progress")
+  saveProgress(
+    @Headers() headers: Record<string, string>,
+    @Param("courseId") courseId: string,
+    @Param("videoId") videoId: string,
+    @Body() body: { chapterStartSeconds?: number; lastPositionSeconds?: number; isCompleted?: boolean },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAuth(ctx);
+    return this.service.saveMyProgress(ctx.username, courseId, videoId, body);
   }
 }

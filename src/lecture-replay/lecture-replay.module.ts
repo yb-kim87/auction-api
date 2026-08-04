@@ -5,6 +5,7 @@ import { CourseSection } from "./entities/course-section.entity";
 import { CourseVideo } from "./entities/course-video.entity";
 import { LectureAccessLink } from "./entities/lecture-access-link.entity";
 import { LectureEnrollment } from "./entities/lecture-enrollment.entity";
+import { LectureProgress } from "./entities/lecture-progress.entity";
 import { LectureReplayService } from "./lecture-replay.service";
 import { LectureReplayController } from "./lecture-replay.controller";
 import { LectureReplayPublicController } from "./lecture-replay-public.controller";
@@ -19,6 +20,7 @@ import { UsersModule } from "../users/users.module";
       CourseVideo,
       LectureAccessLink,
       LectureEnrollment,
+      LectureProgress,
     ]),
     UsersModule,
   ],

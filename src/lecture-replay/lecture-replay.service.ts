@@ -7,6 +7,7 @@ import { CourseSection } from "./entities/course-section.entity";
 import { CourseVideo } from "./entities/course-video.entity";
 import { LectureAccessLink } from "./entities/lecture-access-link.entity";
 import { LectureEnrollment, LectureEnrollmentStatus } from "./entities/lecture-enrollment.entity";
+import { LectureProgress } from "./entities/lecture-progress.entity";
 import { UsersService } from "../users/users.service";
 import { UserRole } from "../common/constants";
 
@@ -27,6 +28,8 @@ export class LectureReplayService {
     private readonly linkRepo: Repository<LectureAccessLink>,
     @InjectRepository(LectureEnrollment)
     private readonly enrollmentRepo: Repository<LectureEnrollment>,
+    @InjectRepository(LectureProgress)
+    private readonly progressRepo: Repository<LectureProgress>,
     private readonly usersService: UsersService,
   ) {}
 
@@ -513,7 +516,36 @@ export class LectureReplayService {
       });
     }
 
-    return items;
+    return Promise.all(
+      items.map(async (item) => ({
+        ...item,
+        ...(await this.getCourseProgressSummary(username, item.courseId)),
+      })),
+    );
+  }
+
+  private async getCourseProgressSummary(username: string, courseId: string) {
+    const sections = await this.sectionRepo.find({ where: { courseId } });
+    const videos = sections.length
+      ? await this.videoRepo.find({ where: { sectionId: In(sections.map((section) => section.id)), isPublished: true } })
+      : [];
+    const totalLessons = videos.reduce((sum, video) => sum + Math.max(1, video.chapters?.length ?? 0), 0);
+    const rows = await this.progressRepo.find({ where: { username, courseId }, order: { updatedAt: "DESC" } });
+    const completedLessons = rows.filter((row) => row.isCompleted).length;
+    const latest = rows[0];
+    const latestVideo = latest ? videos.find((video) => video.id === latest.videoId) : undefined;
+    const latestChapter = latestVideo?.chapters?.find(
+      (chapter) => chapter.startSeconds === latest.chapterStartSeconds,
+    );
+    return {
+      totalLessons,
+      completedLessons: Math.min(completedLessons, totalLessons),
+      progressPercent: totalLessons > 0 ? Math.round((Math.min(completedLessons, totalLessons) / totalLessons) * 100) : 0,
+      lastWatchedAt: latest?.updatedAt ?? null,
+      lastVideoId: latest?.videoId ?? null,
+      lastChapterStartSeconds: latest?.chapterStartSeconds ?? null,
+      lastLessonTitle: latestChapter?.title ?? latestVideo?.title ?? null,
+    };
   }
 
   private async courseHasOtVideo(courseId: string): Promise<boolean> {
@@ -567,9 +599,68 @@ export class LectureReplayService {
     if (!course || (!course.isPublished && user?.role !== UserRole.ADMIN)) {
       throw new NotFoundException("강의를 찾을 수 없습니다.");
     }
+    const progress = await this.progressRepo.find({
+      where: { username, courseId },
+      order: { updatedAt: "DESC" },
+    });
     return {
       course: { id: course.id, title: course.title, description: course.description },
       sections: await this.buildSectionsWithVideos(course.id, mode === "ot-videos-only"),
+      progress: progress.map((item) => ({
+        videoId: item.videoId,
+        chapterStartSeconds: item.chapterStartSeconds,
+        lastPositionSeconds: item.lastPositionSeconds,
+        isCompleted: item.isCompleted,
+        completedAt: item.completedAt,
+        updatedAt: item.updatedAt,
+      })),
+    };
+  }
+
+  async saveMyProgress(
+    username: string,
+    courseId: string,
+    videoId: string,
+    body: { chapterStartSeconds?: number; lastPositionSeconds?: number; isCompleted?: boolean },
+  ) {
+    await this.getAccessMode(username, courseId);
+    const video = await this.videoRepo.findOne({ where: { id: videoId } });
+    if (!video) throw new NotFoundException("영상을 찾을 수 없습니다.");
+    const section = await this.sectionRepo.findOne({ where: { id: video.sectionId } });
+    if (!section || section.courseId !== courseId) {
+      throw new NotFoundException("영상을 찾을 수 없습니다.");
+    }
+
+    const chapterStartSeconds = Math.max(0, Math.round(body.chapterStartSeconds ?? 0));
+    const lastPositionSeconds = Math.max(0, Math.round(body.lastPositionSeconds ?? chapterStartSeconds));
+    let progress = await this.progressRepo.findOne({
+      where: { username, courseId, videoId, chapterStartSeconds },
+    });
+    if (!progress) {
+      progress = this.progressRepo.create({
+        username,
+        courseId,
+        videoId,
+        chapterStartSeconds,
+        lastPositionSeconds,
+        isCompleted: Boolean(body.isCompleted),
+        completedAt: body.isCompleted ? new Date() : null,
+      });
+    } else {
+      progress.lastPositionSeconds = Math.max(progress.lastPositionSeconds, lastPositionSeconds);
+      if (body.isCompleted && !progress.isCompleted) {
+        progress.isCompleted = true;
+        progress.completedAt = new Date();
+      }
+    }
+    const saved = await this.progressRepo.save(progress);
+    return {
+      videoId: saved.videoId,
+      chapterStartSeconds: saved.chapterStartSeconds,
+      lastPositionSeconds: saved.lastPositionSeconds,
+      isCompleted: saved.isCompleted,
+      completedAt: saved.completedAt,
+      updatedAt: saved.updatedAt,
     };
   }
 

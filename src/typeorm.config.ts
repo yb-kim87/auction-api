@@ -41,6 +41,7 @@ import { CourseSection } from "./lecture-replay/entities/course-section.entity";
 import { CourseVideo } from "./lecture-replay/entities/course-video.entity";
 import { LectureAccessLink } from "./lecture-replay/entities/lecture-access-link.entity";
 import { LectureEnrollment } from "./lecture-replay/entities/lecture-enrollment.entity";
+import { LectureProgress } from "./lecture-replay/entities/lecture-progress.entity";
 import { RedevelopmentZone } from "./redevelopment/entities/redevelopment-zone.entity";
 
 const entities = [
@@ -84,6 +85,7 @@ const entities = [
   CourseVideo,
   LectureAccessLink,
   LectureEnrollment,
+  LectureProgress,
   RedevelopmentZone,
 ];
 
