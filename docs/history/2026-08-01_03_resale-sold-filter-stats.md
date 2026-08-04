@@ -721,3 +721,44 @@ PARCEL 실패 시 VWorld search API로 도로명주소를 찾아 ROAD로 재시�
 양쪽 `tsc --noEmit` + `npm run build` 클린. 실제 지도 렌더링/마커
 표시는 카카오 API 키 발급 전이라 미확인 — 키 등록 후 사용자가 직접
 확인 필요.
+
+## 追記 (2026-08-04) — 매도분석 지도: Railway가 VWorld를 직접 호출 못 하는 문제
+
+배포 후 실사용 확인 중 사용자 보고: "이렇게만 나오고 안되는데?" (지도는
+뜨는데 마커가 0개, "이번 조회에서 0건 좌표를 새로 확보했습니다"). Railway
+로그 확인 결과 `GeocodeService`가 VWorld 호출마다
+`SocketError/UND_ERR_SOCKET`로 전부 실패 — 이미 알려진 이슈였다
+(VatController 주석, 2026-07-21: "Railway(해외 리전)가 VWorld API에
+연결하지 못하는 문제"). 처음 이 기능을 만들 때 "VatController가 이미
+같은 API를 백엔드에서 직접 호출해 정상 동작 중"이라고 잘못 판단했는데,
+실제로는 VatController가 호출하는 게 아니라 **VAT 계산기 쪽은 애초에
+프론트(Vercel, icn1 강제) 전용 Route Handler(`api/vat/*`)로 우회하고
+있었고, 백엔드 VatController는 죽은 코드였거나 최소한 이 경로로는 안
+쓰이고 있었다** — 조사가 불충분했던 것.
+
+### 수정
+VAT 계산기와 완전히 동일한 패턴으로 프론트 우회 적용:
+- 신규 `auction/src/app/api/resale-match/geocode/route.ts`
+  (`preferredRegion="icn1"`, admin 인증 `requireAdminFromRequest`
+  재사용) — PARCEL 지오코딩 + 실패 시 VWorld search로 도로명 찾아
+  ROAD 재시도(auction-api의 GeocodeService/VatController와 동일 로직).
+- 백엔드 `GET /resale-match/matches/map`은 이제 지오코딩을 시도하지
+  않고 캐싱된 좌표만 반환(단순화). 지오코딩 자체는 브라우저→Vercel
+  API 라우트에서 수행.
+- 신규 `POST /resale-match/matches/coords`(백엔드) — 프론트가 지오코딩한
+  결과를 받아 `auctions.latitude/longitude`에 캐싱 저장.
+- `ResaleMatchTab.tsx`의 `loadMap()`이 지도 데이터 조회 후, 좌표 없는
+  항목(최대 80건)을 동시 5개씩 `/api/resale-match/geocode`로 지오코딩 →
+  성공한 것만 화면에 바로 반영 + 백엔드에 저장.
+- 이제 필요 없어진 `src/resale-match/geocode.service.ts`(백엔드) 삭제.
+
+### 변경 파일
+`src/resale-match/resale-match.controller.ts`,
+`src/resale-match/resale-match.module.ts`(auction-api, geocode.service.ts
+삭제); `src/app/api/resale-match/geocode/route.ts`(신규), `src/lib/api.ts`,
+`src/app/admin/ResaleMatchTab.tsx` (auction).
+
+### 테스트 결과
+양쪽 `tsc --noEmit` + `npm run build` 클린. 배포 후 실제 지도에서
+마커가 뜨는지는 사용자 재확인 필요(이 追記 작성 시점 기준 미확인 —
+Railway 로그로 원인만 확정, 수정 사항은 아직 실사용 검증 전).

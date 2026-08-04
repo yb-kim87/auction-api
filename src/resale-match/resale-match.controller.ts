@@ -13,15 +13,7 @@ import { Repository } from "typeorm";
 import { Auction } from "../auctions/auction.entity";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { AuctionTradeMatchRow } from "./entities/auction-trade-match.entity";
-import { GeocodeService } from "./geocode.service";
 import { ResaleMatchService } from "./resale-match.service";
-
-/** 지오코딩 API(VWorld) 호출 부하를 제한하기 위한 동시 실행 수. */
-const GEOCODE_CONCURRENCY = 5;
-/** 한 번의 지도 조회 요청에서 새로 지오코딩할 최대 건수 — 좌표가 없는
- * 물건이 한꺼번에 수백 건이어도 요청이 과도하게 오래 걸리지 않게 상한을
- * 둔다. 남은 건은 다음 조회(새로고침) 때 이어서 채워진다. */
-const GEOCODE_BATCH_LIMIT = 80;
 
 /** 2단계 — 관리자 QA 화면(설계 문서 9.5절)이 쓰는 조회/검토 API.
  * 설계상 55점(MEDIUM) 이상 후보를 QA 대상으로 삼는다 — 70점 이상
@@ -34,7 +26,6 @@ export class ResaleMatchController {
     @InjectRepository(Auction)
     private readonly auctionRepo: Repository<Auction>,
     private readonly resaleMatchService: ResaleMatchService,
-    private readonly geocodeService: GeocodeService,
   ) {}
 
   @Get("auctions/:auctionId/candidates")
@@ -103,14 +94,17 @@ export class ResaleMatchController {
     });
   }
 
-  /** 지도 표시용 — listMatches와 같은 대상(1위 후보, 55점 이상)에 좌표를
-   * 붙여서 반환한다. 좌표가 없는 물건은 그 자리에서 지오코딩해 채우고
-   * auctions 테이블에 캐싱한다(주소가 안 바뀌는 한 재조회 안 함). 사용자
-   * 요청, 2026-08-04: "매도분석된 리스트를 지도위에 표시". */
+  /** 지도 표시용 — listMatches와 같은 대상(1위 후보, 55점 이상)에 캐싱된
+   * 좌표(있으면)를 붙여서 반환한다. 좌표가 없는 항목의 실제 지오코딩은
+   * 프론트(Vercel, 서울 리전)에서 처리한다 — Railway(해외 리전)가
+   * VWorld API에 연결하지 못해(SocketError/UND_ERR_SOCKET, 실측
+   * 2026-08-04) 백엔드에서 직접 호출하면 항상 실패한다(VAT 계산기와
+   * 동일 이슈, 2026-07-21). 사용자 요청, 2026-08-04: "매도분석된
+   * 리스트를 지도위에 표시". */
   @Get("matches/map")
   async listMatchesForMap(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
-    const rows: Array<Record<string, unknown>> = await this.matchRepo.query(`
+    const rows = await this.matchRepo.query(`
       SELECT
         m.id AS "matchId",
         m."auctionId",
@@ -136,35 +130,37 @@ export class ResaleMatchController {
       WHERE m."candidateRank" = 1 AND m."scoreTotal" >= 55
       ORDER BY m."scoreTotal" DESC
     `);
+    return { items: rows };
+  }
 
-    const missing = rows.filter((r) => r.latitude == null || r.longitude == null).slice(0, GEOCODE_BATCH_LIMIT);
-    let geocodedCount = 0;
-    for (let i = 0; i < missing.length; i += GEOCODE_CONCURRENCY) {
-      const batch = missing.slice(i, i + GEOCODE_CONCURRENCY);
-      await Promise.all(
-        batch.map(async (row) => {
-          const address = [row.city, row.district, row.umdNm, row.jibun]
-            .filter((v) => typeof v === "string" && v.trim())
-            .join(" ");
-          if (!address) return;
-          const coord = await this.geocodeService.geocode(address);
-          if (!coord) return;
-          row.latitude = coord.latitude;
-          row.longitude = coord.longitude;
-          geocodedCount += 1;
-          await this.auctionRepo.update(row.auctionId as string, {
-            latitude: coord.latitude,
-            longitude: coord.longitude,
-          });
-        }),
-      );
+  /** 프론트(Vercel)에서 VWorld로 직접 지오코딩한 결과를 캐싱용으로
+   * 저장한다. 주소가 안 바뀌는 한 재조회할 필요 없어 auctions 테이블에
+   * 영구 저장(vatPnu 등과 동일 패턴). */
+  @Post("matches/coords")
+  async saveCoords(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { items?: Array<{ auctionId?: string; latitude?: number; longitude?: number }> },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    const items = Array.isArray(body.items) ? body.items : [];
+    let saved = 0;
+    for (const item of items) {
+      if (
+        !item.auctionId ||
+        typeof item.latitude !== "number" ||
+        typeof item.longitude !== "number" ||
+        !Number.isFinite(item.latitude) ||
+        !Number.isFinite(item.longitude)
+      ) {
+        continue;
+      }
+      await this.auctionRepo.update(item.auctionId, {
+        latitude: item.latitude,
+        longitude: item.longitude,
+      });
+      saved += 1;
     }
-
-    return {
-      items: rows,
-      geocodedNow: geocodedCount,
-      pendingCount: rows.filter((r) => r.latitude == null || r.longitude == null).length,
-    };
+    return { ok: true, saved };
   }
 
   @Patch("matches/:matchId/review")
