@@ -133,11 +133,18 @@ export class LectureReplayService {
    * 오름차순 정렬(관리자가 순서 뒤섞어 입력해도 재생 목록은 항상
    * 시간순으로 보이게). 빈 배열/undefined면 null(챕터 없음)로 저장. */
   private normalizeChapters(
-    chapters: Array<{ title?: string; startSeconds?: number }> | undefined,
-  ): Array<{ title: string; startSeconds: number }> | null {
+    chapters: Array<{ title?: string; startSeconds?: number; endSeconds?: number }> | undefined,
+  ): Array<{ title: string; startSeconds: number; endSeconds?: number }> | null {
     if (!chapters) return null;
     const cleaned = chapters
-      .map((c) => ({ title: (c.title ?? "").trim(), startSeconds: Math.max(0, Math.round(c.startSeconds ?? 0)) }))
+      .map((c) => {
+        const startSeconds = Math.max(0, Math.round(c.startSeconds ?? 0));
+        const endSeconds =
+          typeof c.endSeconds === "number" && c.endSeconds > startSeconds
+            ? Math.round(c.endSeconds)
+            : undefined;
+        return { title: (c.title ?? "").trim(), startSeconds, endSeconds };
+      })
       .filter((c) => c.title.length > 0)
       .sort((a, b) => a.startSeconds - b.startSeconds);
     return cleaned.length > 0 ? cleaned : null;
@@ -150,7 +157,7 @@ export class LectureReplayService {
       description?: string;
       bunnyVideoId?: string;
       durationSeconds?: number;
-      chapters?: Array<{ title?: string; startSeconds?: number }>;
+      chapters?: Array<{ title?: string; startSeconds?: number; endSeconds?: number }>;
     },
   ) {
     const title = body.title?.trim();
@@ -187,7 +194,7 @@ export class LectureReplayService {
       sortOrder?: number;
       isPublished?: boolean;
       isOtVideo?: boolean;
-      chapters?: Array<{ title?: string; startSeconds?: number }> | null;
+      chapters?: Array<{ title?: string; startSeconds?: number; endSeconds?: number }> | null;
     },
   ) {
     const video = await this.videoRepo.findOne({ where: { id } });

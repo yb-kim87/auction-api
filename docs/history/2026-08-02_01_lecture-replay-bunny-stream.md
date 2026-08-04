@@ -672,3 +672,54 @@ expires)`로만 계산되므로 `t` 파라미터를 추가해도 서명이 깨�
 `auction`은 `npm run build`(next build) 모두 클린. 배포 후 실제
 Bunny Stream 영상에 챕터를 등록해 재생 화면에서 시간 이동이 되는지는
 관리자가 직접 영상을 올린 뒤 확인 필요(미확인).
+
+## 追記 (2026-08-04) — 챕터 자동 정지(다음 챕터 시작 전에 끊기) + 종료시간 직접 입력
+
+챕터 기능 적용 직후 사용자 질문: "적용은 잘되는데 영상이 시작시간을
+정해주면 다음 시작시간전에 끝나는걸로 하게는 못하나?" → "종료시간을
+입력해도 되고"로 대안 제시. 즉 지금까지는 `t=`로 시작 지점만 이동할
+뿐 재생은 영상 끝까지 계속돼서, 챕터 구분이 목록에서만 보이고 실제
+재생은 안 끊긴다는 문제.
+
+Bunny Stream이 Player.js(postMessage 기반 재생 제어/이벤트 API)를
+공식 지원한다는 걸 WebFetch/WebSearch로 확인
+([Bunny Stream Playback control API](https://docs.bunny.net/stream/playback-api),
+[Player.js 지원 발표](https://bunny.net/blog/introducing-player-js-support-for-bunny-stream-advanced-player-control-and-monitoring-api/))
+— `assets.mediadelivery.net/playerjs/playerjs-latest.min.js`를 로드해
+`new playerjs.Player(iframeId)`로 감싼 뒤 `on("timeupdate", cb)`로 현재
+재생 초를 받아 `pause()`를 호출하는 방식.
+
+### 구현
+- **백엔드**: `CourseVideo.chapters`에 `endSeconds?: number`(선택) 추가.
+  관리자가 종료시간을 직접 안 주면 프론트에서 "다음 챕터의 시작 시각"을
+  종료 시각으로 자동 계산(기존 `durationSeconds` 표시 계산 로직과
+  동일한 fallback을 재활용). `normalizeChapters()`가 `endSeconds >
+  startSeconds`인 경우만 유효값으로 받아들인다.
+- **프론트 — 신규 파일** `src/lib/bunny-playerjs.ts`: Player.js 스크립트
+  1회 로드(모듈 스코프 프라미스 캐시) + `attachChapterAutoPause(iframeId,
+  endSeconds)` — `endSeconds`가 없으면(챕터 없거나 마지막 챕터) 아무 동작
+  안 함, 있으면 `timeupdate`를 구독해 도달 시 `pause()`.
+- `MyCourseClient.tsx`/`LectureReplayClient.tsx`: iframe에 고정 `id` 부여,
+  `embedUrl`이 바뀔 때(챕터/영상 전환 시 iframe이 새로 마운트될 때)마다
+  `attachChapterAutoPause` 재호출. `expandVideoRows()`가 반환하는 각 행에
+  `endSeconds`(자동 정지 지점, 명시 지정 또는 다음 챕터 시작일 때만 값 존재
+  — 마지막 챕터는 억지로 추정하지 않고 그냥 끝까지 재생)를 추가.
+- **관리자 화면**(`LectureReplayTab.tsx`): 챕터 입력 형식에
+  "시작시간-종료시간 제목"(하이픈으로 종료시간 추가 지정) 지원 추가.
+  종료시간 생략 시 기존처럼 다음 챕터 시작에서 자동 정지.
+
+### 변경 파일
+`src/lecture-replay/entities/course-video.entity.ts`,
+`src/lecture-replay/lecture-replay.service.ts`,
+`src/lecture-replay/lecture-replay.controller.ts` (auction-api);
+`src/lib/bunny-playerjs.ts`(신규), `src/lib/api.ts`,
+`src/app/admin/LectureReplayTab.tsx`,
+`src/app/courses/[courseId]/MyCourseClient.tsx`,
+`src/app/lecture/[token]/LectureReplayClient.tsx` (auction).
+
+### 테스트 결과
+양쪽 `tsc --noEmit` + `npm run build` 클린. Player.js를 통한 실제
+자동 정지 동작은 CSP상 Artifact가 아닌 일반 Next.js 페이지라 외부
+스크립트 로드 자체는 제약이 없지만, 실제 브라우저에서 타임업데이트
+이벤트가 기대대로 오는지는 관리자가 챕터를 등록한 뒤 직접 재생해
+확인 필요(미확인 — Bunny 공식 문서 예시 코드를 그대로 따랐음).

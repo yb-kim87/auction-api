@@ -41,9 +41,12 @@ export class CourseVideo {
    * 그 시작 시각부터 재생된다(Bunny iframe embed의 `t=초` 파라미터 이용).
    * startSeconds 오름차순으로 저장(사용자 요청, 2026-08-04: "영상 1개를
    * 올리면 시간을 알려주면 알려준 시간으로 섹션을 구분해서 나눠서 영상이
-   * 보이도록"). */
+   * 보이도록"). endSeconds는 선택 — 없으면 프론트가 "다음 챕터의
+   * startSeconds"를 종료 시점으로 써서 자동 정지한다(Player.js
+   * timeupdate로 감지, 2026-08-04 追記: "다음 시작시간전에 끝나는걸로
+   * 하게는 못하나?" / "종료시간을 입력해도 되고"). */
   @Column({ type: "simple-json", nullable: true })
-  chapters!: Array<{ title: string; startSeconds: number }> | null;
+  chapters!: Array<{ title: string; startSeconds: number; endSeconds?: number }> | null;
 
   @CreateDateColumn()
   createdAt!: Date;
