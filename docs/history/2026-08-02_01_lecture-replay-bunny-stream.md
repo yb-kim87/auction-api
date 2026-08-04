@@ -782,3 +782,41 @@ Bunny의 기본 하단 컨트롤(재생바/시간)을 불투명 오버레이로 
 리다이렉트로 정상). 실제 브라우저에서 커스텀 진행바가 정확히 챕터
 길이만큼만 채워지는지, 하단 오버레이가 Bunny 컨트롤을 빈틈없이
 가리는지는 관리자가 직접 확인 필요(미확인).
+
+## 追記 (2026-08-04) — 마지막 챕터에서 진행바/탐색이 아예 안 되던 버그
+
+사용자 보고(2강 "2주차 손품시세조사" 실사용, 스크린샷 첨부): "첫번째
+섹션 빌라 시세조사 방법은 게이지 조절이 되는데 두번째 섹션
+전화조사방법은 게이지 조절이 아예 안돼". 운영 DB `course_videos`를
+직접 조회해 원인 확인 — 실제로 두 챕터 제목("빌라 시세조사 방법",
+"전화조사 방법")은 영상 1개(`bunnyVideoId=f92254d6...`, 전체
+2813초=46:53)의 챕터 2개였고(`startSeconds` 0 / 2195), 두 번째가
+마지막 챕터라 `endSeconds`가 없는 상태(자동 정지 안 하도록 의도한
+설계 그대로).
+
+문제는 `BunnyChapterPlayer`의 진행바 계산이 `chapterDuration = endSeconds
+!= null ? ... : null`로 되어 있어서, `endSeconds`가 없는 마지막
+챕터는 `chapterDuration`이 통째로 `null`이 되고, 그 결과 진행바가
+0%에 고정되고(`progressPct`가 항상 0) `seekAt()`의 가드
+(`chapterDuration == null → return`)에 걸려 클릭 탐색도 완전히
+막혀 있었다. "자동 정지 안 함"과 "진행바/탐색 비활성화"가 같은
+조건(`endSeconds` 유무)에 실수로 묶여 있던 게 원인.
+
+### 수정
+`BunnyChapterPlayer`에 `videoDurationSeconds`(영상 전체 길이) prop을
+추가해, 진행바/탐색 계산 전용 `displayEndSeconds = endSeconds ??
+videoDurationSeconds`를 따로 두었다. 자동 정지(`timeupdate`에서
+`pause()` 호출)는 여전히 원래의 `endSeconds`만 보고 판단하므로 마지막
+챕터는 그대로 끝까지 자연 재생되고, 진행바/탐색은 영상 전체 길이를
+"이 챕터의 끝"으로 대신 써서 정상적으로 채워지고 클릭 탐색도 된다.
+
+### 변경 파일
+`src/components/BunnyChapterPlayer.tsx`,
+`src/app/courses/[courseId]/MyCourseClient.tsx`,
+`src/app/lecture/[token]/LectureReplayClient.tsx` (auction).
+
+### 테스트 결과
+`tsc --noEmit` + `npm run build` 클린. `vercel --prod --yes`로 직접
+배포(GitHub 자동배포가 이번에도 즉시 트리거 안 됨) 후
+`auction-seven-tan.vercel.app` 정상 응답(307) 확인. 실제로 두 번째
+챕터에서 진행바가 채워지고 탐색이 되는지는 사용자가 재확인 필요.
