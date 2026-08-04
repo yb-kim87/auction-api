@@ -910,3 +910,31 @@ WebSearch/WebFetch로 Bunny 공식 문서를 재확인한 결과:
 ### 테스트 결과
 `tsc --noEmit` + `npm run build` 클린. `vercel --prod --yes` 배포 후
 정상 응답(307) 확인.
+
+## 追記 (2026-08-04) — 0:00 챕터가 이전 시청 위치에서 재생되던 버그
+
+사용자 보고: "1강에 챕터를 넣었는데... 경매기본지식이 근데 00:00부터
+시작을 안해... 누르면 33:07부터 시작해". 원인은 `buildEmbedUrl()`의
+`startSeconds > 0` 조건 — 0을 "값 없음"으로 취급해 `t=` 파라미터
+자체를 생략시켰다. Bunny 플레이어는 `t` 파라미터가 없으면 자체
+"이어보기"(마지막 시청 위치, localStorage 기반 추정) 기능으로 재생을
+시작해버려, 0:00부터 시작해야 할 첫 챕터가 이전에 보던 위치(33:07)에서
+시작되는 것처럼 보였다.
+
+`startSeconds > 0` → `startSeconds >= 0`으로 수정해 0초여도 명시적으로
+`t=0`을 붙이도록 함. 프론트(`src/lib/api.ts`)의 `fetchMyCoursePlayUrl`/
+`fetchLecturePlayUrl`에도 같은 패턴의 버그(`startSeconds ? ... : ""`)가
+있어 같이 수정(`startSeconds != null` 체크로 변경) — 이쪽은 프론트→
+백엔드로 `t` 쿼리 파라미터 자체를 안 보내는 문제였음(0이 아닌 값일 때는
+정상 동작해 지금까지 발견 안 됐던 케이스).
+
+### 변경 파일
+`src/lecture-replay/lecture-replay.service.ts`(auction-api, `buildEmbedUrl`);
+`src/lib/api.ts`(auction, `fetchMyCoursePlayUrl`/`fetchLecturePlayUrl`).
+
+### 테스트 결과
+양쪽 `tsc --noEmit` 클린. 프론트 `npm run build`는 로컬에서 동시에
+돌고 있던 `npm run dev` 프로세스가 `.next` 디렉토리 파일을 잠그고
+있어(OneDrive 동기화 환경, EINVAL readlink) 로컬 확인은 실패했지만
+타입체크가 클린해 코드 자체의 문제는 아님 — 배포 파이프라인(Vercel)
+빌드에서는 별도 환경이라 문제없이 빌드될 것으로 예상, 배포 후 확인 필요.
