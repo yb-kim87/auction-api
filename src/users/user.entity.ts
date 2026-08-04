@@ -61,7 +61,7 @@ export class User {
   currentSessionId!: string | null;
 
   /** 위 세션의 마지막 활동 시각. 일정 시간(유휴 타임아웃) 갱신이 없으면 자리를 비운 것으로 보고 새 로그인을 허용한다. */
-  @Column({ type: "timestamptz", nullable: true })
+  @Column({ type: Date, nullable: true })
   sessionLastActiveAt!: Date | null;
 
   @CreateDateColumn()

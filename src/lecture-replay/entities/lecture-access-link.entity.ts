@@ -18,7 +18,7 @@ export class LectureAccessLink {
   @Column()
   title!: string;
 
-  @Column({ type: "timestamptz", nullable: true })
+  @Column({ type: Date, nullable: true })
   expiresAt!: Date | null;
 
   @Column({ default: true })

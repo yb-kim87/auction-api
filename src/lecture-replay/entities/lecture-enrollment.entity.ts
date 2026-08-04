@@ -33,10 +33,10 @@ export class LectureEnrollment {
   @Column()
   courseId!: string;
 
-  @Column({ type: "timestamptz" })
+  @Column({ type: Date })
   startsAt!: Date;
 
-  @Column({ type: "timestamptz" })
+  @Column({ type: Date })
   expiresAt!: Date;
 
   @Column({ type: "text", default: LectureEnrollmentStatus.ACTIVE })

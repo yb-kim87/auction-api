@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Param,
@@ -127,7 +128,7 @@ export class ResaleMatchController {
       FROM auction_trade_match m
       JOIN auctions a ON a.id = m."auctionId"
       JOIN actual_trade t ON t.id = m."actualTradeId"
-      WHERE m."candidateRank" = 1 AND m."scoreTotal" >= 55
+      WHERE m."candidateRank" = 1 AND m."scoreTotal" >= 55 AND m.status <> 'REJECTED'
       ORDER BY m."scoreTotal" DESC
     `);
     return { items: rows };
@@ -179,6 +180,16 @@ export class ResaleMatchController {
       reviewedBy: ctx.username,
       reviewedAt: new Date(),
     });
+    return { ok: true };
+  }
+
+  /** 매칭 결과 행 자체를 완전히 삭제한다(반려와 달리 데이터를 지운다 —
+   * 사용자 요청, 2026-08-04: "데이터를 지울 수 있거나"). 목록/지도
+   * 어디에도 다시 나타나지 않는다. */
+  @Delete("matches/:matchId")
+  async deleteMatch(@Headers() headers: Record<string, string>, @Param("matchId") matchId: string) {
+    requireAdmin(getAuthContext(headers));
+    await this.matchRepo.delete(matchId);
     return { ok: true };
   }
 
