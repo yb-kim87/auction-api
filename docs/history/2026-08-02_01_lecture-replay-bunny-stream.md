@@ -840,3 +840,48 @@ Bunny 쿼리 파라미터에 컨트롤을 완전히 숨기는 공식 옵션이 �
 ### 테스트 결과
 `tsc --noEmit` + `npm run build` 클린, `vercel --prod --yes` 배포 후
 정상 응답 확인. 실제로 겹침이 완전히 사라졌는지는 사용자 재확인 필요.
+
+## 追記 (2026-08-04) — 자체 진행바 되돌림: Bunny 기본 재생바 + 구간 자동 정지만 유지
+
+사용자가 Vimeo의 `controls=0` 예시를 들며 "버니도 이런게 가능하지
+않을까? 이렇게 해놓고 우리 게이지를 올려두면 되지 않을까?"라고 제안.
+WebSearch/WebFetch로 Bunny 공식 문서를 재확인한 결과:
+- iframe embed 쿼리 파라미터에는 `controls`/`chromeless`/`hideControls`류가
+  없음(전체 파라미터 목록 재확인, `t`/`autoplay`/`muted`/`loop`/
+  `compactControls` 등만 존재).
+- 대신 **Update Video Library API**([참고](https://bunny.net/docs/reference/videolibrarypublic_update))에
+  `Controls`(표시할 컨트롤 목록), `CustomHTML`(플레이어에 커스텀 CSS 주입)
+  필드가 있어, 새 플레이어(media-chrome 기반, `bunny-media-time-range`
+  등 선택자)에서는 재생바를 포함한 컨트롤을 라이브러리 설정에서 끌 수
+  있다는 것도 확인
+  ([새 플레이어 소개](https://bunny.net/blog/introducing-the-new-bunny-stream-video-player/),
+  [Custom head HTML 마이그레이션 가이드](https://bunny.net/docs/stream/custom-head-html-migration-guide)).
+
+다만 이 설정은 **URL 파라미터가 아니라 라이브러리 전체 설정**이라
+챕터 없는 일반 영상까지 Bunny 기본 컨트롤이 사라지는 트레이드오프가
+있음을 사용자에게 안내(AskUserQuestion) → 사용자가 "우리꺼 집어
+넣으니까 복잡하게 보이네"라며 커스텀 진행바 자체를 없애고, 처음
+버니스트리밍 그대로 쓰되 "구간이 나눠져있고 섹션별로 정지되는
+정도로만" 하자고 최종 결정.
+
+### 되돌린 내용
+- `src/components/BunnyChapterPlayer.tsx` 삭제.
+- `src/lib/bunny-playerjs.ts`: `attachChapterAutoPause()`(Player.js
+  timeupdate로 endSeconds 도달 시 pause만 호출하는 단순 버전)로 복귀,
+  `PlayerJsPlayer` 타입에서 `play`/`setCurrentTime` 등 진행바용 API 제거.
+- `MyCourseClient.tsx`/`LectureReplayClient.tsx`: 챕터 여부와 무관하게
+  항상 순정 `<iframe>`(Bunny 기본 컨트롤 그대로) 렌더링 + `embedUrl`
+  변경 시 `attachChapterAutoPause` 재연결.
+- 최종 동작: 목록에서는 챕터별로 나뉘어 보이고(섹션 분리 유지), 클릭하면
+  해당 시작 시각(`t=`)부터 재생되며, 다음 챕터 시작 지점(또는 관리자가
+  지정한 종료 시각)에서 자동으로 멈춘다 — 단, 재생바 자체는 Bunny
+  기본(영상 전체 길이 기준) 그대로.
+
+### 변경 파일
+`src/lib/bunny-playerjs.ts`, `src/app/courses/[courseId]/MyCourseClient.tsx`,
+`src/app/lecture/[token]/LectureReplayClient.tsx` (auction). 삭제:
+`src/components/BunnyChapterPlayer.tsx`.
+
+### 테스트 결과
+`tsc --noEmit` + `npm run build` 클린. `vercel --prod --yes` 배포 후
+정상 응답(307) 확인.
