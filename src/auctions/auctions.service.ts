@@ -31,6 +31,8 @@ import { parseUnitFloorFromAddress, selectFloorAwareNaverPrice } from "./naver-f
 import { TagsService } from "../tags/tags.service";
 import { nowPartsInKst } from "../common/kst-time.util";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface WriteMeta {
   status: AuctionStatus;
   submittedBy: string;
@@ -125,8 +127,14 @@ export class AuctionsService implements OnModuleInit {
    * 집어 조회할 때 쓴다(성능: 관심물건이 몇 건 안 되는데도 전체 물건을
    * 다 불러오면 느려지는 문제, 2026-08-02). */
   async findByIds(ids: string[], isStaff: boolean, isAdmin: boolean) {
-    if (ids.length === 0) return [];
-    const items = await this.auctionRepo.find({ where: { id: In(ids) } });
+    // id 컬럼이 uuid 타입이라, UUID 형식이 아닌 값이 하나라도 섞여 있으면
+    // Postgres가 배치 전체를 invalid input syntax 에러로 거부해 500이
+    // 난다(실측 사고, 2026-08-05: 관심물건에 잘못 저장된 "categories"
+    // 값 하나 때문에 그 회원의 관심물건 8건 전체가 안 보였음). 호출 측
+    // 데이터가 이미 깨져 있어도 서비스가 죽지 않도록 여기서도 걸러낸다.
+    const validIds = ids.filter((id) => UUID_RE.test(id));
+    if (validIds.length === 0) return [];
+    const items = await this.auctionRepo.find({ where: { id: In(validIds) } });
     if (isStaff) {
       return isAdmin ? items : items.map((item) => stripResaleMatchFields(item));
     }

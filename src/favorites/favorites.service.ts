@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -7,6 +8,8 @@ import { Repository } from "typeorm";
 import { AuctionFavorite } from "./auction-favorite.entity";
 import { FavoriteCategory } from "./favorite-category.entity";
 import { UsersService } from "../users/users.service";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Injectable()
 export class FavoritesService {
@@ -74,6 +77,14 @@ export class FavoritesService {
   }
 
   async add(username: string, auctionId: string, category?: string | null, memo?: string | null) {
+    // 잘못된 라우팅/클라이언트 호출로 UUID가 아닌 값이 auctionId로 들어오면
+    // 조용히 저장하지 않고 즉시 거부한다 — 과거 "categories"라는 값이
+    // 저장돼 그 값이 포함된 이후 /auctions/by-ids 배치 조회 전체가 Postgres
+    // UUID 파싱 에러(500)로 죽는 사고가 있었다(사용자 리포트, 2026-08-05:
+    // "내물건 관심물건에 8개나 있는데 물건이 안보여").
+    if (!UUID_RE.test(auctionId)) {
+      throw new BadRequestException("잘못된 물건 ID입니다.");
+    }
     const userId = await this.resolveUserId(username);
     const normalizedCategory = category?.trim() || null;
     const normalizedMemo = memo?.trim() || null;
