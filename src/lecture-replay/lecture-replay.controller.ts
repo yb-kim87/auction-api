@@ -93,6 +93,7 @@ export class LectureReplayController {
       description?: string;
       bunnyVideoId?: string;
       durationSeconds?: number;
+      chapters?: Array<{ title?: string; startSeconds?: number }>;
     },
   ) {
     requireAdmin(getAuthContext(headers));
@@ -112,6 +113,7 @@ export class LectureReplayController {
       sortOrder?: number;
       isPublished?: boolean;
       isOtVideo?: boolean;
+      chapters?: Array<{ title?: string; startSeconds?: number }> | null;
     },
   ) {
     requireAdmin(getAuthContext(headers));

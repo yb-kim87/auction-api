@@ -602,3 +602,73 @@ status`/헬스체크로 정상 기동 확인 예정(이 문서에 追記).
 완료. 실제로 이미 가입한 3명과 같은 이름으로 재가입을 시도했을 때
 자동 승급이 안 되는지는 실사용 시나리오라 직접 재현 테스트는
 안 함(로직상 보장됨).
+
+## 追記 (2026-08-04) — 영상 1개를 타임스탬프로 나눠 여러 섹션처럼 보여주는 "챕터" 기능
+
+사용자 요청: "영상 1개를 올리면 시간을 알려주면 알려준 시간으로 섹션을
+구분해서 나눠서 영상이 보이도록 해줄 수 있어?" → "시간시작 종료시작은
+입력하면 영상 1개가 여러개로 쪼개져서 보이게 하는거지"로 의도 확정 —
+실제 파일(Bunny Stream 영상)은 하나 그대로 두고, 관리자가 타임스탬프
+목록만 입력하면 강의 화면에서 여러 강의처럼 나뉘어 보이고 클릭 시 그
+지점부터 재생되게 하는 기능.
+
+### 설계
+영상마다 별도 챕터 테이블을 만들지 않고, `CourseVideo`에 `chapters`
+(simple-json, `{title, startSeconds}[]`) 컬럼 하나만 추가 — 가벼운
+메타데이터라 별도 엔티티/FK가 과함. 종료 시각은 별도로 안 받고 "다음
+챕터의 시작 시각"(마지막 챕터는 영상 전체 길이)으로 자동 계산.
+
+재생은 Bunny Stream iframe embed의 `t=`(초 단위 시작 지점) 쿼리
+파라미터를 붙이는 방식 — 서명 토큰은 `SHA256(security_key+video_id+
+expires)`로만 계산되므로 `t` 파라미터를 추가해도 서명이 깨지지 않는다
+(2026-08-02 기록의 "color 파라미터는 지원 안 됨"과 달리 `t`는 Bunny
+공식 지원 파라미터).
+
+### 구현
+**백엔드**
+- `CourseVideo.chapters`(신규 컬럼, 마이그레이션
+  `1784269000000-AddCourseVideoChapters`).
+- `LectureReplayService.normalizeChapters()`: 제목 없는 항목 제외,
+  startSeconds 오름차순 정렬.
+- `createVideo`/`updateVideo`가 `chapters` 필드를 받아 저장.
+- `buildEmbedUrl(bunnyVideoId, startSeconds?)`: `startSeconds`가 있으면
+  `&t=초` 추가.
+- `getMyPlayUrl`/`getPlayUrl`(로그인 수강생용/공개 링크용 둘 다)이
+  `startSeconds`를 받아 `buildEmbedUrl`에 전달. 컨트롤러
+  (`lecture-courses.controller.ts`, `lecture-replay-public.controller.ts`)
+  에 `?t=` 쿼리 파라미터 추가.
+- `buildSectionsWithVideos()`가 반환하는 영상 목록에 `chapters` 필드
+  포함(관리자/수강생 화면 모두 이 목록을 씀).
+
+**프론트 — 관리자**(`LectureReplayTab.tsx`)
+- 영상 등록/수정 화면에 챕터 입력 textarea 추가 — "12:34 제목" 형식
+  한 줄당 하나(`parseChaptersText`로 파싱, `H:MM:SS`/`MM:SS`/`SS` 모두
+  허용).
+- 영상 목록 행에 "챕터 N개" 표시 + "챕터" 버튼으로 인라인 편집(기존
+  챕터를 다시 텍스트로 보여주는 `chaptersToText`로 역변환).
+
+**프론트 — 수강생 화면**(`MyCourseClient.tsx`, `LectureReplayClient.tsx`)
+- `expandVideoRows()`: 영상에 챕터가 있으면 챕터별로, 없으면 영상
+  그대로 사이드바 행을 만든다. 각 챕터 행의 재생시간은 "다음 챕터
+  시작 - 이 챕터 시작"(마지막 챕터는 "영상 전체 길이 - 시작")으로 계산.
+- 선택 상태를 `(videoId, startSeconds)` 쌍으로 관리해, 같은 영상의
+  다른 챕터를 구분해서 활성 표시.
+- "이전/다음 강의" 이동도 챕터 단위로 펼친 목록(`publishedRows`)
+  기준으로 동작하도록 변경(기존엔 영상 단위였음).
+
+### 변경 파일
+`src/lecture-replay/entities/course-video.entity.ts`,
+`src/lecture-replay/lecture-replay.service.ts`,
+`src/lecture-replay/lecture-replay.controller.ts`,
+`src/lecture-replay/lecture-courses.controller.ts`,
+`src/lecture-replay/lecture-replay-public.controller.ts`,
+`src/migrations/1784269000000-AddCourseVideoChapters.ts` (auction-api),
+`src/lib/api.ts`, `src/app/admin/LectureReplayTab.tsx`,
+`src/app/courses/[courseId]/MyCourseClient.tsx`,
+`src/app/lecture/[token]/LectureReplayClient.tsx` (auction).
+
+### 테스트 결과
+양쪽 `tsc --noEmit` 클린, `auction-api`는 `npm run build`(nest build),
+`auction`은 `npm run build`(next build) 모두 클린. 배포 후 실제
+Bunny Stream 영상에 챕터를 등록해 재생 화면에서 시간 이동이 되는지는
+관리자가 직접 영상을 올린 뒤 확인 필요(미확인).

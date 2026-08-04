@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from "@nestjs/common";
+import { Controller, Get, Param, Query } from "@nestjs/common";
 import { LectureReplayService } from "./lecture-replay.service";
 
 /** 링크 토큰만으로 접근하는 공개 시청 API. 로그인 계정이 아직 없으므로
@@ -14,7 +14,8 @@ export class LectureReplayPublicController {
   }
 
   @Get("access/:token/videos/:videoId/play")
-  getPlayUrl(@Param("token") token: string, @Param("videoId") videoId: string) {
-    return this.service.getPlayUrl(token, videoId);
+  getPlayUrl(@Param("token") token: string, @Param("videoId") videoId: string, @Query("t") t?: string) {
+    const startSeconds = t ? Number(t) : undefined;
+    return this.service.getPlayUrl(token, videoId, Number.isFinite(startSeconds) ? startSeconds : undefined);
   }
 }

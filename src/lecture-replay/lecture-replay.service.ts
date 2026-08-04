@@ -129,6 +129,20 @@ export class LectureReplayService {
     }
   }
 
+  /** 챕터 목록을 검증·정규화한다 — 제목 없는 항목 제외, startSeconds
+   * 오름차순 정렬(관리자가 순서 뒤섞어 입력해도 재생 목록은 항상
+   * 시간순으로 보이게). 빈 배열/undefined면 null(챕터 없음)로 저장. */
+  private normalizeChapters(
+    chapters: Array<{ title?: string; startSeconds?: number }> | undefined,
+  ): Array<{ title: string; startSeconds: number }> | null {
+    if (!chapters) return null;
+    const cleaned = chapters
+      .map((c) => ({ title: (c.title ?? "").trim(), startSeconds: Math.max(0, Math.round(c.startSeconds ?? 0)) }))
+      .filter((c) => c.title.length > 0)
+      .sort((a, b) => a.startSeconds - b.startSeconds);
+    return cleaned.length > 0 ? cleaned : null;
+  }
+
   async createVideo(
     sectionId: string,
     body: {
@@ -136,6 +150,7 @@ export class LectureReplayService {
       description?: string;
       bunnyVideoId?: string;
       durationSeconds?: number;
+      chapters?: Array<{ title?: string; startSeconds?: number }>;
     },
   ) {
     const title = body.title?.trim();
@@ -157,6 +172,7 @@ export class LectureReplayService {
       // 등록 직후엔 기본 비공개. 준비가 끝나면 목록에서 "공개로"를
       // 눌러 직접 켜야 수강생에게 보인다(사용자 요청, 2026-08-02 재변경).
       isPublished: false,
+      chapters: this.normalizeChapters(body.chapters),
     });
     return this.videoRepo.save(video);
   }
@@ -171,6 +187,7 @@ export class LectureReplayService {
       sortOrder?: number;
       isPublished?: boolean;
       isOtVideo?: boolean;
+      chapters?: Array<{ title?: string; startSeconds?: number }> | null;
     },
   ) {
     const video = await this.videoRepo.findOne({ where: { id } });
@@ -189,6 +206,9 @@ export class LectureReplayService {
     if (body.sortOrder !== undefined) video.sortOrder = body.sortOrder;
     if (body.isPublished !== undefined) video.isPublished = body.isPublished;
     if (body.isOtVideo !== undefined) video.isOtVideo = body.isOtVideo;
+    if (body.chapters !== undefined) {
+      video.chapters = body.chapters === null ? null : this.normalizeChapters(body.chapters);
+    }
     return this.videoRepo.save(video);
   }
 
@@ -278,6 +298,7 @@ export class LectureReplayService {
             description: v.description,
             durationSeconds: v.durationSeconds,
             isPublished: restrictToOtVideos ? v.isPublished && v.isOtVideo : v.isPublished,
+            chapters: v.chapters,
           })),
         };
       }),
@@ -299,7 +320,7 @@ export class LectureReplayService {
     };
   }
 
-  async getPlayUrl(token: string, videoId: string) {
+  async getPlayUrl(token: string, videoId: string, startSeconds?: number) {
     const link = await this.resolveActiveLink(token);
     const video = await this.videoRepo.findOne({ where: { id: videoId } });
     if (!video || video.sectionId == null) {
@@ -312,7 +333,7 @@ export class LectureReplayService {
     if (!video.isPublished) {
       throw new BadRequestException("아직 공개되지 않은 영상입니다.");
     }
-    return { embedUrl: this.buildEmbedUrl(video.bunnyVideoId) };
+    return { embedUrl: this.buildEmbedUrl(video.bunnyVideoId, startSeconds) };
   }
 
   // ---------- 관리자: 수강권(enrollment) ----------
@@ -545,7 +566,7 @@ export class LectureReplayService {
     };
   }
 
-  async getMyPlayUrl(username: string, courseId: string, videoId: string) {
+  async getMyPlayUrl(username: string, courseId: string, videoId: string, startSeconds?: number) {
     const mode = await this.getAccessMode(username, courseId);
     const video = await this.videoRepo.findOne({ where: { id: videoId } });
     if (!video || video.sectionId == null) {
@@ -561,7 +582,7 @@ export class LectureReplayService {
     if (!video.isPublished) {
       throw new BadRequestException("아직 공개되지 않은 영상입니다.");
     }
-    return { embedUrl: this.buildEmbedUrl(video.bunnyVideoId) };
+    return { embedUrl: this.buildEmbedUrl(video.bunnyVideoId, startSeconds) };
   }
 
   /** Bunny Stream 임베드 URL을 만든다. BUNNY_STREAM_TOKEN_KEY가 설정돼
@@ -573,18 +594,25 @@ export class LectureReplayService {
    * 라이브러리 단위로 지정해야 한다(2026-08-02 확인, docs.bunny.net에
    * color 쿼리 파라미터는 존재하지 않음 — 이전에 넣었던 `&color=` 파라미터
    * 제거). */
-  private buildEmbedUrl(bunnyVideoId: string): string {
+  /** startSeconds가 있으면 Bunny embed의 `t=`(초 단위 시작 지점) 파라미터를
+   * 붙여준다 — 영상 하나를 챕터(구간)로 나눠 보여줄 때, 챕터를 클릭하면
+   * 그 지점부터 바로 재생되게 하기 위함(2026-08-04). 토큰 서명은
+   * security_key+video_id+expires만으로 계산되므로 `t` 파라미터를
+   * 추가해도 서명이 깨지지 않는다. */
+  private buildEmbedUrl(bunnyVideoId: string, startSeconds?: number): string {
     const libraryId = process.env.BUNNY_STREAM_LIBRARY_ID?.trim();
     if (!libraryId) {
       throw new BadRequestException("BUNNY_STREAM_LIBRARY_ID 환경변수가 설정되어 있지 않습니다.");
     }
     const tokenKey = process.env.BUNNY_STREAM_TOKEN_KEY?.trim();
     const base = `https://iframe.mediadelivery.net/embed/${libraryId}/${bunnyVideoId}`;
+    const tParam =
+      typeof startSeconds === "number" && startSeconds > 0 ? `&t=${Math.round(startSeconds)}` : "";
     if (!tokenKey) {
-      return `${base}?autoplay=false`;
+      return `${base}?autoplay=false${tParam}`;
     }
     const expires = Math.floor(Date.now() / 1000) + PLAY_URL_TTL_SECONDS;
     const token = createHash("sha256").update(`${tokenKey}${bunnyVideoId}${expires}`).digest("hex");
-    return `${base}?token=${token}&expires=${expires}&autoplay=false`;
+    return `${base}?token=${token}&expires=${expires}&autoplay=false${tParam}`;
   }
 }

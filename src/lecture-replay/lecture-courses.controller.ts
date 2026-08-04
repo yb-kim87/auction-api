@@ -1,4 +1,4 @@
-import { Controller, Get, Headers, Param } from "@nestjs/common";
+import { Controller, Get, Headers, Param, Query } from "@nestjs/common";
 import { getAuthContext, requireAuth } from "../common/auth-context";
 import { LectureReplayService } from "./lecture-replay.service";
 
@@ -31,9 +31,16 @@ export class LectureCoursesController {
     @Headers() headers: Record<string, string>,
     @Param("courseId") courseId: string,
     @Param("videoId") videoId: string,
+    @Query("t") t?: string,
   ) {
     const ctx = getAuthContext(headers);
     requireAuth(ctx);
-    return this.service.getMyPlayUrl(ctx.username, courseId, videoId);
+    const startSeconds = t ? Number(t) : undefined;
+    return this.service.getMyPlayUrl(
+      ctx.username,
+      courseId,
+      videoId,
+      Number.isFinite(startSeconds) ? startSeconds : undefined,
+    );
   }
 }
