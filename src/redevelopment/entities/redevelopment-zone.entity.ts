@@ -57,9 +57,11 @@ export class RedevelopmentZone {
   @Column({ type: "date", nullable: true })
   asOfDate!: string | null;
 
-  /** 폴리곤이 실제 경계인지, 지오코딩+근사인지, 관리자가 직접 그린 것인지. */
+  /** 폴리곤이 실제 경계인지, 지오코딩+근사인지, 관리자가 직접 그린 것인지.
+   * IMAGE_AUTO = 구역도 이미지에서 경계를 자동 추출하고 고시 면적으로 축척을
+   * 맞춰 지오코딩 위치에 얹은 것(모양·크기는 정확, 위치는 검토 필요). */
   @Column({ type: "text", default: "MANUAL" })
-  boundaryType!: "EXACT" | "CONVEX_HULL_APPROX" | "POINT_ONLY" | "MANUAL";
+  boundaryType!: "EXACT" | "CONVEX_HULL_APPROX" | "POINT_ONLY" | "IMAGE_AUTO" | "MANUAL";
 
   /** 자동 수집 파이프라인이 마지막으로 이 구역을 갱신한 시각 — 관리자가
    * MANUAL로 마지막 수정한 뒤에는 자동 갱신이 덮어쓰지 않게 판단하는 데 쓴다. */
