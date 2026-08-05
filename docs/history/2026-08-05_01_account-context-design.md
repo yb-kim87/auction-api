@@ -23,4 +23,7 @@
 
 - 강의실과 경매 서비스의 시각적 경계는 분명해졌고, 회원정보 관리 기능은 중복 구현 없이
   동일하게 동작한다.
-- 프론트엔드 TypeScript 검사(`npx tsc --noEmit`)를 통과했다.
+- `useSearchParams`를 사용하는 회원정보 분기에는 Suspense 경계를 적용해 Next.js 정적
+  렌더링 오류를 방지했다.
+- 프론트엔드 TypeScript 검사(`npx tsc --noEmit`)와 프로덕션 빌드(`npm run build`)를
+  통과했다.
