@@ -31,10 +31,12 @@ export class LoanPolicy {
   @Column({ type: "boolean", default: false })
   businessLoanOnly!: boolean;
 
-  /** 방빼기(방공제) 적용 여부 — 켜면 물건 소재지 기준 최우선변제금액을
-   * 대출한도에서 차감한다(사용자 요청, 2026-08-05). */
-  @Column({ type: "boolean", default: false })
-  roomDeductionEnabled!: boolean;
+  /** 방빼기(방공제) 적용 대상 — "none"(미적용)/"appraisal"(감정가 기준
+   * 금액에서 차감)/"bid"(낙찰가 기준 금액에서 차감)/"both"(둘 다에서
+   * 각각 차감). min 계산 전에 대상 기준 금액에서 먼저 뺀다(사용자 요청,
+   * 2026-08-05). */
+  @Column({ type: "text", default: "none" })
+  roomDeductionTarget!: "none" | "appraisal" | "bid" | "both";
 
   @Column({ type: "integer", default: 0 })
   sortOrder!: number;

@@ -18,6 +18,7 @@ import {
   matchesPropertyType,
   needsCreditScoreWarning,
   type ProgressStatus,
+  type RoomDeductionTarget,
 } from "./investment-math.util";
 import { estimateDefaultProfit } from "./profit-calculator.util";
 import { getRoomDeductionWon } from "./room-deduction.util";
@@ -117,6 +118,7 @@ export class RecommendationEngineService {
         existingLoanWon: number;
         loanUnavailable: boolean;
         roomDeductionWon: number;
+        roomDeductionTarget: RoomDeductionTarget;
       }
     >;
     total: number;
@@ -189,6 +191,7 @@ export class RecommendationEngineService {
         existingLoanWon: number;
         loanUnavailable: boolean;
         roomDeductionWon: number;
+        roomDeductionTarget: RoomDeductionTarget;
       }
     > = {};
     const affordable = auctions
@@ -200,20 +203,24 @@ export class RecommendationEngineService {
           officialLandPrice: item.officialLandPrice,
         });
         // 방공제(방빼기) — 실제 임차인 유무와 무관하게 지역 기준 최우선변제금액을
-        // 대출한도에서 미리 차감한다. existingLoanWon(기존 대출)과 계산 효과가
-        // 동일해(둘 다 대출한도에서 그만큼 빼는 것) 별도 파라미터를 새로 만들지
-        // 않고 existingLoanWon에 합산한다.
+        // 정책에 지정된 적용 대상(감정가/낙찰가/둘 다) 기준 금액에서 min 계산
+        // 전에 먼저 차감한다(사용자 요청, 2026-08-05: "감정가면 감정가60%-
+        // 방빼기 와 낙찰가80% 중 낮은 금액이 최종 대출 금액"). 최종 min 결과에서
+        // 빼는 기존대출(existingLoanWon)과는 계산 시점이 달라 별도 파라미터로
+        // 전달한다.
+        const roomDeductionTarget = policy?.roomDeductionTarget ?? "none";
         const roomDeductionWon =
-          policy?.roomDeductionEnabled ? getRoomDeductionWon(item.city, item.district) : 0;
-        const effectiveExistingLoanWon = criteria.existingLoanWon + roomDeductionWon;
+          roomDeductionTarget !== "none" ? getRoomDeductionWon(item.city, item.district) : 0;
         const requiredEquity = policy
           ? requiredEquityForItem(
               item.minPrice,
               item.appraisedValue,
               policy,
               criteria.annualIncomeWon ?? undefined,
-              effectiveExistingLoanWon,
+              criteria.existingLoanWon,
               incomeLoanMultiplier,
+              roomDeductionWon,
+              roomDeductionTarget,
             )
           : item.minPrice;
         if (policy) {
@@ -231,6 +238,7 @@ export class RecommendationEngineService {
             existingLoanWon: criteria.existingLoanWon,
             loanUnavailable: policy.loanUnavailable,
             roomDeductionWon,
+            roomDeductionTarget,
           };
         }
         const estimatedProfit = policy
@@ -244,7 +252,9 @@ export class RecommendationEngineService {
                 criteria.annualIncomeWon != null
                   ? Math.max(0, criteria.annualIncomeWon) * incomeLoanMultiplier
                   : null,
-              existingLoanWon: effectiveExistingLoanWon,
+              existingLoanWon: criteria.existingLoanWon,
+              roomDeductionWon,
+              roomDeductionTarget,
               housingCount: criteria.housingCount,
               regulatedArea: regulated,
             }).finalProfit

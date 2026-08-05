@@ -70,7 +70,7 @@ export interface LoanPolicyLike {
   regulatedArea: boolean;
   loanUnavailable: boolean;
   businessLoanOnly: boolean;
-  roomDeductionEnabled?: boolean;
+  roomDeductionTarget?: RoomDeductionTarget;
 }
 
 /** 수도권(서울·경기·인천) 여부. 시/도 명 앞부분으로 판정한다. */
@@ -126,10 +126,18 @@ export function selectLoanPolicy(
   return byId("unregulated_owner");
 }
 
+/** 방공제(방빼기) 적용 대상. "none"이면 미적용. */
+export type RoomDeductionTarget = "none" | "appraisal" | "bid" | "both";
+
 /**
  * 감정가×감정가비율, 낙찰가(최저가)×낙찰가비율, 연소득×소득배수(소득 기준 상한) 중
  * 가장 낮은 금액이 대출 정책·감정 기준 한도다. 대출 불가 정책이면 한도 0.
  * 소득 정보가 없으면(annualIncomeWon undefined) 소득 기준은 적용하지 않는다.
+ *
+ * 방공제는 min을 구한 뒤 결과에서 빼는 게 아니라, 적용 대상으로 지정된
+ * 기준 금액(감정가 기준·낙찰가 기준 또는 둘 다)에서 먼저 차감한 뒤 그
+ * 값들 중 최저가를 최종 한도로 삼는다(사용자 요청, 2026-08-05: "감정가면
+ * 감정가60%-방빼기 와 낙찰가80% 중 낮은 금액이 최종 대출 금액").
  */
 export function maxLoanAmount(
   minPrice: number,
@@ -137,11 +145,17 @@ export function maxLoanAmount(
   policy: Pick<LoanPolicyLike, "loanRatio" | "appraisalRatio" | "loanUnavailable">,
   annualIncomeWon?: number,
   incomeLoanMultiplier?: number,
+  roomDeductionWon = 0,
+  roomDeductionTarget: RoomDeductionTarget = "none",
 ): number {
   if (policy.loanUnavailable) return 0;
   if (!minPrice || minPrice <= 0) return 0;
-  const byMinPrice = minPrice * policy.loanRatio;
-  const byAppraisal = appraisedValue > 0 ? appraisedValue * policy.appraisalRatio : Infinity;
+  let byMinPrice = minPrice * policy.loanRatio;
+  let byAppraisal = appraisedValue > 0 ? appraisedValue * policy.appraisalRatio : Infinity;
+  if (roomDeductionWon > 0) {
+    if (roomDeductionTarget === "bid" || roomDeductionTarget === "both") byMinPrice -= roomDeductionWon;
+    if (roomDeductionTarget === "appraisal" || roomDeductionTarget === "both") byAppraisal -= roomDeductionWon;
+  }
   // 0원(소득없음)도 유효한 입력이라 그대로 반영한다. 소득 정보 자체가 없을
   // 때(undefined/null)만 소득 기준을 적용하지 않는다.
   const byIncome =
@@ -160,9 +174,19 @@ export function requiredEquityForItem(
   annualIncomeWon?: number,
   existingLoanWon?: number,
   incomeLoanMultiplier?: number,
+  roomDeductionWon = 0,
+  roomDeductionTarget: RoomDeductionTarget = "none",
 ): number {
   if (!minPrice || minPrice <= 0) return 0;
-  const loanLimit = maxLoanAmount(minPrice, appraisedValue, policy, annualIncomeWon, incomeLoanMultiplier);
+  const loanLimit = maxLoanAmount(
+    minPrice,
+    appraisedValue,
+    policy,
+    annualIncomeWon,
+    incomeLoanMultiplier,
+    roomDeductionWon,
+    roomDeductionTarget,
+  );
   const availableLoan = Math.max(0, loanLimit - (existingLoanWon ?? 0));
   return Math.max(0, minPrice - availableLoan);
 }

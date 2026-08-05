@@ -29,18 +29,22 @@ export class LoanPolicyController {
       loanRatio?: number;
       appraisalRatio?: number;
       loanUnavailable?: boolean;
-      roomDeductionEnabled?: boolean;
+      roomDeductionTarget?: string;
     },
   ) {
     requireAdmin(getAuthContext(headers));
     const loanUnavailable = Boolean(body.loanUnavailable);
-    const roomDeductionEnabled = Boolean(body.roomDeductionEnabled);
+    const roomDeductionTarget: "none" | "appraisal" | "bid" | "both" = (
+      ["none", "appraisal", "bid", "both"] as const
+    ).includes(body.roomDeductionTarget as "none")
+      ? (body.roomDeductionTarget as "none" | "appraisal" | "bid" | "both")
+      : "none";
     if (loanUnavailable) {
       return this.loanPolicyService.updatePolicy(id, {
         loanRatio: 0,
         appraisalRatio: 0,
         loanUnavailable: true,
-        roomDeductionEnabled,
+        roomDeductionTarget,
       });
     }
     const loanRatio = Number(body.loanRatio);
@@ -55,7 +59,7 @@ export class LoanPolicyController {
       loanRatio,
       appraisalRatio,
       loanUnavailable: false,
-      roomDeductionEnabled,
+      roomDeductionTarget,
     });
   }
 
