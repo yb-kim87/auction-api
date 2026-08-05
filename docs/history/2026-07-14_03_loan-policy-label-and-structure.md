@@ -133,3 +133,40 @@
   공백까지 메우지는 않았다 — "최소 필요자금"/"추정 수익"의 1차 소스인
   `loanInfoByItemId.requiredEquity`는 모든 화면에서 이미 서버 계산값이라
   방공제가 정상 반영된다.
+
+## 追記 (2026-08-05) — 방공제 계산 방식 정정(최종 min 이후 차감 → 적용 대상 기준금액 차감)
+
+사용자 피드백: "차감되는 로직에 대해서 수정할께 있어. 감정가 60% 낙찰가
+80% 중에 낮은게 기본로직인데, 방공제 적용항목이 감정가면 감정가 60% -
+방빼기 = 나온 금액과 낙찰가 80% 중 낮은 금액이 최종 대출 금액이 나오도록
+해줘. 만약에 낙찰가로 적용하면 감정가 60% 낙찰가 80% - 방공제 두 금액 중
+낮은거. 둘다면 둘다 방공제를 뺀 결과 중에 낮은 금액이 대출 금액으로
+나오도록." 이어서 "방공제가 체크박스가 아니라 드롭박스로 감정가/낙찰가/
+둘다/미적용 이렇게 선택해서 적용되게 해줘, 기본은 미적용."
+
+바로 위 항목(같은 날 최초 구현)에서는 방공제 금액을 `existingLoanWon`
+(기존대출)에 합산해 **min(감정가 기준, 낙찰가 기준) 결과가 나온 뒤에**
+일괄 차감했는데, 이는 사용자가 원한 계산과 다르다(예: 감정가 기준에만
+방공제가 적용돼야 하는데 낙찰가 기준이 이미 더 낮아서 min으로 뽑혔다면
+방공제가 반영되면 안 됨). 아래처럼 정정:
+
+- `loan_policies.roomDeductionEnabled`(boolean) →
+  `roomDeductionTarget`(text: `"none"|"appraisal"|"bid"|"both"`, 기본
+  `"none"`)로 마이그레이션(`1784279000000-ChangeLoanPolicyRoomDeductionToTarget`,
+  기존 `true`였던 정책은 `"both"`로 이관).
+- `investment-math.util.ts`의 `maxLoanAmount`/`requiredEquityForItem`,
+  `profit-calculator.util.ts`(백엔드)와 `profit-calculator.ts`(프론트)의
+  `calculateProfit`/`estimateDefaultProfit`에 각각
+  `roomDeductionWon`/`roomDeductionTarget` 파라미터 추가 — **min을 구하기
+  전에** 지정된 기준(`appraisal`이면 감정가×비율, `bid`면 낙찰가×비율,
+  `both`면 둘 다)에서 방공제를 먼저 뺀 뒤 그 값들 중 최저가를 최종
+  대출한도로 삼는다. 기존대출(`existingLoanWon`) 차감은 지금처럼 최종
+  min 결과에서 그대로 이루어진다(방공제와 계산 시점이 다름).
+- `LoanPolicyTab.tsx`: 체크박스 → `<select>`(미적용/감정가/낙찰가/둘다)로
+  변경.
+- `RecommendCard.tsx`: `LoanInfo`에 `roomDeductionWon`/`roomDeductionTarget`
+  둘 다 추가해 "추정 수익" 재계산 시 `existingLoanWon`에 합산하던 임시
+  방식을 걷어내고 정식 파라미터로 전달.
+- `page.tsx`: `AuctionDetailModal`에 넘기던 `existingLoanWon`에 방공제를
+  합산했던 임시 코드를 되돌림(방공제 표시 라벨이 "기존대출"로 잘못
+  뜨는 문제도 함께 제거).
