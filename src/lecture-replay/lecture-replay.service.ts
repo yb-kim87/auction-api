@@ -20,6 +20,15 @@ const PLAY_URL_TTL_SECONDS = 6 * 60 * 60;
 /** 관리자 "90일 권한 부여" 빠른 버튼의 기본 수강 기간. */
 const DEFAULT_ENROLLMENT_DAYS = 90;
 
+/** OT 강의는 신규 OT수강생뿐 아니라 기존 유료 수강생에게도 공통 제공한다.
+ * 일반 회원(member)에게는 자동 공개하지 않고, 일반 강의는 계속 개별
+ * 수강권이 있어야 시청할 수 있다. */
+function canAccessOtContent(role: UserRole | undefined): boolean {
+  return role === UserRole.OT_STUDENT ||
+    role === UserRole.STUDENT ||
+    role === UserRole.CONSULTING_STUDENT;
+}
+
 @Injectable()
 export class LectureReplayService {
   constructor(
@@ -490,16 +499,15 @@ export class LectureReplayService {
       };
     });
 
-    // OT수강생은 개별 수강권 없이도 "OT강의"로 지정된 공개 강의 전체를,
-    // 또는 OT강의로 지정되진 않았지만 "OT영상"으로 지정된 영상이 하나라도
-    // 있는 공개 강의를 자동으로 볼 수 있다. 관리자는 모든 강의를(비공개
-    // 포함, 관리 목적) 자동으로 볼 수 있다(2026-08-02). 이미 개별 수강권이
-    // 있는 강의는 중복 표시하지 않는다.
+    // OT수강생과 기존 수강생은 개별 수강권 없이도 "OT강의"로 지정된 공개
+    // 강의 전체를, 또는 OT영상이 하나라도 있는 공개 강의를 자동으로 볼 수
+    // 있다. 관리자는 모든 강의를(비공개 포함, 관리 목적) 자동으로 볼 수
+    // 있다. 이미 개별 수강권이 있는 강의는 중복 표시하지 않는다.
     const user = await this.usersService.findByUsername(username);
     let autoCourses: Course[] = [];
     if (user?.role === UserRole.ADMIN) {
       autoCourses = await this.courseRepo.find({ order: { createdAt: "DESC" } });
-    } else if (user?.role === UserRole.OT_STUDENT) {
+    } else if (canAccessOtContent(user?.role)) {
       const publishedCourses = await this.courseRepo.find({ where: { isPublished: true } });
       for (const course of publishedCourses) {
         if (course.isOtCourse || (await this.courseHasOtVideo(course.id))) {
@@ -575,7 +583,7 @@ export class LectureReplayService {
     const user = await this.usersService.findByUsername(username);
     if (user?.role === UserRole.ADMIN) return "full";
 
-    if (user?.role === UserRole.OT_STUDENT) {
+    if (canAccessOtContent(user?.role)) {
       const course = await this.courseRepo.findOne({ where: { id: courseId } });
       if (course?.isOtCourse && course.isPublished) return "full";
       if (await this.courseHasOtVideo(courseId)) return "ot-videos-only";

@@ -968,3 +968,22 @@ WebSearch/WebFetch로 Bunny 공식 문서를 재확인한 결과:
 ### 검증
 각 구현 시 프론트와 API 타입 검사를 통과했고 관련 커밋을 양쪽 `main`에
 반영했다.
+
+## 追記 (2026-08-05) — 기존 수강생의 공개 OT 강의 자동 접근
+
+기존 `student` 및 `consulting_student` 등급도 OT 강의를 볼 수 있게 해달라는
+요청에 따라, OT 콘텐츠의 자동 접근 대상을 `ot_student`만이 아니라 세 등급으로
+확장했다.
+
+- 공개된 `isOtCourse` 강의는 세 등급 모두 개별 수강권 없이 전체 시청 가능.
+- 일반 강의 안의 공개 `isOtVideo`는 세 등급 모두 시청 가능하며, 나머지
+  영상은 개별 수강권이 없으면 계속 잠김 상태로 유지.
+- 일반 회원(`member`)에게는 자동 공개하지 않고, 일반 강의의 개별 수강권
+  및 기간/해지 판정도 기존과 동일하게 유지.
+- 목록 생성(`listMyCourses`)과 실제 재생 권한 판정(`getAccessMode`)이 같은
+  `canAccessOtContent()` 기준을 사용하도록 해 목록과 재생 권한이 달라지지
+  않게 했다.
+
+### 변경 파일 및 검증
+`auction-api/src/lecture-replay/lecture-replay.service.ts`.
+`npx tsc --noEmit` 통과.
