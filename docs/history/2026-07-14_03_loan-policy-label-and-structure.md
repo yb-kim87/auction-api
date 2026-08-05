@@ -96,3 +96,40 @@
 ### 결과
 - 여러 정책의 감정가/낙찰가 비율을 동시에 수정한 뒤 버튼 한 번으로 일괄 저장 가능
 - 변경하지 않은 정책은 저장 요청에 포함되지 않아 불필요한 API 호출 없음
+
+## 追記 (2026-08-05) — 방빼기(방공제) 적용 여부 추가
+
+사용자 요청: "대출정책관리를 통해 회원에게 대출가를 보여주고 있는데 여기서
+하나 추가를 했으면 좋겠어 방뺴기(방공제) 적용 여부를 체크박스 할 수 있게
+해주고, 방공제 적용은 지역별로 데이터를 적용해주면 될꺼같아." 이어서
+체크박스는 정책 7줄에 각각(대출불가 우측), 기준표는 최신판(2023.2.21
+개정)으로 통일 적용하기로 확인.
+
+- `auction-api`: `loan_policies`에 `roomDeductionEnabled`(boolean) 컬럼
+  추가(마이그레이션 `1784278000000-AddLoanPolicyRoomDeduction`).
+  `src/recommendation/room-deduction.util.ts`(신규) — 시/도·시군구 문자열로
+  서울/과밀억제권역(서울 제외)/광역시 등(+안산·용인·김포·경기광주)/그 밖의
+  지역 4단계를 판정해 최우선변제금액(5,500만/4,800만/2,800만/2,500만원)을
+  반환. `investment-math.util.ts`의 `LoanPolicyLike`에
+  `roomDeductionEnabled?` 추가. `recommendation-engine.service.ts`에서
+  정책이 켜져 있으면 물건 소재지 기준 방공제 금액을 계산해 기존
+  `existingLoanWon`(기존대출 차감)에 합산 — 대출한도에서 고정 금액을 빼는
+  효과가 동일해 별도 계산 경로를 새로 만들지 않았다. 응답
+  `loanInfoByItemId`에 `roomDeductionWon` 필드 추가.
+- `auction`: `LoanPolicyTab.tsx` 테이블에 "대출불가" 오른쪽에 "방공제"
+  체크박스 열 추가, 행 설명에 적용 여부 표시. `RecommendCard.tsx`의
+  `LoanInfo`에 `roomDeductionWon` 추가해 카드 내 "추정 수익" 재계산에도
+  반영(최소 필요자금은 이미 서버 계산값을 그대로 쓰므로 자동 반영).
+  `AuctionDetailModal`에 넘기는 `existingLoanWon`에도 합산해 상세
+  모달 내부 계산과도 어긋나지 않게 함.
+
+### 한계
+- 방공제는 실제 임차인 보증금과 무관하게 지역별 최우선변제금액 "1건"을
+  고정 차감하는 실무 관행을 그대로 구현한 것으로, 담보(근저당) 설정일자별
+  세분화된 법정 기준표(여러 차례 개정)는 적용하지 않고 최신판으로 통일했다
+  (사용자 확인 완료).
+- `search/page.tsx`(전체 검색) 등 일부 화면은 원래 `existingLoanWon`을
+  `AuctionDetailModal`에 넘기지 않고 있었는데, 이번 작업에서 그 기존
+  공백까지 메우지는 않았다 — "최소 필요자금"/"추정 수익"의 1차 소스인
+  `loanInfoByItemId.requiredEquity`는 모든 화면에서 이미 서버 계산값이라
+  방공제가 정상 반영된다.
