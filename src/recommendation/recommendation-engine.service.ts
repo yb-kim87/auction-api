@@ -20,6 +20,7 @@ import {
   type ProgressStatus,
 } from "./investment-math.util";
 import { estimateDefaultProfit } from "./profit-calculator.util";
+import { getRoomDeductionWon } from "./room-deduction.util";
 
 const PRICE_MERIT_TAG = "가격메리트검토";
 
@@ -115,6 +116,7 @@ export class RecommendationEngineService {
         incomeLoanLimit: number | null;
         existingLoanWon: number;
         loanUnavailable: boolean;
+        roomDeductionWon: number;
       }
     >;
     total: number;
@@ -186,6 +188,7 @@ export class RecommendationEngineService {
         incomeLoanLimit: number | null;
         existingLoanWon: number;
         loanUnavailable: boolean;
+        roomDeductionWon: number;
       }
     > = {};
     const affordable = auctions
@@ -196,13 +199,20 @@ export class RecommendationEngineService {
           city: item.city,
           officialLandPrice: item.officialLandPrice,
         });
+        // 방공제(방빼기) — 실제 임차인 유무와 무관하게 지역 기준 최우선변제금액을
+        // 대출한도에서 미리 차감한다. existingLoanWon(기존 대출)과 계산 효과가
+        // 동일해(둘 다 대출한도에서 그만큼 빼는 것) 별도 파라미터를 새로 만들지
+        // 않고 existingLoanWon에 합산한다.
+        const roomDeductionWon =
+          policy?.roomDeductionEnabled ? getRoomDeductionWon(item.city, item.district) : 0;
+        const effectiveExistingLoanWon = criteria.existingLoanWon + roomDeductionWon;
         const requiredEquity = policy
           ? requiredEquityForItem(
               item.minPrice,
               item.appraisedValue,
               policy,
               criteria.annualIncomeWon ?? undefined,
-              criteria.existingLoanWon,
+              effectiveExistingLoanWon,
               incomeLoanMultiplier,
             )
           : item.minPrice;
@@ -220,6 +230,7 @@ export class RecommendationEngineService {
             incomeLoanLimit,
             existingLoanWon: criteria.existingLoanWon,
             loanUnavailable: policy.loanUnavailable,
+            roomDeductionWon,
           };
         }
         const estimatedProfit = policy
@@ -233,7 +244,7 @@ export class RecommendationEngineService {
                 criteria.annualIncomeWon != null
                   ? Math.max(0, criteria.annualIncomeWon) * incomeLoanMultiplier
                   : null,
-              existingLoanWon: criteria.existingLoanWon,
+              existingLoanWon: effectiveExistingLoanWon,
               housingCount: criteria.housingCount,
               regulatedArea: regulated,
             }).finalProfit

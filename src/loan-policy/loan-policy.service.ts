@@ -20,6 +20,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: true,
     loanUnavailable: false,
     businessLoanOnly: false,
+    roomDeductionEnabled: false,
     sortOrder: 0,
   },
   {
@@ -30,6 +31,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: true,
     loanUnavailable: false,
     businessLoanOnly: false,
+    roomDeductionEnabled: false,
     sortOrder: 1,
   },
   {
@@ -40,6 +42,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: true,
     loanUnavailable: true,
     businessLoanOnly: false,
+    roomDeductionEnabled: false,
     sortOrder: 2,
   },
   {
@@ -50,6 +53,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: false,
     loanUnavailable: false,
     businessLoanOnly: false,
+    roomDeductionEnabled: false,
     sortOrder: 3,
   },
   {
@@ -60,6 +64,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: false,
     loanUnavailable: false,
     businessLoanOnly: false,
+    roomDeductionEnabled: false,
     sortOrder: 4,
   },
   {
@@ -70,6 +75,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: false,
     loanUnavailable: false,
     businessLoanOnly: true,
+    roomDeductionEnabled: false,
     sortOrder: 5,
   },
   {
@@ -80,6 +86,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     regulatedArea: false,
     loanUnavailable: false,
     businessLoanOnly: false,
+    roomDeductionEnabled: false,
     sortOrder: 6,
   },
 ];
@@ -123,7 +130,7 @@ export class LoanPolicyService implements OnModuleInit {
 
   async updatePolicy(
     id: string,
-    input: { loanRatio: number; appraisalRatio: number; loanUnavailable: boolean },
+    input: { loanRatio: number; appraisalRatio: number; loanUnavailable: boolean; roomDeductionEnabled?: boolean },
   ) {
     const policy = await this.loanPolicyRepo.findOne({ where: { id } });
     if (!policy) {
@@ -132,6 +139,7 @@ export class LoanPolicyService implements OnModuleInit {
     policy.loanRatio = input.loanRatio;
     policy.appraisalRatio = input.appraisalRatio;
     policy.loanUnavailable = input.loanUnavailable;
+    if (input.roomDeductionEnabled !== undefined) policy.roomDeductionEnabled = input.roomDeductionEnabled;
     return this.loanPolicyRepo.save(policy);
   }
 

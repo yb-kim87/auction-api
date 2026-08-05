@@ -31,6 +31,11 @@ export class LoanPolicy {
   @Column({ type: "boolean", default: false })
   businessLoanOnly!: boolean;
 
+  /** 방빼기(방공제) 적용 여부 — 켜면 물건 소재지 기준 최우선변제금액을
+   * 대출한도에서 차감한다(사용자 요청, 2026-08-05). */
+  @Column({ type: "boolean", default: false })
+  roomDeductionEnabled!: boolean;
+
   @Column({ type: "integer", default: 0 })
   sortOrder!: number;
 }

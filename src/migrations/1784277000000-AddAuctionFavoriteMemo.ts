@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddAuctionFavoriteMemo1784276000000 implements MigrationInterface {
-  name = "AddAuctionFavoriteMemo1784276000000";
+export class AddAuctionFavoriteMemo1784277000000 implements MigrationInterface {
+  name = "AddAuctionFavoriteMemo1784277000000";
 
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

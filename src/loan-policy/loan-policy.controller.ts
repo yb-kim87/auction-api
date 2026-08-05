@@ -24,15 +24,23 @@ export class LoanPolicyController {
   async updatePolicy(
     @Headers() headers: Record<string, string>,
     @Param("id") id: string,
-    @Body() body: { loanRatio?: number; appraisalRatio?: number; loanUnavailable?: boolean },
+    @Body()
+    body: {
+      loanRatio?: number;
+      appraisalRatio?: number;
+      loanUnavailable?: boolean;
+      roomDeductionEnabled?: boolean;
+    },
   ) {
     requireAdmin(getAuthContext(headers));
     const loanUnavailable = Boolean(body.loanUnavailable);
+    const roomDeductionEnabled = Boolean(body.roomDeductionEnabled);
     if (loanUnavailable) {
       return this.loanPolicyService.updatePolicy(id, {
         loanRatio: 0,
         appraisalRatio: 0,
         loanUnavailable: true,
+        roomDeductionEnabled,
       });
     }
     const loanRatio = Number(body.loanRatio);
@@ -47,6 +55,7 @@ export class LoanPolicyController {
       loanRatio,
       appraisalRatio,
       loanUnavailable: false,
+      roomDeductionEnabled,
     });
   }
 

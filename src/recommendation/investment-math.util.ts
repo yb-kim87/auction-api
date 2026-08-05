@@ -70,6 +70,7 @@ export interface LoanPolicyLike {
   regulatedArea: boolean;
   loanUnavailable: boolean;
   businessLoanOnly: boolean;
+  roomDeductionEnabled?: boolean;
 }
 
 /** 수도권(서울·경기·인천) 여부. 시/도 명 앞부분으로 판정한다. */
