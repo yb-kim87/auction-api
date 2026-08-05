@@ -73,6 +73,13 @@ export class RedevelopmentZone {
   @Column({ type: "text", nullable: true })
   referenceImageUrl!: string | null;
 
+  /** 고시 면적(㎡). 원 근사 반지름 계산에도 쓰지만, 이미지에서 자동 추출한
+   * 경계가 제대로 잡혔는지 검증하는 기준으로도 쓴다 — 보정된 폴리곤의
+   * 실제 면적이 이 값과 크게 다르면 기준점을 잘못 찍은 것이다
+   * (사용자 요청, 2026-08-05: 이미지 인식 + 배율 일치화). */
+  @Column({ type: "real", nullable: true })
+  areaSqMeters!: number | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

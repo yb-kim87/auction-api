@@ -163,6 +163,7 @@ export class RedevelopmentService {
       sourceKey?: string;
       asOfDate?: string | null;
       referenceImageUrl?: string | null;
+      areaSqMeters?: number | null;
     }>,
   ) {
     let created = 0;
@@ -203,6 +204,7 @@ export class RedevelopmentService {
           existing.boundaryType = (item.boundaryType as RedevelopmentZone["boundaryType"]) ?? existing.boundaryType;
           existing.asOfDate = item.asOfDate ?? existing.asOfDate;
           existing.referenceImageUrl = item.referenceImageUrl ?? existing.referenceImageUrl;
+          existing.areaSqMeters = item.areaSqMeters ?? existing.areaSqMeters;
           existing.lastAutoSyncedAt = new Date();
           await this.zoneRepo.save(existing);
           updated += 1;
@@ -218,6 +220,7 @@ export class RedevelopmentService {
             sourceKey,
             asOfDate: item.asOfDate ?? null,
             referenceImageUrl: item.referenceImageUrl ?? null,
+            areaSqMeters: item.areaSqMeters ?? null,
             boundaryType: (item.boundaryType as RedevelopmentZone["boundaryType"]) ?? "CONVEX_HULL_APPROX",
             lastAutoSyncedAt: new Date(),
           });

@@ -93,6 +93,7 @@ export class RedevelopmentController {
         sourceKey?: string;
         asOfDate?: string | null;
         referenceImageUrl?: string | null;
+        areaSqMeters?: number | null;
       }>;
     },
   ) {
