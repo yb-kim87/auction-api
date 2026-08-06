@@ -485,3 +485,54 @@ naverPrice/education/실거래가/factTags 등은 애초에 탱크옥션이 아�
   나서 바로 대량 실행하지 않고 소수 건으로 먼저 검증할 것(2026-08-06
   주택공시가격 임포트 사고 — 사전 소규모 검증 없이 대량 작업을 바로
   돌려 운영 DB 다운 사고가 났던 교훈).
+
+## 追記 (2026-08-07, 2차) — 파일럿 검증 성공(실제 1건 저장 확인)
+
+### 매핑 모듈 신설
+`crawler/nice_map_to_raw.py` — 나이스 obj → `mapCrawledItem` 계약(raw
+필드) 변환. 실측 확인한 필드: `court.courtNm`(법원), `soyujaNm`(소유자),
+`addrNoPrivacy`(주소), `gamjungAmt`/`minAmt`/`maegakAmt`(감정가/최저가/
+매각가), `saYear`+`saNo`(사건번호), `dspslDxdyYmd`(매각기일),
+`tojiArea`/`bldgArea`(면적), `pnuCd`(19자리 PNU).
+
+**주의(불확실한 필드)**: 나이스는 "아파트/오피스텔/연립" 같은 깔끔한
+용도 텍스트를 안 준다(`yejungYongdoNm`="집합건물"처럼 법적 분류만).
+`aptTradePriceLst`/`rhouseTradePriceLst`/`officetelTradePriceLst` 중
+어느 게 채워졌는지로 추정하는 휴리스틱을 썼다 — 검증된 샘플(아파트
+1건)에서는 정확했으나 일반화 검증은 안 됐다. 실거래가 리스트가 전부
+비어있으면 건물명 텍스트 키워드로 폴백.
+
+### nice_client.py 헤더 갱신
+기존 DEFAULT_HEADERS(sec-ch-ua 3종)는 2026-07-30 실측상 12건 한도에
+여전히 걸렸던 수준이었다. 2026-08-06 100건 성공 검증에 썼던 전체
+헤더셋(Sec-Fetch-*, Priority, GA 쿠키)과 http2=True로 교체.
+`requirements-v3.txt`에 `h2` 추가.
+
+### 파일럿 워커 신설
+`crawler/nice_worker.py` — 상시 폴링 데몬이 아니라 **objId를 직접
+지정해 소수 건만 검증하는 스크립트**(1차 범위, 사용자 요청: "문제가
+안 나올 때까지 점검하면서 점점 옮겨갈 것" — 대량 자동화 전 단계).
+`--dry-run`으로 매핑 결과만 미리보기, 실제 실행 시
+`/nice-crawler/import-item`으로 저장.
+
+### 버그 발견/수정: 링크 검증이 나이스를 전부 막고 있었음
+저장 파이프라인(`mapCrawledItem`/`importCrawledItem`)을 그대로
+재사용하도록 설계했는데, `isValidTankAuctionLink`가
+`tankauction.com` 도메인만 허용해 나이스 링크가 전부
+`invalid_link`로 스킵됐다(파일럿 1건째 시도에서 발견). 탱크 판정
+로직은 그대로 두고 `niceauction.co.kr/auction/detail/{objId}`
+패턴을 추가로 허용하도록 수정.
+
+### 검증 결과
+objId `1965189097446179694`(강원 원주지원, 2025타경20905, 아파트) 1건을
+실제로 운영 DB에 저장 — `created: true`, `city`/`district`/`propType`
+자동 분류·`factTags`(["아파트","지방","3룸"]) 자동 태깅까지 탱크옥션
+크롤 물건과 동일하게 정상 동작 확인.
+
+### 다음 단계
+- 상시 폴링 데몬(`/nice-crawler/status`의 running 플래그를 보고 사이트맵
+  자동 수집 → 순차 저장)은 이 파일럿이 충분히 검증된 뒤 진행.
+- `usage` 추정 휴리스틱을 오피스텔·연립·상가 등 다른 유형으로도 검증 필요.
+- `appraiser`(감정평가사)·`unpaidFeeAmount`(미납관리비, 애초에 안 됨)·
+  `officialLandPrice`(공시가)는 아직 매핑 안 함 — 로 남겨두는 게 맞는지
+  나이스 응답에서 별도 확인 필요.
