@@ -91,7 +91,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
   },
   {
     id: "low_price_nonmetro_apartment",
-    label: "비수도권 공시가 2억 이하 아파트(주택수 무관)",
+    label: "비수도권 공시가 2억 이하 주택(아파트·빌라 등, 주택수 무관)",
     loanRatio: 0.9,
     appraisalRatio: 0.8,
     regulatedArea: false,

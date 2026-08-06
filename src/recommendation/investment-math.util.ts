@@ -82,9 +82,10 @@ export function isMetropolitanArea(city: string | null | undefined): boolean {
 const LOW_PRICE_NONMETRO_THRESHOLD_WON = 200_000_000;
 
 /**
- * 오피스텔 또는 지방 아파트 공시가 2억 이하인지 여부.
+ * 오피스텔 또는 비수도권 공시가 2억 이하 주택인지 여부.
  * - 오피스텔: 공시가와 관계없이 특례 대출정책을 적용한다.
- * - 지방 아파트: 비수도권이면서 공시가가 2억 이하일 때만 특례를 적용한다.
+ * - 저가 주택: 비수도권의 아파트·다세대·연립·도시형생활주택이면서
+ *   공시가가 2억 이하일 때만 특례를 적용한다.
  * 해당하면 주택수·규제지역과 무관하게 특례 정책이 최우선 적용된다.
  */
 export function isOfficetelOrLowPriceNonMetro(item: {
@@ -92,21 +93,25 @@ export function isOfficetelOrLowPriceNonMetro(item: {
   city?: string | null;
   officialLandPrice?: number | null;
 }): boolean {
-  return isOfficetel(item) || isLowPriceNonMetroApartment(item);
+  return isOfficetel(item) || isLowPriceNonMetroHome(item);
 }
 
 export function isOfficetel(item: { usage?: string | null }): boolean {
   return (item.usage ?? "").includes("오피스텔");
 }
 
-export function isLowPriceNonMetroApartment(item: {
+export function isLowPriceNonMetroHome(item: {
   usage?: string | null;
   city?: string | null;
   officialLandPrice?: number | null;
 }): boolean {
   const officialLandPrice = item.officialLandPrice ?? 0;
+  const usage = item.usage ?? "";
+  const isEligibleHome = ["아파트", "다세대", "연립", "도시형생활주택", "도시형 생활주택"].some((type) =>
+    usage.includes(type),
+  );
   return (
-    (item.usage ?? "").includes("아파트") &&
+    isEligibleHome &&
     !isMetropolitanArea(item.city) &&
     officialLandPrice > 0 &&
     officialLandPrice <= LOW_PRICE_NONMETRO_THRESHOLD_WON
@@ -115,7 +120,7 @@ export function isLowPriceNonMetroApartment(item: {
 
 /**
  * 회원정보(주택수·생애최초 여부)와 물건의 규제지역 여부로 적용할 대출 정책을 선택한다.
- * - 오피스텔 또는 지방 아파트 공시가 2억 이하 물건은 주택수·규제지역 무관하게 최우선 적용.
+ * - 오피스텔 또는 비수도권 공시가 2억 이하 주택(아파트·빌라 등)은 주택수·규제지역 무관하게 최우선 적용.
  * - 규제지역: 무주택만 대출 가능(감정가 비율만 적용, 생애최초/일반 구분), 1주택 이상은 불가.
  * - 비규제지역: 무주택 일반/생애최초/1주택 이상(사업자대출)로 구분.
  */
@@ -130,9 +135,9 @@ export function selectLoanPolicy(
     const officetel = byId("officetel");
     if (officetel) return officetel;
   }
-  if (item && isLowPriceNonMetroApartment(item)) {
-    const lowPriceApartment = byId("low_price_nonmetro_apartment");
-    if (lowPriceApartment) return lowPriceApartment;
+  if (item && isLowPriceNonMetroHome(item)) {
+    const lowPriceHome = byId("low_price_nonmetro_apartment");
+    if (lowPriceHome) return lowPriceHome;
   }
   if (regulatedArea) {
     if (criteria.housingCount > 0) return byId("regulated_owner");
