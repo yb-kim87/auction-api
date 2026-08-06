@@ -29,6 +29,13 @@ function buildPublicApiOrigins(): string[] {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // SIGTERM/SIGINT 수신 시 TypeORM 커넥션을 정상 종료한다. sql.js(로컬 개발 DB)는
+  // 비동기 autoSave로 파일에 쓰는데, 강제 종료(kill -9, taskkill /F)로 프로세스가
+  // 즉시 죽으면 그 저장이 끝나기 전에 데이터가 날아간다 — 실제로 이 때문에 강의자료
+  // 편집 데이터가 반복적으로 초기화되는 문제를 겪었다(2026-07-24). 강제 종료 자체는
+  // 막을 수 없지만, 최소한 정상 종료 신호에는 안전하게 반응하도록 한다.
+  app.enableShutdownHooks();
+
   // /public/* 경로(랜딩페이지에서 인증 없이 호출하는 공개 API)는 아임웹 랜딩
   // 도메인만 허용하고, 그 외 전체 API는 화이트리스트+쿠키 인증을 유지한다.
   // Nest의 enableCors는 경로별 분기를 지원하지 않으므로 미들웨어를 먼저

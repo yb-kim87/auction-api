@@ -80,7 +80,7 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
   },
   {
     id: "officetel_or_low_price_nonmetro",
-    label: "오피스텔 · 비수도권 공시가 2억 이하(주택수 무관)",
+    label: "오피스텔 · 지방 아파트 공시가 2억 이하(주택수 무관)",
     loanRatio: 0.9,
     appraisalRatio: 0.8,
     regulatedArea: false,

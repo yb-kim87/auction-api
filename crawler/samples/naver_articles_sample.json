@@ -1,0 +1,1624 @@
+{
+  "isSuccess": true,
+  "detailCode": "success",
+  "message": "",
+  "result": {
+    "seed": "ebe5f4ad-a51a-472e-bf60-ac6a8da10993",
+    "lastInfo": [
+      1,
+      250000000,
+      490.76884297471486,
+      "2636132742"
+    ],
+    "hasNextPage": true,
+    "totalCount": 8,
+    "list": [
+      {
+        "representativeArticleInfo": {
+          "complexName": "장유경동리인하이스트",
+          "articleNumber": "2637371889",
+          "articleName": "장유경동리인하이스트",
+          "dongName": "105",
+          "tradeType": "A1",
+          "realEstateType": "A01",
+          "spaceInfo": {
+            "supplySpace": 95.31,
+            "contractSpace": 137.43,
+            "exclusiveSpace": 65.69,
+            "landSpace": 18805,
+            "floorSpace": 0,
+            "supplySpaceName": "95A",
+            "exclusiveSpaceName": "65.69A",
+            "nameType": "A"
+          },
+          "landInfo": {},
+          "buildingInfo": {
+            "buildingConjunctionDateType": "CDY01",
+            "buildingConjunctionDate": "20190529",
+            "approvalElapsedYear": 8
+          },
+          "verificationInfo": {
+            "verificationType": "OWNER",
+            "isAssociationArticle": false,
+            "exposureStartDate": "2026-07-11",
+            "articleConfirmDate": "2026-07-11"
+          },
+          "brokerInfo": {
+            "cpId": "bizmk",
+            "brokerageName": "경동부동산공인중개사사무소",
+            "brokerName": "매경부동산",
+            "cpOutLinkType": "CP_NAME"
+          },
+          "articleDetail": {
+            "direction": "WS",
+            "directionStandard": "거실 기준",
+            "articleFeatureDescription": "인기있는 타입, 엘레베이터 2대, 깨끗하고 관리 잘 된 집,",
+            "directTrade": false,
+            "floorInfo": "중/40",
+            "floorDetailInfo": {
+              "targetFloor": "중",
+              "totalFloor": "40",
+              "groundTotalFloor": "0",
+              "undergroundTotalFloor": "0",
+              "floorType": "20",
+              "residenceType": "1"
+            },
+            "isSafeLessorOfHug": false
+          },
+          "articleMediaDto": {
+            "imageCount": 0,
+            "isVrExposed": false,
+            "photos": []
+          },
+          "articleMedia": {
+            "imageCount": 0,
+            "isVrExposed": false,
+            "photos": []
+          },
+          "address": {
+            "city": "경상남도",
+            "division": "김해시",
+            "sector": "신문동",
+            "coordinates": {
+              "xCoordinate": 128.816447,
+              "yCoordinate": 35.196011
+            }
+          },
+          "priceInfo": {
+            "dealPrice": 245000000,
+            "warrantyPrice": 0,
+            "rentPrice": 0,
+            "managementFeeAmount": 200000,
+            "priceChangeStatus": 1,
+            "priceChangeHistories": [
+              {
+                "modifiedDate": "2026-07-11T10:08:29",
+                "dealPrice": 235000000
+              },
+              {
+                "modifiedDate": "2026-07-22T15:25:55",
+                "dealPrice": 245000000
+              }
+            ]
+          }
+        },
+        "duplicatedArticleInfo": {
+          "representativePriceInfo": {
+            "dealPrice": {
+              "minPrice": 245000000,
+              "maxPrice": 245000000
+            },
+            "warrantyPrice": {
+              "minPrice": 0,
+              "maxPrice": 0
+            },
+            "rentPrice": {
+              "minPrice": 0,
+              "maxPrice": 0
+            },
+            "premiumPrice": {
+              "minPrice": 0,
+              "maxPrice": 0
+            }
+          },
+          "realtorCount": 2,
+          "directTradeCount": 0,
+          "articleInfoList": [
+            {
+              "complexName": "장유경동리인하이스트",
+              "articleNumber": "2637371889",
+              "articleName": "장유경동리인하이스트",
+              "dongName": "105",
+              "tradeType": "A1",
+              "realEstateType": "A01",
+              "spaceInfo": {
+                "supplySpace": 95.31,
+                "contractSpace": 137.43,
+                "exclusiveSpace": 65.69,
+                "landSpace": 18805,
+                "floorSpace": 0,
+                "supplySpaceName": "95A",
+                "exclusiveSpaceName": "65.69A",
+                "nameType": "A"
+              },
+              "landInfo": {},
+              "buildingInfo": {
+                "buildingConjunctionDateType": "CDY01",
+                "buildingConjunctionDate": "20190529",
+                "approvalElapsedYear": 8
+              },
+              "verificationInfo": {
+                "verificationType": "OWNER",
+                "isAssociationArticle": false,
+                "exposureStartDate": "2026-07-11",
+                "articleConfirmDate": "2026-07-11"
+              },
+              "brokerInfo": {
+                "cpId": "bizmk",
+                "brokerageName": "경동부동산공인중개사사무소",
+                "brokerName": "매경부동산",
+                "cpOutLinkType": "CP_NAME"
+              },
+              "articleDetail": {
+                "direction": "WS",
+                "directionStandard": "거실 기준",
+                "articleFeatureDescription": "인기있는 타입, 엘레베이터 2대, 깨끗하고 관리 잘 된 집,",
+                "directTrade": false,
+                "floorInfo": "중/40",
+                "floorDetailInfo": {
+                  "targetFloor": "중",
+                  "totalFloor": "40",
+                  "groundTotalFloor": "0",
+                  "undergroundTotalFloor": "0",
+                  "floorType": "20",
+                  "residenceType": "1"
+                },
+                "isSafeLessorOfHug": false
+              },
+              "articleMediaDto": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "articleMedia": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "address": {
+                "city": "경상남도",
+                "division": "김해시",
+                "sector": "신문동",
+                "coordinates": {
+                  "xCoordinate": 128.816447,
+                  "yCoordinate": 35.196011
+                }
+              },
+              "priceInfo": {
+                "dealPrice": 245000000,
+                "warrantyPrice": 0,
+                "rentPrice": 0,
+                "managementFeeAmount": 200000,
+                "priceChangeStatus": 1,
+                "priceChangeHistories": [
+                  {
+                    "modifiedDate": "2026-07-11T10:08:29",
+                    "dealPrice": 235000000
+                  },
+                  {
+                    "modifiedDate": "2026-07-22T15:25:55",
+                    "dealPrice": 245000000
+                  }
+                ]
+              },
+              "haveFavorite": false
+            },
+            {
+              "complexName": "장유경동리인하이스트",
+              "articleNumber": "2635265277",
+              "articleName": "장유경동리인하이스트",
+              "dongName": "105",
+              "tradeType": "A1",
+              "realEstateType": "A01",
+              "spaceInfo": {
+                "supplySpace": 95.31,
+                "contractSpace": 137.43,
+                "exclusiveSpace": 65.69,
+                "landSpace": 18805,
+                "floorSpace": 0,
+                "supplySpaceName": "95A",
+                "exclusiveSpaceName": "65.69A",
+                "nameType": "A"
+              },
+              "landInfo": {},
+              "buildingInfo": {
+                "buildingConjunctionDateType": "CDY01",
+                "buildingConjunctionDate": "20190529",
+                "approvalElapsedYear": 8
+              },
+              "verificationInfo": {
+                "verificationType": "OWNER",
+                "isAssociationArticle": false,
+                "exposureStartDate": "2026-07-01",
+                "articleConfirmDate": "2026-07-01"
+              },
+              "brokerInfo": {
+                "cpId": "bizmk",
+                "brokerageName": "단지내경동리인뷰황소부동산중개사무소",
+                "brokerName": "매경부동산",
+                "cpOutLinkType": "CP_NAME"
+              },
+              "articleDetail": {
+                "direction": "ES",
+                "directionStandard": "거실 기준",
+                "articleFeatureDescription": "안정감있고 개방감 좋은 세대, 가격협의가능, 고속 엘레베이터 2대",
+                "directTrade": false,
+                "floorInfo": "중/40",
+                "floorDetailInfo": {
+                  "targetFloor": "중",
+                  "totalFloor": "40",
+                  "groundTotalFloor": "0",
+                  "undergroundTotalFloor": "0",
+                  "floorType": "20",
+                  "residenceType": "1"
+                },
+                "isSafeLessorOfHug": false
+              },
+              "articleMediaDto": {
+                "imageUrl": "https://landthumb-phinf.pstatic.net/20260701_224/1782865237664gCBTI_JPEG/2635265277_20260701092036024274.jpg",
+                "imageType": "10",
+                "imageCount": 10,
+                "isVrExposed": false,
+                "photos": [
+                  {
+                    "imageId": "2635265277@20260701092036024274",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_224/1782865237664gCBTI_JPEG/2635265277_20260701092036024274.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024285",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_34/1782865237665DnWzs_JPEG/2635265277_20260701092036024285.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024286",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_58/1782865237665cWyUq_JPEG/2635265277_20260701092036024286.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024287",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_260/1782865237664q7ue4_JPEG/2635265277_20260701092036024287.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024288",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_286/1782865237665F7WDT_JPEG/2635265277_20260701092036024288.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024289",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_126/1782865237665GxNTH_JPEG/2635265277_20260701092036024289.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024290",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_206/1782865237665CxsxL_JPEG/2635265277_20260701092036024290.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024291",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_240/1782865237668Qpynp_JPEG/2635265277_20260701092036024291.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024292",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_296/1782865237665IfYoQ_JPEG/2635265277_20260701092036024292.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024293",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_52/1782865237666h3J1m_JPEG/2635265277_20260701092036024293.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  }
+                ]
+              },
+              "articleMedia": {
+                "imageUrl": "https://landthumb-phinf.pstatic.net/20260701_224/1782865237664gCBTI_JPEG/2635265277_20260701092036024274.jpg",
+                "imageType": "10",
+                "imageCount": 10,
+                "isVrExposed": false,
+                "photos": [
+                  {
+                    "imageId": "2635265277@20260701092036024274",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_224/1782865237664gCBTI_JPEG/2635265277_20260701092036024274.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024285",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_34/1782865237665DnWzs_JPEG/2635265277_20260701092036024285.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024286",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_58/1782865237665cWyUq_JPEG/2635265277_20260701092036024286.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024287",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_260/1782865237664q7ue4_JPEG/2635265277_20260701092036024287.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024288",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_286/1782865237665F7WDT_JPEG/2635265277_20260701092036024288.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024289",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_126/1782865237665GxNTH_JPEG/2635265277_20260701092036024289.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024290",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_206/1782865237665CxsxL_JPEG/2635265277_20260701092036024290.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024291",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_240/1782865237668Qpynp_JPEG/2635265277_20260701092036024291.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024292",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_296/1782865237665IfYoQ_JPEG/2635265277_20260701092036024292.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2635265277@20260701092036024293",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260701_52/1782865237666h3J1m_JPEG/2635265277_20260701092036024293.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  }
+                ]
+              },
+              "address": {
+                "city": "경상남도",
+                "division": "김해시",
+                "sector": "신문동",
+                "coordinates": {
+                  "xCoordinate": 128.816447,
+                  "yCoordinate": 35.196011
+                }
+              },
+              "priceInfo": {
+                "dealPrice": 245000000,
+                "warrantyPrice": 0,
+                "rentPrice": 0,
+                "managementFeeAmount": 200000,
+                "priceChangeStatus": 0
+              },
+              "haveFavorite": false
+            }
+          ]
+        }
+      },
+      {
+        "representativeArticleInfo": {
+          "complexName": "장유경동리인하이스트",
+          "articleNumber": "2640061100",
+          "articleName": "장유경동리인하이스트",
+          "dongName": "105",
+          "tradeType": "A1",
+          "realEstateType": "A01",
+          "spaceInfo": {
+            "supplySpace": 95.31,
+            "contractSpace": 137.43,
+            "exclusiveSpace": 65.69,
+            "landSpace": 18805,
+            "floorSpace": 0,
+            "supplySpaceName": "95A",
+            "exclusiveSpaceName": "65.69A",
+            "nameType": "A"
+          },
+          "landInfo": {},
+          "buildingInfo": {
+            "buildingConjunctionDateType": "CDY01",
+            "buildingConjunctionDate": "20190529",
+            "approvalElapsedYear": 8
+          },
+          "verificationInfo": {
+            "verificationType": "OWNER",
+            "isAssociationArticle": false,
+            "exposureStartDate": "2026-07-25",
+            "articleConfirmDate": "2026-07-25"
+          },
+          "brokerInfo": {
+            "cpId": "bizmk",
+            "brokerageName": "단지내경동리인뷰황소부동산중개사무소",
+            "brokerName": "매경부동산",
+            "cpOutLinkType": "CP_NAME"
+          },
+          "articleDetail": {
+            "direction": "ES",
+            "directionStandard": "거실 기준",
+            "articleFeatureDescription": "신문지구 아울렛 전망, 고속 엘리베이터 2대",
+            "directTrade": false,
+            "floorInfo": "중/40",
+            "floorDetailInfo": {
+              "targetFloor": "중",
+              "totalFloor": "40",
+              "groundTotalFloor": "0",
+              "undergroundTotalFloor": "0",
+              "floorType": "20",
+              "residenceType": "1"
+            },
+            "isSafeLessorOfHug": false
+          },
+          "articleMediaDto": {
+            "imageUrl": "https://landthumb-phinf.pstatic.net/20260725_149/1784963056503E3ng8_JPEG/2640061100_20260725160415013639.jpg",
+            "imageType": "10",
+            "imageCount": 10,
+            "isVrExposed": false,
+            "photos": [
+              {
+                "imageId": "2640061100@20260725160415013627",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_225/1784963056500xzSye_JPEG/2640061100_20260725160415013627.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013639",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_149/1784963056503E3ng8_JPEG/2640061100_20260725160415013639.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013640",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_260/1784963056501BAd4p_JPEG/2640061100_20260725160415013640.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013643",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_213/1784963056501TKIqe_JPEG/2640061100_20260725160415013643.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013644",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_128/1784963056502yW62x_JPEG/2640061100_20260725160415013644.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013645",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_181/1784963056503C5yL1_JPEG/2640061100_20260725160415013645.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013647",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_299/1784963056502sJfjH_JPEG/2640061100_20260725160415013647.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013659",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_42/1784963056502z2GBX_JPEG/2640061100_20260725160415013659.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013660",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_144/1784963056505KFJCf_JPEG/2640061100_20260725160415013660.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013662",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_82/1784963056501DpCOt_JPEG/2640061100_20260725160415013662.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              }
+            ]
+          },
+          "articleMedia": {
+            "imageUrl": "https://landthumb-phinf.pstatic.net/20260725_149/1784963056503E3ng8_JPEG/2640061100_20260725160415013639.jpg",
+            "imageType": "10",
+            "imageCount": 10,
+            "isVrExposed": false,
+            "photos": [
+              {
+                "imageId": "2640061100@20260725160415013627",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_225/1784963056500xzSye_JPEG/2640061100_20260725160415013627.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013639",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_149/1784963056503E3ng8_JPEG/2640061100_20260725160415013639.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013640",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_260/1784963056501BAd4p_JPEG/2640061100_20260725160415013640.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013643",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_213/1784963056501TKIqe_JPEG/2640061100_20260725160415013643.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013644",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_128/1784963056502yW62x_JPEG/2640061100_20260725160415013644.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013645",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_181/1784963056503C5yL1_JPEG/2640061100_20260725160415013645.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013647",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_299/1784963056502sJfjH_JPEG/2640061100_20260725160415013647.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013659",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_42/1784963056502z2GBX_JPEG/2640061100_20260725160415013659.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013660",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_144/1784963056505KFJCf_JPEG/2640061100_20260725160415013660.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2640061100@20260725160415013662",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260725_82/1784963056501DpCOt_JPEG/2640061100_20260725160415013662.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              }
+            ]
+          },
+          "address": {
+            "city": "경상남도",
+            "division": "김해시",
+            "sector": "신문동",
+            "coordinates": {
+              "xCoordinate": 128.816447,
+              "yCoordinate": 35.196011
+            }
+          },
+          "priceInfo": {
+            "dealPrice": 250000000,
+            "warrantyPrice": 0,
+            "rentPrice": 0,
+            "managementFeeAmount": 200000,
+            "priceChangeStatus": 0
+          }
+        },
+        "duplicatedArticleInfo": {
+          "representativePriceInfo": {
+            "dealPrice": {
+              "minPrice": 250000000,
+              "maxPrice": 250000000
+            },
+            "warrantyPrice": {
+              "minPrice": 0,
+              "maxPrice": 0
+            },
+            "rentPrice": {
+              "minPrice": 0,
+              "maxPrice": 0
+            },
+            "premiumPrice": {
+              "minPrice": 0,
+              "maxPrice": 0
+            }
+          },
+          "realtorCount": 7,
+          "directTradeCount": 0,
+          "articleInfoList": [
+            {
+              "complexName": "장유경동리인하이스트",
+              "articleNumber": "2639961464",
+              "articleName": "장유경동리인하이스트",
+              "dongName": "105",
+              "tradeType": "A1",
+              "realEstateType": "A01",
+              "spaceInfo": {
+                "supplySpace": 95.31,
+                "contractSpace": 137.43,
+                "exclusiveSpace": 65.69,
+                "landSpace": 18805,
+                "floorSpace": 0,
+                "supplySpaceName": "95A",
+                "exclusiveSpaceName": "65.69A",
+                "nameType": "A"
+              },
+              "landInfo": {},
+              "buildingInfo": {
+                "buildingConjunctionDateType": "CDY01",
+                "buildingConjunctionDate": "20190529",
+                "approvalElapsedYear": 8
+              },
+              "verificationInfo": {
+                "verificationType": "OWNER",
+                "isAssociationArticle": false,
+                "exposureStartDate": "2026-07-25",
+                "articleConfirmDate": "2026-07-25"
+              },
+              "brokerInfo": {
+                "cpId": "bizmk",
+                "brokerageName": "홈런부동산공인중개사사무소",
+                "brokerName": "매경부동산",
+                "cpOutLinkType": "CP_NAME"
+              },
+              "articleDetail": {
+                "direction": "ES",
+                "directionStandard": "거실 기준",
+                "directTrade": false,
+                "floorInfo": "중/40",
+                "floorDetailInfo": {
+                  "targetFloor": "중",
+                  "totalFloor": "40",
+                  "groundTotalFloor": "0",
+                  "undergroundTotalFloor": "0",
+                  "floorType": "20",
+                  "residenceType": "1"
+                },
+                "isSafeLessorOfHug": false
+              },
+              "articleMediaDto": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "articleMedia": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "address": {
+                "city": "경상남도",
+                "division": "김해시",
+                "sector": "신문동",
+                "coordinates": {
+                  "xCoordinate": 128.816447,
+                  "yCoordinate": 35.196011
+                }
+              },
+              "priceInfo": {
+                "dealPrice": 250000000,
+                "warrantyPrice": 0,
+                "rentPrice": 0,
+                "managementFeeAmount": 130000,
+                "priceChangeStatus": 0
+              },
+              "haveFavorite": false
+            },
+            {
+              "complexName": "장유경동리인하이스트",
+              "articleNumber": "2640061100",
+              "articleName": "장유경동리인하이스트",
+              "dongName": "105",
+              "tradeType": "A1",
+              "realEstateType": "A01",
+              "spaceInfo": {
+                "supplySpace": 95.31,
+                "contractSpace": 137.43,
+                "exclusiveSpace": 65.69,
+                "landSpace": 18805,
+                "floorSpace": 0,
+                "supplySpaceName": "95A",
+                "exclusiveSpaceName": "65.69A",
+                "nameType": "A"
+              },
+              "landInfo": {},
+              "buildingInfo": {
+                "buildingConjunctionDateType": "CDY01",
+                "buildingConjunctionDate": "20190529",
+                "approvalElapsedYear": 8
+              },
+              "verificationInfo": {
+                "verificationType": "OWNER",
+                "isAssociationArticle": false,
+                "exposureStartDate": "2026-07-25",
+                "articleConfirmDate": "2026-07-25"
+              },
+              "brokerInfo": {
+                "cpId": "bizmk",
+                "brokerageName": "단지내경동리인뷰황소부동산중개사무소",
+                "brokerName": "매경부동산",
+                "cpOutLinkType": "CP_NAME"
+              },
+              "articleDetail": {
+                "direction": "ES",
+                "directionStandard": "거실 기준",
+                "articleFeatureDescription": "신문지구 아울렛 전망, 고속 엘리베이터 2대",
+                "directTrade": false,
+                "floorInfo": "중/40",
+                "floorDetailInfo": {
+                  "targetFloor": "중",
+                  "totalFloor": "40",
+                  "groundTotalFloor": "0",
+                  "undergroundTotalFloor": "0",
+                  "floorType": "20",
+                  "residenceType": "1"
+                },
+                "isSafeLessorOfHug": false
+              },
+              "articleMediaDto": {
+                "imageUrl": "https://landthumb-phinf.pstatic.net/20260725_149/1784963056503E3ng8_JPEG/2640061100_20260725160415013639.jpg",
+                "imageType": "10",
+                "imageCount": 10,
+                "isVrExposed": false,
+                "photos": [
+                  {
+                    "imageId": "2640061100@20260725160415013627",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_225/1784963056500xzSye_JPEG/2640061100_20260725160415013627.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013639",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_149/1784963056503E3ng8_JPEG/2640061100_20260725160415013639.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013640",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_260/1784963056501BAd4p_JPEG/2640061100_20260725160415013640.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013643",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_213/1784963056501TKIqe_JPEG/2640061100_20260725160415013643.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013644",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_128/1784963056502yW62x_JPEG/2640061100_20260725160415013644.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013645",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_181/1784963056503C5yL1_JPEG/2640061100_20260725160415013645.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013647",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_299/1784963056502sJfjH_JPEG/2640061100_20260725160415013647.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013659",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_42/1784963056502z2GBX_JPEG/2640061100_20260725160415013659.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013660",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_144/1784963056505KFJCf_JPEG/2640061100_20260725160415013660.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013662",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_82/1784963056501DpCOt_JPEG/2640061100_20260725160415013662.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  }
+                ]
+              },
+              "articleMedia": {
+                "imageUrl": "https://landthumb-phinf.pstatic.net/20260725_149/1784963056503E3ng8_JPEG/2640061100_20260725160415013639.jpg",
+                "imageType": "10",
+                "imageCount": 10,
+                "isVrExposed": false,
+                "photos": [
+                  {
+                    "imageId": "2640061100@20260725160415013627",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_225/1784963056500xzSye_JPEG/2640061100_20260725160415013627.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013639",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_149/1784963056503E3ng8_JPEG/2640061100_20260725160415013639.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013640",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_260/1784963056501BAd4p_JPEG/2640061100_20260725160415013640.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013643",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_213/1784963056501TKIqe_JPEG/2640061100_20260725160415013643.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013644",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_128/1784963056502yW62x_JPEG/2640061100_20260725160415013644.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013645",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_181/1784963056503C5yL1_JPEG/2640061100_20260725160415013645.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013647",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_299/1784963056502sJfjH_JPEG/2640061100_20260725160415013647.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013659",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_42/1784963056502z2GBX_JPEG/2640061100_20260725160415013659.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013660",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_144/1784963056505KFJCf_JPEG/2640061100_20260725160415013660.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  },
+                  {
+                    "imageId": "2640061100@20260725160415013662",
+                    "imagePath": "https://landthumb-phinf.pstatic.net/20260725_82/1784963056501DpCOt_JPEG/2640061100_20260725160415013662.jpg",
+                    "imageType": "10",
+                    "isVrExposed": false
+                  }
+                ]
+              },
+              "address": {
+                "city": "경상남도",
+                "division": "김해시",
+                "sector": "신문동",
+                "coordinates": {
+                  "xCoordinate": 128.816447,
+                  "yCoordinate": 35.196011
+                }
+              },
+              "priceInfo": {
+                "dealPrice": 250000000,
+                "warrantyPrice": 0,
+                "rentPrice": 0,
+                "managementFeeAmount": 200000,
+                "priceChangeStatus": 0
+              },
+              "haveFavorite": false
+            },
+            {
+              "complexName": "장유경동리인하이스트",
+              "articleNumber": "2638262817",
+              "articleName": "장유경동리인하이스트",
+              "dongName": "105",
+              "tradeType": "A1",
+              "realEstateType": "A01",
+              "spaceInfo": {
+                "supplySpace": 95.31,
+                "contractSpace": 137.43,
+                "exclusiveSpace": 65.69,
+                "landSpace": 18805,
+                "floorSpace": 0,
+                "supplySpaceName": "95A",
+                "exclusiveSpaceName": "65.69A",
+                "nameType": "A"
+              },
+              "landInfo": {},
+              "buildingInfo": {
+                "buildingConjunctionDateType": "CDY01",
+                "buildingConjunctionDate": "20190529",
+                "approvalElapsedYear": 8
+              },
+              "verificationInfo": {
+                "verificationType": "OWNER",
+                "isAssociationArticle": false,
+                "exposureStartDate": "2026-07-16",
+                "articleConfirmDate": "2026-07-16"
+              },
+              "brokerInfo": {
+                "cpId": "bizmk",
+                "brokerageName": "복돼지공인중개사사무소",
+                "brokerName": "매경부동산",
+                "cpOutLinkType": "CP_NAME"
+              },
+              "articleDetail": {
+                "direction": "WS",
+                "directionStandard": "거실 기준",
+                "articleFeatureDescription": "가격 좋은 집 이사 조율 가능 전망 나오는 집",
+                "directTrade": false,
+                "floorInfo": "중/40",
+                "floorDetailInfo": {
+                  "targetFloor": "중",
+                  "totalFloor": "40",
+                  "groundTotalFloor": "0",
+                  "undergroundTotalFloor": "0",
+                  "floorType": "20",
+                  "residenceType": "1"
+                },
+                "isSafeLessorOfHug": false
+              },
+              "articleMediaDto": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "articleMedia": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "address": {
+                "city": "경상남도",
+                "division": "김해시",
+                "sector": "신문동",
+                "coordinates": {
+                  "xCoordinate": 128.816447,
+                  "yCoordinate": 35.196011
+                }
+              },
+              "priceInfo": {
+                "dealPrice": 250000000,
+                "warrantyPrice": 0,
+                "rentPrice": 0,
+                "managementFeeAmount": 200000,
+                "priceChangeStatus": 0
+              },
+              "haveFavorite": false
+            },
+            {
+              "complexName": "장유경동리인하이스트",
+              "articleNumber": "2637559817",
+              "articleName": "장유경동리인하이스트",
+              "dongName": "105",
+              "tradeType": "A1",
+              "realEstateType": "A01",
+              "spaceInfo": {
+                "supplySpace": 95.31,
+                "contractSpace": 137.43,
+                "exclusiveSpace": 65.69,
+                "landSpace": 18805,
+                "floorSpace": 0,
+                "supplySpaceName": "95A",
+                "exclusiveSpaceName": "65.69A",
+                "nameType": "A"
+              },
+              "landInfo": {},
+              "buildingInfo": {
+                "buildingConjunctionDateType": "CDY01",
+                "buildingConjunctionDate": "20190529",
+                "approvalElapsedYear": 8
+              },
+              "verificationInfo": {
+                "verificationType": "OWNER",
+                "isAssociationArticle": false,
+                "exposureStartDate": "2026-07-13",
+                "articleConfirmDate": "2026-07-13"
+              },
+              "brokerInfo": {
+                "cpId": "bizmk",
+                "brokerageName": "금손스카이부동산공인중개사사무소",
+                "brokerName": "매경부동산",
+                "cpOutLinkType": "CP_NAME"
+              },
+              "articleDetail": {
+                "direction": "ES",
+                "directionStandard": "거실 기준",
+                "articleFeatureDescription": "전망좋은집 이사협의가능 신혼부부 추천 소형평수",
+                "directTrade": false,
+                "floorInfo": "중/40",
+                "floorDetailInfo": {
+                  "targetFloor": "중",
+                  "totalFloor": "40",
+                  "groundTotalFloor": "0",
+                  "undergroundTotalFloor": "0",
+                  "floorType": "20",
+                  "residenceType": "1"
+                },
+                "isSafeLessorOfHug": false
+              },
+              "articleMediaDto": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "articleMedia": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "address": {
+                "city": "경상남도",
+                "division": "김해시",
+                "sector": "신문동",
+                "coordinates": {
+                  "xCoordinate": 128.816447,
+                  "yCoordinate": 35.196011
+                }
+              },
+              "priceInfo": {
+                "dealPrice": 250000000,
+                "warrantyPrice": 0,
+                "rentPrice": 0,
+                "managementFeeAmount": 200000,
+                "priceChangeStatus": 0
+              },
+              "haveFavorite": false
+            },
+            {
+              "complexName": "장유경동리인하이스트",
+              "articleNumber": "2637366650",
+              "articleName": "장유경동리인하이스트",
+              "dongName": "105",
+              "tradeType": "A1",
+              "realEstateType": "A01",
+              "spaceInfo": {
+                "supplySpace": 95.31,
+                "contractSpace": 137.43,
+                "exclusiveSpace": 65.69,
+                "landSpace": 18805,
+                "floorSpace": 0,
+                "supplySpaceName": "95A",
+                "exclusiveSpaceName": "65.69A",
+                "nameType": "A"
+              },
+              "landInfo": {},
+              "buildingInfo": {
+                "buildingConjunctionDateType": "CDY01",
+                "buildingConjunctionDate": "20190529",
+                "approvalElapsedYear": 8
+              },
+              "verificationInfo": {
+                "verificationType": "OWNER",
+                "isAssociationArticle": false,
+                "exposureStartDate": "2026-07-11",
+                "articleConfirmDate": "2026-07-11"
+              },
+              "brokerInfo": {
+                "cpId": "bizmk",
+                "brokerageName": "경동부동산공인중개사사무소",
+                "brokerName": "매경부동산",
+                "cpOutLinkType": "CP_NAME"
+              },
+              "articleDetail": {
+                "direction": "ES",
+                "directionStandard": "거실 기준",
+                "articleFeatureDescription": "초고속 엘베 두대, 선호타입, 쇼파자리 뻥뷰, 개방감 좋아요",
+                "directTrade": false,
+                "floorInfo": "중/40",
+                "floorDetailInfo": {
+                  "targetFloor": "중",
+                  "totalFloor": "40",
+                  "groundTotalFloor": "0",
+                  "undergroundTotalFloor": "0",
+                  "floorType": "20",
+                  "residenceType": "1"
+                },
+                "isSafeLessorOfHug": false
+              },
+              "articleMediaDto": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "articleMedia": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "address": {
+                "city": "경상남도",
+                "division": "김해시",
+                "sector": "신문동",
+                "coordinates": {
+                  "xCoordinate": 128.816447,
+                  "yCoordinate": 35.196011
+                }
+              },
+              "priceInfo": {
+                "dealPrice": 250000000,
+                "warrantyPrice": 0,
+                "rentPrice": 0,
+                "managementFeeAmount": 200000,
+                "priceChangeStatus": 0
+              },
+              "haveFavorite": false
+            },
+            {
+              "complexName": "장유경동리인하이스트",
+              "articleNumber": "2637467776",
+              "articleName": "장유경동리인하이스트",
+              "dongName": "105",
+              "tradeType": "A1",
+              "realEstateType": "A01",
+              "spaceInfo": {
+                "supplySpace": 95.31,
+                "contractSpace": 137.43,
+                "exclusiveSpace": 65.69,
+                "landSpace": 18805,
+                "floorSpace": 0,
+                "supplySpaceName": "95A",
+                "exclusiveSpaceName": "65.69A",
+                "nameType": "A"
+              },
+              "landInfo": {},
+              "buildingInfo": {
+                "buildingConjunctionDateType": "CDY01",
+                "buildingConjunctionDate": "20190529",
+                "approvalElapsedYear": 8
+              },
+              "verificationInfo": {
+                "verificationType": "OWNER",
+                "isAssociationArticle": false,
+                "exposureStartDate": "2026-07-11",
+                "articleConfirmDate": "2026-07-11"
+              },
+              "brokerInfo": {
+                "cpId": "bizmk",
+                "brokerageName": "경동리인뷰당근부동산중개사무소",
+                "brokerName": "매경부동산",
+                "cpOutLinkType": "CP_NAME"
+              },
+              "articleDetail": {
+                "direction": "ES",
+                "directionStandard": "거실 기준",
+                "articleFeatureDescription": "선호하는 구조. 아울렛 뷰. 초고속 엘베 2대. 이사협의",
+                "directTrade": false,
+                "floorInfo": "중/40",
+                "floorDetailInfo": {
+                  "targetFloor": "중",
+                  "totalFloor": "40",
+                  "groundTotalFloor": "0",
+                  "undergroundTotalFloor": "0",
+                  "floorType": "20",
+                  "residenceType": "1"
+                },
+                "isSafeLessorOfHug": false
+              },
+              "articleMediaDto": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "articleMedia": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "address": {
+                "city": "경상남도",
+                "division": "김해시",
+                "sector": "신문동",
+                "coordinates": {
+                  "xCoordinate": 128.816447,
+                  "yCoordinate": 35.196011
+                }
+              },
+              "priceInfo": {
+                "dealPrice": 250000000,
+                "warrantyPrice": 0,
+                "rentPrice": 0,
+                "managementFeeAmount": 180000,
+                "priceChangeStatus": 0
+              },
+              "haveFavorite": false
+            },
+            {
+              "complexName": "장유경동리인하이스트",
+              "articleNumber": "2636843246",
+              "articleName": "장유경동리인하이스트",
+              "dongName": "105",
+              "tradeType": "A1",
+              "realEstateType": "A01",
+              "spaceInfo": {
+                "supplySpace": 95.31,
+                "contractSpace": 137.43,
+                "exclusiveSpace": 65.69,
+                "landSpace": 18805,
+                "floorSpace": 0,
+                "supplySpaceName": "95A",
+                "exclusiveSpaceName": "65.69A",
+                "nameType": "A"
+              },
+              "landInfo": {},
+              "buildingInfo": {
+                "buildingConjunctionDateType": "CDY01",
+                "buildingConjunctionDate": "20190529",
+                "approvalElapsedYear": 8
+              },
+              "verificationInfo": {
+                "verificationType": "OWNER",
+                "isAssociationArticle": false,
+                "exposureStartDate": "2026-07-09",
+                "articleConfirmDate": "2026-07-09"
+              },
+              "brokerInfo": {
+                "cpId": "NEONET",
+                "brokerageName": "케이부동산중개사무소",
+                "brokerName": "부동산뱅크",
+                "cpOutLinkType": "CP_NAME"
+              },
+              "articleDetail": {
+                "direction": "ES",
+                "directionStandard": "거실 기준",
+                "articleFeatureDescription": "내부 컨디션 좋음.초고속엘리베이터,협의입주가능",
+                "directTrade": false,
+                "floorInfo": "중/40",
+                "floorDetailInfo": {
+                  "targetFloor": "중",
+                  "totalFloor": "40",
+                  "groundTotalFloor": "0",
+                  "undergroundTotalFloor": "0",
+                  "floorType": "20",
+                  "residenceType": "1"
+                },
+                "isSafeLessorOfHug": false
+              },
+              "articleMediaDto": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "articleMedia": {
+                "imageCount": 0,
+                "isVrExposed": false,
+                "photos": []
+              },
+              "address": {
+                "city": "경상남도",
+                "division": "김해시",
+                "sector": "신문동",
+                "coordinates": {
+                  "xCoordinate": 128.816447,
+                  "yCoordinate": 35.196011
+                }
+              },
+              "priceInfo": {
+                "dealPrice": 250000000,
+                "warrantyPrice": 0,
+                "rentPrice": 0,
+                "managementFeeAmount": 170000,
+                "priceChangeStatus": 0
+              },
+              "haveFavorite": false
+            }
+          ]
+        }
+      },
+      {
+        "representativeArticleInfo": {
+          "complexName": "장유경동리인하이스트",
+          "articleNumber": "2639961754",
+          "articleName": "장유경동리인하이스트",
+          "dongName": "105",
+          "tradeType": "A1",
+          "realEstateType": "A01",
+          "spaceInfo": {
+            "supplySpace": 95.31,
+            "contractSpace": 137.43,
+            "exclusiveSpace": 65.69,
+            "landSpace": 18805,
+            "floorSpace": 0,
+            "supplySpaceName": "95A",
+            "exclusiveSpaceName": "65.69A",
+            "nameType": "A"
+          },
+          "landInfo": {},
+          "buildingInfo": {
+            "buildingConjunctionDateType": "CDY01",
+            "buildingConjunctionDate": "20190529",
+            "approvalElapsedYear": 8
+          },
+          "verificationInfo": {
+            "verificationType": "OWNER",
+            "isAssociationArticle": false,
+            "exposureStartDate": "2026-07-25",
+            "articleConfirmDate": "2026-07-25"
+          },
+          "brokerInfo": {
+            "cpId": "bizmk",
+            "brokerageName": "홈런부동산공인중개사사무소",
+            "brokerName": "매경부동산",
+            "cpOutLinkType": "CP_NAME"
+          },
+          "articleDetail": {
+            "direction": "ES",
+            "directionStandard": "거실 기준",
+            "articleFeatureDescription": "대리석 올 인테리어, 화장실 미끄럼방지",
+            "directTrade": false,
+            "floorInfo": "저/40",
+            "floorDetailInfo": {
+              "targetFloor": "저",
+              "totalFloor": "40",
+              "groundTotalFloor": "0",
+              "undergroundTotalFloor": "0",
+              "floorType": "20",
+              "residenceType": "1"
+            },
+            "isSafeLessorOfHug": false
+          },
+          "articleMediaDto": {
+            "imageCount": 0,
+            "isVrExposed": false,
+            "photos": []
+          },
+          "articleMedia": {
+            "imageCount": 0,
+            "isVrExposed": false,
+            "photos": []
+          },
+          "address": {
+            "city": "경상남도",
+            "division": "김해시",
+            "sector": "신문동",
+            "coordinates": {
+              "xCoordinate": 128.816447,
+              "yCoordinate": 35.196011
+            }
+          },
+          "priceInfo": {
+            "dealPrice": 250000000,
+            "warrantyPrice": 0,
+            "rentPrice": 0,
+            "managementFeeAmount": 120000,
+            "priceChangeStatus": 0
+          }
+        }
+      },
+      {
+        "representativeArticleInfo": {
+          "complexName": "장유경동리인하이스트",
+          "articleNumber": "2638248298",
+          "articleName": "장유경동리인하이스트",
+          "dongName": "105",
+          "tradeType": "A1",
+          "realEstateType": "A01",
+          "spaceInfo": {
+            "supplySpace": 95.31,
+            "contractSpace": 137.43,
+            "exclusiveSpace": 65.69,
+            "landSpace": 18805,
+            "floorSpace": 0,
+            "supplySpaceName": "95A",
+            "exclusiveSpaceName": "65.69A",
+            "nameType": "A"
+          },
+          "landInfo": {},
+          "buildingInfo": {
+            "buildingConjunctionDateType": "CDY01",
+            "buildingConjunctionDate": "20190529",
+            "approvalElapsedYear": 8
+          },
+          "verificationInfo": {
+            "verificationType": "OWNER",
+            "isAssociationArticle": false,
+            "exposureStartDate": "2026-07-16",
+            "articleConfirmDate": "2026-07-16"
+          },
+          "brokerInfo": {
+            "cpId": "bizmk",
+            "brokerageName": "홈런부동산공인중개사사무소",
+            "brokerName": "매경부동산",
+            "cpOutLinkType": "CP_NAME"
+          },
+          "articleDetail": {
+            "direction": "ES",
+            "directionStandard": "거실 기준",
+            "articleFeatureDescription": "사이드뷰",
+            "directTrade": false,
+            "floorInfo": "저/40",
+            "floorDetailInfo": {
+              "targetFloor": "저",
+              "totalFloor": "40",
+              "groundTotalFloor": "0",
+              "undergroundTotalFloor": "0",
+              "floorType": "20",
+              "residenceType": "1"
+            },
+            "isSafeLessorOfHug": false
+          },
+          "articleMediaDto": {
+            "imageCount": 0,
+            "isVrExposed": false,
+            "photos": []
+          },
+          "articleMedia": {
+            "imageCount": 0,
+            "isVrExposed": false,
+            "photos": []
+          },
+          "address": {
+            "city": "경상남도",
+            "division": "김해시",
+            "sector": "신문동",
+            "coordinates": {
+              "xCoordinate": 128.816447,
+              "yCoordinate": 35.196011
+            }
+          },
+          "priceInfo": {
+            "dealPrice": 250000000,
+            "warrantyPrice": 0,
+            "rentPrice": 0,
+            "managementFeeAmount": 100000,
+            "priceChangeStatus": 0
+          }
+        }
+      },
+      {
+        "representativeArticleInfo": {
+          "complexName": "장유경동리인하이스트",
+          "articleNumber": "2636132742",
+          "articleName": "장유경동리인하이스트",
+          "dongName": "107",
+          "tradeType": "A1",
+          "realEstateType": "A01",
+          "spaceInfo": {
+            "supplySpace": 95.31,
+            "contractSpace": 137.43,
+            "exclusiveSpace": 65.69,
+            "landSpace": 18805,
+            "floorSpace": 0,
+            "supplySpaceName": "95A",
+            "exclusiveSpaceName": "65.69A",
+            "nameType": "A"
+          },
+          "landInfo": {},
+          "buildingInfo": {
+            "buildingConjunctionDateType": "CDY01",
+            "buildingConjunctionDate": "20190529",
+            "approvalElapsedYear": 8
+          },
+          "verificationInfo": {
+            "verificationType": "OWNER",
+            "isAssociationArticle": false,
+            "exposureStartDate": "2026-07-05",
+            "articleConfirmDate": "2026-07-05"
+          },
+          "brokerInfo": {
+            "cpId": "bizmk",
+            "brokerageName": "단지내경동리인뷰황소부동산중개사무소",
+            "brokerName": "매경부동산",
+            "cpOutLinkType": "CP_NAME"
+          },
+          "articleDetail": {
+            "direction": "ES",
+            "directionStandard": "거실 기준",
+            "articleFeatureDescription": "장유 시티뷰, 엘베2대, 안정감 있는만 채광굿, 이사 언제든",
+            "directTrade": false,
+            "floorInfo": "중/40",
+            "floorDetailInfo": {
+              "targetFloor": "중",
+              "totalFloor": "40",
+              "groundTotalFloor": "0",
+              "undergroundTotalFloor": "0",
+              "floorType": "20",
+              "residenceType": "1"
+            },
+            "isSafeLessorOfHug": false
+          },
+          "articleMediaDto": {
+            "imageCount": 4,
+            "isVrExposed": false,
+            "photos": [
+              {
+                "imageId": "2636132742@20260705163030689062",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260705_233/1783236631948j0ncy_JPEG/2636132742_20260705163030689062.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2636132742@20260705163030689090",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260705_287/1783236631949ArrMQ_JPEG/2636132742_20260705163030689090.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2636132742@20260705163030689091",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260705_145/1783236631947LGkXD_JPEG/2636132742_20260705163030689091.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2636132742@20260705163030689092",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260705_116/1783236631947Kjpd8_JPEG/2636132742_20260705163030689092.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              }
+            ]
+          },
+          "articleMedia": {
+            "imageCount": 4,
+            "isVrExposed": false,
+            "photos": [
+              {
+                "imageId": "2636132742@20260705163030689062",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260705_233/1783236631948j0ncy_JPEG/2636132742_20260705163030689062.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2636132742@20260705163030689090",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260705_287/1783236631949ArrMQ_JPEG/2636132742_20260705163030689090.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2636132742@20260705163030689091",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260705_145/1783236631947LGkXD_JPEG/2636132742_20260705163030689091.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              },
+              {
+                "imageId": "2636132742@20260705163030689092",
+                "imagePath": "https://landthumb-phinf.pstatic.net/20260705_116/1783236631947Kjpd8_JPEG/2636132742_20260705163030689092.jpg",
+                "imageType": "10",
+                "isVrExposed": false
+              }
+            ]
+          },
+          "address": {
+            "city": "경상남도",
+            "division": "김해시",
+            "sector": "신문동",
+            "coordinates": {
+              "xCoordinate": 128.815495,
+              "yCoordinate": 35.195888
+            }
+          },
+          "priceInfo": {
+            "dealPrice": 250000000,
+            "warrantyPrice": 0,
+            "rentPrice": 0,
+            "managementFeeAmount": 180000,
+            "priceChangeStatus": 0
+          }
+        }
+      }
+    ]
+  }
+}

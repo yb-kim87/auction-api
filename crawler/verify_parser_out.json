@@ -1,0 +1,17 @@
+{
+  "1923913": {
+    "unpaid_fee_amount": 0,
+    "unpaid_fee_note": "* 미납 관리비 없음\r\n- 전기, 수도 포함/도시가스 별도",
+    "unpaid_fee_checked_at": "2022-03-31"
+  },
+  "2415616": {
+    "unpaid_fee_amount": 1570000,
+    "unpaid_fee_note": "- 전기, 수도 포함/도시가스 별도",
+    "unpaid_fee_checked_at": "2026-02-24"
+  },
+  "2431730": {
+    "unpaid_fee_amount": 0,
+    "unpaid_fee_note": "",
+    "unpaid_fee_checked_at": ""
+  }
+}

@@ -1,0 +1,81 @@
+--- 체납 at 442136 ---
+-arrears-joined-table" data-render="client-arrears-record-table">
+                <tr>
+                    <th style='width:10.4%;white-space:nowrap'>체납조사(본건)</th>
+                    <td style='width:15%'>${c.escapeHtml(t)}</td>
+                    <th style='width:10%;white-space:nowrap'>체납금액</th>
+
+--- 체납 at 442277 ---
+:nowrap'>체납조사(본건)</th>
+                    <td style='width:15%'>${c.escapeHtml(t)}</td>
+                    <th style='width:10%;white-space:nowrap'>체납금액</th>
+                    <td style='width:15%'>${c.escapeHtml(e)}${i}</td>
+                    <th style='width:10%;white-space:nowrap'>비고</th>
+ 
+
+--- 관리비 at 171126 ---
+*Number(t?.dpst_rate||10)*.01,st=Number(t?.cat2||0)===3011||Number(t?.cat2||0)===3012?"":Number(t?.cat1||0)===30?", (별도금액 : 주차비 별도)":", (별도금액 : 인수금액, 관리비 등)";(r.매각?.ment||"").includes("우선매수")||r.차순위신고?R.ment="잔금 : 매각가 - 보증금 (잔금 납부 기한)":R.ment=`<span class='red'>${h.formatWon(X,{maximumFractionDigits
+
+--- 관리비 at 173655 ---
+md(v)?this.addDaysYmd(v,M):"-",B=Number(t?.cat2||0)===3011||Number(t?.cat2||0)===3012?"":Number(t?.cat1||0)===30?", (별도금액 : 주차비 별도)":", (별도금액 : 인수금액, 관리비 등)",H=Number(t?.minb_amt||0)*Number(t?.dpst_rate||10)*.01,P={매각일:{ment:`매각기일<span class='red'>(${t?.caNm||"법원"} ${t?.dptNm||""})</span><br>입찰보증금 :
+
+--- 출처 at 324269 ---
+,"<br>")}</td>
+                    </tr>
+                </table><br>
+            `).join("");return`
+            ${this.buildCarSectionTitle("차량제원","출처 : 한국교통안전공단")}
+            ${e}
+        `}buildCarSpaceHtml(t={}){const e=this.resolveCarSpaceImage(t);return e?`
+            <div class='carSpace'>
+
+--- 출처 at 327650 ---
+l(t?.car_type)}</td>
+                    <th>용도</th>
+                    <td class="center">${c.escapeHtml(t?.use_type)}</td>
+                    <th>출처구분</th>
+                    <td class="center">${c.escapeHtml(t?.new_type)}</td>
+                    <th>원동기형식</th>
+                    <td class="c
+
+--- 출처 at 328525 ---
+r="${c.escapeHtml(n)}" data-idx="${c.escapeHtml(i)}" data-fsq="0">사고이력</span>`:"",a=this.buildLabeledMetaText([["조회일자",this.getCarDocSearchDate(t)],["출처",this.pickText(t,["source","src","origin","provider","source_nm","sourceNm","hist_source","histSource"],"보험개발원")]]);return`
+            ${this.buil
+
+--- 출처 at 421215 ---
+">
+                <tr>
+                    <th width="15%">구분</th>
+                    <th width="60%">변동내용</th>
+                    <th width="15%">출처</th>
+                    <th width="10%">등록일</th>
+                </tr>
+                ${a}
+            </table>
+        `}async setEventListener(
+
+--- 제공 at 76776 ---
+play:none;width:100%;margin-top:5px;'>
+                            <span style='float:left'>
+                                * 본 동호수/공시가격은 공공데이터 포털에서 제공하는 주택 공시가격정보를 기반으로 제공하고 있으며, 건물의 배치가 상이 할 수 있으므로 <br>
+                                참고용으로 활용하시기 바랍니다.
+                            </span>
+        
+
+--- 제공 at 76797 ---
+margin-top:5px;'>
+                            <span style='float:left'>
+                                * 본 동호수/공시가격은 공공데이터 포털에서 제공하는 주택 공시가격정보를 기반으로 제공하고 있으며, 건물의 배치가 상이 할 수 있으므로 <br>
+                                참고용으로 활용하시기 바랍니다.
+                            </span>
+                            <
+
+--- 제공 at 131561 ---
+론 앱에서 개인 맞춤형 대출한도와 유선 상담을 받을 수 있습니다)</div>
+                            <div class="fright f12" style="display:flex; justify-contents:center;"><span>* 제공:&nbsp;&nbsp;</span><img alt="openloan" src="/img/favicon/openloan.ico"><span>&nbsp;오픈론</span></div>
+                        </div>
+                
+
+--- 제공 at 607870 ---
+moveClass("gnbClose")):(t.show(),e.addClass("gnbClose"),s.addClass("gnbClose")))}}const os={1:"공장",2:"동식물사육재배장",3:"소매점",4:"도매점",5:"가정집",6:"사무실",7:"서비스제공시설",8:"보관시설"};class ls{constructor(t){this.detailView=t}async init(){await this.wrapData(),await this.setEventListener()}async wrapData(){const t=th
+

@@ -1,0 +1,1802 @@
+[
+  {
+    "i": 1,
+    "objId": "1965189097446179694",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "20905",
+      "addr": "강원특별자치도 원주시 단계동 1184 원주봉화산푸르지오 109동 12층1201호",
+      "bldgNm": "",
+      "gamjungAmt": "282000000",
+      "minAmt": "197400000",
+      "courtNm": "원주지원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 2,
+    "objId": "1965551367909016214",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "20901",
+      "addr": "강원특별자치도 원주시 반곡동 1802 반곡벽산블루밍2차아파트 201동 7층705호",
+      "bldgNm": "",
+      "gamjungAmt": "312000000",
+      "minAmt": "218400000",
+      "courtNm": "원주지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 3,
+    "objId": "1953230030343503968",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "1698",
+      "addr": "강원특별자치도 원주시 태장동 128-1 태장동보렉스아파트 801동 3층307호",
+      "bldgNm": "",
+      "gamjungAmt": "101000000",
+      "minAmt": "49490000",
+      "courtNm": "원주지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 4,
+    "objId": "1960840282471661981",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11336",
+      "addr": "경상북도 김천시 부곡동 416-7 김천한성사랑채주상복합 13층 1307호",
+      "bldgNm": "",
+      "gamjungAmt": "194000000",
+      "minAmt": "135800000",
+      "courtNm": "김천지원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 5,
+    "objId": "1952142946631417863",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "4914",
+      "addr": "광주광역시 남구 진월동 249 대주아파트 101동 1층102호",
+      "bldgNm": "",
+      "gamjungAmt": "322000000",
+      "minAmt": "144256000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 6,
+    "objId": "1957941168847192236",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "31641",
+      "addr": "대구광역시 달성군 다사읍 서재리 145 서재보성타운 109동 4층401호",
+      "bldgNm": "",
+      "gamjungAmt": "105000000",
+      "minAmt": "25211000",
+      "courtNm": "대구서부지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 7,
+    "objId": "2017010959612117811",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "31",
+      "addr": "충청남도 천안시 서북구 두정동 526-1 극동늘푸른아파트 107동 2층204호",
+      "bldgNm": "",
+      "gamjungAmt": "185000000",
+      "minAmt": "129500000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 8,
+    "objId": "2027157514264510880",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10268",
+      "addr": "충청남도 천안시 동남구 목천읍 신계리 422 천안목천동우1차아파트 107동 1층106호",
+      "bldgNm": "",
+      "gamjungAmt": "44456000",
+      "minAmt": "31119000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 9,
+    "objId": "2027157474154382182",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10257",
+      "addr": "충청남도 천안시 동남구 병천면 병천리 308 아우내아파트  4층402호",
+      "bldgNm": "",
+      "gamjungAmt": "33000000",
+      "minAmt": "23100000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 10,
+    "objId": "2076778897738826693",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10257",
+      "addr": "충청남도 천안시 동남구 병천면 병천리 308 아우내아파트  4층404호",
+      "bldgNm": "아우내아파트",
+      "gamjungAmt": "33000000",
+      "minAmt": "23100000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 11,
+    "objId": "2076778903573103075",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10257",
+      "addr": "충청남도 천안시 동남구 병천면 병천리 308 아우내아파트  4층412호",
+      "bldgNm": "아우내아파트",
+      "gamjungAmt": "33000000",
+      "minAmt": "23100000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 12,
+    "objId": "2027157470891213286",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10254",
+      "addr": "충청남도 천안시 서북구 쌍용동 1273 현대아파트 401동 19층1903호",
+      "bldgNm": "",
+      "gamjungAmt": "178000000",
+      "minAmt": "124600000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 13,
+    "objId": "2019184680200306717",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10110",
+      "addr": "충청남도 아산시 권곡동 205-1 청솔아파트 103동 11층1103호",
+      "bldgNm": "",
+      "gamjungAmt": "122000000",
+      "minAmt": "59780000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 14,
+    "objId": "2003242658243281591",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12847",
+      "addr": "충청남도 천안시 서북구 백석동 930 브라운스톤 천안 104동 14층1401호",
+      "bldgNm": "",
+      "gamjungAmt": "370000000",
+      "minAmt": "181300000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 15,
+    "objId": "1967725856520405002",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12336",
+      "addr": "충청남도 천안시 서북구 쌍용동 1273 현대아파트 403동 3층306호",
+      "bldgNm": "",
+      "gamjungAmt": "143000000",
+      "minAmt": "143000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 16,
+    "objId": "1964826588562325985",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12233",
+      "addr": "충청남도 아산시 배방읍 공수리 636 한라비발디아파트 108동 12층1203호",
+      "bldgNm": "",
+      "gamjungAmt": "215000000",
+      "minAmt": "150500000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 17,
+    "objId": "1944896648828158141",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11962",
+      "addr": "충청남도 천안시 동남구 영성동 48-9  3층304호",
+      "bldgNm": "",
+      "gamjungAmt": "220000000",
+      "minAmt": "220000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 18,
+    "objId": "1923292976717497128",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11650",
+      "addr": "충청남도 아산시 둔포면 석곡리 1788 아산테크노밸리이지더원3단지 301동 19층1901호",
+      "bldgNm": "",
+      "gamjungAmt": "216000000",
+      "minAmt": "216000000",
+      "courtNm": "천안지원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 19,
+    "objId": "1935473204076217141",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11597",
+      "addr": "충청남도 천안시 서북구 두정동 1864 우성아파트 103동 10층1009호",
+      "bldgNm": "",
+      "gamjungAmt": "163000000",
+      "minAmt": "163000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 20,
+    "objId": "1913905651742933024",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11465",
+      "addr": "충청남도 천안시 서북구 두정동 525-1 대우아파트 103동 6층604호",
+      "bldgNm": "대우아파트",
+      "gamjungAmt": "181000000",
+      "minAmt": "181000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 21,
+    "objId": "1913905579571544096",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11203",
+      "addr": "충청남도 천안시 서북구 두정동 527 주공아파트 106동 2층204호",
+      "bldgNm": "주공아파트",
+      "gamjungAmt": "162000000",
+      "minAmt": "162000000",
+      "courtNm": "천안지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 22,
+    "objId": "1925025704378892313",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2024",
+      "saNo": "5904",
+      "addr": "충청남도 천안시 신부동  861 우방아파트 107동 3층302호",
+      "bldgNm": "우방아파트",
+      "gamjungAmt": "178000000",
+      "minAmt": "5028000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 23,
+    "objId": "2016286960376611329",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "50055",
+      "addr": "전라남도 목포시 대양동 75-1 근화희망타운아파트 103동 2층205호",
+      "bldgNm": "",
+      "gamjungAmt": "63000000",
+      "minAmt": "44100000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 24,
+    "objId": "2019184802296496191",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "19",
+      "addr": "전라남도 목포시 산정동 1080-54 황실아파트 비동 4층405호",
+      "bldgNm": "",
+      "gamjungAmt": "61000000",
+      "minAmt": "42700000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 25,
+    "objId": "2021000476870312373",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10142",
+      "addr": "충청남도 천안시 서북구 백석동 890 그린빌2차아파트 202동 2층201호",
+      "bldgNm": "",
+      "gamjungAmt": "254000000",
+      "minAmt": "124460000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 26,
+    "objId": "1988745002615833061",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "51672",
+      "addr": "전라남도 목포시 남교동 1-1 남교크레지움에듀파크 1동 6층601호",
+      "bldgNm": "",
+      "gamjungAmt": "189800000",
+      "minAmt": "106288000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 27,
+    "objId": "1988382516116980595",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "51665",
+      "addr": "전라남도 목포시 남교동 1-1 남교크레지움에듀파크 1동 10층1002호",
+      "bldgNm": "",
+      "gamjungAmt": "198000000",
+      "minAmt": "110880000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 28,
+    "objId": "1986207891991822978",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "51620",
+      "addr": "전라남도 목포시 남교동 1-1 남교크레지움에듀파크 1동 21층2103호",
+      "bldgNm": "",
+      "gamjungAmt": "193500000",
+      "minAmt": "108360000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 29,
+    "objId": "1982946436987224887",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "51573",
+      "addr": "전라남도 목포시 달동 1331-8 신항만뉴캐슬오션시티2차아파트 202동 3층303호",
+      "bldgNm": "",
+      "gamjungAmt": "228000000",
+      "minAmt": "127680000",
+      "courtNm": "목포지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 30,
+    "objId": "1981134414054162455",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "51560",
+      "addr": "전라남도 목포시 남교동 1-1 남교크레지움에듀파크 1동 15층1503호",
+      "bldgNm": "",
+      "gamjungAmt": "207000000",
+      "minAmt": "115920000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 31,
+    "objId": "1980409673781609434",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "51545",
+      "addr": "전라남도 목포시 용당동 1214 에드가채움아파트 104동 14층1405호",
+      "bldgNm": "",
+      "gamjungAmt": "185000000",
+      "minAmt": "103600000",
+      "courtNm": "목포지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 32,
+    "objId": "1985483234883928944",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "50965",
+      "addr": "강원특별자치도 춘천시 효자동 821 동보아파트 101동 8층804호",
+      "bldgNm": "",
+      "gamjungAmt": "79000000",
+      "minAmt": "55300000",
+      "courtNm": "춘천지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 33,
+    "objId": "1945796117471953001",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "31459",
+      "addr": "전북특별자치도 김제시 신풍동 167-65 도원리엘시아101동 13층 1303호",
+      "bldgNm": "",
+      "gamjungAmt": "279000000",
+      "minAmt": "136710000",
+      "courtNm": "전주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 34,
+    "objId": "1944896767241748891",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "31455",
+      "addr": "전북특별자치도 김제시 신풍동 167-65 도원리엘시아101동 16층 1601호",
+      "bldgNm": "",
+      "gamjungAmt": "282000000",
+      "minAmt": "138180000",
+      "courtNm": "전주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 35,
+    "objId": "1944896766948147215",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "31448",
+      "addr": "전북특별자치도 김제시 신풍동 167-65 도원리엘시아101동 6층 604호",
+      "bldgNm": "",
+      "gamjungAmt": "279000000",
+      "minAmt": "136710000",
+      "courtNm": "전주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 36,
+    "objId": "1925226735436038945",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "31240",
+      "addr": "전북특별자치도 전주시 완산구 서신동 962-2 중흥아파트 106동 7층707호",
+      "bldgNm": "",
+      "gamjungAmt": "173000000",
+      "minAmt": "41537000",
+      "courtNm": "전주지방법원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 37,
+    "objId": "1913905275857797152",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11405",
+      "addr": "충청남도 아산시 배방읍 북수리 1535 새솔마을중앙하이츠아파트 305동 7층701호",
+      "bldgNm": "새솔마을중앙하이츠아파트",
+      "gamjungAmt": "227000000",
+      "minAmt": "158900000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 38,
+    "objId": "1913905291678711840",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "10842",
+      "addr": "충청남도 천안시 서북구 쌍용동  652 일성아파트 305동 17층1703호",
+      "bldgNm": "일성아파트",
+      "gamjungAmt": "155000000",
+      "minAmt": "108500000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 39,
+    "objId": "1988744847082652538",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "1005",
+      "addr": "전북특별자치도 전주시 완산구 삼천동1가 305-10 대왕장미타운 102동 4층402호",
+      "bldgNm": "",
+      "gamjungAmt": "175000000",
+      "minAmt": "122500000",
+      "courtNm": "전주지방법원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 40,
+    "objId": "1913419906217410592",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "455",
+      "addr": "경상남도 김해시 삼방동 692 화인아파트 103동 4층408호",
+      "bldgNm": "화인아파트",
+      "gamjungAmt": "142000000",
+      "minAmt": "69580000",
+      "courtNm": "창원지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 41,
+    "objId": "1963014632394195762",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12434",
+      "addr": "울산광역시 동구 서부동 257-4 현대패밀리서부아파트 117동 11층1102호",
+      "bldgNm": "",
+      "gamjungAmt": "147000000",
+      "minAmt": "147000000",
+      "courtNm": "울산지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 42,
+    "objId": "1947433579499750191",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11810",
+      "addr": "경상남도 김해시 대청동 333-6 갑오마을부영아파트 504동 10층1003호",
+      "bldgNm": "",
+      "gamjungAmt": "175000000",
+      "minAmt": "60025000",
+      "courtNm": "창원지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 43,
+    "objId": "1940908980138147937",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11700",
+      "addr": "경상남도 김해시 삼문동 583-7 갑오마을부영그린타운2차 1002동 9층904호",
+      "bldgNm": "",
+      "gamjungAmt": "160000000",
+      "minAmt": "112000000",
+      "courtNm": "창원지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 44,
+    "objId": "1932936515529212886",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11546",
+      "addr": "경상남도 김해시 무계동 156-5 석봉마을 1002동 21층2104호",
+      "bldgNm": "",
+      "gamjungAmt": "130000000",
+      "minAmt": "31213000",
+      "courtNm": "창원지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 45,
+    "objId": "1917071411323600914",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11353",
+      "addr": "경상남도 김해시 삼문동 62-4 젤미마을부영그린타운7차 404동 18층1806호",
+      "bldgNm": "젤미마을부영그린타운7차",
+      "gamjungAmt": "185000000",
+      "minAmt": "129500000",
+      "courtNm": "창원지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 46,
+    "objId": "1915235798190391328",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11332",
+      "addr": "경상남도 김해시 어방동 499 대우유토피아아파트 9동 19층1903호",
+      "bldgNm": "대우유토피아아파트",
+      "gamjungAmt": "137000000",
+      "minAmt": "67130000",
+      "courtNm": "창원지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 47,
+    "objId": "1915027694681063456",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11316",
+      "addr": "경상남도 김해시 동상동 1104 롯데캐슬가야2단지 202동 1층103호",
+      "bldgNm": "롯데캐슬가야2단지",
+      "gamjungAmt": "233000000",
+      "minAmt": "163100000",
+      "courtNm": "창원지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 48,
+    "objId": "1913419005306077216",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11264",
+      "addr": "경상남도 김해시 부곡동 1169 석봉마을8단지부영아파트 806동 4층404호",
+      "bldgNm": "석봉마을8단지부영아파트",
+      "gamjungAmt": "135000000",
+      "minAmt": "94500000",
+      "courtNm": "창원지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 49,
+    "objId": "1913418995474628640",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "10474",
+      "addr": "경상남도 창원시 의창구 팔용동  173-6  2층204호",
+      "bldgNm": "",
+      "gamjungAmt": "132000000",
+      "minAmt": "5566000",
+      "courtNm": "창원지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 50,
+    "objId": "1927591838777081862",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2024",
+      "saNo": "61614",
+      "addr": "부산광역시 연제구 연산동  2121-4 배산프라임타워 7층702호",
+      "bldgNm": "배산프라임타워",
+      "gamjungAmt": "204000000",
+      "minAmt": "5762000",
+      "courtNm": "부산지방법원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 51,
+    "objId": "2021722817774485548",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "30383",
+      "addr": "광주광역시 광산구 송정동 731-1 송정크레지움센트럴  5층501호",
+      "bldgNm": "",
+      "gamjungAmt": "204000000",
+      "minAmt": "114240000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 52,
+    "objId": "2018097837157384631",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "30270",
+      "addr": "광주광역시 북구 용봉동 1475 용봉동 도나우270 102동 7층701호",
+      "bldgNm": "",
+      "gamjungAmt": "270000000",
+      "minAmt": "151200000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 53,
+    "objId": "2005781351860535835",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "850",
+      "addr": "충청남도 천안시 서북구 쌍용동 1233 광명아파트 104동 14층1404호",
+      "bldgNm": "",
+      "gamjungAmt": "167000000",
+      "minAmt": "116900000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 54,
+    "objId": "1998533183456411677",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "814",
+      "addr": "충청남도 아산시 신창면 남성리 476-6 2동 5층513호",
+      "bldgNm": "",
+      "gamjungAmt": "59000000",
+      "minAmt": "41300000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 55,
+    "objId": "1930037327095136444",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "655",
+      "addr": "경기도 평택시 세교동 597 힐스테이트평택2차 216동 14층1402호",
+      "bldgNm": "",
+      "gamjungAmt": "412000000",
+      "minAmt": "201880000",
+      "courtNm": "평택지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 56,
+    "objId": "1921816367326036843",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "32673",
+      "addr": "전라남도 나주시 빛가람동 850 에듀캐슬아파트 제103동 제7층 제702호",
+      "bldgNm": "",
+      "gamjungAmt": "229000000",
+      "minAmt": "42023000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 57,
+    "objId": "1913466763094261792",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "32471",
+      "addr": "광주광역시 북구 용두동 330 양산타운아파트 103동 2층202호",
+      "bldgNm": "양산타운아파트",
+      "gamjungAmt": "138000000",
+      "minAmt": "138000000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 58,
+    "objId": "1973161739289624747",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "1496",
+      "addr": "강원특별자치도 평창군 대관령면 횡계리 283 알펜로제아파트 103동 4층404호",
+      "bldgNm": "",
+      "gamjungAmt": "165000000",
+      "minAmt": "115500000",
+      "courtNm": "영월지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 59,
+    "objId": "2010488130926280896",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12950",
+      "addr": "충청남도 아산시 신창면 남성리 840 아산코아루에듀파크아파트 107동 4층401호",
+      "bldgNm": "",
+      "gamjungAmt": "176000000",
+      "minAmt": "123200000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 60,
+    "objId": "2007956062149279772",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12947",
+      "addr": "충청남도 천안시 서북구 입장면 기로리 86-1 주성레이크빌 107동 5층503호",
+      "bldgNm": "",
+      "gamjungAmt": "60000000",
+      "minAmt": "42000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 61,
+    "objId": "2004328762795098785",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12867",
+      "addr": "충청남도 아산시 신창면 남성리 840 아산코아루에듀파크아파트 105동 3층303호",
+      "bldgNm": "",
+      "gamjungAmt": "167000000",
+      "minAmt": "116900000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 62,
+    "objId": "1991282849545716209",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12663",
+      "addr": "충청남도 천안시 서북구 백석동 930 브라운스톤 천안 109동 2층204호",
+      "bldgNm": "",
+      "gamjungAmt": "209000000",
+      "minAmt": "102410000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 63,
+    "objId": "1944896648635220089",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11961",
+      "addr": "충청남도 천안시 동남구 영성동 48-9  3층303호",
+      "bldgNm": "",
+      "gamjungAmt": "201000000",
+      "minAmt": "201000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 64,
+    "objId": "1932573969215390337",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11792",
+      "addr": "충청남도 천안시 서북구 두정동 2045 천안두정역이안더센트럴 108동 4층401호",
+      "bldgNm": "",
+      "gamjungAmt": "307000000",
+      "minAmt": "307000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 65,
+    "objId": "1930037375908446234",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11684",
+      "addr": "충청남도 아산시 모종동 847 모종금호어울림아이퍼스트아파트 101동 15층1505호",
+      "bldgNm": "",
+      "gamjungAmt": "274000000",
+      "minAmt": "191800000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 66,
+    "objId": "1935473196891373584",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11596",
+      "addr": "충청남도 천안시 서북구 쌍용동 1233 광명아파트 101동 16층1603호",
+      "bldgNm": "",
+      "gamjungAmt": "175000000",
+      "minAmt": "175000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 67,
+    "objId": "2048916054347874516",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2024",
+      "saNo": "89192",
+      "addr": "광주광역시 남구 봉선동  5  비동 2층212호",
+      "bldgNm": "",
+      "gamjungAmt": "156000000",
+      "minAmt": "69888000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 68,
+    "objId": "2048916041655911051",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2024",
+      "saNo": "89192",
+      "addr": "광주광역시 남구 봉선동  5  에이동 4층406호",
+      "bldgNm": "",
+      "gamjungAmt": "168000000",
+      "minAmt": "75264000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 69,
+    "objId": "2048916084915962335",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2024",
+      "saNo": "89192",
+      "addr": "광주광역시 남구 봉선동  5  비동 5층512호",
+      "bldgNm": "",
+      "gamjungAmt": "167000000",
+      "minAmt": "74816000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 70,
+    "objId": "2048916060282814943",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2024",
+      "saNo": "89192",
+      "addr": "광주광역시 남구 봉선동  5  에이동 14층1411호",
+      "bldgNm": "",
+      "gamjungAmt": "174000000",
+      "minAmt": "77952000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 71,
+    "objId": "2048916073297740646",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2024",
+      "saNo": "89192",
+      "addr": "광주광역시 남구 봉선동  5  비동 2층216호",
+      "bldgNm": "",
+      "gamjungAmt": "109000000",
+      "minAmt": "48832000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 72,
+    "objId": "1914645724511863680",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2022",
+      "saNo": "8793",
+      "addr": "광주광역시 광산구 우산동  1609-16 우산동한국아델리움더스위트 5층502호",
+      "bldgNm": "우산동한국아델리움더스위트",
+      "gamjungAmt": "438000000",
+      "minAmt": "3536000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 73,
+    "objId": "2011213301521843050",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "30003",
+      "addr": "충청북도 충주시 중앙탑면 용전리 696 신우희가로아파트 105동 4층404호",
+      "bldgNm": "",
+      "gamjungAmt": "154000000",
+      "minAmt": "123200000",
+      "courtNm": "충주지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 74,
+    "objId": "2014112421475516437",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "11",
+      "addr": "경상남도 사천시 사남면 월성리 30-2 엘아이지사천리가 111동 1층101호",
+      "bldgNm": "",
+      "gamjungAmt": "195000000",
+      "minAmt": "136500000",
+      "courtNm": "진주지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 75,
+    "objId": "1978959911421215229",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "936",
+      "addr": "경상남도 남해군 남해읍 서변리 361 남산아파트  5층606호",
+      "bldgNm": "",
+      "gamjungAmt": "96000000",
+      "minAmt": "32928000",
+      "courtNm": "진주지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 76,
+    "objId": "1940184114812420579",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "767",
+      "addr": "경상남도 사천시 정동면 풍정리 520 송보파인빌아파트 106동 4층407호",
+      "bldgNm": "",
+      "gamjungAmt": "73000000",
+      "minAmt": "25039000",
+      "courtNm": "진주지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 77,
+    "objId": "1926775890759385091",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "709",
+      "addr": "경상남도 사천시 사천읍 정의리 192-2 나동 4층403호",
+      "bldgNm": "",
+      "gamjungAmt": "49000000",
+      "minAmt": "11765000",
+      "courtNm": "진주지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 78,
+    "objId": "2002878599979336213",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "695",
+      "addr": "경상남도 거제시 옥포동 886-24 삼도하이츠아파트 101동 5층505호",
+      "bldgNm": "",
+      "gamjungAmt": "71800000",
+      "minAmt": "50260000",
+      "courtNm": "통영지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 79,
+    "objId": "1998534387494290216",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "679",
+      "addr": "경상남도 거제시 고현동 963-1 거제고현2아파트 112동 3층309호",
+      "bldgNm": "",
+      "gamjungAmt": "64000000",
+      "minAmt": "44800000",
+      "courtNm": "통영지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 80,
+    "objId": "2000341645022724116",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "633",
+      "addr": "경상남도 거제시 덕포동 779-3 거제옥포도뮤토1단지 102동 3층301호",
+      "bldgNm": "",
+      "gamjungAmt": "120000000",
+      "minAmt": "84000000",
+      "courtNm": "통영지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 81,
+    "objId": "1968088533289664624",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "5829",
+      "addr": "부산광역시 수영구 광안동 529 비치-그린아파트 104동 1층101호",
+      "bldgNm": "",
+      "gamjungAmt": "375000000",
+      "minAmt": "262500000",
+      "courtNm": "부산동부지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 82,
+    "objId": "1968813042737087106",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "5820",
+      "addr": "부산광역시 해운대구 반여동 1192-3 일동미라주아파트 104동 19층1903호",
+      "bldgNm": "",
+      "gamjungAmt": "224000000",
+      "minAmt": "156800000",
+      "courtNm": "부산동부지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 83,
+    "objId": "1960478023065011069",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "5709",
+      "addr": "부산광역시 기장군 정관읍 용수리 1387 정관동일스위트 105동 16층1603호",
+      "bldgNm": "",
+      "gamjungAmt": "321000000",
+      "minAmt": "224700000",
+      "courtNm": "부산동부지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 84,
+    "objId": "1952505426675237369",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "5643",
+      "addr": "부산광역시 남구 용호동 300-1 중경맨션  2층201호",
+      "bldgNm": "",
+      "gamjungAmt": "163000000",
+      "minAmt": "114100000",
+      "courtNm": "부산동부지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 85,
+    "objId": "1998535007643107346",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "560",
+      "addr": "전라남도 목포시 대성동 222 목포대성엘에이치천년나무아파트 108동 8층802호",
+      "bldgNm": "",
+      "gamjungAmt": "245000000",
+      "minAmt": "171500000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 86,
+    "objId": "1940546568063026122",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "5519",
+      "addr": "부산광역시 기장군 정관읍 방곡리 385 서희스타힐스 305동 2층203호",
+      "bldgNm": "",
+      "gamjungAmt": "187000000",
+      "minAmt": "130900000",
+      "courtNm": "부산동부지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 87,
+    "objId": "1937647534314881509",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "5467",
+      "addr": "부산광역시 남구 대연동 245 대우그린아파트 101동 4층406호",
+      "bldgNm": "",
+      "gamjungAmt": "164000000",
+      "minAmt": "114800000",
+      "courtNm": "부산동부지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 88,
+    "objId": "1927500709519949999",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "5368",
+      "addr": "부산광역시 해운대구 재송동 1026-1 시영아파트 30동",
+      "bldgNm": "",
+      "gamjungAmt": "131000000",
+      "minAmt": "64190000",
+      "courtNm": "부산동부지원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 89,
+    "objId": "1952505421226836615",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "5289",
+      "addr": "부산광역시 남구 용호동 480-2 미주아파트  8층801호",
+      "bldgNm": "",
+      "gamjungAmt": "243000000",
+      "minAmt": "170100000",
+      "courtNm": "부산동부지원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 90,
+    "objId": "1917071425378713605",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "5255",
+      "addr": "부산광역시 남구 대연동 1872 대연롯데캐슬레전드1단지 102동 12층1204호",
+      "bldgNm": "대연롯데캐슬레전드1단지",
+      "gamjungAmt": "229000000",
+      "minAmt": "160300000",
+      "courtNm": "부산동부지원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 91,
+    "objId": "2006505779607109661",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "52501",
+      "addr": "전라남도 광양시 중동 1665 성호2차아파트 214동 15층1506호",
+      "bldgNm": "",
+      "gamjungAmt": "71000000",
+      "minAmt": "49700000",
+      "courtNm": "순천지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 92,
+    "objId": "2076428070792724913",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "52449",
+      "addr": "전라남도 여수시 국동 813 중앙아파트 1동 2층 213호",
+      "bldgNm": "중앙아파트",
+      "gamjungAmt": "41000000",
+      "minAmt": "28700000",
+      "courtNm": "순천지원",
+      "fieldCount": 149
+    }
+  },
+  {
+    "i": 93,
+    "objId": "1999616571747599054",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "52380",
+      "addr": "전라남도 광양시 중동 1655 호반리젠시빌 105동 2층201호",
+      "bldgNm": "",
+      "gamjungAmt": "160000000",
+      "minAmt": "112000000",
+      "courtNm": "순천지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 94,
+    "objId": "1998534904773608069",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "52373",
+      "addr": "전라남도 광양시 중동 1665 성호2차아파트 205동 2층204호",
+      "bldgNm": "",
+      "gamjungAmt": "64000000",
+      "minAmt": "44800000",
+      "courtNm": "순천지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 95,
+    "objId": "1982584185532973864",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "52139",
+      "addr": "전라남도 광양시 중동 1665 성호2차아파트 205동 13층1302호",
+      "bldgNm": "",
+      "gamjungAmt": "81000000",
+      "minAmt": "45360000",
+      "courtNm": "순천지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 96,
+    "objId": "1978597553209344183",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "520",
+      "addr": "전라남도 목포시 대양동 75-18 근화희망타운아파트 301동 2층 205호",
+      "bldgNm": "",
+      "gamjungAmt": "51300000",
+      "minAmt": "35910000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 97,
+    "objId": "2073885937250599897",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "520",
+      "addr": "전라남도 목포시 대양동 75-18 근화희망타운아파트 302동 7층 705호",
+      "bldgNm": "근화희망타운아파트",
+      "gamjungAmt": "67000000",
+      "minAmt": "46900000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 98,
+    "objId": "2073885941319074301",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "520",
+      "addr": "전라남도 목포시 대양동 75-18 근화희망타운아파트 303동 2층 206호",
+      "bldgNm": "근화희망타운아파트",
+      "gamjungAmt": "77000000",
+      "minAmt": "53900000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 99,
+    "objId": "1947433675922605021",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "51781",
+      "addr": "전라남도 광양시 중동 1665 성호2차아파트 201동 11층1118호",
+      "bldgNm": "",
+      "gamjungAmt": "61000000",
+      "minAmt": "21862400",
+      "courtNm": "순천지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 100,
+    "objId": "1998535002094043781",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "51744",
+      "addr": "전라남도 목포시 연산동 1260 연산주공3단지아파트 306동 9층903호",
+      "bldgNm": "",
+      "gamjungAmt": "88000000",
+      "minAmt": "61600000",
+      "courtNm": "목포지원",
+      "fieldCount": 150
+    }
+  }
+]

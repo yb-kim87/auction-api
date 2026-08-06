@@ -1,0 +1,54 @@
+[
+  {
+    "caseState": "매각결정기일",
+    "count": "282"
+  },
+  {
+    "caseState": "허가",
+    "count": "102"
+  },
+  {
+    "caseState": "신건",
+    "count": "38"
+  },
+  {
+    "caseState": "낙찰",
+    "count": "33"
+  },
+  {
+    "caseState": "지급기한",
+    "count": "26"
+  },
+  {
+    "caseState": "유찰",
+    "count": "21"
+  },
+  {
+    "caseState": "취하",
+    "count": "16"
+  },
+  {
+    "caseState": "배당기일",
+    "count": "7"
+  },
+  {
+    "caseState": "변경",
+    "count": "6"
+  },
+  {
+    "caseState": "배당종결",
+    "count": "4"
+  },
+  {
+    "caseState": "기각",
+    "count": "3"
+  },
+  {
+    "caseState": "이송",
+    "count": "1"
+  },
+  {
+    "caseState": "미진행",
+    "count": "1"
+  }
+]

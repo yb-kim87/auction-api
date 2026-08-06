@@ -1,0 +1,966 @@
+
+<html lang="ko">
+<head>
+	<meta charset="utf-8" />
+	<meta name="Generator" content="origin">
+	<meta http-equiv="Content-Script-Type" content="text/javascript">
+	<meta http-equiv="Content-Style-Type" content="text/css">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+			<meta name="viewport" content="width=1000, maximum-scale=1.0">
+		
+            <title>경매 상세정보</title>
+            <link rel="image_src" href="https://www.tankauction.com/img/help/sns_back_new.jpg">
+            <meta name="keywords" content="경매 상세정보">
+            <meta name="description" content="경매 상세정보">
+            <meta name="apple-mobile-web-app-title" content="경매 상세정보">
+            <meta property="og:type" content="website">
+            <meta property="og:title" content="경매 상세정보">
+            <meta property="og:site_name" content="탱크옥션">
+            <meta property="og:image" content="https://www.tankauction.com/img/help/sns_back_new.jpg"> 
+            <meta property="og:description" content="경매 상세정보">
+            <meta property="og:url" content="https://www.tankauction.com">
+            <meta property="og:site" content="https://www.tankauction.com">
+            <meta name="twitter:card" content="summary">
+            <meta name="twitter:title" content="경매 상세정보">
+            <meta name="twitter:image" content="https://www.tankauction.com/img/help/sns_back_new.jpg">
+            <meta name="twitter:description" content="경매 상세정보">
+            <!-- 팝업별 title/meta는 popHeader include 이전에 MetaHelper 값으로 세팅합니다. -->
+        
+    <!-- 상세창 전용 view.css는 각 ca/pa/ma 상세 CSS에서 직접 import합니다. -->
+    <link rel="stylesheet" href="/dist/assets/css/component/header/popHeader-Cg204WQ0.css">
+	
+	<link href='/img/icon/icon192x192.png' rel='icon' type='image/png' />
+	<link href='/img/icon/icon192x192.png' rel='shortcut icon' type='image/png' />
+	<link href='/img/icon/icon128x128.png' rel='apple-touch-icon'  type='image/png'/>
+
+	<script async src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js" integrity="sha384-DKYJZ8NLiK8MN4/C5P2dtSmLQ4KwPaoqAfyA/DfmEc1VDxu4yyC7wy6K1Hs90nka" crossorigin="anonymous"></script>
+</head>
+<body style="padding:0;overflow-x:hidden">
+<div id="pop_wrap">
+
+<!-- //관심물건/법원 링크 버튼 -->
+<link rel="stylesheet" href="/dist/assets/ca/css/caView-mGw6YXoX.css"><div class="tble_view_mask"></div>
+<!--ly_메모장-->
+
+<div class="LyView_writeBox ui-widget-content" id="ly_inter">
+    <div class="LyView_write input_box_4">
+        <div>
+            <div class="title">
+                <span class='ly_inter_ment'>
+                    <span class="ment">관심물건 </span><span class="ment01">: <font>관심물건 등록 및 관리는 500건 까지 가능</font></span>
+                    <span class="pcVerlineShow" style='padding:0 0 0 170px;vertical-align:middle' title="이동">
+                        <svg height="16" viewBox="0 96 960 960" width="16" aria-hidden="true">
+                            <path d="M480 932.308 339.692 792l22.539-22.539L464 871.23V592l-280 .769 101.769 101.769L264 716.308 123.692 576l141.077-141.077 22.539 22.539L184.77 560H464V280.77L362.231 382.539 339.692 360 480 219.692 620.308 360l-22.539 22.539L496 280.77V560l280-.769-101.769-101.769L696 435.692 836.308 576 696 716.308l-22.539-22.539L775.23 592H496l.769 280 101.769-101.769L620.308 792 480 932.308Z" />
+                        </svg>
+                    </span>
+                </span>
+                <span class="btnClose close btn-show-intr" data-op="2"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span>
+            </div>
+            <div id="fmIntr">
+                <table width="100%" class="tbl_write" style="border-top:none">
+                    <tr height="40">
+                        <th width="50" class="pcVerTdShow">관심도</th>
+                        <td>
+                            <select name='priority' id='priority' style='border-color:#bbb;width:100px;color:orange'>
+                                                                    <option value='0'>☆</option>
+                                                                    <option value='1'>★</option>
+                                                                    <option value='2'>★★</option>
+                                                                    <option value='3'>★★★</option>
+                                                                    <option value='4'>★★★★</option>
+                                                                    <option value='5'>★★★★★</option>
+                                                            </select>
+                        </td>
+                        <th width="50" class="pcVerTdShow">분 류</th>
+                        <td>
+                            <select name='gubun' id='gubun' style='border-color:#bbb;width:180px'>
+                                <option value='0'>미분류</option>
+                            </select>
+                            &nbsp;&nbsp;&nbsp;<span class="button btn_small btn_whitegray" id="btnCategory" style='margin-bottom:3px'>분류관리</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th valign="top" class="pcVerTdShow">제목<br>(내용)</th>
+                        <td colspan='3'>
+                            <textarea name="memo" id="int_memo" style="width:98%;height:80px;padding:5px 5px 15px 5px;resize:none;max-height:400px" placeholder="개인정보(주민등록번호 등) 입력은 삼가 주세요."></textarea>
+                                                            <div style='padding:5px 0'>
+                                    <input type="checkbox" name="chkSms" value="1">
+                                    관심물건 <span class='bold blue'>실시간 입찰결과문자</span> 알림 받기
+                                    <span class="tooltip blue-tooltip" style="position:relative;top:0px;">
+                                        <p class="btn_whitegray radius_30 center" style='width:17px;font-size:11px'>?</p><span style="position:absolute;left:-50px;width:270px;">
+                                            관심물건의 상태변경을 문자로 받고 싶을 때 <br>체크하시면 됩니다.<br><br>예정 → 신건<br>진행 ↔ 미진행(변경, 매각 등 미종국물건)<br>진행 → 종국(취하, 기각, 모사건종결 등 종국물건)<br>
+                                        </span>
+                                    </span>
+                                                                        <span class="settingDiv">
+                                        <span><img src="/img/icon/icon_setting.svg" alt="Settings Icon" class="icon_setting" data-subject="auto_interest_alam"></span>
+                                    </span>
+                                                                    </div>
+                                                        <div class="right" style="padding:10px">
+                                <span class="button btn_small btn_whitegray btn-intr-del" style="display:none;">삭제하기</span>
+                                <span class="button btn_small btn_tank btn-intr-save">저장하기</span>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <div style='border-top:1px solid #ddd;padding-top:0px;background:#f4f4f4'>
+                    <div class="title" style='border-bottom:0;'><span class="ment">일정관리</span>: 날짜별로 기록해 일정관리 하세요.<span id="intrScheduleHint" class='blue f13 bold' style='display:none'>(관심물건 등록 후 일정기록 가능)</span></div>
+                    <table width="100%" class="tbl_write" style="border-top:none">
+                        <tr>
+                            <th width="50" class="pcVerTdShow">메 모</th>
+                            <td width='80%'>
+                                <input type="date" name="skdDt" id="skdDt" value="2026-07-28" data-placeholder="날짜선택" required aria-required="true" min="2020-01-01" max="2030-12-31"> <span class='button button_tiny btn_gray btn-skd-clear' style='display:none;vertical-align:top' id='skdClear'>내용 비우기</span>
+                                <textarea name="skdMemo" id="skdMemo" style="resize:vertical;width:100%;height:70px;padding:5px" rows="10" placeholder="개인정보(주민등록번호 등) 입력은 삼가 해 주세요."></textarea>
+                            </td>
+                            <td valign='bottom'>
+                                <span class='button btn_tank_2 radius_5 btn-skd-save' style='min-width:60px;padding:15px 0'><span id='skdbtnText'>일정<br>추가</span></span>
+                            </td>
+                        </tr>
+                    </table>
+                    <br>
+                    <div id='intrSkdList' style="display:none; border:1px solid #999;height:200px;overflow:auto;margin:5px 10px">
+                        <table class="tbl_list">
+                            <tr class="pcVerTrShow">
+                                <th>메모</th>
+                                <th width='60'>비고</th>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="/dist/assets/css/component/modal/listSettingModal-TZ8LGBjT.css"><!--on/off 스위치 버튼(체크박스) -->
+<div class="wrap">
+    <div class="settingModalTotal" style="display: none; position: absolute; z-index: 1000; background-color: #fff; padding: 10px; border-radius: 5px;">
+        <div class="settingModal" style='background:#FFF;min-width:230px'>
+            <div class="closeSettingModalButton" style="cursor: pointer; position: absolute; top: -10px; right: -10px;">
+                <svg viewBox="0 0 25 25" style="width:20px;height:20px;stroke:#888;fill:rgb(255,255,255);stroke-width: 1">
+                    <title>닫기</title>
+                    <path d="M4.92893219,19.0710678 C1.02368927,15.1658249 1.02368927,8.83417511 4.92893219,4.92893219 C8.83417511,1.02368927 15.1658249,1.02368927 19.0710678,4.92893219 C22.9763107,8.83417511 22.9763107,15.1658249 19.0710678,19.0710678 C15.1658249,22.9763107 8.83417511,22.9763107 4.92893219,19.0710678 Z"></path>
+                    <path d="M15.5355339 15.5355339L8.46446609 8.46446609M15.5355339 8.46446609L8.46446609 15.5355339"></path>
+                </svg>
+            </div>
+            <div class="settingModalTop">
+                <div class="modalTitle">
+                    세팅모달 샘플
+                </div>
+                <!-- 토글타입 -->
+                <div class="toggleSwitchBox">
+                    <label class="toggleSwitch">
+                        <input id="setting_checkbox" type="checkbox" class="settings" data-subject="">
+                        <p>
+                            <span style="padding:4px 0 0 6px">ON</span>
+                            <span style="padding:4px 2px 0 2px">OFF</span>
+                        </p>
+                    </label>
+                </div>
+                <!-- 라디오버튼타입 -->
+                <div class="radioButtonBox">
+                    <label style='margin-right:10px'><input type='radio' name="list_num_type" value="0"> 숫자형</label>
+                    <label style='margin-right:10px'><input type='radio' name="list_num_type" value="1"> 한글형</label>
+                    <label style='margin-right:10px'><input type='radio' name="list_num_type" value="2"> 혼합형</label>
+                </div>
+            </div>
+            <div class="settingModalBottom">
+                <span>환경설정 바로가기</span> 〉
+            </div>
+        </div>
+    </div>
+</div>
+<script type="module" src="/dist/js/component/modal/listSettingModal-bbJhPQLr.js"></script>
+<div class='LyView_write  ui-widget-content' style='top:100px;display:none;min-width:500px;left: 50%;margin-left: -300px;background:transparent;width:auto;background:rgba(255,255,255,0.8);z-index:90' id='ly_markertext'>
+    <div style='background:#015EA9;border-bottom:1px solid #000'>
+        <table class='tbl_noline'>
+            <tr height='38' class='ly_text_ment' style='cursor: move;color:#FFF' title="좌우로 이동 가능">
+                <td width='30' class='right'><img src='/img/icon/icon_text.svg' style='width:18px;'></td>
+                <td>
+                    <span class='f16 bold'> 필기도구 메모장</span>
+                </td>
+                <td width='30px'>
+                    <svg height="24" viewBox="0 96 960 960" width="24">
+                        <path fill='yellow' stroke-width='3' stroke="yellow" d="M480 932.308 339.692 792l22.539-22.539L464 871.23V592l-280 .769 101.769 101.769L264 716.308 123.692 576l141.077-141.077 22.539 22.539L184.77 560H464V280.77L362.231 382.539 339.692 360 480 219.692 620.308 360l-22.539 22.539L496 280.77V560l280-.769-101.769-101.769L696 435.692 836.308 576 696 716.308l-22.539-22.539L775.23 592H496l.769 280 101.769-101.769L620.308 792 480 932.308Z" />
+                    </svg>
+                </td>
+                <td width='75px' class='f15'>
+                    <span class='hand marker_textBox_Btn marker_textBox_Btn1' data-marker-action='toggle-text-box' data-mode='1' style="padding:3px 10px;" title="최소화">－</span>
+                    <span class='hand marker_textBox_Btn marker_textBox_Btn0' data-marker-action='toggle-text-box' data-mode='0' style='display:none;padding:3px 10px;' title="이전 창크기로 복원">□</span>
+                    <span class='hand btnClose' data-marker-action='close-text' style="padding:3px 10px;" title="창닫기">×</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div id="marker_textBox">
+        <div>
+            <table class='tbl_noline'>
+                <tr height='40px' style="background:linear-gradient(#FFF, #EEE)">
+                    <td> · 글자색 (전체 변경)
+                        <div class="matextColor mkOn matextColor1" style="background:red" data-marker-action='set-text-color' data-color-key='1' title="글자색을 전체로 변경">&nbsp;</div>
+                        <div class="matextColor matextColor2" style="background:black" data-marker-action='set-text-color' data-color-key='2' title="글자색을 전체로 변경">&nbsp;</div>
+                    </td>
+                    <td width='60'><span data-marker-action='clear-text' class="hand" title="글자전체 지우기">· 다시쓰기</td>
+                </tr>
+            </table>
+        </div>
+        <textarea id='marker_textBox_textarea' placeholder="메모장은 별도 저장은 되지 않으며, 간단한 메모 등 학습용도로 이용을 할 수 있습니다."></textarea>
+        <br><input type='hidden' id='textBox_val' value='0'>
+    </div>
+</div><div id="ly_markerboard" style='display:none'>
+    <div class="canvasBoardTitle">
+        <div>
+            <img src='/img/icon/icon_paintboard.svg' valign='middle' style='width:20px;'> 탱크옥션 보드판
+            <div data-marker-action='close-board'>닫기</div>
+        </div>
+    </div>
+    <div class="canvasBoardMenu">
+        <div>
+            <div>
+                <div style='position:absolute;top:2px;left:-2px'><img src="/img/icon/icon_pencil.svg" width="20" valign="top"></div>
+                <input type="hidden" id="line_type" name="line_type" min="0" max="100" value="5"></input>
+            </div>
+            <div>
+                <span style="display:inline-block;font-size:13px;">굵기</span>
+                <button data-marker-action="set-line-width" data-line="3" class="line_3 on" style="width:28px">&nbsp;<div style="top:7px;height:4px;"></div></button>
+                <button data-marker-action="set-line-width" data-line="7" class="line_7" style="width:28px">&nbsp;<div style="top:5px;height:8px;"></div></button>
+                <button data-marker-action="set-line-width" data-line="15" class="line_15" style="width:28px">&nbsp;<div style="top:2px;height:14px;"></div></button>
+            </div>
+            <div style='vertical-align:top'>
+                <span style="display:inline-block;font-size:13px;">색상</span>
+                <button data-marker-action="set-board-color" data-color="white" class="color_white on" style="background-color: white;">&nbsp;</button>
+                <button data-marker-action="set-board-color" data-color="red" class="color_red" style="background-color: red;">&nbsp;</button>
+                <button data-marker-action="set-board-color" data-color="yellow" class="color_yellow" style="background-color: yellow;">&nbsp;</button>
+                <button data-marker-action="set-board-color" data-color="skyblue" class="color_skyblue" style="background-color: skyblue;">&nbsp;</button>
+                <button data-marker-action="set-board-color" data-color="lime" class="color_lime" style="background-color: lime;">&nbsp;</button>
+            </div>
+            <div style='vertical-align:top;border-left:2px solid #ccc '>
+                <button data-marker-action="set-board-color" data-color="black" class="color_black" style="height:auto;padding:2px 5px"><img src='/img/icon/icon_eraser.svg' width="18" valign="top"> 지우개</button>
+                <button data-marker-action="clear-board" style="height:auto;padding:2px 5px"><img src='/img/icon/icon_wasteBasket.svg' width="18" valign="top"> 전체지우기</button>
+            </div>
+            <div data-marker-action='close-board'>닫기</div>
+        </div>
+    </div>
+    <div id="canvasBoardBox" style='position:absolute;overflow-x:hidden;overflow-y:hidden;width:100%;height:100%;'>
+        <canvas id='canvasBoard' width='5000' height='5000' style="background:#000;"></canvas>
+    </div>
+</div><!--ly_환경설정-->
+<div class="tble_view_write view-layer-hidden view-layer-w350" id="ly_settings">
+    <div class="title">
+        <span class="ment">환경설정</span>
+        <span class="btnClose close"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span>
+    </div>
+    <div class='setContent'>
+        <table class='tbl_noline'>
+                        <tr style="margin-top: 10px;">
+                <td>관심물건 실시간 알림받기 자동 체크</td>
+                <td>
+                    <!--on/off 스위치 버튼(체크박스)-->
+                    <div class="toggleSwitchBox">
+                        <label class="toggleSwitch">
+                            <input id="auto_interest_alam" type="checkbox" class="settings" data-val="">
+                            <p>
+                                <span style="padding:4px 0 0 6px">ON</span>
+                                <span style="padding:4px 2px 0 2px">OFF</span>
+                            </p>
+                        </label>
+                    </div>
+                </td>
+            </tr>
+                                    <tr style="margin-top: 10px;">
+                <td>펜기능 도구 자동 활성화</td>
+                <td>
+                    <!--on/off 스위치 버튼(체크박스)-->
+                    <div class="toggleSwitchBox">
+                        <label class="toggleSwitch">
+                            <input id="using_pen" type="checkbox" class="settings" data-val="">
+                            <p>
+                                <span style="padding:4px 0 0 6px">ON</span>
+                                <span style="padding:4px 2px 0 2px">OFF</span>
+                            </p>
+                        </label>
+                    </div>
+                </td>
+            </tr>
+            <tr style='margin-top: 10px; padding-bottom:5px;'>
+                <td>상세정보 펼쳐진 화면 보기</td>
+                <td>
+                    <!--on/off 스위치 버튼(체크박스)-->
+                    <div class="toggleSwitchBox">
+                        <label class="toggleSwitch">
+                            <input id="spread_detail" type="checkbox" class="settings" data-val="">
+                            <p>
+                                <span style="padding:4px 0 0 6px">ON</span>
+                                <span style="padding:4px 2px 0 2px">OFF</span>
+                            </p>
+                        </label>
+                    </div>
+                </td>
+            </tr>
+                        <tr>
+                <td>숫자표기형식</td>
+                <td class='right'>
+                        <select id="ca_num_type" style='width:70px !important;' class="settings" name="ca_num_type">
+                            <option value="0">숫자형</option>
+                            <option value="1">한글형</option>
+                            <option value="2">혼합형</option>
+                        </select>
+                </td>
+            </tr>
+        </table>
+        <div id="goToSettings" class='p10 blue' style='margin:0 0 0 0px; cursor:pointer;'>
+            <span class='blue' style="text-decoration:underline;text-underline-offset:3px;">환경설정 바로가기(현재창이 닫힙니다)</span> 〉 
+        </div>
+    </div>
+
+    <div class='clear center' style='padding:20px'>
+        <span class="button btn_m btn_white radius_5 btnClose">확인</span>
+    </div>
+</div>
+
+<!--ly_글자크기-->
+<div class="tble_view_write view-layer-hidden view-layer-w300" id="ly_zoom">
+    <div class="title"><span class="ment">글자크기</span><span class="btnClose close"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span></div>
+    <div class="cont" style='padding:10px'>
+        <div>
+            <dt><span class="btn_font" id="btnFont_0" data-action="font-size" data-mode="0" style="font-size:11px;">가</span></dt>
+            <dd>더작게</dd>
+        </div>
+        <div>
+            <dt><span class="btn_font" id="btnFont_1" data-action="font-size" data-mode="1" style="font-size:12px;">가</span></dt>
+            <dd>작게</dd>
+        </div>
+        <div>
+            <dt><span class="btn_font active" id="btnFont_2" data-action="font-size" data-mode="2" style="font-size:13px;">가</span></dt>
+            <dd>기본</dd>
+        </div>
+        <div>
+            <dt><span class="btn_font" id="btnFont_3" data-action="font-size" data-mode="3" style="font-size:16px;">가</span></dt>
+            <dd>크게</dd>
+        </div>
+    </div>
+    <div class='f14 clear' style='padding:30px 10px 0 10px'> 배경색지정</div>
+    <div class="cont" style='padding:0 10px'>
+        <div>
+            <dt><span class="btn_Bg" id="btnbgColor_0" data-action="bg-color" data-mode="0" style="background-color:#888;"></span></dt>
+            <dd>어둡게</dd>
+        </div>
+        <div>
+            <dt><span class="btn_Bg" id="btnbgColor_1" data-action="bg-color" data-mode="1" style="background-color:#AED1FD;"></span></dt>
+            <dd>푸르게</dd>
+        </div>
+        <div>
+            <dt><span class="btn_Bg activeBg" id="btnbgColor_2" data-action="bg-color" data-mode="2" style="background-color:#ddd;"></span></dt>
+            <dd>기본</dd>
+        </div>
+        <div>
+            <dt><span class="btn_Bg" id="btnbgColor_3" data-action="bg-color" data-mode="3" style="background-color:#fff;"></span></dt>
+            <dd>밝게</dd>
+        </div>
+    </div>
+    <div class='f14 clear' style='padding:30px 10px 0 10px'> 화면크기</div>
+    <div class="cont" style='padding:0 10px'>
+        <div>
+            <dt><span class="btn_zoom" id="btnZoom_0" data-action="zoom-size" data-mode="0" style="font-size:11px;">▤</span></dt>
+            <dd>70%</dd>
+        </div>
+        <div>
+            <dt><span class="btn_zoom" id="btnZoom_1" data-action="zoom-size" data-mode="1" style="font-size:12px;">▤</span></dt>
+            <dd>80%</dd>
+        </div>
+        <div>
+            <dt><span class="btn_zoom" id="btnZoom_2" data-action="zoom-size" data-mode="2" style="font-size:14px;">▤</span></dt>
+            <dd>90%</dd>
+        </div>
+        <div>
+            <dt><span class="btn_zoom activeZoom" id="btnZoom_3" data-action="zoom-size" data-mode="3" style="font-size:16px;">▤</span></dt>
+            <dd>100%</dd>
+        </div>
+    </div>
+
+    <div class='clear center' style='padding:20px'>
+        <span class="button btn_m btn_white radius_5 btnClose">확인</span>
+    </div>
+</div>
+<!--ly_지도길찾기-->
+<div class="tble_view_write view-layer-hidden view-layer-w300" id="ly_findMap">
+    <div class="title"><span class="ment">길찾기</span><span class="btnClose close"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span></div>
+    <div class="cont" style='padding:10px'>
+        <div style="width:100%;" data-findmap-mode='mobile'>
+            <dt><span class="button btn_yellow btn_medium bold btnClose" id="navi" data-action="open-navi" style='min-width:150px;'><img src="/img/icon/kakaoNavi.svg" width='22' style='vertical-align:bottom'> 카카오 내비</span></dt>
+        </div>
+        <div style="width:100%;" data-findmap-mode='mobile'>
+            <dt><span class="button btn_green btn_medium bold btnClose" data-action="find-map" data-map-kind="3" style='min-width:150px;'><img src="/img/icon/naverNavi.svg" width='22' style='vertical-align:bottom'>네이버 내비</span></dt>
+        </div>
+        <div style="width:100%;" data-findmap-mode='mobile'>
+            <dt><span class="button btn_red btn_medium bold btnClose" data-action="find-map" data-map-kind="4" style='min-width:150px;'><img src="/img/icon/tmapNavi.svg" width='22' style='vertical-align:bottom'> T 맵&nbsp;&nbsp;내비</span></dt>
+        </div>
+        <div style="width:50%;" data-findmap-mode='pc'>
+            <dt><span class="button btn_yellow btn_medium bold btnClose" data-action="find-map" data-map-kind="1" style='font-size:16px'><img src="/img/icon/icon_kakao.svg" width='22' style='vertical-align:bottom'>길찾기</span></dt>
+        </div>
+        <div style="width:50%;" data-findmap-mode='pc'>
+            <dt><span class="button btn_green btn_medium bold btnClose" data-action="find-map" data-map-kind="2" style='font-size:16px'><img src="/img/icon/icon_naver.svg" width='20' style='vertical-align:bottom'>길찾기</span></dt>
+        </div>
+    </div>
+</div>
+<!-- SNS 공유 모달 -->
+<div class="tble_view_write sns-modal view-layer-hidden view-layer-w300" id="ly_sns">
+    <div class="title"><span class="ment">SNS 공유</span><span class="btnClose close"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span></div>
+    <div class="cont sns-modal-content">
+        <div>
+            <dt><span data-action="sns-kakao"><img src="/img/icon/icon_kakao.svg" alt="카카오톡" width="40" class="radius_5 btnClose"></span></dt>
+        </div>
+        <div>
+            <dt><span data-action="sns-share" data-sns="facebook" class="btnClose"><img src="/img/icon/icon_facebook.svg" alt="페이스북" width="40" class="radius_5"></span></dt>
+        </div>
+        <div>
+            <dt><span data-action="sns-share" data-sns="naver" class="btnClose"><img src="/img/icon/icon_naver.svg" alt="네이버블로그" width="40" class="radius_5"></span></dt>
+        </div>
+        <div>
+            <dt><span data-action="sns-share" data-sns="band" class="btnClose"><img src="/img/icon/icon_band.svg" alt="네이버밴드" width="40" class="radius_5"></span></dt>
+        </div>
+    </div>
+    <div class="clear center sns-modal-copy">
+        <span class="btn_url button btn_middum btn_white radius_5 btnClose" data-action="sns-copy-url-alert">url 복사하기</span>
+    </div>
+</div>
+<!-- SNS 공유 모달 -->
+<!--ly_인쇄선택-->
+<div class="tble_view_write input_box view-layer-hidden" id="ly_print">
+    <div class="title"><span class="ment">선택 인쇄 </span><span class="ment01">: 원하시는 항목을 선택 후 인쇄하세요~</span></div>
+    <div style='padding:10px'>
+        <div class='fleft center' style='width:150px'>
+            <label><input type="checkbox" id="chkAllPrt" name="chkAllPrt" data-action="print-check-all" checked><span class="bold f15 chk_ment"> 전체인쇄</span></label>
+        </div>
+        <div class='fleft' style='padding-top:3px;width:370px'>
+            <label class='fleft' style='width:24%;display:none' id='printIntrLabel' data-action="print-check-each"><input type='checkbox' name='chkPrt' id='chkPrt_20' value='lyCnt_inter' class='chk' checked><span class='chk_ment'> 관심메모</span></label>
+            <label class='fleft' style='width:24%' data-action="print-check-each"><input type='checkbox' name='chkPrt' id='chkPrt_1' value='lyCnt_base' checked><span class='chk_ment'> 기본목록</span></label>
+            <label class='fleft' style='width:24%' data-action="print-check-each"><input type='checkbox' name='chkPrt' id='chkPrt_2' value='lyCnt_picBox' checked><span class='chk_ment'> 물건사진</span></label>
+            <label class='fleft' style='width:24%' data-action="print-check-each"><input type='checkbox' name='chkPrt' id='chkPrt_3' value='lyCnt_dateBox' checked><span class='chk_ment'> 입찰일정</span></label>
+            <label class='fleft' style='width:24%' data-action="print-check-each"><input type='checkbox' name='chkPrt' id='chkPrt_4' value='lyCnt_object' checked><span class='chk_ment'> 물건내용</span></label>
+            <label class='fleft' style='width:24%;display:none' id='printLeasLabel' data-action="print-check-each"><input type='checkbox' name='chkPrt' id='chkPrt_5' value='lyCnt_leas' class='chk' checked><span class='chk_ment'> 임차인내용</span></label>
+            <label class='fleft' style='width:24%;display:none' id='printRegistLabel' data-action="print-check-each"><input type='checkbox' name='chkPrt' id='chkPrt_7' value='lyCnt_regist' checked><span class='chk_ment'> 등기내용</span></label>
+            <label class='fleft' style='width:24%' data-action="print-check-each"><input type='checkbox' name='chkPrt' id='chkPrt_6' value='lyCnt_add' checked><span class='chk_ment'> 추가내용</span></label>
+        </div>
+    </div>
+    <div style="padding:10px 40px">
+        <div class='clear' id="lymemoPrt">
+            <div class="f15 bold no-print" style='padding:10px 0'><span class='f18'>📝</span> 인쇄시 메모사항</div>
+            <textarea name="memoPrt" id="memoPrt" data-action="print-memo-input" style="width:100%;height:50px;border:1px solid #999;resize: none;margin-bottom:10px" placeholder="인쇄시 필요한 메모를 입력 하세요.(인쇄물 상단에 메모사항과 같이 프린트 됩니다.)"></textarea>
+        </div>
+    </div>
+    <div class='clear center' style='padding:20px'>
+        <span class="button btn_m btn_white radius_5" id='prt_btn_no'>취소</span>&nbsp;
+        <span class="button btn_m btn_tank radius_5" data-action="print-go" id='prt_btn'>인쇄하기</span>&nbsp;
+    </div>
+</div>
+<!-- 관할법원안내 -->
+<div class="tble_view_write view-layer-hidden" id="ly_court">
+    <div class="title"><span class="ment">관할법원안내</span><span class="btnClose close"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span></div>
+    <div data-court-table></div>
+    <div class="law_info" style="text-align:center;padding:10px 0 5px">
+        <!-- 지도보기 버튼은 data-action=open-court-map 경로로 대체됨 -->
+        <span class="button btn_m btn_white radius_5" data-action="open-court-map" data-popup-url="" id='courtMapBtn'>지도보기</span>
+        &nbsp; &nbsp; &nbsp;
+        <span class="button btn_m btn_white radius_5" data-action="goto-court" id='courtGotoBtn'>대법원 법원경매정보바로가기</span>
+    </div>
+</div>
+<!--//(참고자료) 안내,도움말-->
+<div class="tble_view_write input_box view-layer-hidden" id="ly_file">
+    <div class="title"><span class="ment">참고자료 펼쳐보기 <font class='blue'>(도움말)</font></span><span class="btnClose close"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span></div>
+    <div style='padding:10px'>
+        <div>
+            - 상세정보와 참고자료를 (지도, 사진, 등기부등본, 감정평가서 등) 동시에 열람 할 수 있습니다.<br>
+            - 본 서비스는 <span class='bold'>화면해상도</span> <span class='red'>(1680 X 1050)이상만 적용</span> 되며, <span class='blue'>(2560×1440)이상 최적화</span> 입니다.
+        </div>
+    </div>
+    <div style="padding:10px 0 30px">
+        <img src="/img/svg/lyFilehelp.svg" width="100%" style='border:1px solid #ddd'>
+    </div>
+</div>
+<!--ly_유튜브 MY영상 등록-->
+<div class="tble_view_write view-layer-hidden view-layer-w620 view-layer-pad-ytube" id="ly_ytube">
+    <div class="title">
+        <span class="ment"><img src='/img/icon/icon_youtube.svg' width='20' class='radius_5' valign='middle'> 유튜브 MY영상 등록</span>
+        <span class="btnClose close"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span>
+    </div>
+
+    <div id='fmYtube'>
+        <div style='float:left;width:100%'>
+            <table class='tbl_noline input_box'>
+                <tr class='h40'>
+                    <th class='ac tx100 f12' style='border:none;min-width:80px'>글쓴이</th>
+                    <td><input type='text' name='name' id='name' class='tx200 h25' placeholder='글쓴이' autocomplete='off' style='height:30px;padding-left:5px'></td>
+                </tr>
+                <tr class='h40'>
+                    <th class='ac tx100 f12' style='border:none;min-width:80px'>제목</th>
+                    <td><input type='text' name='title' id='title' class='tx350 h25' placeholder='제목입력 (’ ‘ 작은따음표 제외)' autocomplete='off' style='height:30px;padding-left:5px'></td>
+                </tr>
+                <tr class='h40'>
+                    <th class='ac tx100 f12' style='border:none;min-width:80px'>영상ID</th>
+                    <td><input type='text' name='yid' id='yid' class='tx200 h25' placeholder='영상ID' autocomplete='off' style='height:30px;padding-left:5px'></td>
+                </tr>
+                <tr><th><span style='color:indianred'>(수정불가)</span></th><td style='color:#999;'>⤷ 예)https://www.youtube.com/watch?v=<span style='color:indianred;padding:0 2px;border:1px solid #999'>CJgMeQlzHxI</span> ⟵영상ID</td></tr>
+                <tr class='h60'>
+                    <td colspan='2' style='text-align:center'>
+                        <span id='ytubeReg' data-action='ytube-reg' style='background:indianred;padding:4px 10px;color:#fff;border-radius:5px;cursor:pointer;margin-right:30px' title='유튜브 MY영상 등록'>등 록</span>
+                        <span id='ytubeRst' data-action='ytube-rst' style='background:steelblue;padding:4px 10px;color:#fff;border-radius:5px;cursor:pointer;' title='등록폼을 초기화'>취 소</span>
+                    </td>
+                </tr>
+            </table>
+            <hr style='border:1px dotted #eee'><br>
+        </div>
+    </div>
+
+    <div class='ytubeListHelp' style='background:#fff;width:100%'><div class='clear'></div>
+        <div style='width:100%;border-bottom:1px solid #888'>
+            <div style='font-size:16px;height:30px;font-weight:bold;padding-left:10px'><img src='/img/icon/icon_youtube.svg' width='20' class='radius_5' valign='middle'> 유튜브 MY영상 홍보안내</div>
+        </div>
+        <div class='p10'>
+            <div class='f14'>① 본 경·공매사건과 관련된 유튜브 영상을 등록 하시기 바랍니다. </div>
+            <div class='f14'>③ 본인이 제작한 유튜브 영상을 등록 바랍니다.</div>
+            <div class='f14'>③ 기사 내용과 관련 없는 내응은 삭제 됩니다.</div>
+            <div class='f14'>④ 등록/수정한 영상은 탱크옥션에서 확인 후 오픈이 됩니다.</div>
+            <div class='p5 bold'>※ 내가 만든 영상을 홍보하세요. 모든 회원님에게 도움이 되도록 많은 이용 바랍니다.</div>
+            <div class='p5 right'>문의전화 : 02-456-1544 </div>
+        </div>
+    </div>
+
+    <div class='ytubeListBox' style='float:left;background:#fff;width:100%'>
+        <div style='float:left;width:100%;height:28px;border-bottom:1px solid #888'>
+            <div style='float:left;font-size:16px;font-weight:bold;padding-left:10px'><img src='/img/icon/icon_youtube.svg' width='20' class='radius_5' valign='middle'> 유튜브 MY영상 목록<span id='ytbLtCnt'></span></div>
+        </div>
+        <div style='float:left;display:block;width:100%;height:280px;overflow-y:scroll;'>
+            <table class='tbl_Scroll'>
+                <colgroup>
+                    <col style='width:10%'>
+                    <col style='width:67%'>
+                    <col style='width:7%'>
+                    <col style='width:7%'>
+                    <col style='width:7%'>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>사진</th>
+                        <th>등록자/제목/영상ID</th>
+                        <th>노출</th>
+                        <th>수정</th>
+                        <th>삭제</th>
+                    </tr>
+                </thead>
+                <tbody id='ytubeList'></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- 회원제보 파일 미리보기 -->
+<div class="tble_view_write member-report-modal" id="ly_userReport">
+    <div class="title"><span class="ment">회원 제보 파일 미리보기</span><span class="btnClose close"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span></div>
+    <div class="cont member-report-modal-content">
+        <div class="member-report-modal-body-wrap" data-render='client-member-report-modal-body'></div>
+    </div>
+</div>
+<!--동호수/공시가격> 풍선도움말-->
+<div id='dhTooltip' class='dh-tooltip ca-tooltip-layer'></div>
+
+<!-- 파일 가림처리 멘트 -->
+<div class="tble_view_write view-layer-hidden" id="ly_fileMask">
+    <div class="title"><span class="ment">종결된 사건</span><span class="btnClose close"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span></div>
+    <div class='center f14 lh20 p10'>
+        본 사건은 경매가 종결된 사건이며, 개인정보 문제로 가림처리 됩니다.<br>
+        파일 또는 내용 확인이 필요하시면, 대표전화 또는 카톡채널로 문의주세요<br><br>
+        <span class='f16 ca-contact-phone'>전화: 02-456-1544</span>
+        <span class='button btn_small btn_yellow' data-action="kakao-chat">
+            <img src="/img/icon/icon_kakao.svg" width="22" class="ca-icon-bottom"> 카톡문의
+        </span>
+    </div>
+</div>
+
+<!--! 상세정보 페이지 이동-->
+<div id='moveVBox' data-render='client-move-v'></div>
+
+<!--  ///////  탑메뉴  ///////  -->
+<div id="lyTop" class='no-print ca-top-wrap' data-detail-stage='core'>
+    <span id='lyTopPrgsMsg' data-render='client-top-prgs-msg'></span>
+    <div class='ca-top-shell'>
+        <div class="lyTopLeft fleft ca-top-left">
+            <div class='lyTop_log'><img src="/img/inc/tank_logo.svg" alt="탱크옥션"></div>
+            <div class='lyTop_log_fix ca-top-logo-fixed' data-render='client-top-left-fixed'></div>
+            <div class='clear'></div>
+        </div>
+        <div class="lyTopCenter fleft ptop_10" data-render='client-top-actions-center'></div>
+        <div class="fright right ptop_10 ca-top-actions-right" data-render='client-top-actions-right'></div>
+        <div class="clear"></div>
+    </div>
+</div>
+<!--  ///////  탑메뉴  (부가멘트)///////  -->
+
+<div class='lyTopFixMent' id='lyTopFixMent' data-detail-stage='core'>
+    <div data-render='client-top-summary'></div>
+</div>
+
+<div id="TOP_NAVI" class='clear ca-top-navi-spacer'></div>
+<!-- 관련 물건번호 -->
+<div data-render='client-relate-products' data-detail-stage='core'></div>
+<!-- 관심물건 정보 -->
+<!--  ///////  경매정보  ///////  -->
+
+<div id="lyCtnr" data-detail-stage='core'>
+    <!-- //정보시작 -->
+    <div id="lyCnts">
+        <!-- //관심물건 정보(JS 렌더링) -->
+        <div class="clear"></div>
+        <div id='lyCnt_inter' data-detail-stage='core'></div>
+        <!-- 동일 공매사건(JS 렌더링) -->
+        <div data-render='client-relate-public-auction'></div>
+        <!-- //동일 공매사건 -->
+
+        <!-- 사건번호 -->
+        <div id="lyCnt_num" data-detail-stage='core'>
+            <div class="viewtitle clear ca-relative">
+                <div class="fleft f28 bold_900">
+                    <span class='bold ca-auction-title-prefix'>경매 </span>
+                    <span data-base-info-text="saNo"></span>
+                    <span class="f22" data-base-info-text="skdPn"></span><br>
+                    <span class="f12 bold_400 stepDay"></span>
+                </div>
+                <div class="fright veiw_tanklogo ca-absolute-top-right">
+                    <div class='right'>
+                        <img src="/img/inc/tank_logo.svg" alt="탱크옥션" width='80' valign='middle'>
+                    </div>
+                    <div><span data-base-info-text="caNm"></span> <span data-base-info-text="dptNm"></span> (<span data-base-info-text="dptPhone"></span>)</div>
+                </div>
+                <div class="fright ptop_25 no-print spanBox ca-absolute-court-info"><span data-base-info-text="caNm"></span> <span data-base-info-text="dptNm"></span> (<span data-base-info-text="dptPhone"></span>)</div>
+                <div class="clear"></div>
+            </div>
+            <div class="fleft">
+                <div class='fleft'>
+                    <span class='viewobject' data-action='maskoff'>
+                        <span data-base-info-text="catNm"></span>
+                        <span class='f14 ca-object-extra' data-base-info-object-add></span>
+                    </span>
+                </div>
+                <div class='fleft ca-inline-pad-10'>
+                    <span class='blue spanBox' data-base-info-text="dpslDvsn"></span> <span class='red spanBox' data-base-info-text="spCdtn"></span><br>
+                </div>
+            </div>
+            <div class="fright">
+                <span class="spanBox">매각일자 <span class="bold" data-base-info-text="bidDtm"></span></span>
+                <br><span class='spanBox ca-hidden' data-base-info-visible='endDt'>종국일자 <span class='bold' data-base-info-enddt></span></span>
+            </div>
+            <div class="clear"></div>
+            <div class='ca-address-block'>
+                <span class="bold" data-base-info-text="regnAdrs"></span> &nbsp;&nbsp;<span class="button btn_small btn_white" data-action="copy-addr" data-addr="">주소복사</span> <span class="button btn_small btn_white" data-action="goto-addr" data-addr="">새주소검색</span>
+                <br>
+                <span data-base-info-road-row class='ca-hidden'>(<span data-base-info-text='roadAdrsTitle'></span>:<span data-base-info-text='roadAdrs'></span>)</span>
+            </div>
+        </div>
+        <!-- 기본정보 -->
+        <div class="CopyTxt" data-render='client-basic-info-region' data-detail-stage='core'></div>
+        <!-- //기본정보 -->
+
+        <!-- 사진,입찰 진행내역 -->
+        <div id='lyCnt_date' data-detail-stage='core'>
+            <div id='lyCnt_picBox' class='ca-photo-column'>
+                <div>
+                    <!--사진-->
+                    <div class='swiper-box ca-swiper-view-box' id='view_box'>
+                        <div class='swiper-container_s' data-render='client-photo-swiper'></div>
+                    </div>
+                </div>
+            </div>
+            <div id='lyCnt_dateBox' class='ca-history-column'>
+                <div id='histPanel' data-render='client-hist-panel'>
+                    <div>
+                        <div class='fleft'>
+                            <span class='button button_tiny btn_tank_1 radius_5 no-print ca-history-toggle' data-action='his-pm' data-mode='1' id='his_btm_0'>펼쳐보기 ▼</span>
+                            <span class='button button_tiny btn_whitegray radius_5 ca-history-toggle' data-action='his-pm' data-mode='0' id='his_btm_1'>간략보기 ▲</span>
+                            <span class='span_block ca-history-dday' id='histDdayInfo'></span>
+                        </div>
+                        <div class='fright'>
+                            <span id="hitInfo">&nbsp;</span> <!-- 조회수 정보 -->
+                        </div>
+                        <div class='clear'></div>
+                    </div>
+                    <table class="tbl_list">
+                        <tr>
+                            <th>구분</th>
+                            <th>매각기일</th>
+                            <th>최저매각가격</th>
+                            <th>결과</th>
+                        </tr>
+                        <tbody id='hist_tb' class='ca-table-body-full' data-render='client'>
+                            <tr class='hist_tr his_placeholder'>
+                                <td colspan='4' class='center'>입찰진행내역 불러오는 중...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id='histAdBanner' data-render='client-hist-ad'></div>
+                </div>
+                <div id='preScheduleBox' data-render='client-pre-schedule' class='ca-hidden'></div>
+            </div>
+            <div class="clear"></div>
+        </div>
+
+        <div class='df_btn clear no-print' id='topToggleBar' data-render='client-top-toggle' data-detail-stage='core'>
+            <div></div>
+        </div>
+        <div class='clear no-print ca-hidden' id='df_map_m'></div>
+        <div class='clear' id='df_pic_m' data-detail-stage='core'>
+            <div class='df_pic_m_inner' data-render='client-photo-expanded'></div>
+            <div class='clear'></div>
+        </div>
+        <!-- //사진,입찰 진행내역 -->
+        <div class="clear ca-full-width"></div>
+        <div id='lyCnt_object' class='clear' data-detail-stage='object'>
+            <!-- 매각토지/건물현황 통합테이블 -->
+            <div class="sectTitle ca-hidden" id='objectSectionTitle' data-render='client-object-section'>
+                <dt class='ca-section-title-left'><span class="title_line"></span>토지/건물 현황 </dt>
+                <dd class='ca-section-title-body'>
+                    <span class='spanBox' data-render='client-object-apsl-info'></span>
+                </dd>
+                <dd class='right ca-section-title-actions'><span id='objectHeaderActions' data-render='client-object-header-actions'></span></dd>
+                <div class="clear"></div>
+            </div>
+            <table class="Ltbl_list ca-hidden" id='objectMainTable'>
+                <!-- 토지현황 -->
+                <tr id='landHeaderRow' data-render='client-land-header'>
+                    <th width="8.5%">구분(목록)</th>
+                    <th colspan="5" data-land-area-mode="wide">면적</th>
+                    <th colspan="2" width="16%" data-land-area-mode="normal">소재지</th>
+                    <th width="10%" data-land-area-mode="normal">지목</th>
+                    <th width="13%" data-land-area-mode="normal">용도지역지구</th>
+                    <th width="11%" data-land-area-mode="normal">면적</th>
+
+                    <th colspan="2" width="15%" data-land-price-mode="apsl">감정가</th>
+                    <th width="10%" data-land-price-mode="unit">
+                        <div class="bold ca-unit-header">
+                            <span class='btn_gray payMP_0 button_tiny f13 ca-unit-toggle' data-action='pay-mp' data-mode='1' title="㎡당 단가 보기">㎡</span><span class='btn_white  payMP_1 button_tiny f13 ca-unit-toggle' data-action='pay-mp' data-mode='0' title="평당 단가 보기">평</span>
+                            <span class='span_block ca-unit-label'>단가</span>
+                        </div>
+                        <div class='bold' data-land-ilp='1'>(공시지가)</div>
+                    </th>
+                    <th width="15%" data-land-price-mode="unit">감정가</th>
+                    <th>비고</th>
+                </tr>
+                <tbody id='objectLandBody' data-render='client-land-body'></tbody>
+                <!-- //토지현황 -->
+
+                <!-- 건물현황 -->
+                <tr id='bldgHeaderRow' data-render='client-bldg-header'>
+                    <th width="8.5%">구분(목록)</th>
+                    <th colspan="4" data-bldg-struct-mode="wide">현황/구조</th>
+                    <th width="11%" data-bldg-struct-mode="normal">소재지</th>
+                    <th width="5%" data-bldg-struct-mode="normal">층</th>
+                    <th width="10%" data-bldg-struct-mode="normal">현황</th>
+                    <th width="13%" data-bldg-struct-mode="normal">구조</th>
+                    <th width="11%">면적</th>
+                    <th colspan="2" data-bldg-price-mode="apsl">감정가</th>
+                    <th width="10%" data-bldg-price-mode="unit">
+                        <span class='payM'>㎡당 단가</span><span class='payP no-print'>평당 단가</span>
+                    </th>
+                    <th width="15%" data-bldg-price-mode="unit">감정가</th>
+                    <th>비고</th>
+                </tr>
+                <tbody id='objectBldgBody' data-render='client-bldg-body'></tbody>
+                <tbody id='objectSummaryRows' data-render='client-object-summary'></tbody>
+            </table>
+            <!-- //매각토지/건물현황 통합테이블 -->
+
+            <!--//공시가격 tid=2219243-->
+            <div id='publicPriceContainer' data-render='client-public-price'></div>
+
+            <div data-render='client-car-info'></div>
+            <div data-render='client-ship-info'></div>
+            <div data-render='client-fishing-right-info'></div>
+            <div data-render='client-mining-right-info'></div>
+
+            <!-- 공부와의 차이,현황/위치/주변환경,참고사항 -->
+
+            <div data-render='client-object-detail-notes'></div>
+            <!-- //공부와의 차이,현황/위치/주변환경,참고사항 -->
+        </div>
+        <div id='lyCnt_leas' class='clear' data-detail-stage='analysis'>
+            <!-- 임차인 현황(JS 렌더링) -->
+        </div>
+        <div id='lyCnt_regist' class='clear' data-detail-stage='analysis'>
+            <!-- 등기정보(JS 렌더링) -->
+        </div>
+        <div id='lyCnt_add' class='clear'>
+            <!-- 기타 참고사항 -->
+            <div data-render='client-additional-ref-note' data-detail-stage='late'></div>
+            <!-- //기타 참고사항 -->
+
+            <!-- 주의사항 -->
+            <div data-render='client-warning-note' data-detail-stage='late'></div>
+            <!-- //주의사항 -->
+
+            <!-- 권리분석요약 -->
+            <div data-render='client-right-analysis-summary' data-detail-stage='analysis'></div>
+            <!-- //권리분석요약 -->
+
+            <!-- 주요 변동내역 -->
+            <div data-render='client-important-change-history' data-detail-stage='late'></div>
+            <!-- //주요 변동내역 -->
+
+            <!-- 회원제보 파일 -->
+            <div data-render='client-member-report-files' data-detail-stage='late'></div>
+            <!-- //회원제보 파일 -->
+
+            <!-- 예정물건 정보(물건내역/목록내역) -->
+            <div data-render='client-disposal-information' data-detail-stage='late'></div>
+            <!-- //예정물건 정보(물건내역/목록내역) -->
+
+            <!-- 관련사건내역 -->
+            <div data-render='client-relate-case-history' data-detail-stage='late'></div>
+            <!-- //관련사건내역 -->
+
+            <!-- NPL 정보(JS 렌더링) -->
+            <div data-render='client-npl-information' data-detail-stage='late'></div>
+            <!-- 오픈론 불러오기 -->
+            <div class="w100 sectTitle ca-hidden" id="openLoanTitle" data-detail-stage='late'>
+                <dt><span class="title_line"></span></span>예상대출한도</dt>
+
+                <dd class='ca-openloan-actions'>
+                    <div> <span id="goToOpenLoan" class="button btn_white btn_small ca-openloan-button" data-action="open-openloan">맞춤형 상담받기</span> </div>
+                </dd>
+                <div class="clear"></div>
+            </div>
+            <div id="openLoanTableDiv" data-detail-stage='late' class='ca-hidden'></div>
+
+            <!-- 매각사례분석 -->
+            <div data-render='client-sale-case' data-detail-stage='late'></div>
+            <!-- //매각사례분석 -->
+
+            <!-- 당사자내역 -->
+            <div data-render='client-person-info' data-detail-stage='late'></div>
+            <!-- //당사자내역 -->
+
+            <!-- //국토부 실거래가 -->
+            <div id="molitTradePriceDiv" class="sectTitle ca-hidden" data-detail-stage='late'>
+                <dt class='ca-section-title-left'><span class="title_line"></span>국토부 실거래가 </dt>
+                <dd class='ca-molit-title-body'>
+                    <span id='molitTradeBldNm' class='spanBox'></span>
+                </dd>
+                <dd id="molitTradeMore" class='ca-molit-more'></dd>
+                <div class="clear"></div>
+            </div>
+            <div id="molitTradePriceSrchDiv" data-detail-stage='late' class='ca-hidden ca-molit-search'></div>
+            <table class="Ltbl_list" data-detail-stage='late'>
+                <thead id="molitTradePriceHead"></thead>
+                <tbody id="molitTradePriceBody"></tbody>
+            </table>
+            <div id="molitPublicPriceContainer" data-render="client-molit-public-price" data-detail-stage='late'></div>
+
+            <!-- //국토부 실거래가 차트 -->
+            <div id="molitTradePriceChartDiv" data-detail-stage='late' class='ca-hidden ca-molit-chart'></div>
+            <!-- 아파트 단지정보 -->
+            <div data-render='client-apartment-complex-info' data-detail-stage='late'></div>
+            <!-- 체납내역(JS 렌더링) -->
+            <div data-render='client-arrears-record' data-detail-stage='late'></div>
+            <!-- //체납내역 -->
+            <!-- 아파트 동호수정보 -->
+            <div data-render='client-dh-price-info' data-detail-stage='late'></div>
+            <!-- 건축물정보(JS 렌더링) -->
+            <div data-render='client-building-info' data-detail-stage='late'></div>
+            <!-- //건축물정보 -->
+            <div class='clear' height='30px'></div>
+            <!-- 주변환경 통합(JS 렌더링) -->
+            <div data-render='client-environment-group-title' data-detail-stage='late'></div>
+            <!-- 행정기관 -->
+            <div data-render='client-administrative-agency' data-detail-stage='late'></div>
+            <!-- 인근 도시철도(JS 렌더링) -->
+            <div data-render='client-near-metro-information' data-detail-stage='late'></div>
+            <!-- 교육환경/주변환경 -->
+            <div data-render='client-education-environment' data-detail-stage='late'></div>
+        </div>
+        <!-- //copyright -->
+        <div class='viewCopyright' data-detail-stage='core'>
+            <div class='ca-copyright-wrap'>
+                <div class='fleft ca-copyright-text'>
+                    본 정보는 대법원 경매정보 및 감정평가서 기타 공부 상의 내용을 기초로 하여 제공되는 정보입니다.<br>
+                    입력 착오 및 기타 내용의 변경으로 사실과 다를 수 있으니 법원 공부를 재확인 후 입찰하시기 바랍니다. (면책 조건 정보제공, 무단 복제 및 재배포 금지)
+                </div>
+                <div class='fright no-print ca-copyright-action'>
+                    <span class='button btn_small btn_whitegray radius_5' id='view_top_go'>top</span>
+                </div>
+            </div>
+        </div>
+        <div id="lyBtm">
+            <div class="fleft ca-qr-box">
+                <div id="qrcode"></div>
+            </div>
+            <div class="fleft ca-qr-text">
+                QR코드를 찍으면 해당 물건의 간략한 정보와 현재 진행 상황을 확인할 수 있습니다.(출력시간 : 2026-07-28 08:55 AM)<br><br>
+                본 정보는 대법원 경매정보 및 감정평가서 기타 공부 상의 내용을 기초로 하여 제공되는 정보입니다.<br>
+                입력 착오 및 기타 내용의 변경으로 사실과 다를 수 있으니 법원 공부를 재확인 후 입찰하시기 바랍니다. (면책 조건 정보제공, 무단 복제 및 재배포 금지)
+            </div>
+        </div>
+        <div class="clear"></div>
+        <div class="lySide_ht ca-side-spacer"></div>
+    </div>
+
+
+    <!-- //(참고자료)-->
+    <div id="lyFileMent" data-detail-stage='late' class='ca-file-ment'>
+        <div class="lyFileBtn_1 fright">
+            <div class='lyFileMentFL'>
+                <span>
+                    본 창에서 <span class='bold'>참고자료</span>를 <br>
+                    내용과 같이 열람 가능합니다.<br>
+                </span>
+            </div>
+            <div class='lyFileMentFR'>
+                <span class='f11'>
+                    <svg height="24" viewBox="0 96 960 960" width="24">
+                        <path fill="white" d="M200 936q-33 0-56.5-23.5T120 856V296q0-33 23.5-56.5T200 216h560q33 0 56.5 23.5T840 296v80h-80v-80H200v560h560v-80h80v80q0 33-23.5 56.5T760 936H200Zm480-160-56-56 103-104H360v-80h367L624 432l56-56 200 200-200 200Z" />
+                    </svg>
+                    <br>
+                    펼쳐보기
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div id="lyFile" data-detail-stage='late'>
+        <div class='lyFileBtnShow'>
+            <div>
+                <span class="btn_bic btn_white norounded lyFileBtn_0" title="닫기"><span class='svg_icon svg_icon_nor'><svg viewBox='0 0 24 24'><title>닫기</title><path d='M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575'></path></svg></span></span>
+            </div>
+        </div>
+
+        <!-- 확장메뉴 -->
+        <div class="lymenu">
+            <iframe frameborder='0' width='100%' height='100%' marginheight='0' marginwidth='0' scrolling='auto' src='about:blank' data-base-src='/ca/inc/component/iframe/caFileView.php' topmargin='0' id="ifFileVew"></iframe>
+        </div>
+    </div>
+    <div class="clear"></div>
+
+    <!-- //사이드메뉴 -->
+    <div id="lySide" class='no-print' data-detail-stage='late'>
+        <div class="side_box" id="sideRefBox">
+            <span id='sideFileRefMenu' data-render='client-file-menu'></span>
+            <span id='sideReferenceMenu' data-render='client-reference-menu'></span>
+            <span id='sideMapRefMenu' data-render='client-map-menu'></span>
+
+            <span id='sideEtcRefMenu' data-render='client-etc-menu'></span>
+            <span id='sideRecentViewedMenu' data-render='client-recent-viewed-menu'></span>
+            <span id='sideSearchMenu' data-render='client-search-menu'></span>
+            <dd class="radius"></dd>
+        </div>
+        <div id='sideYtbCta' data-render='client-ytb-cta'></div>
+    </div>
+</div>
+
+<div class="normalToolTip ca-tooltip-hidden"></div>
+</div> <!-- tk_wrap -->
+<!--floating div tank.css-->
+<div id="FLOATING_DIV" style="display:none">
+	<div id="FLOATING_DIV_MASK"	class="FLOATING_DIV_MASK"></div>
+	<div class="FLOATING_DIV_BLOCK">
+		<div id="FLOATING_CONTENT" class="FLOATING_CONTENT"></div>
+	</div>
+</div>
+<!--floating div -->
+</body>
+</html>
+<script type="module" src="/dist/ca/js/caView-FV6xkJQ7.js"></script>

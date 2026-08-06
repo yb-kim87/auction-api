@@ -1,0 +1,362 @@
+[
+  {
+    "i": 1,
+    "objId": "1965189097446179694",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "20905",
+      "addr": "강원특별자치도 원주시 단계동 1184 원주봉화산푸르지오 109동 12층1201호",
+      "bldgNm": "",
+      "gamjungAmt": "282000000",
+      "minAmt": "197400000",
+      "courtNm": "원주지원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 2,
+    "objId": "1965551367909016214",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "20901",
+      "addr": "강원특별자치도 원주시 반곡동 1802 반곡벽산블루밍2차아파트 201동 7층705호",
+      "bldgNm": "",
+      "gamjungAmt": "312000000",
+      "minAmt": "218400000",
+      "courtNm": "원주지원",
+      "fieldCount": 150
+    }
+  },
+  {
+    "i": 3,
+    "objId": "1953230030343503968",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "1698",
+      "addr": "강원특별자치도 원주시 태장동 128-1 태장동보렉스아파트 801동 3층307호",
+      "bldgNm": "",
+      "gamjungAmt": "101000000",
+      "minAmt": "49490000",
+      "courtNm": "원주지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 4,
+    "objId": "1960840282471661981",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11336",
+      "addr": "경상북도 김천시 부곡동 416-7 김천한성사랑채주상복합 13층 1307호",
+      "bldgNm": "",
+      "gamjungAmt": "194000000",
+      "minAmt": "135800000",
+      "courtNm": "김천지원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 5,
+    "objId": "1952142946631417863",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "4914",
+      "addr": "광주광역시 남구 진월동 249 대주아파트 101동 1층102호",
+      "bldgNm": "",
+      "gamjungAmt": "322000000",
+      "minAmt": "144256000",
+      "courtNm": "광주지방법원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 6,
+    "objId": "1957941168847192236",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "31641",
+      "addr": "대구광역시 달성군 다사읍 서재리 145 서재보성타운 109동 4층401호",
+      "bldgNm": "",
+      "gamjungAmt": "105000000",
+      "minAmt": "25211000",
+      "courtNm": "대구서부지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 7,
+    "objId": "2017010959612117811",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "31",
+      "addr": "충청남도 천안시 서북구 두정동 526-1 극동늘푸른아파트 107동 2층204호",
+      "bldgNm": "",
+      "gamjungAmt": "185000000",
+      "minAmt": "129500000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 8,
+    "objId": "2027157514264510880",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10268",
+      "addr": "충청남도 천안시 동남구 목천읍 신계리 422 천안목천동우1차아파트 107동 1층106호",
+      "bldgNm": "",
+      "gamjungAmt": "44456000",
+      "minAmt": "31119000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 9,
+    "objId": "2027157474154382182",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10257",
+      "addr": "충청남도 천안시 동남구 병천면 병천리 308 아우내아파트  4층402호",
+      "bldgNm": "",
+      "gamjungAmt": "33000000",
+      "minAmt": "23100000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 10,
+    "objId": "2076778897738826693",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10257",
+      "addr": "충청남도 천안시 동남구 병천면 병천리 308 아우내아파트  4층404호",
+      "bldgNm": "아우내아파트",
+      "gamjungAmt": "33000000",
+      "minAmt": "23100000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 11,
+    "objId": "2076778903573103075",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10257",
+      "addr": "충청남도 천안시 동남구 병천면 병천리 308 아우내아파트  4층412호",
+      "bldgNm": "아우내아파트",
+      "gamjungAmt": "33000000",
+      "minAmt": "23100000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 12,
+    "objId": "2027157470891213286",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10254",
+      "addr": "충청남도 천안시 서북구 쌍용동 1273 현대아파트 401동 19층1903호",
+      "bldgNm": "",
+      "gamjungAmt": "178000000",
+      "minAmt": "124600000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 13,
+    "objId": "2019184680200306717",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2026",
+      "saNo": "10110",
+      "addr": "충청남도 아산시 권곡동 205-1 청솔아파트 103동 11층1103호",
+      "bldgNm": "",
+      "gamjungAmt": "122000000",
+      "minAmt": "59780000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 14,
+    "objId": "2003242658243281591",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12847",
+      "addr": "충청남도 천안시 서북구 백석동 930 브라운스톤 천안 104동 14층1401호",
+      "bldgNm": "",
+      "gamjungAmt": "370000000",
+      "minAmt": "181300000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 15,
+    "objId": "1967725856520405002",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12336",
+      "addr": "충청남도 천안시 서북구 쌍용동 1273 현대아파트 403동 3층306호",
+      "bldgNm": "",
+      "gamjungAmt": "143000000",
+      "minAmt": "143000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 16,
+    "objId": "1964826588562325985",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "12233",
+      "addr": "충청남도 아산시 배방읍 공수리 636 한라비발디아파트 108동 12층1203호",
+      "bldgNm": "",
+      "gamjungAmt": "215000000",
+      "minAmt": "150500000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 17,
+    "objId": "1944896648828158141",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11962",
+      "addr": "충청남도 천안시 동남구 영성동 48-9  3층304호",
+      "bldgNm": "",
+      "gamjungAmt": "220000000",
+      "minAmt": "220000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 18,
+    "objId": "1923292976717497128",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11650",
+      "addr": "충청남도 아산시 둔포면 석곡리 1788 아산테크노밸리이지더원3단지 301동 19층1901호",
+      "bldgNm": "",
+      "gamjungAmt": "216000000",
+      "minAmt": "216000000",
+      "courtNm": "천안지원",
+      "fieldCount": 152
+    }
+  },
+  {
+    "i": 19,
+    "objId": "1935473204076217141",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11597",
+      "addr": "충청남도 천안시 서북구 두정동 1864 우성아파트 103동 10층1009호",
+      "bldgNm": "",
+      "gamjungAmt": "163000000",
+      "minAmt": "163000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  },
+  {
+    "i": 20,
+    "objId": "1913905651742933024",
+    "httpStatus": 200,
+    "bodyCode": 0,
+    "ok": true,
+    "msg": "Ok",
+    "summary": {
+      "saYear": "2025",
+      "saNo": "11465",
+      "addr": "충청남도 천안시 서북구 두정동 525-1 대우아파트 103동 6층604호",
+      "bldgNm": "대우아파트",
+      "gamjungAmt": "181000000",
+      "minAmt": "181000000",
+      "courtNm": "천안지원",
+      "fieldCount": 151
+    }
+  }
+]

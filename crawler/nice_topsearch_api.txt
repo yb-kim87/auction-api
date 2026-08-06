@@ -1,0 +1,15 @@
+https://niceauction.co.kr/api/v1/auth/login-check
+https://niceauction.co.kr/api/v1/code/addr/list?pnuCd=
+https://niceauction.co.kr/api/v1/code/list
+https://niceauction.co.kr/api/v1/court/list
+https://niceauction.co.kr/api/v1/cs/holiday
+https://niceauction.co.kr/api/v1/land-news/list/offset?pageNo=1&pageSize=20&pageSortOrder=date_desc
+https://niceauction.co.kr/api/v1/obj/free/list/offset?pageNo=1&pageSize=100&pageSortOrder=dspslDxdyYmd_asc&tag=%EB%AC%B4%EB%A3%8C%EC%83%98%ED%94%8C_%EC%83%81%EC%97%85%EC%9A%A9&size=4
+https://niceauction.co.kr/api/v1/obj/free/list/offset?pageNo=1&pageSize=100&pageSortOrder=dspslDxdyYmd_asc&tag=%EB%AC%B4%EB%A3%8C%EC%83%98%ED%94%8C_%EC%95%84%ED%8C%8C%ED%8A%B8&size=4
+https://niceauction.co.kr/api/v1/post/list/offset?pageNo=1&pageSize=3&pageSortOrder=date_desc&postMasterId=1922147967406440558
+https://niceauction.co.kr/api/v1/post/list/offset?pageNo=1&pageSize=4&pageSortOrder=date_desc&postMasterId=1878984669811179520
+https://niceauction.co.kr/api/v1/search/advanced/facet/dxdy?objType=76000001&dspslDxdyYmdStart=20260701&dspslDxdyYmdEnd=20260731&mode=all&courtYmd=20260726
+https://niceauction.co.kr/api/v1/search/advanced/facet/new-dxdy?objType=76000001&dspslDxdyYmdStart=20260701&dspslDxdyYmdEnd=20260731&mode=all&courtYmd=20260726
+https://niceauction.co.kr/api/v1/site/server-time
+https://niceauction.co.kr/api/v1/stats/maegak/report?searchDate=2026-07-24
+https://niceauction.co.kr/api/v1/youtube/video/list/offset?pageNo=1&pageSize=18&pageSortOrder=date_desc

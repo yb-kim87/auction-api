@@ -1,0 +1,73 @@
+{
+  "isSuccess": true,
+  "result": {
+    "list": [
+      {
+        "tradeDate": "2026-04-21",
+        "tradeYear": "2026",
+        "floor": 20,
+        "dealPrice": 248000000,
+        "deposit": 0,
+        "monthlyRent": 0,
+        "isDelete": false,
+        "tradeCategory": "중개거래",
+        "registrationDate": "2026-06-29",
+        "propertyType": "NORMAL",
+        "isRenew": false
+      },
+      {
+        "tradeDate": "2026-01-31",
+        "tradeYear": "2026",
+        "floor": 31,
+        "dealPrice": 240000000,
+        "deposit": 0,
+        "monthlyRent": 0,
+        "isDelete": false,
+        "tradeCategory": "중개거래",
+        "registrationDate": "2026-03-20",
+        "propertyType": "NORMAL",
+        "isRenew": false
+      },
+      {
+        "tradeDate": "2026-01-20",
+        "tradeYear": "2026",
+        "floor": 35,
+        "dealPrice": 245000000,
+        "deposit": 0,
+        "monthlyRent": 0,
+        "isDelete": false,
+        "tradeCategory": "중개거래",
+        "registrationDate": "2026-03-20",
+        "propertyType": "NORMAL",
+        "isRenew": false
+      },
+      {
+        "tradeDate": "2025-10-01",
+        "tradeYear": "2025",
+        "floor": 37,
+        "dealPrice": 249000000,
+        "deposit": 0,
+        "monthlyRent": 0,
+        "isDelete": false,
+        "tradeCategory": "중개거래",
+        "registrationDate": "2025-10-24",
+        "propertyType": "NORMAL",
+        "isRenew": false
+      },
+      {
+        "tradeDate": "2025-06-12",
+        "tradeYear": "2025",
+        "floor": 17,
+        "dealPrice": 294000000,
+        "deposit": 0,
+        "monthlyRent": 0,
+        "deleteDate": "2025-06-30",
+        "isDelete": true,
+        "tradeCategory": "중개거래",
+        "propertyType": "NORMAL",
+        "isRenew": false
+      }
+    ],
+    "hasNextPage": true
+  }
+}

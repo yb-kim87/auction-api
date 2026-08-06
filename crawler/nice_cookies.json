@@ -1,0 +1,32 @@
+[
+  {
+    "domain": ".niceauction.co.kr",
+    "expiry": 1819597035,
+    "httpOnly": false,
+    "name": "_ga",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "GA1.1.332412517.1785037036"
+  },
+  {
+    "domain": ".niceauction.co.kr",
+    "expiry": 1816573035,
+    "httpOnly": true,
+    "name": "na_session_auth_v2",
+    "path": "/",
+    "sameSite": "None",
+    "secure": true,
+    "value": "MTc4NTAzNzAzNXxEWDhFQVFMX2dBQUJFQUVRQUFCSF80QUFBUVp6ZEhKcGJtY01Dd0FKYzJWemMybHZia2xrQm5OMGNtbHVad3dtQUNSaFkyVTVNbU13TnkxaFlqQTNMVFE0TW1NdFlUZGpNaTAwTm1NNVpXRXlZamhpWXpRPXzIg1icHwNHiMFbfGRIKKGWZDpiu9cZmXN0lYnJP2I4kA=="
+  },
+  {
+    "domain": ".niceauction.co.kr",
+    "expiry": 1819597035,
+    "httpOnly": false,
+    "name": "_ga_MGNYXFKQXH",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "GS2.1.s1785037035$o1$g0$t1785037035$j60$l0$h0"
+  }
+]

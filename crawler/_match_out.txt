@@ -1,0 +1,2 @@
+매치 건수: 1
+{'aptDong': '102', 'aptNm': '서운동경남아너스빌', 'buildYear': '2007', 'buyerGbn': '개인', 'cdealDay': '', 'cdealType': '', 'dealAmount': '42,000', 'dealDay': '14', 'dealMonth': '4', 'dealYear': '2026', 'dealingGbn': '중개거래', 'estateAgentSggNm': '인천 계양구', 'excluUseAr': '101.8427', 'floor': '3', 'jibun': '178', 'landLeaseholdGbn': 'N', 'rgstDate': '26.05.07', 'sggCd': '28245', 'slerGbn': '개인', 'umdNm': '서운동'}

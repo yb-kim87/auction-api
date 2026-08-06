@@ -1,0 +1,602 @@
+[
+  {
+    "objId": "2071344443264336277",
+    "objProgStatusCd": 9000005,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020206,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20202,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2068814486487172157",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020212,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20202,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2082211712592773922",
+    "objProgStatusCd": 9000003,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020110,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2076622227020710965",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020104,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076550596839605301",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020114,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2082210038251783045",
+    "objProgStatusCd": 9000003,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020105,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2076539322340738101",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020221,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20202,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076535016413725749",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020221,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20202,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2069889058368127493",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010101,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2076555461397578805",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010102,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076543157310325813",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020105,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076579087912010805",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010108,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076586305600356405",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010105,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076560248792941621",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020114,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076606828485018677",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020104,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2043474262295052792",
+    "objProgStatusCd": 9000005,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020106,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2059772188671607601",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2030101,
+    "yongdoCd1": 203,
+    "yongdoCd2": 20301,
+    "yejungYongdoNm": "자동차",
+    "auctnLstDvsCd": 59000004
+  },
+  {
+    "objId": "2076545089248690229",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010102,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2076596907202839605",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020104,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076576584986264629",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020114,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076541553249092661",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010101,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2076621271122052149",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020114,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076539034661815349",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020106,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2068809319138197527",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020110,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2076558698938893365",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020104,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076540673435108405",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020104,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2040942698000548662",
+    "objProgStatusCd": 9000022,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010101,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2076541046535226421",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020104,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076554651250982965",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020106,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076565096577893429",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020221,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20202,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2042017329570643970",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020221,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20202,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2081491313634574802",
+    "objProgStatusCd": 9000003,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020106,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2076160473123783733",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020106,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076535626659791925",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020104,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2038754191714812553",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2030101,
+    "yongdoCd1": 203,
+    "yongdoCd2": 20301,
+    "yejungYongdoNm": "자동차",
+    "auctnLstDvsCd": 59000004
+  },
+  {
+    "objId": "2076562326395289653",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010101,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2076553944313627701",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010101,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076588910518993973",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010101,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2076561156742317109",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020221,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20202,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076583574873572405",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020104,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2061268197402738720",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010108,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2076554479309684789",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010101,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2076588192215073845",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010102,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2076581981272932405",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010108,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2056581831175700532",
+    "objProgStatusCd": 9000020,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010102,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2074963547942551937",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020101,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076542349038584885",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020301,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20203,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076571735401955381",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020104,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2071338232712266222",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020114,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2076546522480116789",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020221,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20202,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076578506929602613",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020221,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20202,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2076574283068343349",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020101,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2054002943706792054",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020101,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2061312285741154364",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2010102,
+    "yongdoCd1": 201,
+    "yongdoCd2": 20101,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000001
+  },
+  {
+    "objId": "2076539198617158709",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020104,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2039486580195852306",
+    "objProgStatusCd": 9000022,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020110,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2076539629992936501",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020114,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  },
+  {
+    "objId": "2048889827666952220",
+    "objProgStatusCd": 9000022,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020105,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2051479475874431086",
+    "objProgStatusCd": 9000004,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020106,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000003
+  },
+  {
+    "objId": "2076569336306205749",
+    "objProgStatusCd": 9000024,
+    "objStatusCd": 6000001,
+    "yongdoCd": 2020102,
+    "yongdoCd1": 202,
+    "yongdoCd2": 20201,
+    "yejungYongdoNm": "",
+    "auctnLstDvsCd": 59000011
+  }
+]

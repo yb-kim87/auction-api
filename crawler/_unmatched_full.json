@@ -1,0 +1,3782 @@
+[
+  {
+    "id": "7e5d99e6-3636-4411-873c-5fd8dac896fc",
+    "auctionNo": "2025타경13168",
+    "court": "서울북부지방법원 9계",
+    "address": "서울특별시 성북구 정릉동 508-9 현대로얄빌라 제501호",
+    "status": "approved"
+  },
+  {
+    "id": "682ce20a-e2eb-4045-bd71-772ca6db7164",
+    "auctionNo": "2025타경20752",
+    "court": "군산지원 3계",
+    "address": "전북특별자치도 군산시 조촌동 491 삼성아파트 2동 9층908호",
+    "status": "approved"
+  },
+  {
+    "id": "9da142ee-5aa9-4eb0-a992-602e0ee326ef",
+    "auctionNo": "2022타경33646",
+    "court": "강릉지원 3계",
+    "address": "강원도 삼척시 중앙로 199, 5층 506호",
+    "status": "approved"
+  },
+  {
+    "id": "4b4724cf-92e9-4330-9f2f-ab8ecdfcd1d1",
+    "auctionNo": "2025타경20914",
+    "court": "군산지원 3계",
+    "address": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 103동 8층 802호",
+    "status": "approved"
+  },
+  {
+    "id": "c68ceade-4836-490d-ba6f-a13a384ec5ee",
+    "auctionNo": "2025타경503084",
+    "court": "대전지방법원 5계",
+    "address": "대전광역시 서구 만년동 1-1 초원아파트 102동 8층806호",
+    "status": "approved"
+  },
+  {
+    "id": "ef69952c-944d-423b-90d6-7bfe47ce5f16",
+    "auctionNo": "2025타경511199",
+    "court": "인천지방법원 22계",
+    "address": "인천광역시 서구 마전동 999-1 검단2차아이파크 201동 14층1402호",
+    "status": "approved"
+  },
+  {
+    "id": "b3f7aea5-7320-4536-bc99-dc47df2bc05c",
+    "auctionNo": "2025타경20895",
+    "court": "군산지원 3계",
+    "address": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 102동 17층 1702호",
+    "status": "approved"
+  },
+  {
+    "id": "2b9003d8-97cf-44e0-b2c4-a2de907fdd41",
+    "auctionNo": "2025타경1268",
+    "court": "울산지방법원 6계",
+    "address": "경상남도 양산시 물금읍 범어리 476 양산경동메르빌 103동 14층1402호",
+    "status": "approved"
+  },
+  {
+    "id": "afe4080f-33a1-4893-b26b-66062f8b3ee1",
+    "auctionNo": "2025타경512347",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 452-26 블루밍아파트 비동 2층205호",
+    "status": "approved"
+  },
+  {
+    "id": "69e7e3b3-6ae6-4a4e-955b-d4471ac99aa8",
+    "auctionNo": "2025타경514326",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 남동구 간석동 235-27 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "52d579d1-092e-4361-ba5d-f19967f29034",
+    "auctionNo": "2026타경60076",
+    "court": "고양지원 2계",
+    "address": "경기도 고양시 일산서구 주엽동 29 문촌마을아파트 406동 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "8429bafe-e122-4c47-95fe-bfdd25691684",
+    "auctionNo": "2026타경600092",
+    "court": "대전지방법원 5계",
+    "address": "대전광역시 서구 관저동 1148 구봉마을8-1단지 811동 21층2104호",
+    "status": "approved"
+  },
+  {
+    "id": "34dfa003-184e-49be-9440-a170558f00fd",
+    "auctionNo": "2025타경11934",
+    "court": "서울남부지방법원 16계",
+    "address": "서울특별시 강서구 화곡동 111-179 동광아트빌 제1층 제101호",
+    "status": "approved"
+  },
+  {
+    "id": "e49b33eb-fce6-44f9-ab34-f5c69dc0fb92",
+    "auctionNo": "2025타경102667",
+    "court": "서울중앙지방법원 12계",
+    "address": "서울특별시 종로구 구기동 50-31 지하층101호",
+    "status": "approved"
+  },
+  {
+    "id": "17a77caa-e4cd-423a-baa2-1c646cf9ae10",
+    "auctionNo": "2025타경51895",
+    "court": "서산지원 2계",
+    "address": "충청남도 당진시 송악읍 가학리 690 송악 이-편한세상 106동 14층1401호",
+    "status": "approved"
+  },
+  {
+    "id": "02033a02-a21c-4179-8392-db2517b048f3",
+    "auctionNo": "2025타경53154",
+    "court": "안산지원 6계",
+    "address": "경기도 안산시 상록구 사동 1512 안산고잔6차푸르지오 619동 17층1701호",
+    "status": "approved"
+  },
+  {
+    "id": "c998d8ea-a124-4e27-bcb0-a9020e18ed2a",
+    "auctionNo": "2026타경501154",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 부평구 부평동 442-17 월드에스클래스 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "08b9ba26-d792-4b5a-8c8e-c8ea22887eee",
+    "auctionNo": "2025타경513046",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 도화동 634-99 미래홈타운 2층203호",
+    "status": "approved"
+  },
+  {
+    "id": "2e84aa6e-3dc7-4fe6-ba6b-cea3513ac23f",
+    "auctionNo": "2025타경71333",
+    "court": "남양주지원 3계",
+    "address": "경기도 남양주시 다산동 4002-1 플루리움 513동 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "49744c48-e8c6-4cd7-83dd-d894e9fa2cce",
+    "auctionNo": "2025타경512726",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 남동구 구월동 1143-2 센트럴타워 5층501호",
+    "status": "approved"
+  },
+  {
+    "id": "d2877ea3-5837-42b0-8c76-d8a5d88b6542",
+    "auctionNo": "2025타경1569",
+    "court": "청주지방법원 5계",
+    "address": "충청북도 청주시 서원구 산남동 1103 청주현진에버빌아파트 101동 8층 802호",
+    "status": "approved"
+  },
+  {
+    "id": "6594b109-c90b-42ba-b6cf-f9dccc91f4b9",
+    "auctionNo": "2025타경512661",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 계양구 작전동 679-10 어반스카이 3동 5층503호",
+    "status": "approved"
+  },
+  {
+    "id": "376a4ac9-eb80-4f51-82bc-56301e017b1d",
+    "auctionNo": "2025타경30722",
+    "court": "충주지원 4계",
+    "address": "충청북도 충주시 중앙탑면 용전리 696 신우희가로아파트 110동 4층403호",
+    "status": "approved"
+  },
+  {
+    "id": "4d16918e-d9ae-4aa6-adc6-5858a4d79ff4",
+    "auctionNo": "2025타경509325",
+    "court": "인천지방법원 14계",
+    "address": "인천광역시 서구 청라동 96-9 리베라움더레이크플러스 15층1514호",
+    "status": "approved"
+  },
+  {
+    "id": "29a34559-6e56-426e-b9a6-d442a644aecd",
+    "auctionNo": "2026타경600182",
+    "court": "대전지방법원 7계",
+    "address": "대전광역시 대덕구 법동 280-2 삼호아파트 3동 12층1201호",
+    "status": "approved"
+  },
+  {
+    "id": "11902b74-d393-49b0-bf2e-03305f7bede1",
+    "auctionNo": "2025타경21849",
+    "court": "통영지원 4계",
+    "address": "경상남도 거제시 아주동 1680-8 덕산아내프리미엄3차 303동 7층702호",
+    "status": "approved"
+  },
+  {
+    "id": "7db01f05-4d52-47e1-a630-5ad3ed4f72a3",
+    "auctionNo": "2025타경10022",
+    "court": "대구지방법원 11계",
+    "address": "대구광역시 중구 삼덕동2가 29-57 홍길아파트 9층902호",
+    "status": "approved"
+  },
+  {
+    "id": "8791a9a7-1f52-439d-a3b8-c8c9ac6966a6",
+    "auctionNo": "2025타경42097",
+    "court": "평택지원 8계",
+    "address": "경기도 평택시 이충동 589-3 대진아파트 4동 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "beb807cc-068a-482c-9715-34fb0e1da746",
+    "auctionNo": "2025타경11460",
+    "court": "창원지방법원 1계",
+    "address": "경상남도 김해시 삼계동 1439-1 화정마을부영아파트 104동 15층1504호",
+    "status": "approved"
+  },
+  {
+    "id": "10841264-3a3c-4d7a-a598-8a34b3834169",
+    "auctionNo": "2024타경584271",
+    "court": "인천지방법원 11계",
+    "address": "인천광역시 미추홀구 미추로58번길 12, 2층203호 (숭의동,메트로칸)",
+    "status": "approved"
+  },
+  {
+    "id": "c1c3088d-84dc-4911-a48e-7b9bf47087cb",
+    "auctionNo": "2025타경34719",
+    "court": "부천지원 2계",
+    "address": "경기도 부천시 원미구 심곡동 368-36 다우빌 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "ea961565-f347-4452-9ca1-9771cc09033a",
+    "auctionNo": "2025타경51747",
+    "court": "서울서부지방법원 7계",
+    "address": "서울특별시 은평구 구산동 308-83 미주빌라 가동 4층401호",
+    "status": "approved"
+  },
+  {
+    "id": "c9a5d2bd-54d0-46af-a845-b8df2c12720d",
+    "auctionNo": "2024타경58335",
+    "court": "부산지방법원 5계",
+    "address": "부산광역시 부산진구 연수로11번길 43, 5층502호 (양정동,포세이돈)",
+    "status": "approved"
+  },
+  {
+    "id": "66a17da9-fe1f-41ff-b4ba-dfb272b1db05",
+    "auctionNo": "2025타경514094",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 서구 석남동 509-1 힐스테이션 12층1202호",
+    "status": "approved"
+  },
+  {
+    "id": "37683b53-93f4-4db8-95f0-29ea38407702",
+    "auctionNo": "2023타경4573",
+    "court": "부산동부지원 6계",
+    "address": "부산광역시 남구 황령대로319번가길 142, 104동 4층401호 (대연동,삼익그린타운)",
+    "status": "approved"
+  },
+  {
+    "id": "b297be6e-e7de-4ec0-925d-48f33709b28d",
+    "auctionNo": "2025타경514484",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 752-72 아이챌린지 주건축물제1동 7층702호",
+    "status": "approved"
+  },
+  {
+    "id": "ce105dd8-268f-49ee-94be-b1dd00c76f7b",
+    "auctionNo": "2025타경3129",
+    "court": "부산서부지원 5계",
+    "address": "부산광역시 사상구 모라동 75 백양푸른숲아파트 407동 14층1401호",
+    "status": "approved"
+  },
+  {
+    "id": "6067b033-0018-4fae-a996-5ec8c7d34a1f",
+    "auctionNo": "2025타경12141",
+    "court": "울산지방법원 1계",
+    "address": "경상남도 양산시 주진동 710 양산천년가더힐 101동 5층502호",
+    "status": "approved"
+  },
+  {
+    "id": "edd20dbf-7f75-44fe-9b07-76d0bb7a2fd6",
+    "auctionNo": "2025타경22256",
+    "court": "부산지방법원 8계",
+    "address": "부산광역시 금정구 장전동 605-1 장전동에스제이타워 15층1502호",
+    "status": "approved"
+  },
+  {
+    "id": "b2275b58-2a71-4959-b226-165ac57129fe",
+    "auctionNo": "2025타경33808",
+    "court": "부천지원 7계",
+    "address": "경기도 부천시 원미구 심곡동 100-1 삼성주택 에이동 2층 205호",
+    "status": "approved"
+  },
+  {
+    "id": "0276d6a6-1c30-40b2-82d4-66989f0b8d02",
+    "auctionNo": "2025타경32231",
+    "court": "대구서부지원 1계",
+    "address": "대구광역시 달서구 도원동 1438 대곡사계절타운 303동 16층1603호",
+    "status": "approved"
+  },
+  {
+    "id": "511e161c-36d2-497d-ba41-1bc5c960c36b",
+    "auctionNo": "2026타경3031",
+    "court": "대구서부지원 1계",
+    "address": "대구광역시 달서구 용산동 419-1 한마음아파트 106동 5층503호",
+    "status": "approved"
+  },
+  {
+    "id": "805c6d05-9a53-4ee8-a194-f95f511f1853",
+    "auctionNo": "2025타경11731",
+    "court": "울산지방법원 1계",
+    "address": "울산광역시 북구 산하동 1033-1 울산블루마시티2차푸르지오 101동 24층2403호",
+    "status": "approved"
+  },
+  {
+    "id": "85f72701-4ca3-4a62-841c-659c05ebd774",
+    "auctionNo": "2025타경51354",
+    "court": "서산지원 1계",
+    "address": "충청남도 당진시 채운동 276-12 한중아파트 102동 14층1401호",
+    "status": "approved"
+  },
+  {
+    "id": "807fdf74-09c0-4af8-aa0c-4da4ad618e04",
+    "auctionNo": "2025타경512576",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 숭의동 303-92 샤인힐 10층1005호",
+    "status": "approved"
+  },
+  {
+    "id": "0181eacb-4d69-499e-a97d-f38cb6e3a7a9",
+    "auctionNo": "2025타경21714",
+    "court": "통영지원 4계",
+    "address": "경상남도 거제시 장승포동 625 대호마전빌1차 6층602호",
+    "status": "approved"
+  },
+  {
+    "id": "b8ede5d0-98c7-4a27-b2f3-e8b2abb83b58",
+    "auctionNo": "2025타경16007(2)",
+    "court": "홍성지원 3계",
+    "address": "충청남도 서천군 서천읍 사곡리 386 천산스카이빌아파트 106동 12층1204호",
+    "status": "approved"
+  },
+  {
+    "id": "323258aa-c88b-44ee-b435-0b82fee75f12",
+    "auctionNo": "2025타경12383",
+    "court": "서울남부지방법원 4계",
+    "address": "서울특별시 금천구 독산동 973-1 어반팰리스 제7층 제702호",
+    "status": "approved"
+  },
+  {
+    "id": "83d7da00-e594-47a4-8818-002d3fc722c1",
+    "auctionNo": "2024타경110655",
+    "court": "안양지원 1계",
+    "address": "경기도 안양시 만안구 만안로77번길 8, 6층604호 (안양동,청명더에이스)",
+    "status": "approved"
+  },
+  {
+    "id": "4054b40a-d055-4517-b1f3-7bfc4c4daabc",
+    "auctionNo": "2025타경1288",
+    "court": "울산지방법원 1계",
+    "address": "울산광역시 북구 화봉동 452 화봉청구타운 201동 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "33244f70-f28f-42da-9f9a-2fe1f1e9ed9f",
+    "auctionNo": "2025타경9988",
+    "court": "서울남부지방법원 2계",
+    "address": "서울특별시 강서구 화곡동 56-93 도무스힐르 제1동 제2층 제202호",
+    "status": "approved"
+  },
+  {
+    "id": "9dbd09c7-0854-4d86-948f-9b81f5fe0c9e",
+    "auctionNo": "2025타경514087",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 주안동 1002-11 리오센트럴타워 11층1102호",
+    "status": "approved"
+  },
+  {
+    "id": "7e959a54-f652-445b-b1dd-b7c903dc7cd4",
+    "auctionNo": "2024타경109501",
+    "court": "안양지원 1계",
+    "address": "경기도 안양시 만안구 전파로24번길 32, 2층201호 (안양동,라움빌리지)",
+    "status": "approved"
+  },
+  {
+    "id": "0cf35e97-4ecf-4e68-b783-5eee36a1f085",
+    "auctionNo": "2025타경101763",
+    "court": "부산서부지원 5계",
+    "address": "부산광역시 사상구 엄궁동 680-2 엄궁동쌍용스윗닷홈 105동 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "7a4cffd7-811f-4980-aaff-840b0f2e1b87",
+    "auctionNo": "2025타경5578",
+    "court": "부산동부지원 7계",
+    "address": "부산광역시 기장군 기장읍 대라리 169-1 태윤리더스 8층802호",
+    "status": "approved"
+  },
+  {
+    "id": "e9bf7533-c0ce-4c98-9a64-68ad4934600b",
+    "auctionNo": "2025타경51422",
+    "court": "서울동부지방법원 3계",
+    "address": "서울특별시 성동구 도선동 332 4층404호",
+    "status": "approved"
+  },
+  {
+    "id": "7996316d-80b2-4be1-8707-3b826fc9b4e2",
+    "auctionNo": "2026타경60194",
+    "court": "고양지원 4계",
+    "address": "경기도 고양시 일산동구 장항동 734 삼라마이다스 3 4층408호",
+    "status": "approved"
+  },
+  {
+    "id": "00796d0e-948e-4159-99d3-d44239e26930",
+    "auctionNo": "2025타경502985",
+    "court": "대전지방법원 12계",
+    "address": "대전광역시 서구 가수원동 808 은아아파트5단지 504동 5층503호",
+    "status": "approved"
+  },
+  {
+    "id": "ea92042d-8c31-4a05-9690-13c31b76f946",
+    "auctionNo": "2025타경33665(9)",
+    "court": "부천지원 9계",
+    "address": "경기도 부천시 소사구 소사본동 133-12 부천소사역푸르지오 103동 1층 103호",
+    "status": "approved"
+  },
+  {
+    "id": "13d0578c-39d1-4d3a-b2f1-7e751225d655",
+    "auctionNo": "2025타경510701",
+    "court": "인천지방법원 22계",
+    "address": "인천광역시 연수구 송도동 316 힐스테이트 송도 더테라스 102동 8층807호",
+    "status": "approved"
+  },
+  {
+    "id": "c54592ff-6cec-4d32-a0d0-fef4c16585af",
+    "auctionNo": "2025타경34439",
+    "court": "부천지원 7계",
+    "address": "경기도 부천시 소사구 소사본동 155-8 신성탑스빌 1층101호",
+    "status": "approved"
+  },
+  {
+    "id": "9aef9001-d883-4adc-96b5-a4953434f575",
+    "auctionNo": "2025타경511832",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 남동구 구월동 1147-1 캐슬베리 6층603호",
+    "status": "approved"
+  },
+  {
+    "id": "091d9822-5710-4439-84d8-4862db22b7e9",
+    "auctionNo": "2025타경35392",
+    "court": "부천지원 3계",
+    "address": "경기도 부천시 원미구 약대동 216-1 부천아이파크 106동 11층1103호",
+    "status": "approved"
+  },
+  {
+    "id": "721f59a1-6cc7-4af6-8e53-c01ab7f9e15c",
+    "auctionNo": "2025타경10680",
+    "court": "서울남부지방법원 16계",
+    "address": "서울특별시 강서구 화곡동 56-93 도무스힐르 제1동 제지층 제102호",
+    "status": "approved"
+  },
+  {
+    "id": "c13cf54e-99d0-482b-b6bc-144379950776",
+    "auctionNo": "2025타경8213",
+    "court": "광주지방법원 2계",
+    "address": "전남광주통합특별시 광산구 월계동 878-4 첨단에이엠-시티스카이하이2차 14층1403호",
+    "status": "approved"
+  },
+  {
+    "id": "40c6d0e2-86aa-4d68-9db8-f1b411d13aed",
+    "auctionNo": "2025타경22296",
+    "court": "부산지방법원 1계",
+    "address": "부산광역시 중구 부평동4가 15-1 로얄스카이캐슬 5층503호",
+    "status": "approved"
+  },
+  {
+    "id": "2f3e92a2-ea89-4b6b-9025-101529beef86",
+    "auctionNo": "2025타경1435",
+    "court": "부산지방법원 6계",
+    "address": "부산광역시 동래구 수안동 32-2 5층503호",
+    "status": "approved"
+  },
+  {
+    "id": "11f1598e-affd-49e3-8541-731d12a86a5d",
+    "auctionNo": "2025타경839",
+    "court": "서산지원 2계",
+    "address": "충청남도 서산시 죽성동 74-1 서산삼성아파트 105동 3층303호",
+    "status": "approved"
+  },
+  {
+    "id": "c65cfa57-eec1-4e89-b9c1-85f4258e0410",
+    "auctionNo": "2026타경502361",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 미추홀구 용현동 624-55 10층1002호",
+    "status": "approved"
+  },
+  {
+    "id": "f97fa0ca-aa3a-48f3-a8e5-c7ed04dd6f17",
+    "auctionNo": "2024타경5265",
+    "court": "부산서부지원 1계",
+    "address": "부산광역시 사상구 학감대로49번길 62, 101동 15층1501호 (학장동,학장대림아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "7bf8d678-6193-4ee7-8bf8-fda58fee1132",
+    "auctionNo": "2025타경9207",
+    "court": "대구지방법원 4계",
+    "address": "경상북도 경산시 정평동 138-4 경산우방맨션 105동 17층1702호",
+    "status": "approved"
+  },
+  {
+    "id": "3b3f668f-f3bb-4eed-9f5b-7b1b3f01ef9c",
+    "auctionNo": "2025타경5462",
+    "court": "부산동부지원 6계",
+    "address": "부산광역시 해운대구 반여동 585 반여동우신아파트 102동 1층101호",
+    "status": "approved"
+  },
+  {
+    "id": "5c147d2a-8040-415c-961f-2d1ac00b5036",
+    "auctionNo": "2025타경55606",
+    "court": "수원지방법원 5계",
+    "address": "경기도 용인시 기흥구 언남동 500 초원마을성원상떼빌 206동 20층2004호",
+    "status": "approved"
+  },
+  {
+    "id": "02396485-4e5b-4c17-a40a-fc951edb0ae6",
+    "auctionNo": "2025타경635",
+    "court": "대구지방법원 6계",
+    "address": "대구광역시 남구 대명동 1633 파크아파트 디동 1층109호",
+    "status": "approved"
+  },
+  {
+    "id": "80fa707c-0cde-4fd0-bd97-bd1b4f28ebde",
+    "auctionNo": "2025타경503202",
+    "court": "대전지방법원 12계",
+    "address": "세종특별자치시 조치원읍 죽림리 159-2 신동아아파트 201동 6층602호",
+    "status": "approved"
+  },
+  {
+    "id": "5b43f6f4-0bf1-4c34-ad2b-5d63da66bae1",
+    "auctionNo": "2025타경4978",
+    "court": "부산동부지원 2계",
+    "address": "부산광역시 남구 대연동 649 삼성아파트 103동 5층503호",
+    "status": "approved"
+  },
+  {
+    "id": "89b40dee-5294-440e-aa83-3fd21409a2b7",
+    "auctionNo": "2025타경22531",
+    "court": "부산지방법원 1계",
+    "address": "부산광역시 부산진구 당감동 794 백양푸른채 303동 20층2002호",
+    "status": "approved"
+  },
+  {
+    "id": "d20eac54-c384-4335-8b98-56386d9cbfa8",
+    "auctionNo": "2026타경65",
+    "court": "경주지원 4계",
+    "address": "경상북도 경주시 황성동 277-6 황성5차현대아파트 509동 8층804호",
+    "status": "approved"
+  },
+  {
+    "id": "1dea0bb0-854e-44ae-8551-803052a2c02f",
+    "auctionNo": "2025타경729",
+    "court": "순천지원 8계",
+    "address": "전라남도 광양시 중동 1665 성호2차아파트 201동 19층1903호",
+    "status": "approved"
+  },
+  {
+    "id": "b485ef0d-6a93-4520-9f31-6fb1531004b4",
+    "auctionNo": "2025타경508506",
+    "court": "인천지방법원 2계",
+    "address": "인천광역시 연수구 송도동 9-29 송도웰카운티2단지 220동 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "4bcb0b7a-835b-49fc-9819-a835878cc385",
+    "auctionNo": "2025타경51880",
+    "court": "순천지원 7계",
+    "address": "전라남도 광양시 마동 1033 신원아르시스 102동 4층407호",
+    "status": "approved"
+  },
+  {
+    "id": "daa6a529-3b9b-4e19-8d41-3d7d90e37ff4",
+    "auctionNo": "2025타경11311",
+    "court": "김천지원 5계",
+    "address": "경상북도 구미시 구평동 455 부영아파트 604동 3층 303호",
+    "status": "approved"
+  },
+  {
+    "id": "2e272586-f561-4c19-adea-1940efb2feb4",
+    "auctionNo": "2025타경101109",
+    "court": "부산서부지원 1계",
+    "address": "부산광역시 사상구 괘법동 270-9 파크블루11차 3층306호",
+    "status": "approved"
+  },
+  {
+    "id": "73306eea-ced6-4532-b2a9-5cb8647f69d8",
+    "auctionNo": "2024타경52096",
+    "court": "청주지방법원 2계",
+    "address": "충청북도 청주시 상당구 무농정로 72, 101동 8층 804호 (용암동, 용암대원칸타빌아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "03a36f17-20e1-4b38-be6b-c333ea921cae",
+    "auctionNo": "2025타경12146",
+    "court": "울산지방법원 6계",
+    "address": "경상남도 양산시 주진동 710 양산천년가더힐 108동 17층1704호",
+    "status": "approved"
+  },
+  {
+    "id": "91275abc-e8c9-4d62-8b1a-c165118d2856",
+    "auctionNo": "2024타경512924",
+    "court": "인천지방법원 25계",
+    "address": "인천광역시 부평구 마장로220번길 13, 104동 22층2202호 (산곡동,한신휴아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "b9b1e499-7cb1-4bb5-b462-fd113044d610",
+    "auctionNo": "2023타경54570(1)",
+    "court": "순천지원 7계",
+    "address": "전라남도 광양시 광장로 112-20, 104동 5층503호 (중동,성호아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "e70e4369-2be0-4d37-8569-b1c2acc03f4f",
+    "auctionNo": "2025타경11211",
+    "court": "김천지원 1계",
+    "address": "경상북도 김천시 지좌동 440-2 덕일아파트 제4동 제2층 제203호",
+    "status": "approved"
+  },
+  {
+    "id": "d1ef8730-93f9-48c6-ae41-28cf68c19498",
+    "auctionNo": "2025타경508707",
+    "court": "인천지방법원 10계",
+    "address": "인천광역시 연수구 송도동 312-1 호반써밋송도 102동 16층1603호",
+    "status": "approved"
+  },
+  {
+    "id": "df00fd6d-89fd-4747-93cc-4c7b6050a026",
+    "auctionNo": "2025타경11174",
+    "court": "김천지원 1계",
+    "address": "경상북도 구미시 봉곡동 105 세양청마루아파트 제107동 제3층 제305호",
+    "status": "approved"
+  },
+  {
+    "id": "bad28045-e79f-4cfe-8dfe-142bc0049021",
+    "auctionNo": "2025타경500362",
+    "court": "인천지방법원 26계",
+    "address": "인천광역시 연수구 송도과학로27번길 70, 104동 3층303호 (송도동,롯데캐슬)",
+    "status": "approved"
+  },
+  {
+    "id": "0f6d0f48-d4ae-45ca-ac2e-ad2bb4cadcf6",
+    "auctionNo": "2025타경341",
+    "court": "김천지원 1계",
+    "address": "경상북도 구미시 형곡동 375-1 제6층 제705호",
+    "status": "approved"
+  },
+  {
+    "id": "2d789c35-df58-4048-a14a-1eacf55584f9",
+    "auctionNo": "2025타경1282",
+    "court": "울산지방법원 1계",
+    "address": "울산광역시 울주군 범서읍 천상리 646 한라그린피스맨션 103동 2층203호",
+    "status": "approved"
+  },
+  {
+    "id": "0bb28353-3439-4e2e-a909-5e5fdccb9d76",
+    "auctionNo": "2025타경811",
+    "court": "인천지방법원 22계",
+    "address": "인천광역시 계양구 서운동 178 서운동경남아너스빌 103동 9층902호",
+    "status": "approved"
+  },
+  {
+    "id": "13a5acad-ff7f-4023-b157-756fd1bcb17b",
+    "auctionNo": "2024타경119479",
+    "court": "울산지방법원 6계",
+    "address": "경상남도 양산시 물금읍 새실로 115, 504동 2층203호 (양산물금 대방노블랜드 5차 에듀카운티)",
+    "status": "approved"
+  },
+  {
+    "id": "4e6d8ae1-0c7c-4189-bc44-baeba60134e5",
+    "auctionNo": "2025타경509714",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 남동구 간석동 10-6 지층1호",
+    "status": "approved"
+  },
+  {
+    "id": "97ac5f9f-e1a3-435e-99e1-00ca1ff7152a",
+    "auctionNo": "2025타경511576",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 남동구 간석동 249-6 이츠아파트 7층705호",
+    "status": "approved"
+  },
+  {
+    "id": "75859e0b-7f5b-49d1-89f9-dd82d0370948",
+    "auctionNo": "2025타경73610",
+    "court": "의정부지방법원 7계",
+    "address": "경기도 의정부시 의정부동 8-5 유현페라리움 4층 402호",
+    "status": "approved"
+  },
+  {
+    "id": "44f04290-5946-44c1-b1ce-db8f52a47c7f",
+    "auctionNo": "2025타경4775",
+    "court": "부산동부지원 2계",
+    "address": "부산광역시 남구 문현동 408-18 문현동월가아파트 13층1301호",
+    "status": "approved"
+  },
+  {
+    "id": "7e40893a-d558-4a84-a58a-a4e7984aeb74",
+    "auctionNo": "2025타경3520",
+    "court": "고양지원 8계",
+    "address": "경기도 고양시 일산서구 덕이동 1535 하이파크시티일산파밀리에4단지 410동 24층2402호",
+    "status": "approved"
+  },
+  {
+    "id": "01df7a3c-0c5f-48f4-ac3c-dc5ede87f867",
+    "auctionNo": "2025타경101764",
+    "court": "부산서부지원 5계",
+    "address": "부산광역시 북구 화명동 295 도시화명그린아파트 208동 17층1701호",
+    "status": "approved"
+  },
+  {
+    "id": "ec004e74-020d-4d7c-8dbd-1e6a4d3871ed",
+    "auctionNo": "2025타경64079",
+    "court": "고양지원 3계",
+    "address": "경기도 고양시 일산서구 일산동 652-2 현대아파트 207동 10층1003호",
+    "status": "approved"
+  },
+  {
+    "id": "7de40565-797e-4c8d-9780-5f16a4bbd55d",
+    "auctionNo": "2025타경6103",
+    "court": "서울북부지방법원 4계",
+    "address": "서울특별시 중랑구 면목동 148-16 진영리더스 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "c53035db-fa1e-4374-8a08-77c7d53ba95b",
+    "auctionNo": "2025타경56162",
+    "court": "수원지방법원 8계",
+    "address": "경기도 화성시 향남읍 행정리 492 향남시범살구꽃마을신영지웰아파트 1204동 18층1802호",
+    "status": "approved"
+  },
+  {
+    "id": "dd24e7db-430b-466e-a3c2-8defaf48c7aa",
+    "auctionNo": "2025타경511827",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 180-20 메이져뷰 10층1001호",
+    "status": "approved"
+  },
+  {
+    "id": "9dbaeee2-9e47-46b1-99d8-5ec6e8782c94",
+    "auctionNo": "2025타경508386",
+    "court": "인천지방법원 24계",
+    "address": "인천광역시 연수구 송도동 192-8 베르디움더퍼스트 106동 27층2701호",
+    "status": "approved"
+  },
+  {
+    "id": "c1a883d7-4756-4552-9653-dfb251091f88",
+    "auctionNo": "2025타경101723",
+    "court": "부산서부지원 5계",
+    "address": "부산광역시 서구 남부민동 523-1 대림비치아파트 102동 22층2202호",
+    "status": "approved"
+  },
+  {
+    "id": "b48036ca-65cc-4dd4-874b-1cbd8eeb4d01",
+    "auctionNo": "2025타경818",
+    "court": "안산지원 5계",
+    "address": "경기도 시흥시 은행동 599-1 시흥은행4차푸르지오 409동 17층1703호",
+    "status": "approved"
+  },
+  {
+    "id": "64d141bc-59de-4233-baff-752f5cb13553",
+    "auctionNo": "2025타경13092",
+    "court": "서울북부지방법원 3계",
+    "address": "서울특별시 도봉구 도봉동 422-22 동일스위트홈타운 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "b14dbc79-0fac-4b2a-bb16-1ebde82b5290",
+    "auctionNo": "2025타경101752",
+    "court": "부산서부지원 5계",
+    "address": "부산광역시 북구 화명동 295 도시화명그린아파트 205동 3층305호",
+    "status": "approved"
+  },
+  {
+    "id": "4c8c30c6-0de6-4353-ab05-c3ee224e4f04",
+    "auctionNo": "2025타경5365",
+    "court": "부산동부지원 2계",
+    "address": "부산광역시 남구 감만동 225-2 감만현대아파트 103동 12층1203호",
+    "status": "approved"
+  },
+  {
+    "id": "20776a0d-2448-4953-b425-e6c668f3a455",
+    "auctionNo": "2024타경578368",
+    "court": "인천지방법원 9계",
+    "address": "인천광역시 미추홀구 숭의동 26-10 7층701호",
+    "status": "approved"
+  },
+  {
+    "id": "33c00813-ad0e-4dd9-8fd7-939105b301b1",
+    "auctionNo": "2025타경104328",
+    "court": "서울중앙지방법원 4계",
+    "address": "서울특별시 관악구 신림동 254-134 산자락빌라 비동 지1층비01호",
+    "status": "approved"
+  },
+  {
+    "id": "704e9ac4-4612-4798-8232-d6f52f01c366",
+    "auctionNo": "2025타경22131",
+    "court": "부산지방법원 8계",
+    "address": "부산광역시 부산진구 당감동 518 주공아파트 320동 10층1005호",
+    "status": "approved"
+  },
+  {
+    "id": "7236dba8-d8cf-4cab-8e21-b222631f03dd",
+    "auctionNo": "2025타경514611",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 부평구 부평동 375-126 위너스빌2 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "77cc93e4-a1e2-4be0-8f21-ce4c107e09bb",
+    "auctionNo": "2025타경13778",
+    "court": "서울북부지방법원 4계",
+    "address": "서울특별시 강북구 수유동 516-127 삼광빌라 나동 2층 204호",
+    "status": "approved"
+  },
+  {
+    "id": "d53836fb-8e65-4b2e-bbdf-754bd971b42c",
+    "auctionNo": "2025타경512566",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 150-2 투엠레뷰 9층904호",
+    "status": "approved"
+  },
+  {
+    "id": "5d10bb58-6278-43cd-8eaf-daf6ab736201",
+    "auctionNo": "2025타경100903",
+    "court": "안양지원 1계",
+    "address": "경기도 안양시 만안구 안양동 438-7 청명더에이스 3층301호",
+    "status": "approved"
+  },
+  {
+    "id": "e25ca711-c18b-44a1-9080-63ccee4984e7",
+    "auctionNo": "2025타경575",
+    "court": "부산동부지원 6계",
+    "address": "부산광역시 해운대구 반송동 887 남흥아파트 102동 1층102호",
+    "status": "approved"
+  },
+  {
+    "id": "17e536fa-03aa-4d08-8ea2-edad11747d1a",
+    "auctionNo": "2025타경9454",
+    "court": "대구지방법원 4계",
+    "address": "경상북도 경산시 옥산동 725-2 옥산신화평광타운 204동 16층1603호",
+    "status": "approved"
+  },
+  {
+    "id": "2ac6d5a6-a13a-4d8b-a452-104d4d6537d5",
+    "auctionNo": "2025타경1835",
+    "court": "의정부지방법원 7계",
+    "address": "강원특별자치도 철원군 동송읍 이평리 838-8 디-101호",
+    "status": "approved"
+  },
+  {
+    "id": "b225fc35-51a9-4291-a43b-cd1ca80f32f4",
+    "auctionNo": "2025타경510330",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 용현동 624-79 7층702호",
+    "status": "approved"
+  },
+  {
+    "id": "a3f52645-5436-4526-931a-5e9676a56827",
+    "auctionNo": "2025타경15971",
+    "court": "홍성지원 3계",
+    "address": "충청남도 홍성군 홍북읍 신경리 1369 내포신도시경남아너스빌 105동 8층805호",
+    "status": "approved"
+  },
+  {
+    "id": "a1c39b5e-3dcf-4211-8523-4ed4975d573d",
+    "auctionNo": "2025타경5662",
+    "court": "부산동부지원 7계",
+    "address": "부산광역시 기장군 정관읍 모전리 728 동일스위트3차 302동 9층901호",
+    "status": "approved"
+  },
+  {
+    "id": "96031274-f8f3-4f87-af85-33da44b4886d",
+    "auctionNo": "2025타경5609",
+    "court": "부산동부지원 7계",
+    "address": "부산광역시 남구 용호동 514-1 동부타워 102동 8층801호",
+    "status": "approved"
+  },
+  {
+    "id": "48803fb0-a121-4295-bb32-142fd8870b7f",
+    "auctionNo": "2025타경42574",
+    "court": "평택지원 3계",
+    "address": "경기도 평택시 지산동 824-1 명진쉐르빌1 6층602호",
+    "status": "approved"
+  },
+  {
+    "id": "d49aa0e3-0122-4de2-8204-5a68952c2ce1",
+    "auctionNo": "2025타경9419",
+    "court": "대구지방법원 4계",
+    "address": "대구광역시 수성구 신매동 246 신매우방타운 101동 4층417호",
+    "status": "approved"
+  },
+  {
+    "id": "7b25fed3-b64d-4387-86ee-e76f903a03fc",
+    "auctionNo": "2025타경9634",
+    "court": "대구지방법원 4계",
+    "address": "대구광역시 북구 침산동 293-12 메트로캐슬 3층3-302호",
+    "status": "approved"
+  },
+  {
+    "id": "9d10973c-cf1a-466a-9dee-5d4b11a579ff",
+    "auctionNo": "2025타경1391",
+    "court": "울산지방법원 8계",
+    "address": "경상남도 양산시 주진동 710 양산천년가더힐 105동 17층 1703호",
+    "status": "approved"
+  },
+  {
+    "id": "ff8faff3-fac0-49b4-8565-eb06303509ad",
+    "auctionNo": "2025타경9909",
+    "court": "대구지방법원 4계",
+    "address": "대구광역시 동구 신서동 543 영조아름다운나날 107동 11층1103호",
+    "status": "approved"
+  },
+  {
+    "id": "654de3e5-7cbb-46b0-bc5d-4f8ba006f7ad",
+    "auctionNo": "2025타경10584",
+    "court": "밀양지원 1계",
+    "address": "경상남도 창녕군 남지읍 남지리 758-358 골든렉시움 2층204호",
+    "status": "approved"
+  },
+  {
+    "id": "63ef475b-76f6-4cc7-ac27-3e2b52c8b8f1",
+    "auctionNo": "2025타경51922",
+    "court": "순천지원 7계",
+    "address": "전라남도 광양시 중동 1665 성호2차아파트 201동 23층2321호",
+    "status": "approved"
+  },
+  {
+    "id": "4a9e9715-08df-473f-aae1-15c90fd5c8db",
+    "auctionNo": "2025타경9549",
+    "court": "대구지방법원 4계",
+    "address": "대구광역시 북구 복현동 430 4층508호",
+    "status": "approved"
+  },
+  {
+    "id": "f06411ff-9124-4422-a2ff-cf9911535184",
+    "auctionNo": "2025타경4025",
+    "court": "포항지원 4계",
+    "address": "경상북도 포항시 남구 오천읍 문덕리 268-1 태웅하이츠 101동 1층 103호",
+    "status": "approved"
+  },
+  {
+    "id": "d1498016-0fe1-4d3e-ae0a-acb864ed9b5b",
+    "auctionNo": "2025타경12228",
+    "court": "서울남부지방법원 16계",
+    "address": "서울특별시 강서구 화곡동 51-49 제2층 제201호",
+    "status": "approved"
+  },
+  {
+    "id": "153400c4-7b7b-4fbd-b00b-89e31773a933",
+    "auctionNo": "2025타경512779",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 숭의동 57-10 더패밀리 5층502호",
+    "status": "approved"
+  },
+  {
+    "id": "f6b8dfae-cf0a-4ed5-b93e-983f2ca5d893",
+    "auctionNo": "2025타경243",
+    "court": "강릉지원 2계",
+    "address": "강원특별자치도 강릉시 주문진읍 교항리 1261 센텀파크디오션(1단지) 101동 13층1305호",
+    "status": "approved"
+  },
+  {
+    "id": "d215a303-0669-400e-8ea2-29ebb17178ba",
+    "auctionNo": "2025타경13467",
+    "court": "서울남부지방법원 9계",
+    "address": "서울특별시 금천구 독산동 961-9 메트로시티 제2층 제202호",
+    "status": "approved"
+  },
+  {
+    "id": "ed658781-9516-4424-815b-7e261d2c60e6",
+    "auctionNo": "2025타경101084",
+    "court": "부산서부지원 6계",
+    "address": "부산광역시 사상구 주례동 10-21 반도보라매머드타운 103,104동 4층104-401호",
+    "status": "approved"
+  },
+  {
+    "id": "7802e7a1-9c70-499d-918e-8285db9b5a73",
+    "auctionNo": "2025타경34103",
+    "court": "광주지방법원 5계",
+    "address": "광주광역시 광산구 송정동 230-8 대덕9차아파트 902동 12층1205호",
+    "status": "approved"
+  },
+  {
+    "id": "5c3cd4c6-2639-4fe6-9312-27fce606b379",
+    "auctionNo": "2026타경50596",
+    "court": "순천지원 1계",
+    "address": "전라남도 순천시 인제동 207 서광아파트 6층603호",
+    "status": "approved"
+  },
+  {
+    "id": "a213c8d6-3614-4443-9134-b12e1f597bb1",
+    "auctionNo": "2025타경511647",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 409-8 엘루이 13층1301호",
+    "status": "approved"
+  },
+  {
+    "id": "43183f9b-6c98-435d-aba9-c1ec3e633149",
+    "auctionNo": "2026타경50534",
+    "court": "순천지원 1계",
+    "address": "전라남도 광양시 중동 1324-1 수하임2차 201동 28층2801호",
+    "status": "approved"
+  },
+  {
+    "id": "e43ff385-5c17-402c-93c6-e90b2f6c456f",
+    "auctionNo": "2026타경10133",
+    "court": "울산지방법원 7계",
+    "address": "경상남도 양산시 상북면 대석리 665 일양하이츠타운 101동 13층1303호",
+    "status": "approved"
+  },
+  {
+    "id": "44d23ffe-991c-49b9-b81d-2b65a8d5a11e",
+    "auctionNo": "2025타경20802",
+    "court": "군산지원 5계",
+    "address": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 104동 17층1702호",
+    "status": "approved"
+  },
+  {
+    "id": "80c0b055-1d8a-405a-8562-b733abb3eba0",
+    "auctionNo": "2025타경21624",
+    "court": "통영지원 4계",
+    "address": "경상남도 거제시 고현동 483 고현삼도아파트 8층805호",
+    "status": "approved"
+  },
+  {
+    "id": "4f97546a-e32d-43a6-bf08-8e1975930974",
+    "auctionNo": "2026타경10573",
+    "court": "울산지방법원 7계",
+    "address": "경상남도 양산시 평산동 568-20 덕계동일스위트1차 104동 6층602호",
+    "status": "approved"
+  },
+  {
+    "id": "ee0f5139-a8b8-497f-8b30-2bfa94e6550a",
+    "auctionNo": "2026타경30445",
+    "court": "광주지방법원 5계",
+    "address": "광주광역시 광산구 도산동 782 호반아파트 202동 5층511호",
+    "status": "approved"
+  },
+  {
+    "id": "6d3757e0-54de-40ad-a49a-6e5f4e6fc9a5",
+    "auctionNo": "2025타경34709",
+    "court": "부천지원 7계",
+    "address": "경기도 부천시 원미구 약대동 164-21 엔토피아 105동 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "0f1295b2-f5a6-432c-9e63-b3c74ca288af",
+    "auctionNo": "2025타경511815",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 서구 가좌동 136 무한퍼스트지 13층1305호",
+    "status": "approved"
+  },
+  {
+    "id": "0418eaf3-5680-46fa-b613-6c22089957f2",
+    "auctionNo": "2025타경511428",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 도화동 638-3 라이프타워 13층1305호",
+    "status": "approved"
+  },
+  {
+    "id": "ab89449e-0aea-4134-b31a-990a75c17b99",
+    "auctionNo": "2025타경63779",
+    "court": "고양지원 3계",
+    "address": "경기도 파주시 금촌동 793-6 창성에코빌 7층701호",
+    "status": "approved"
+  },
+  {
+    "id": "2a491be3-910b-4eac-bf57-98cc5a062ff7",
+    "auctionNo": "2024타경557316",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 주안서로 18, 6층605호 (주안동,힐탑플러스)",
+    "status": "approved"
+  },
+  {
+    "id": "b224ed51-1206-4221-93e4-0a53e06ae70b",
+    "auctionNo": "2026타경10047",
+    "court": "경주지원 1계",
+    "address": "경상북도 경주시 현곡면 금장리 399 삼성강변타운 103동 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "1e25c7cf-56a5-4c65-9fe7-c1eb998d08a6",
+    "auctionNo": "2026타경119",
+    "court": "울산지방법원 7계",
+    "address": "울산광역시 울주군 범서읍 천상리 578 천상청구그린타운 102동 12층1201호",
+    "status": "approved"
+  },
+  {
+    "id": "3e743a57-5896-42e5-9fc4-3cbc9eacbb8e",
+    "auctionNo": "2025타경102298",
+    "court": "부산서부지원 4계",
+    "address": "부산광역시 사하구 괴정동 11-2 괴정한일하나로타운 3동 3층309호",
+    "status": "approved"
+  },
+  {
+    "id": "47234307-71ea-4b8e-8ee8-c4edf45565ea",
+    "auctionNo": "2025타경511695",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 숭의동 147-51 한림가우디 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "5d3df320-6366-4713-bee2-d77b08677dff",
+    "auctionNo": "2025타경102227(2)",
+    "court": "부산서부지원 4계",
+    "address": "부산광역시 강서구 신호동 205-1 부산신호윌더하임아파트 107동 6층604호",
+    "status": "approved"
+  },
+  {
+    "id": "903f1976-001d-4b4f-a391-9910a0e08d02",
+    "auctionNo": "2025타경511769",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 용현동 622-54 에이스타워 4층403호",
+    "status": "approved"
+  },
+  {
+    "id": "0e88e9ac-0bf0-4fa4-97b5-9f2ba38623db",
+    "auctionNo": "2025타경511591",
+    "court": "인천지방법원 12계",
+    "address": "인천광역시 서구 청라동 155-12 동양엔파트 472동 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "3ea9becf-ec9f-4fd2-821d-d707f6872b28",
+    "auctionNo": "2025타경11181",
+    "court": "서울남부지방법원 16계",
+    "address": "서울특별시 금천구 독산동 962-13 헤리움팰리스 제7층 제705호",
+    "status": "approved"
+  },
+  {
+    "id": "a09e11fb-3060-4ac8-a4ed-1f17641bf94c",
+    "auctionNo": "2025타경4412",
+    "court": "부산서부지원 4계",
+    "address": "부산광역시 사하구 다대동 80-14 다대다해아파트 3동 6층603호",
+    "status": "approved"
+  },
+  {
+    "id": "d7a3fb5c-1335-4252-bc4e-feb99ee2dcbe",
+    "auctionNo": "2025타경512263",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 남동구 간석동 92-1 페이브시티 8층802호",
+    "status": "approved"
+  },
+  {
+    "id": "d0593a45-eebe-4b76-a08c-ccd4c6c53358",
+    "auctionNo": "2026타경10370",
+    "court": "울산지방법원 7계",
+    "address": "울산광역시 남구 무거동 276-1 굴화주공아파트 201동 13층1304호",
+    "status": "approved"
+  },
+  {
+    "id": "f08ad97f-ff3d-4758-a908-4bb5b4e0b139",
+    "auctionNo": "2025타경512544",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 주안동 1485 12층1204호",
+    "status": "approved"
+  },
+  {
+    "id": "adf4fe64-8d89-44b3-879f-8b7f3a778063",
+    "auctionNo": "2025타경512795",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 760-790 건보 5층505호",
+    "status": "approved"
+  },
+  {
+    "id": "5c23c1e5-477e-4573-96cb-2c9601a35ced",
+    "auctionNo": "2025타경41367",
+    "court": "평택지원 6계",
+    "address": "경기도 안성군 죽산면 죽산리 343-1 무지개아파트 1층102호",
+    "status": "approved"
+  },
+  {
+    "id": "1c530cbd-1b13-4164-aa56-9d07ce9090ff",
+    "auctionNo": "2025타경30915",
+    "court": "충주지원 1계",
+    "address": "충청북도 충주시 중앙탑면 용전리 696 신우희가로아파트 106동 2층203호",
+    "status": "approved"
+  },
+  {
+    "id": "29f5dd68-79d3-4d1f-90d1-2837f41c5ad9",
+    "auctionNo": "2025타경52968",
+    "court": "안산지원 4계",
+    "address": "경기도 안산시 단원구 와동 732-1 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "f4d06f0d-7eb8-4b23-9396-5618b21d4b17",
+    "auctionNo": "2025타경102156",
+    "court": "부산서부지원 4계",
+    "address": "부산광역시 사하구 감천동 13-1105 제일아파트 1층108호",
+    "status": "approved"
+  },
+  {
+    "id": "c5af1aff-33aa-412b-8749-67a997308e8b",
+    "auctionNo": "2026타경501978",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 부평구 부평동 508-5 엠타워9 8층808호",
+    "status": "approved"
+  },
+  {
+    "id": "efe409d2-5c23-46de-9a72-0d430af13697",
+    "auctionNo": "2025타경43083",
+    "court": "평택지원 5계",
+    "address": "경기도 평택시 신장동 295-9 힐사이드2 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "dcf1115e-ff52-46e1-ae10-2c9c5789c090",
+    "auctionNo": "2025타경21922",
+    "court": "부산지방법원 1계",
+    "address": "부산광역시 부산진구 범천동 849-2 대동레미안센트럴시티5 12층1207호",
+    "status": "approved"
+  },
+  {
+    "id": "4423bb27-8f5a-48d4-9f80-bb42eb71b5f8",
+    "auctionNo": "2026타경500148",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 미추홀구 주안동 1002-11 리오센트럴타워 4층403호",
+    "status": "approved"
+  },
+  {
+    "id": "c74f8109-cecb-49a8-a98d-66f1ddf832b9",
+    "auctionNo": "2025타경574",
+    "court": "통영지원 3계",
+    "address": "경상남도 거제시 옥포동 1271-1 성은아파트 103동 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "5cdfe3f0-aab2-4c85-a8ab-d3bcbe5462fe",
+    "auctionNo": "2026타경500982",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 미추홀구 주안동 70-12 필하우스2 5층501호",
+    "status": "approved"
+  },
+  {
+    "id": "457c316d-9ca2-4898-8985-e4361401b7d5",
+    "auctionNo": "2025타경12210",
+    "court": "서울북부지방법원 6계",
+    "address": "서울특별시 중랑구 면목동 1362 2층205호",
+    "status": "approved"
+  },
+  {
+    "id": "ea312a6a-3456-4171-a751-1428afa9182a",
+    "auctionNo": "2025타경102861",
+    "court": "서울중앙지방법원 7계",
+    "address": "서울특별시 서초구 방배동 829-14 제네시스빌 4층403호",
+    "status": "approved"
+  },
+  {
+    "id": "6e9fc354-fd3a-415f-b0f9-64317b398bce",
+    "auctionNo": "2026타경30146",
+    "court": "광주지방법원 7계",
+    "address": "전라남도 나주시 빛가람동 394 빛가람엘에이치1단지아파트 110동 6층601호",
+    "status": "approved"
+  },
+  {
+    "id": "debd5891-bbb5-4f9b-83ac-631900d5b185",
+    "auctionNo": "2025타경103021",
+    "court": "서울중앙지방법원 3계",
+    "address": "서울특별시 동작구 상도동 301-73 카리스빌 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "77848269-4327-4843-b13a-9f5189420652",
+    "auctionNo": "2025타경102539",
+    "court": "서울중앙지방법원 21계",
+    "address": "서울특별시 동작구 대방동 384-2 엘리시아 1동 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "ee3be89b-8f98-4654-934c-58a991f5a9eb",
+    "auctionNo": "2025타경53202",
+    "court": "안산지원 4계",
+    "address": "경기도 안산시 단원구 와동 812-21 지1층비03호",
+    "status": "approved"
+  },
+  {
+    "id": "14cc5620-995f-46d0-a65c-ca4d50904181",
+    "auctionNo": "2025타경507294",
+    "court": "인천지방법원 1계",
+    "address": "인천광역시 중구 송월동3가 3-193 지하층1호",
+    "status": "approved"
+  },
+  {
+    "id": "54820fb8-7086-4e09-8911-b40b4ba1b742",
+    "auctionNo": "2026타경501038",
+    "court": "인천지방법원 19계",
+    "address": "인천광역시 부평구 산곡동 145 경남아파트 301동 14층1405호",
+    "status": "approved"
+  },
+  {
+    "id": "9ad95e35-8f8c-4f52-9c13-a029159036c8",
+    "auctionNo": "2025타경55036",
+    "court": "수원지방법원 4계",
+    "address": "경기도 용인시 기흥구 언남동 382-6 더.시티 3층301호",
+    "status": "approved"
+  },
+  {
+    "id": "5b27546c-df2d-49be-a73e-63365d1c142b",
+    "auctionNo": "2025타경514905",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 미추홀구 주안동 1422-9 엠버빌2 6층604호",
+    "status": "approved"
+  },
+  {
+    "id": "7cbd66b5-796f-460b-9935-5655917f8276",
+    "auctionNo": "2025타경63854",
+    "court": "고양지원 10계",
+    "address": "경기도 고양시 일산서구 탄현동 1640 일산두산위브더제니스 102동 24층2404호",
+    "status": "approved"
+  },
+  {
+    "id": "c92c4d79-1058-4822-b44d-f6141e426a5b",
+    "auctionNo": "2025타경513263",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 남동구 간석동 109-10 위브타운 7층703호",
+    "status": "approved"
+  },
+  {
+    "id": "1a7f30ff-4401-447d-8f0d-31f522405471",
+    "auctionNo": "2025타경509885",
+    "court": "인천지방법원 17계",
+    "address": "인천광역시 미추홀구 도화동 482-2 갤럭시타워 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "1d51c850-de79-4380-9811-316cb5177dda",
+    "auctionNo": "2024타경104184",
+    "court": "수원지방법원 8계",
+    "address": "경기도 화성시 메타폴리스로 54, 14층1403호 (반송동,동탄파라곤2)",
+    "status": "approved"
+  },
+  {
+    "id": "f093cbb5-8b0d-4302-98d4-1757c735e408",
+    "auctionNo": "2025타경12154",
+    "court": "서울남부지방법원 9계",
+    "address": "서울특별시 금천구 시흥동 790-7 에스클래스 제3층 제302호",
+    "status": "approved"
+  },
+  {
+    "id": "9243f6bc-2334-4333-bd53-9c86899efb60",
+    "auctionNo": "2025타경512204",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 431-22 씨티원 7층702호",
+    "status": "approved"
+  },
+  {
+    "id": "e1082868-47a3-441c-80ae-c46fbce3a05f",
+    "auctionNo": "2025타경51099",
+    "court": "순천지원 7계",
+    "address": "전라남도 광양시 중동 1663 금광1차아파트 106동 5층503호",
+    "status": "approved"
+  },
+  {
+    "id": "1027e03c-93cf-47be-a9d6-b26fdf660419",
+    "auctionNo": "2025타경511642",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 숭의동 182-4 다우림 201동 7층706호",
+    "status": "approved"
+  },
+  {
+    "id": "a9f1f959-868b-4425-86da-31b4ff3f7d20",
+    "auctionNo": "2025타경513166",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 118-34 더플레이스뷰 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "b2c91468-1b5f-41cb-b398-a2c50fd4849b",
+    "auctionNo": "2025타경512504",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 433-70 리코팰리스 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "a533fb56-f29f-495b-b6e6-b457c94657f1",
+    "auctionNo": "2023타경1502",
+    "court": "상주지원 2계",
+    "address": "경상북도 문경시 새동네길 13, 5층 601호 (모전동,무지개아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "51022e8e-a758-441d-a78b-d0d2baf8c8d3",
+    "auctionNo": "2025타경104177",
+    "court": "서울중앙지방법원 9계",
+    "address": "서울특별시 강남구 삼성동 157-3 엘지트윈텔2 5층511호",
+    "status": "approved"
+  },
+  {
+    "id": "11eb409d-fd5a-4134-b427-b659a914e905",
+    "auctionNo": "2025타경55692",
+    "court": "수원지방법원 5계",
+    "address": "경기도 화성시 장지동 1009 레이크반도유보라아이비파크9.0 3401동 7층704호",
+    "status": "approved"
+  },
+  {
+    "id": "7c4afddb-66de-403a-9f4b-d6132c44e0a7",
+    "auctionNo": "2025타경512920",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 남동구 만수동 843-4 만수에스클래스 1동 5층501호",
+    "status": "approved"
+  },
+  {
+    "id": "5337b9c4-5ded-4c4c-87c5-836b31faca50",
+    "auctionNo": "2025타경9475",
+    "court": "대구지방법원 1계",
+    "address": "대구광역시 동구 율하동 1093 우방아이유쉘아파트 112동 9층903호",
+    "status": "approved"
+  },
+  {
+    "id": "05f77002-36b4-46a3-9e98-97880e8b6d91",
+    "auctionNo": "2025타경65249",
+    "court": "고양지원 1계",
+    "address": "경기도 고양시 일산서구 덕이동 1529 하이파크시티 일산파밀리에2단지 202동 24층2402호",
+    "status": "approved"
+  },
+  {
+    "id": "9712ba1b-39b0-4374-9e9c-3cd90ccc473a",
+    "auctionNo": "2025타경12691",
+    "court": "서울남부지방법원 16계",
+    "address": "서울특별시 구로구 오류동 4-75 금반석씨티빌41차 제4층 제401호",
+    "status": "approved"
+  },
+  {
+    "id": "b8c09e07-ef2f-4c8f-9100-e9c2add2e192",
+    "auctionNo": "2026타경500200",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 미추홀구 숭의동 1-10 한우리 3층304호",
+    "status": "approved"
+  },
+  {
+    "id": "ab444e6f-fccc-4037-a19e-400369346bda",
+    "auctionNo": "2025타경51814",
+    "court": "순천지원 7계",
+    "address": "전라남도 광양시 중동 1691 성호아파트 303동 5층503호",
+    "status": "approved"
+  },
+  {
+    "id": "1e4f345b-3b28-4f3f-bc1b-9f823a6c7003",
+    "auctionNo": "2025타경513662",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 451-51 조양휴캐슬 7층702호",
+    "status": "approved"
+  },
+  {
+    "id": "0b5bd384-173d-4730-b703-6a8dd84531b5",
+    "auctionNo": "2025타경512976",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 용현동 623-92 리젠빌 6층601호",
+    "status": "approved"
+  },
+  {
+    "id": "e1e2f900-9d2a-44c4-893a-0d97da1f4902",
+    "auctionNo": "2025타경512054",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 남동구 구월동 1133-13 더클래스 14층1402호",
+    "status": "approved"
+  },
+  {
+    "id": "b12aeded-323d-482c-b91c-7c5034f2f0d8",
+    "auctionNo": "2025타경511988",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 숭의동 33-38 101동 2층206호",
+    "status": "approved"
+  },
+  {
+    "id": "7886f3e1-8041-4b8f-b829-7facb5b672c3",
+    "auctionNo": "2025타경20865",
+    "court": "군산지원 3계",
+    "address": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 102동 6층 601호",
+    "status": "approved"
+  },
+  {
+    "id": "56a862b3-bffb-4404-b655-c3ea941096fb",
+    "auctionNo": "2025타경20869",
+    "court": "군산지원 3계",
+    "address": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 102동 8층 801호",
+    "status": "approved"
+  },
+  {
+    "id": "1445df5f-ef8c-41eb-befe-50e10a24b940",
+    "auctionNo": "2025타경22378",
+    "court": "부산지방법원 2계",
+    "address": "부산광역시 동래구 낙민동 222-9 에스더 11층1101호",
+    "status": "approved"
+  },
+  {
+    "id": "da60bd5b-5aa6-45d5-ac1f-5c80bbc6363c",
+    "auctionNo": "2025타경8744",
+    "court": "대구지방법원 6계",
+    "address": "대구광역시 동구 신천동 556-1 신천엘에이치 101동 9층903호",
+    "status": "approved"
+  },
+  {
+    "id": "ac7a3ed3-9d0e-4e74-a9d0-c97d97777417",
+    "auctionNo": "2025타경511215",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 용현동 630-70 모던하우스 3층301호",
+    "status": "approved"
+  },
+  {
+    "id": "13e079d0-72eb-48b8-ac0c-368cff909138",
+    "auctionNo": "2025타경8603",
+    "court": "대구지방법원 6계",
+    "address": "대구광역시 북구 태전동 936-1 한신중앙아파트 201동 13층1306호",
+    "status": "approved"
+  },
+  {
+    "id": "1415f443-1dc1-4a4e-bd19-ab2483582b86",
+    "auctionNo": "2025타경51410(2)",
+    "court": "목포지원 1계",
+    "address": "전라남도 목포시 대양동 75-12 근화희망타운아파트 201동 4층408호",
+    "status": "approved"
+  },
+  {
+    "id": "2c41c7ec-4c97-4fe8-be80-a11bde4103c0",
+    "auctionNo": "2025타경513269",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 도화동 490-3 도화탑클래스 5층504호",
+    "status": "approved"
+  },
+  {
+    "id": "3fb35197-e9e8-4c96-bf9a-71e4018e56c9",
+    "auctionNo": "2025타경508623",
+    "court": "인천지방법원 14계",
+    "address": "인천광역시 남동구 만수동 1038 삼익아파트 102동 6층605호",
+    "status": "approved"
+  },
+  {
+    "id": "9ac1abb4-2839-4124-bc3f-8f4ea29b9cf7",
+    "auctionNo": "2025타경514490",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 518-7 스위트홈 2동 6층604호",
+    "status": "approved"
+  },
+  {
+    "id": "aa089f79-e3e1-4fc8-99fe-3ca3eb1e229b",
+    "auctionNo": "2025타경512870",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 숭의동 147-5 밀레니엄 10층1001호",
+    "status": "approved"
+  },
+  {
+    "id": "40cf0654-8328-4bbf-9f6f-78fd2bc9e0b9",
+    "auctionNo": "2024타경110655",
+    "court": "서울중앙지방법원 9계",
+    "address": "서울특별시 강남구 학동로 165, 3층302호 (논현동,마일스디오빌)",
+    "status": "approved"
+  },
+  {
+    "id": "e70fd967-caf8-47aa-9de4-9bf946c4e7b8",
+    "auctionNo": "2025타경72132",
+    "court": "남양주지원 8계",
+    "address": "경기도 남양주시 화도읍 묵현리 336-3 제 다동 1층 103호",
+    "status": "approved"
+  },
+  {
+    "id": "c4cf7d93-370a-47d6-ae95-1d6ddd8056d0",
+    "auctionNo": "2025타경3188",
+    "court": "광주지방법원 7계",
+    "address": "광주광역시 동구 산수동 568-1 두암타운 105동 4층401호",
+    "status": "approved"
+  },
+  {
+    "id": "53e4f5b2-891f-4ca9-9be1-7f81253b10ae",
+    "auctionNo": "2025타경53550",
+    "court": "안산지원 4계",
+    "address": "경기도 시흥시 은행동 621 시흥은계우미린더퍼스트 403동 3층304호",
+    "status": "approved"
+  },
+  {
+    "id": "8fd4e586-556a-40c1-97ee-6265de8c277e",
+    "auctionNo": "2025타경510631",
+    "court": "인천지방법원 7계",
+    "address": "인천광역시 남동구 논현동 751-1 인천소래논현구역씨10블록에코메트로3차더타워 에이동 27층오2702호",
+    "status": "approved"
+  },
+  {
+    "id": "c3ac42ad-1753-41e2-81f5-43fec85513fc",
+    "auctionNo": "2025타경42013",
+    "court": "평택지원 8계",
+    "address": "경기도 평택시 지산동 750-1 11층1103호",
+    "status": "approved"
+  },
+  {
+    "id": "5ecd8d98-665c-4574-884b-fc32ca143573",
+    "auctionNo": "2025타경1838(2)",
+    "court": "인천지방법원 13계",
+    "address": "인천광역시 연수구 송도동 30-3 송도센트로드 에이동 18층1814호",
+    "status": "approved"
+  },
+  {
+    "id": "e2827a42-a006-4877-9bf4-74d4a97b46df",
+    "auctionNo": "2024타경550599",
+    "court": "인천지방법원 15계",
+    "address": "인천광역시 연수구 아카데미로 442, 303동 31층3101호 (송도동,힐스테이트레이크송도3차)",
+    "status": "approved"
+  },
+  {
+    "id": "80faf79d-aa17-4a25-b523-c01cf8dadaa8",
+    "auctionNo": "2025타경52291",
+    "court": "서울서부지방법원 6계",
+    "address": "서울특별시 은평구 역촌동 41-25 파크원 4층403호",
+    "status": "approved"
+  },
+  {
+    "id": "f22ef1fc-7319-4f6f-9af1-7cbd7bacf84d",
+    "auctionNo": "2025타경7294",
+    "court": "고양지원 1계",
+    "address": "경기도 고양시 일산동구 식사동 1565 위시티블루밍5단지 502동 8층801호",
+    "status": "approved"
+  },
+  {
+    "id": "45621a2a-2e7c-4a66-96c4-500d18d14f20",
+    "auctionNo": "2025타경30888",
+    "court": "충주지원 4계",
+    "address": "충청북도 충주시 중앙탑면 용전리 696 신우희가로아파트 108동 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "76cb9dc2-fb83-4886-b7d6-b5e159f51fd1",
+    "auctionNo": "2025타경3513",
+    "court": "고양지원 6계",
+    "address": "경기도 고양시 일산동구 식사동 1498 위시티일산자이2단지 206동 22층2204호",
+    "status": "approved"
+  },
+  {
+    "id": "2c4fe43a-2e7d-492b-8c1c-0810df368d49",
+    "auctionNo": "2025타경65080",
+    "court": "고양지원 5계",
+    "address": "경기도 고양시 일산서구 덕이동 1540 하이파크시티일산아이파크5단지 504동 21층2102호",
+    "status": "approved"
+  },
+  {
+    "id": "64c7d042-433d-4fb3-8c44-9c9955cd4165",
+    "auctionNo": "2025타경1078",
+    "court": "인천지방법원 26계",
+    "address": "인천광역시 연수구 송도동 4-1 송도더샵퍼스트월드 3동 29층 2902호",
+    "status": "approved"
+  },
+  {
+    "id": "84d5b4b3-b8c9-4094-be8f-6529139ab62f",
+    "auctionNo": "2025타경20860",
+    "court": "군산지원 3계",
+    "address": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 102동 4층 401호",
+    "status": "approved"
+  },
+  {
+    "id": "00c0413c-580b-4665-a6ab-c11839411292",
+    "auctionNo": "2025타경3595",
+    "court": "대전지방법원 7계",
+    "address": "세종특별자치시 나성동 751 세종시리베라아이누리도시형생활주택 7층728호",
+    "status": "approved"
+  },
+  {
+    "id": "6abc1d2b-3a4f-464c-af22-43232d5cefbd",
+    "auctionNo": "2024타경63461",
+    "court": "안산지원 2계",
+    "address": "경기도 시흥시 배곧1로 27-16, 207동 14층1405호 (정왕동,한라비발디캠퍼스2차)",
+    "status": "approved"
+  },
+  {
+    "id": "07f0ffe7-9b50-40da-bb52-f8c3f6daf89d",
+    "auctionNo": "2025타경11805",
+    "court": "천안지원 6계",
+    "address": "충청남도 천안시 서북구 직산읍 삼은리 72-19 청림아파트 2동 5층501호",
+    "status": "approved"
+  },
+  {
+    "id": "05ced805-2ef4-412b-a5b7-42be5b468ef9",
+    "auctionNo": "2025타경65164",
+    "court": "고양지원 1계",
+    "address": "경기도 고양시 일산서구 탄현동 1640 일산두산위브더제니스 108동 18층1802호",
+    "status": "approved"
+  },
+  {
+    "id": "1cdbe5cf-c27e-4fdf-82d1-b3de9e4d8ae7",
+    "auctionNo": "2025타경34744",
+    "court": "부천지원 1계",
+    "address": "경기도 부천시 소사구 옥길동 780-1 옥길호반베르디움 104동 9층903호",
+    "status": "approved"
+  },
+  {
+    "id": "974f816a-6894-4ee6-a3a3-67fa25228085",
+    "auctionNo": "2025타경405",
+    "court": "김천지원 5계",
+    "address": "경상북도 구미시 형곡동 179-1 1층102호",
+    "status": "approved"
+  },
+  {
+    "id": "28ea3c08-09a7-4faa-84cf-ae6097bff4f9",
+    "auctionNo": "2025타경4185",
+    "court": "성남지원 7계",
+    "address": "경기도 성남시 중원구 금광동 2500 래미안금광 107동 16층1605호",
+    "status": "approved"
+  },
+  {
+    "id": "f90bb1af-11b8-451f-a3c3-f0adeef1344b",
+    "auctionNo": "2026타경500270",
+    "court": "인천지방법원 13계",
+    "address": "인천광역시 부평구 삼산동 448-1 신성미소지움아파트 308동 16층1604호",
+    "status": "approved"
+  },
+  {
+    "id": "24c95c17-846c-47e2-8ef5-bd8cf7080289",
+    "auctionNo": "2025타경53281",
+    "court": "성남지원 3계",
+    "address": "경기도 하남시 신장동 411-17 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "8beb889e-fbf1-49f2-811a-f535a2219647",
+    "auctionNo": "2024타경81902(30)",
+    "court": "의정부지방법원 7계",
+    "address": "경기도 의정부시 호국로1336번길 9-13, 2층 204호 (의정부동,흥일홀딩스)",
+    "status": "approved"
+  },
+  {
+    "id": "ddbb5f36-575d-4cdf-92de-203563f7099f",
+    "auctionNo": "2025타경3093",
+    "court": "부천지원 1계",
+    "address": "경기도 부천시 소사구 소사본동 133-12 부천소사역푸르지오 103동 12층1202호",
+    "status": "approved"
+  },
+  {
+    "id": "685f7e9c-e2eb-4852-8063-20177e278504",
+    "auctionNo": "2024타경539615",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 주안서로 18, 6층613호 (주안동,힐탑플러스)",
+    "status": "approved"
+  },
+  {
+    "id": "24941a89-2237-4e6a-911d-deaa7be9d57a",
+    "auctionNo": "2025타경504139",
+    "court": "대전지방법원 7계",
+    "address": "대전광역시 서구 용문동 285-3 덕일한마음아파트 10층1017호",
+    "status": "approved"
+  },
+  {
+    "id": "2eab35af-3714-4287-af85-96f0f3895e6a",
+    "auctionNo": "2025타경63706",
+    "court": "고양지원 8계",
+    "address": "경기도 고양시 일산서구 탄현동 1640 일산두산위브더제니스 106동 50층 5005호",
+    "status": "approved"
+  },
+  {
+    "id": "958ee1ef-519f-4643-888c-a21aa7acfd63",
+    "auctionNo": "2025타경53190",
+    "court": "안산지원 6계",
+    "address": "경기도 시흥시 월곶동 1010-4 진주마을풍림1차아이원 107동 10층1001호",
+    "status": "approved"
+  },
+  {
+    "id": "f3de572b-efcf-4558-bbf7-da6dc46a073b",
+    "auctionNo": "2025타경30690",
+    "court": "충주지원 4계",
+    "address": "충청북도 충주시 중앙탑면 용전리 696 신우희가로아파트 106동 16층1604호",
+    "status": "approved"
+  },
+  {
+    "id": "84656865-67ec-4d2e-abf1-99938a03512c",
+    "auctionNo": "2025타경30795",
+    "court": "충주지원 4계",
+    "address": "충청북도 충주시 중앙탑면 용전리 696 신우희가로아파트 104동 14층1402호",
+    "status": "approved"
+  },
+  {
+    "id": "f2cb1c1c-8515-4791-85d2-415cd6ecc097",
+    "auctionNo": "2025타경512343",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 124-21 엠브이아파트 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "4dd7f595-db96-4992-9e89-68790d9846c5",
+    "auctionNo": "2026타경500178",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 청천동 379-8 더원스테이트 6층1동605호",
+    "status": "approved"
+  },
+  {
+    "id": "1209f532-7f26-4caa-ac99-f50fd19c409a",
+    "auctionNo": "2025타경509672",
+    "court": "인천지방법원 16계",
+    "address": "인천광역시 연수구 송도동 15-10 송도 더 프라우 2 303동 11층1102호",
+    "status": "approved"
+  },
+  {
+    "id": "49d9e0f7-ac90-453e-8c85-3a60d7dea77b",
+    "auctionNo": "2025타경513689",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 주안동 66-2 3층304호",
+    "status": "approved"
+  },
+  {
+    "id": "07177a57-0d57-4e19-89b5-44df5900be9b",
+    "auctionNo": "2025타경503258",
+    "court": "대전지방법원 12계",
+    "address": "대전광역시 대덕구 법동 195-1 그린타운아파트 101동 10층1004호",
+    "status": "approved"
+  },
+  {
+    "id": "3e2c64ac-2f36-4f1e-9b70-9d9c91a988cf",
+    "auctionNo": "2023타경7825",
+    "court": "창원지방법원 4계",
+    "address": "경상남도 김해시 삼안로 244, 4동 7층 706호 (삼방동,한일아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "5a2b89b4-2829-4b8f-8e8d-7554b58c1f08",
+    "auctionNo": "2025타경55288",
+    "court": "수원지방법원 20계",
+    "address": "경기도 용인시 기흥구 영덕동 1069 신동아파밀리에아파트 1208동 20층2005호",
+    "status": "approved"
+  },
+  {
+    "id": "9232a755-65ae-4211-8059-7859572805ba",
+    "auctionNo": "2025타경1059",
+    "court": "울산지방법원 1계",
+    "address": "울산광역시 동구 동부동 남목지구일단의주택지조성사업지구5블럭1롯트 현대하이야트맨션 201동 13층1301호",
+    "status": "approved"
+  },
+  {
+    "id": "a22f4bc7-b8c7-44b6-a6a8-64f815152db8",
+    "auctionNo": "2024타경110655",
+    "court": "부산서부지원 1계",
+    "address": "부산광역시 사상구 낙동대로1210번길 84, 19층1904호 (괘법동,굿모닝뷰)",
+    "status": "approved"
+  },
+  {
+    "id": "4f1d18f9-2884-4bc3-b5d8-d3a8085fefdb",
+    "auctionNo": "2025타경15813",
+    "court": "홍성지원 3계",
+    "address": "충청남도 예산군 오가면 신석리 16-15 오가우성임대아파트 12층1203호",
+    "status": "approved"
+  },
+  {
+    "id": "6a6b3e3d-ff0b-4895-80b4-3e6360c8571d",
+    "auctionNo": "2025타경22211",
+    "court": "부산지방법원 8계",
+    "address": "부산광역시 부산진구 부암동 500 화승삼성아파트 6동 5층502호",
+    "status": "approved"
+  },
+  {
+    "id": "f6f2bf62-9d21-47cd-86b4-0313b056e5d4",
+    "auctionNo": "2025타경20653",
+    "court": "군산지원 5계",
+    "address": "전북특별자치도 군산시 산북동 3637 산북4차부향하나로아파트 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "c9a51fce-071c-4ccc-96a6-201391241144",
+    "auctionNo": "2025타경514039",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 용현동 627-141 에이치엠팰리스 5층502호",
+    "status": "approved"
+  },
+  {
+    "id": "20c8e343-677b-474d-9624-386b5b3d464a",
+    "auctionNo": "2025타경507373",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 주안동 62-1 마인블루빌 9층901호",
+    "status": "approved"
+  },
+  {
+    "id": "9ae5828e-a661-40c4-ba4b-b3ff9ea498c8",
+    "auctionNo": "2025타경1352",
+    "court": "울산지방법원 8계",
+    "address": "경상남도 양산시 평산동 76-2 대우월드피아 5층 505호",
+    "status": "approved"
+  },
+  {
+    "id": "f6efc6f1-8147-442e-946e-8beb8d198699",
+    "auctionNo": "2024타경6198",
+    "court": "부산지방법원 1계",
+    "address": "부산광역시 금정구 온천장로125번길 28-20, 8층805호 (장전동,윤성리버티)",
+    "status": "approved"
+  },
+  {
+    "id": "ee0ae03a-e52c-45bc-b941-49fe43c313fe",
+    "auctionNo": "2025타경602",
+    "court": "창원지방법원 4계",
+    "address": "경상남도 김해시 진영읍 진영리 1690 중흥에스-클래스에코시티 108동 12층1205호",
+    "status": "approved"
+  },
+  {
+    "id": "d50db296-a645-4413-a65b-25a5e785c6ea",
+    "auctionNo": "2025타경514666",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 부평구 부평동 119-35 마스터큐브 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "fec605ec-b741-4180-8737-6ff418368e7f",
+    "auctionNo": "2025타경12127(2)",
+    "court": "천안지원 4계",
+    "address": "충청남도 아산시 온천동 1052 경남아너스빌아파트 101동 12층1202호",
+    "status": "approved"
+  },
+  {
+    "id": "c02276e3-ffcf-484b-afec-004676bf9cb1",
+    "auctionNo": "2025타경20509",
+    "court": "논산지원 3계",
+    "address": "충청남도 논산시 화지동 16 조흥로즈빌 103동 8층802호",
+    "status": "approved"
+  },
+  {
+    "id": "1985241d-1b06-4c53-84f4-3be6ab540086",
+    "auctionNo": "2025타경511810",
+    "court": "인천지방법원 25계",
+    "address": "인천광역시 부평구 부평동 375-2 예승파크뷰 3층303호",
+    "status": "approved"
+  },
+  {
+    "id": "2c5e70e0-8401-4ad9-b430-d08c4d1011fe",
+    "auctionNo": "2025타경2985",
+    "court": "고양지원 11계",
+    "address": "경기도 고양시 일산동구 장항동 869 일산방송컴플렉스방송관련시설 13층101-1310호",
+    "status": "approved"
+  },
+  {
+    "id": "87268c6f-99c0-4d7d-9aa5-f2e516e4773e",
+    "auctionNo": "2023타경542003(5)",
+    "court": "인천지방법원 14계",
+    "address": "인천광역시 남동구 경인로644번길 20, 14층1403호 (간석동,헤이미쉬2차)",
+    "status": "approved"
+  },
+  {
+    "id": "82d7a04b-242e-409d-b495-1ce14eba5d86",
+    "auctionNo": "2023타경64036",
+    "court": "부산지방법원 6계",
+    "address": "부산광역시 부산진구 가야대로747번길 62, 5층502호 (부암동,서면루미랑스)",
+    "status": "approved"
+  },
+  {
+    "id": "958f0a0c-cad6-4913-b823-108ebf62d6b3",
+    "auctionNo": "2024타경61469",
+    "court": "순천지원 7계",
+    "address": "전라남도 광양시 공영로 10, 112동 18층1804호 (중동,금광1차아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "0f4ad4b8-8555-4364-9d23-c1e8a45a430b",
+    "auctionNo": "2026타경600375",
+    "court": "대전지방법원 7계",
+    "address": "대전광역시 유성구 봉명동 640-3 12층1209호",
+    "status": "approved"
+  },
+  {
+    "id": "e5287e4a-f31f-476e-8727-58f32fe64604",
+    "auctionNo": "2024타경505827",
+    "court": "인천지방법원 10계",
+    "address": "인천광역시 미추홀구 장천로94번길 21, 101동 2층205호",
+    "status": "approved"
+  },
+  {
+    "id": "4286b306-75db-4801-adb8-8e18fd79001f",
+    "auctionNo": "2025타경511961",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 연수구 옥련동 524-10 제일아키텍 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "c0035e89-1447-46f3-8307-253f2e3385a3",
+    "auctionNo": "2024타경131610",
+    "court": "서울남부지방법원 15계",
+    "address": "서울특별시 강서구 강서로18바길 22-8, 제5층 제501호 (화곡동, 대성탑스빌)",
+    "status": "approved"
+  },
+  {
+    "id": "dd162a88-8b0b-4380-8610-b683c148e9ac",
+    "auctionNo": "2025타경496",
+    "court": "부산서부지원 6계",
+    "address": "부산광역시 사하구 하단동 717-1 하단청구아파트 1동 18층1804호",
+    "status": "approved"
+  },
+  {
+    "id": "9158993c-0e40-48ab-9361-1ede2e70b13b",
+    "auctionNo": "2025타경30270",
+    "court": "남원지원 1계",
+    "address": "전북특별자치도 남원시 왕정동 146-1 금호프라자 3층 307호",
+    "status": "approved"
+  },
+  {
+    "id": "3c0a7349-3799-4d64-8758-ac170d9eedf5",
+    "auctionNo": "2026타경53",
+    "court": "서울남부지방법원 15계",
+    "address": "서울특별시 금천구 시흥동 865-48 제1층 제101호",
+    "status": "approved"
+  },
+  {
+    "id": "10dd02a7-2f28-4f6b-8aa0-83a35f75f1f8",
+    "auctionNo": "2025타경104309",
+    "court": "서울중앙지방법원 10계",
+    "address": "서울특별시 동작구 상도동 214-433 지하층1호",
+    "status": "approved"
+  },
+  {
+    "id": "7ef9e912-3eec-4019-81fc-4f85dcece8db",
+    "auctionNo": "2024타경54780",
+    "court": "부천지원 2계",
+    "address": "경기도 부천시 소사구 소삼로 47, 101동 7층 703호 (소사본동, 부천소사역푸르지오)",
+    "status": "approved"
+  },
+  {
+    "id": "48e9c0b5-5140-41c9-83de-746fdf6828b3",
+    "auctionNo": "2025타경51786",
+    "court": "서산지원 2계",
+    "address": "충청남도 당진시 송산면 금암리 11 당진대상아파트 101동 1층102호",
+    "status": "approved"
+  },
+  {
+    "id": "2a5371ea-9816-430e-a580-bcb711beeb84",
+    "auctionNo": "2025타경503272",
+    "court": "대전지방법원 5계",
+    "address": "* 철근콘크리트조\n아파트 72.08㎡\n보이라실 2.03㎡",
+    "status": "approved"
+  },
+  {
+    "id": "55b966b3-6abc-415b-b55c-9835deed17b6",
+    "auctionNo": "2025타경5079",
+    "court": "부산동부지원 2계",
+    "address": "부산광역시 남구 문현동 986-5 해운파크맨션 1동 3층311호",
+    "status": "approved"
+  },
+  {
+    "id": "8e31caf3-10b0-4174-801d-681251e25681",
+    "auctionNo": "2024타경81902(27)",
+    "court": "의정부지방법원 7계",
+    "address": "경기도 의정부시 호국로1336번길 9-13, 2층 201호 (의정부동,흥일홀딩스)",
+    "status": "approved"
+  },
+  {
+    "id": "648490dd-7378-42fa-adee-58a7cfe5ad07",
+    "auctionNo": "2025타경3758",
+    "court": "포항지원 4계",
+    "address": "경상북도 포항시 북구 흥해읍 초곡리 1758 포항초곡화산샬레아파트 106동 8층802호",
+    "status": "approved"
+  },
+  {
+    "id": "84c993b0-6f98-450a-b30c-15d9aab1b1ea",
+    "auctionNo": "2025타경20790",
+    "court": "원주지원 2계",
+    "address": "강원특별자치도 원주시 명륜동 802 성원아파트 106동 11층1107호",
+    "status": "approved"
+  },
+  {
+    "id": "724b8502-8063-4875-aded-6bab07d8fb24",
+    "auctionNo": "2025타경512525",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 남동구 구월동 1139-5 제이앤제이오피스텔 4층403호",
+    "status": "approved"
+  },
+  {
+    "id": "eb409e2f-38d6-4cb0-b870-4310330c193d",
+    "auctionNo": "2025타경32264",
+    "court": "대구서부지원 1계",
+    "address": "대구광역시 달성군 화원읍 천내리 119 에덴타운 103동 1층106호",
+    "status": "approved"
+  },
+  {
+    "id": "ae95c6ca-37f8-4e61-bbd5-ca1c9fb9b6af",
+    "auctionNo": "2024타경137274",
+    "court": "서울남부지방법원 15계",
+    "address": "서울특별시 영등포구 신길동 124-11 신길바른리움 제104동 제2층 203호",
+    "status": "approved"
+  },
+  {
+    "id": "b58d945d-5c6d-4825-a64b-b0d028a92786",
+    "auctionNo": "2026타경501228",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 남동구 간석동 316-3 센트라움주건축물 1동 4층102동405호",
+    "status": "approved"
+  },
+  {
+    "id": "6e7cf5c9-6557-478a-a6d2-d9ac246e04c1",
+    "auctionNo": "2025타경512616",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 513-2 베네시안 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "24b5bb32-079c-4035-b062-cbc93aa2cc3c",
+    "auctionNo": "2025타경510634",
+    "court": "인천지방법원 9계",
+    "address": "인천광역시 남동구 논현동 642-2 논현동원베네스트타워 102동 14층1404호",
+    "status": "approved"
+  },
+  {
+    "id": "dee0b28e-cc08-406a-b3b0-83354a7c3f65",
+    "auctionNo": "2025타경52273",
+    "court": "서울서부지방법원 3계",
+    "address": "서울특별시 은평구 구산동 171-1 3층303호",
+    "status": "approved"
+  },
+  {
+    "id": "df1e8617-35b7-48ba-8c2a-f84b6b3fe090",
+    "auctionNo": "2025타경512877",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 숭의동 146-6 신영아이폴리스1차 2층204호",
+    "status": "approved"
+  },
+  {
+    "id": "3e7c1cd3-fd7b-4128-a176-95b63d27242c",
+    "auctionNo": "2024타경140454",
+    "court": "서울남부지방법원 14계",
+    "address": "서울특별시 강서구 곰달래로19나길 15-18, 제3층 제301호",
+    "status": "approved"
+  },
+  {
+    "id": "da85f076-e9da-4c82-b0b8-6fc161ff7886",
+    "auctionNo": "2025타경21798",
+    "court": "부산지방법원 6계",
+    "address": "부산광역시 부산진구 범천동 849-2 대동레미안센트럴시티5 8층811호",
+    "status": "approved"
+  },
+  {
+    "id": "a376ea8f-f3e5-4f87-b1d4-12059e1eb47e",
+    "auctionNo": "2025타경513511",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 주안동 1002-11 리오센트럴타워 8층804호",
+    "status": "approved"
+  },
+  {
+    "id": "b214bb46-ef87-4fdc-abd3-c60dc4b23f0f",
+    "auctionNo": "2025타경42581",
+    "court": "평택지원 8계",
+    "address": "경기도 평택시 서정동 834-4 현진궁전빌라 1층101호",
+    "status": "approved"
+  },
+  {
+    "id": "60455def-1812-4b3f-bac0-1e5d2f8d7d3f",
+    "auctionNo": "2025타경30814",
+    "court": "강릉지원 3계",
+    "address": "강원특별자치도 강릉시 입암동 713 강릉입암동천년가밸로채아파트 103동 2층204호",
+    "status": "approved"
+  },
+  {
+    "id": "31398080-fb8a-4342-8f75-d3ab7a5e7de3",
+    "auctionNo": "2025타경876",
+    "court": "진주지원 3계",
+    "address": "경상남도 사천시 정동면 풍정리 520 송보파인빌아파트 104동 3층303호",
+    "status": "approved"
+  },
+  {
+    "id": "4a7b737d-810e-4ae5-ac14-84a11f4609f4",
+    "auctionNo": "2026타경1",
+    "court": "서울북부지방법원 5계",
+    "address": "서울특별시 노원구 상계동 389-307 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "1a544af7-b19e-4c2a-b986-cadae24145c7",
+    "auctionNo": "2025타경30849",
+    "court": "강릉지원 3계",
+    "address": "강원특별자치도 강릉시 입암동 713 강릉입암동천년가밸로채아파트 103동 12층 1202호",
+    "status": "approved"
+  },
+  {
+    "id": "d1efc913-9268-481e-8dee-4e24d74a6d98",
+    "auctionNo": "2023타경4393",
+    "court": "진주지원 2계",
+    "address": "경상남도 진주시 진양호로185번길 7, 106동 4층403호 (평거동,주공아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "f6b305ef-12db-4aca-ad95-9282883ac7e9",
+    "auctionNo": "2025타경21792",
+    "court": "부산지방법원 6계",
+    "address": "부산광역시 부산진구 범천동 849-2 대동레미안센트럴시티5 6층611호",
+    "status": "approved"
+  },
+  {
+    "id": "80789399-8f1a-4f5e-a322-0e162a684df9",
+    "auctionNo": "2025타경54468",
+    "court": "수원지방법원 9계",
+    "address": "경기도 화성시 봉담읍 수영리 673 한울마을 신창비바패밀리아파트 201동 9층902호",
+    "status": "approved"
+  },
+  {
+    "id": "bb7a7358-0080-4619-a7b5-d53d4d93e35b",
+    "auctionNo": "2024타경64740",
+    "court": "서울서부지방법원 3계",
+    "address": "서울특별시 은평구 응암로21가길 1-7, 2층201호 (응암동,씨에스아르체)",
+    "status": "approved"
+  },
+  {
+    "id": "5bb42d91-d516-42e9-b051-5fec07a9e2e7",
+    "auctionNo": "2025타경2540",
+    "court": "부천지원 8계",
+    "address": "경기도 부천시 오정구 고강동 299 조흥빌라 1동 2층2호",
+    "status": "approved"
+  },
+  {
+    "id": "573d9d2c-3b97-4a3f-b42e-40ad8e55db39",
+    "auctionNo": "2025타경30821",
+    "court": "충주지원 4계",
+    "address": "충청북도 충주시 중앙탑면 용전리 696 신우희가로아파트 109동 15층1502호",
+    "status": "approved"
+  },
+  {
+    "id": "565b03f7-b275-4930-bf83-151f30d3dd69",
+    "auctionNo": "2025타경1263",
+    "court": "수원지방법원 7계",
+    "address": "경기도 수원시 팔달구 우만동 512 3층301호",
+    "status": "approved"
+  },
+  {
+    "id": "5633f045-fddf-4a06-8b05-dab938b80df5",
+    "auctionNo": "2025타경13383",
+    "court": "서울북부지방법원 7계",
+    "address": "서울특별시 중랑구 망우동 584 신내역프라디움더테라스오피스텔 203동 제11층 제1101호",
+    "status": "approved"
+  },
+  {
+    "id": "a15daa4f-0921-4031-9d48-da1e5d337fff",
+    "auctionNo": "2025타경682",
+    "court": "서울남부지방법원 15계",
+    "address": "서울특별시 구로구 오류동 217-10 대신아트빌 제에이동 제2층 제201호",
+    "status": "approved"
+  },
+  {
+    "id": "4abb3bb3-3ecf-48fe-aca1-064a141c0231",
+    "auctionNo": "2025타경30809",
+    "court": "강릉지원 3계",
+    "address": "강원특별자치도 강릉시 입암동 713 강릉입암동천년가밸로채아파트 101동 5층504호",
+    "status": "approved"
+  },
+  {
+    "id": "078b06db-1027-472f-ad30-ae1e72551e1b",
+    "auctionNo": "2025타경11561",
+    "court": "서울남부지방법원 4계",
+    "address": "서울특별시 구로구 개봉동 308-3 스타빌 제3층 제301호",
+    "status": "approved"
+  },
+  {
+    "id": "16a887df-3779-4d10-bc61-6f5ba1565f98",
+    "auctionNo": "2025타경30689",
+    "court": "강릉지원 2계",
+    "address": "강원특별자치도 강릉시 교동 1751 강릉교동(1)주공아파트 101동 5층 503호",
+    "status": "approved"
+  },
+  {
+    "id": "34cf1fcf-bba5-45d4-a476-4d5a22853583",
+    "auctionNo": "2025타경12302",
+    "court": "서울남부지방법원 4계",
+    "address": "서울특별시 강서구 화곡동 56-105 쌍용빌라 제1층 제101호",
+    "status": "approved"
+  },
+  {
+    "id": "adc47ee4-25e4-44da-b181-f85fb5822960",
+    "auctionNo": "2025타경484",
+    "court": "서울남부지방법원 2계",
+    "address": "서울특별시 양천구 신월동 203-3 그린빌라 제1층 제101호",
+    "status": "approved"
+  },
+  {
+    "id": "fbca55c9-6f31-4e1e-8569-70bf3228b7c6",
+    "auctionNo": "2025타경8911",
+    "court": "대구지방법원 13계",
+    "address": "대구광역시 수성구 노변동 440 노변대백아파트 105동 5층502호",
+    "status": "approved"
+  },
+  {
+    "id": "8346a342-f025-4c3e-ae9a-ba0add1b845d",
+    "auctionNo": "2025타경11713",
+    "court": "창원지방법원 6계",
+    "address": "경상남도 김해시 관동동 452-1 팔판마을1단지부영이그린타운 104동 16층1603호",
+    "status": "approved"
+  },
+  {
+    "id": "250d9739-ff45-469f-9339-aca272405ae4",
+    "auctionNo": "2024타경36",
+    "court": "창원지방법원 6계",
+    "address": "경상남도 김해시 내외중앙로 121, 104동 3층 304호 (내동,내외대우아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "9ad4644e-9964-461e-832f-bbaa885b86a7",
+    "auctionNo": "2025타경513942",
+    "court": "인천지방법원 13계",
+    "address": "* 철근콩크리트조\n69.24㎡, 지하실13.87㎡",
+    "status": "approved"
+  },
+  {
+    "id": "3660088b-5761-4489-8eca-ba6c1d5b9974",
+    "auctionNo": "2025타경506902",
+    "court": "인천지방법원 24계",
+    "address": "인천광역시 미추홀구 용현동 664 인천에스케이스카이뷰 105 18층1805호",
+    "status": "approved"
+  },
+  {
+    "id": "a74e9914-deb7-4e19-84f8-d210b322d3e4",
+    "auctionNo": "2024타경104168(2)",
+    "court": "서울남부지방법원 2계",
+    "address": "서울특별시 양천구 목동로21길 27-1, 제1층 제101호",
+    "status": "approved"
+  },
+  {
+    "id": "0facb0ee-7e76-4d5f-9a4a-13e21042095b",
+    "auctionNo": "2025타경53423",
+    "court": "안산지원 4계",
+    "address": "경기도 안산시 상록구 일동 545-11 3층301호",
+    "status": "approved"
+  },
+  {
+    "id": "d65049a0-95ae-4de8-ac7a-740f7c66f3c3",
+    "auctionNo": "2025타경3002",
+    "court": "대구서부지원 2계",
+    "address": "대구광역시 달성군 옥포읍 강림리 1099 대구옥포허브시티 103동 1층104호",
+    "status": "approved"
+  },
+  {
+    "id": "9d254250-f864-44a9-88e6-bfd229a5ee9b",
+    "auctionNo": "2024타경14840",
+    "court": "인천지방법원 5계",
+    "address": "인천광역시 연수구 옥련로99번길 19-11, 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "7089007b-9cfd-4503-a674-85b13c42d506",
+    "auctionNo": "2025타경12674",
+    "court": "서울남부지방법원 13계",
+    "address": "서울특별시 구로구 고척동 253-5 우진명가 제102동 제6층 제602호",
+    "status": "approved"
+  },
+  {
+    "id": "8c174833-5039-4cbc-b12d-e35b606bf2e7",
+    "auctionNo": "2023타경527165",
+    "court": "인천지방법원 14계",
+    "address": "인천광역시 부평구 부평문화로16번길 19, 10층1005호 (부평동,오티아빌)",
+    "status": "approved"
+  },
+  {
+    "id": "804137d3-7a5b-405b-9614-2de2a87d970e",
+    "auctionNo": "2024타경106286(2)",
+    "court": "마산지원 1계",
+    "address": "경상남도 창원시 마산회원구 양덕로 151, 201동 9층902호 (양덕동,마산한일타운2차아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "c2893ecf-26e1-4ab5-8c3c-bea8cc8e938a",
+    "auctionNo": "2023타경104819",
+    "court": "서울남부지방법원 8계",
+    "address": "서울특별시 금천구 시흥대로150길 11-9, 제2층 제202호 (독산동, 엠에스 빌)",
+    "status": "approved"
+  },
+  {
+    "id": "f0838a69-b903-495c-9347-3a2e6c7d35be",
+    "auctionNo": "2025타경62636",
+    "court": "고양지원 14계",
+    "address": "경기도 고양시 일산서구 탄현동 1640 일산두산위브더제니스 103동 44층4405호",
+    "status": "approved"
+  },
+  {
+    "id": "b16645ec-2f09-4bdf-9f0c-d2b19597994c",
+    "auctionNo": "2025타경512723",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 도화동 549-3 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "de2caa85-ee95-4ac8-852e-2c298887b575",
+    "auctionNo": "2025타경1819",
+    "court": "부산서부지원 6계",
+    "address": "부산광역시 북구 금곡동 97-10 금곡화목타운 101동 1층101호",
+    "status": "approved"
+  },
+  {
+    "id": "ce90abb6-3e57-4ba5-9cd6-78374d91d982",
+    "auctionNo": "2025타경30819",
+    "court": "진주지원 4계",
+    "address": "경상남도 진주시 일반성면 개암리 477-12 일반성 에이원아파트 101동 1층101호",
+    "status": "approved"
+  },
+  {
+    "id": "00c07e56-48bf-4834-ae4b-91db937f8732",
+    "auctionNo": "2025타경72079",
+    "court": "남양주지원 6계",
+    "address": "경기도 남양주시 평내동 599 평내마을중흥에스-클래스 2005동 7층 703호",
+    "status": "approved"
+  },
+  {
+    "id": "86207693-9d28-4aeb-9e8b-006b62bf92dc",
+    "auctionNo": "2025타경51416",
+    "court": "서울동부지방법원 1계",
+    "address": "서울특별시 강동구 성내동 509-12 3층301호",
+    "status": "approved"
+  },
+  {
+    "id": "3e2a970c-3179-42de-a679-041d291039c3",
+    "auctionNo": "2025타경31906",
+    "court": "대구서부지원 2계",
+    "address": "대구광역시 달서구 용산동 501-2 성서2차보성타운 106동 13층1305호",
+    "status": "approved"
+  },
+  {
+    "id": "f2c35cc5-21ac-4114-a117-67bb9eedc47b",
+    "auctionNo": "2025타경31852",
+    "court": "대구서부지원 2계",
+    "address": "대구광역시 달서구 상인동 42 보성은하아파트 109동 9층908호",
+    "status": "approved"
+  },
+  {
+    "id": "d9be1b18-acf3-4138-9339-7492bd593bbe",
+    "auctionNo": "2025타경31894",
+    "court": "대구서부지원 2계",
+    "address": "대구광역시 달서구 이곡동 1308-1 성서2차서한타운 101동 1층102호",
+    "status": "approved"
+  },
+  {
+    "id": "1c83d3c8-8fbf-456c-b3ae-0ad8a4e0b600",
+    "auctionNo": "2026타경26",
+    "court": "청주지방법원 5계",
+    "address": "충청북도 증평군 증평읍 장동리 350 보창아파트 2층206호",
+    "status": "approved"
+  },
+  {
+    "id": "8aedd6b5-4a7e-45aa-8f02-7bc97a4fb84c",
+    "auctionNo": "2025타경13508",
+    "court": "서울북부지방법원 4계",
+    "address": "서울특별시 강북구 수유동 348-77 미하우스 5층 502호",
+    "status": "approved"
+  },
+  {
+    "id": "b7d2c4b1-0f65-4671-be56-9d0c01466f3d",
+    "auctionNo": "2025타경511550",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 남동구 구월동 1128 탑클래스 9층906호",
+    "status": "approved"
+  },
+  {
+    "id": "d264335c-e425-4b15-b40c-e2b115c8d9ea",
+    "auctionNo": "2025타경1388",
+    "court": "울산지방법원 5계",
+    "address": "경상남도 양산시 주진동 710 양산천년가더힐 101동 9층901호",
+    "status": "approved"
+  },
+  {
+    "id": "beb4365e-d6c1-4486-a60a-823f8c0a5905",
+    "auctionNo": "2025타경11769",
+    "court": "창원지방법원 6계",
+    "address": "경상남도 창원시 진해구 용원동 1208 일신님아파트 103동 10층1003호",
+    "status": "approved"
+  },
+  {
+    "id": "85de1ec4-de95-46b6-8008-58fdd08bcb13",
+    "auctionNo": "2025타경20875",
+    "court": "원주지원 3계",
+    "address": "강원특별자치도 원주시 태장동 551 삼정백조아파트 102동 7층704호",
+    "status": "approved"
+  },
+  {
+    "id": "8192c497-51da-4e48-8159-c14c6daa5cc3",
+    "auctionNo": "2025타경511544",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 209-1 로렌.하이뷰 2층203호",
+    "status": "approved"
+  },
+  {
+    "id": "d031fa7b-de93-42d5-b779-2125c7bf3b13",
+    "auctionNo": "2025타경511143",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 미추홀구 도화동 618-9 가온누리 6층605호",
+    "status": "approved"
+  },
+  {
+    "id": "8e664e2f-35a3-4d78-ab12-aeb44ce41acc",
+    "auctionNo": "2025타경12604",
+    "court": "울산지방법원 5계",
+    "address": "경상남도 양산시 물금읍 가촌리 1303-1 양산대방노블랜드연리지(2차) 203동 10층1001호",
+    "status": "approved"
+  },
+  {
+    "id": "904dfa24-7816-4271-9bab-cde297f7d794",
+    "auctionNo": "2025타경5505",
+    "court": "부산동부지원 2계",
+    "address": "부산광역시 해운대구 송정동 947 해운대송정우림필유아파트 102동 1층103호",
+    "status": "approved"
+  },
+  {
+    "id": "d380f5e1-d959-4f7a-a281-bc9f02ea2c79",
+    "auctionNo": "2025타경514626",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 미추홀구 주안동 115-1 주안웰가 14층1408호",
+    "status": "approved"
+  },
+  {
+    "id": "1c84edff-0bd6-4c16-a042-82ecbf1af18d",
+    "auctionNo": "2025타경513260",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 주안동 1506-5 보광그랑베르 1동 11층1103호",
+    "status": "approved"
+  },
+  {
+    "id": "e7d804e3-f8df-4787-b07a-c184684cc161",
+    "auctionNo": "2025타경512869",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 372-12 현대홈타운 2층204호",
+    "status": "approved"
+  },
+  {
+    "id": "b93a0223-0e4e-4639-bbab-926bad4110bc",
+    "auctionNo": "2025타경511995",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 숭의동 339-6 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "a4960570-90b7-42cd-b8ed-6a7181e53815",
+    "auctionNo": "2026타경500529",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 부평구 부평동 409-8 엘루이 7층701호",
+    "status": "approved"
+  },
+  {
+    "id": "56518b40-163c-4925-b4f7-1b7f06c40c5e",
+    "auctionNo": "2025타경12083",
+    "court": "서울남부지방법원 16계",
+    "address": "서울특별시 양천구 신월동 411-10 연우넥스트 제103동 제3층 제302호",
+    "status": "approved"
+  },
+  {
+    "id": "a2f539b6-a683-4d11-ade2-08434fbd7341",
+    "auctionNo": "2025타경30883",
+    "court": "충주지원 1계",
+    "address": "충청북도 충주시 중앙탑면 용전리 656 미진 이지비아 110동 11층1101호",
+    "status": "approved"
+  },
+  {
+    "id": "6439a808-fcd6-4667-a993-9be4d6853158",
+    "auctionNo": "2025타경514716",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 209-3 에이치비엘림캐슬 9층904호",
+    "status": "approved"
+  },
+  {
+    "id": "e16f3034-178f-4078-8b70-95cec6168843",
+    "auctionNo": "2026타경600261",
+    "court": "대전지방법원 7계",
+    "address": "대전광역시 대덕구 법동 195-1 그린타운아파트 107동 1층106호",
+    "status": "approved"
+  },
+  {
+    "id": "5363ef9a-5994-44f6-b334-0fe91dd79f42",
+    "auctionNo": "2025타경511657",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 용현동 621-90 6층603호",
+    "status": "approved"
+  },
+  {
+    "id": "647536b0-033b-479c-a6ed-ce35ffe9c0b4",
+    "auctionNo": "2025타경511686",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 417-17 해피애버 4층403호",
+    "status": "approved"
+  },
+  {
+    "id": "4d36b2ba-9dbc-4fc3-bc1d-a44500fe5ac6",
+    "auctionNo": "2025타경512491",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 계양구 작전동 679-10 어반스카이 3동 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "6f39b4ff-6acf-4d32-bfb9-4a56fca90190",
+    "auctionNo": "2025타경512640",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 서구 석남동 506-5 석남룩소르주상복합공동주택 10층1002호",
+    "status": "approved"
+  },
+  {
+    "id": "66eb90fb-c693-4af4-ae58-d904e46819ad",
+    "auctionNo": "2025타경62577",
+    "court": "고양지원 15계",
+    "address": "경기도 파주시 금촌동 793-6 창성에코빌 6층602호",
+    "status": "approved"
+  },
+  {
+    "id": "c6609d85-fa03-4e60-87b8-9c32f991c19c",
+    "auctionNo": "2025타경511749",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 남동구 간석동 49-22 리젠시아 3층308호",
+    "status": "approved"
+  },
+  {
+    "id": "d04df86e-f85d-46de-953a-8b622df3a738",
+    "auctionNo": "2025타경511434",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 숭의동 146-30 4층408호",
+    "status": "approved"
+  },
+  {
+    "id": "3c547b4f-fc53-4f9a-a089-cb23d8743d5b",
+    "auctionNo": "2025타경5681",
+    "court": "부산동부지원 7계",
+    "address": "부산광역시 기장군 정관면 모전리 735 이지더원2차아파트 202동 9층902호",
+    "status": "approved"
+  },
+  {
+    "id": "8977b4d2-e3ab-4305-bc92-7b09457e697a",
+    "auctionNo": "2025타경511295",
+    "court": "인천지방법원 17계",
+    "address": "인천광역시 부평구 부평동 528-9 더갤러리 4층101-402호",
+    "status": "approved"
+  },
+  {
+    "id": "a973a026-c66e-4eef-824e-6ba30b08b65f",
+    "auctionNo": "2026타경103",
+    "court": "순천지원 1계",
+    "address": "전라남도 광양시 광양읍 용강리 907 광양송보파인빌7차아파트 709동 5층502호",
+    "status": "approved"
+  },
+  {
+    "id": "221d0705-5a86-4aaa-b240-57b35b652492",
+    "auctionNo": "2025타경21841",
+    "court": "부산지방법원 1계",
+    "address": "부산광역시 부산진구 범천동 849-2 대동레미안센트럴시티5 6층607호",
+    "status": "approved"
+  },
+  {
+    "id": "bdbda7a6-3c51-4137-bc75-e43be9d00ec8",
+    "auctionNo": "2025타경30677(1)",
+    "court": "강릉지원 1계",
+    "address": "강원특별자치도 강릉시 포남동 1278 민락임대주택 가동 112호",
+    "status": "approved"
+  },
+  {
+    "id": "4ed48de8-b4ed-4841-ae3c-939b98620df0",
+    "auctionNo": "2025타경102207",
+    "court": "부산서부지원 4계",
+    "address": "부산광역시 북구 화명동 295 도시화명그린아파트 208동 17층1705호",
+    "status": "approved"
+  },
+  {
+    "id": "58bb7339-c5c4-4908-839e-76e7c207c0ca",
+    "auctionNo": "2025타경1194",
+    "court": "수원지방법원 10계",
+    "address": "경기도 용인시 기흥구 마북동 638 교동마을구성자이3차 101동 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "747c846f-f438-4983-92e2-0d136a2211f6",
+    "auctionNo": "2024타경51204",
+    "court": "부산지방법원 1계",
+    "address": "부산광역시 금정구 온천장로125번길 28-20, 3층305호 (장전동,윤성리버티)",
+    "status": "approved"
+  },
+  {
+    "id": "1efab0ce-396e-4cd5-bf09-ef3b78a874fe",
+    "auctionNo": "2024타경4236",
+    "court": "창원지방법원 4계",
+    "address": "경상남도 김해시 김해대로1902번길 30, 101동 15층1502호 (구산동,일동미라주)",
+    "status": "approved"
+  },
+  {
+    "id": "06804394-f672-4c57-9de1-53292b2e4bcf",
+    "auctionNo": "2025타경55687",
+    "court": "수원지방법원 4계",
+    "address": "경기도 화성시 청계동 545 동탄역 신안인스빌리베라 1350동 22층2202호",
+    "status": "approved"
+  },
+  {
+    "id": "3c3a0b26-5e26-494b-8f52-055c5e7a5170",
+    "auctionNo": "2026타경30210",
+    "court": "광주지방법원 5계",
+    "address": "광주광역시 북구 문흥동 995-1 102동 13층1401호",
+    "status": "approved"
+  },
+  {
+    "id": "d8824bb8-679d-43f3-b442-2eae63596d2d",
+    "auctionNo": "2022타경6098",
+    "court": "울산지방법원 6계",
+    "address": "울산광역시 남구 거마로133번길 24, 비이동 2층201호 (신정동,세원그린파크빌아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "861151d3-3528-40f5-b01d-c831f6bc24bd",
+    "auctionNo": "2025타경30842",
+    "court": "충주지원 1계",
+    "address": "충청북도 충주시 중앙탑면 용전리 696 신우희가로아파트 109동 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "2845babd-e006-484a-ada3-6fafe3bb683b",
+    "auctionNo": "2026타경50085",
+    "court": "서울서부지방법원 1계",
+    "address": "서울특별시 은평구 대조동 9-21 모아아파트 101동 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "558cddfc-28ad-4a18-bf42-f1b87ef99e59",
+    "auctionNo": "2025타경9313",
+    "court": "제주지방법원 9계",
+    "address": "제주특별자치도 서귀포시 표선면 표선리 1549-3 에이원시티빌 5층 501호",
+    "status": "approved"
+  },
+  {
+    "id": "ff3d1b60-5dc0-40eb-b427-c437e2d37466",
+    "auctionNo": "2026타경30290",
+    "court": "광주지방법원 5계",
+    "address": "광주광역시 북구 동림동 645 삼익 109동 3층306호",
+    "status": "approved"
+  },
+  {
+    "id": "3d82b0ed-2077-4e08-9ca1-c3bf9eb3919d",
+    "auctionNo": "2025타경512436",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 남동구 구월동 1142-27 탑클래스 3층303호",
+    "status": "approved"
+  },
+  {
+    "id": "14f93c14-f79c-4bd5-a798-b1909b51d411",
+    "auctionNo": "2025타경51292",
+    "court": "서산지원 2계",
+    "address": "충청남도 당진시 읍내동 1486 당진2차푸르지오 203동 9층905호",
+    "status": "approved"
+  },
+  {
+    "id": "895c2b64-d070-4bf9-a0ca-b16e82ac524a",
+    "auctionNo": "2025타경20904",
+    "court": "군산지원 3계",
+    "address": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 103동 2층 203호",
+    "status": "approved"
+  },
+  {
+    "id": "9ce62470-33ee-43a9-9715-d206aeecbb1f",
+    "auctionNo": "2025타경20867",
+    "court": "군산지원 5계",
+    "address": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 102동 7층703호",
+    "status": "approved"
+  },
+  {
+    "id": "d1f7d2b3-d516-4c82-9618-4aaf874259e2",
+    "auctionNo": "2026타경25",
+    "court": "홍성지원 5계",
+    "address": "충청남도 홍성군 홍성읍 남장리 515 주공그린빌아파트 104동 2층204호",
+    "status": "approved"
+  },
+  {
+    "id": "31b54486-5a47-406e-a6f6-34a5e2a2fd1a",
+    "auctionNo": "2026타경10315",
+    "court": "울산지방법원 7계",
+    "address": "울산광역시 북구 달천동 107 그린카운티아파트 101동 1층107호",
+    "status": "approved"
+  },
+  {
+    "id": "d9ec940d-f46b-4f93-bfa0-cdbba165178f",
+    "auctionNo": "2025타경510849",
+    "court": "인천지방법원 15계",
+    "address": "인천광역시 서구 석남동 504-12 에이동 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "06e2ab9d-c54c-426b-a0dc-5fbe1642c216",
+    "auctionNo": "2025타경706",
+    "court": "서울남부지방법원 6계",
+    "address": "서울특별시 구로구 개봉동 342-33 제4층 제402호",
+    "status": "approved"
+  },
+  {
+    "id": "9f456c8f-db8c-4479-ac0e-ac0e29c68a32",
+    "auctionNo": "2025타경147",
+    "court": "서울동부지방법원 3계",
+    "address": "서울특별시 송파구 백제고분로18길 4-21, 지하층102호",
+    "status": "approved"
+  },
+  {
+    "id": "bf6aab9e-283e-4fa6-891e-e6b5b6b8c971",
+    "auctionNo": "2025타경507185",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 도화동 545-14 티오피시그니쳐 9층902호",
+    "status": "approved"
+  },
+  {
+    "id": "737b3f13-2a54-457a-842e-560c3e0b3564",
+    "auctionNo": "2025타경514157",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 370-40 진흥스타움 8층803호",
+    "status": "approved"
+  },
+  {
+    "id": "67544479-0669-4d09-8a7d-0ccbb787986b",
+    "auctionNo": "2025타경512426",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 남동구 간석동 109-10 위브타운 12층1203호",
+    "status": "approved"
+  },
+  {
+    "id": "ee61544f-87fb-4286-a577-141400681fa9",
+    "auctionNo": "2025타경514166",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 378-9 남송아파트 2층204호",
+    "status": "approved"
+  },
+  {
+    "id": "02b4f370-5c56-4e98-a2d0-934dc2c0a08b",
+    "auctionNo": "2025타경20879",
+    "court": "군산지원 5계",
+    "address": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 102동 12층1201호",
+    "status": "approved"
+  },
+  {
+    "id": "40388985-5603-498a-8ad0-f63f19326d5b",
+    "auctionNo": "2025타경512010",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 450-11 해송파크뷰2차 2층204호",
+    "status": "approved"
+  },
+  {
+    "id": "9e7abe3e-f349-4fdc-871f-96440373fab7",
+    "auctionNo": "2025타경511918",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 용현동 490-37 대준 블루온 5층507호",
+    "status": "approved"
+  },
+  {
+    "id": "78e82d9e-0cc4-4e61-adcd-b202cf0a79f4",
+    "auctionNo": "2025타경512635",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 남동구 만수동 5-48 월드이-클래스 7층703호",
+    "status": "approved"
+  },
+  {
+    "id": "bd89d964-605d-4eec-a98d-3525a172db55",
+    "auctionNo": "2025타경22131",
+    "court": "통영지원 7계",
+    "address": "경상남도 거제시 양정동 885 거제수월힐스테이트 107동 2층204호",
+    "status": "approved"
+  },
+  {
+    "id": "0cd2aab2-47c6-4bcf-a378-94647038b65e",
+    "auctionNo": "2025타경513585",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 375-131 씨티원2 13층1302호",
+    "status": "approved"
+  },
+  {
+    "id": "3adb4f50-b803-4d15-83a0-f21f47974472",
+    "auctionNo": "2025타경142",
+    "court": "강릉지원 2계",
+    "address": "강원특별자치도 동해시 동굴로 149, 101동 12층1201호 (천곡동,쌍용아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "6b0a3bf7-6499-4c09-9859-fa92c87944b3",
+    "auctionNo": "2026타경10003",
+    "court": "밀양지원 1계",
+    "address": "경상남도 밀양시 교동 1227 한마음타운 103동 11층1105호",
+    "status": "approved"
+  },
+  {
+    "id": "67d2f8b5-83e3-4e91-b2df-907436adc780",
+    "auctionNo": "2025타경510793",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 숭의동 158-31 아르누보 8층802호",
+    "status": "approved"
+  },
+  {
+    "id": "83287806-5610-400f-8dc4-b175db27aaae",
+    "auctionNo": "2025타경512304",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 십정동 182-24 백운빌리지2차 6층602호",
+    "status": "approved"
+  },
+  {
+    "id": "f628be8c-4927-476d-8e19-56368a1becff",
+    "auctionNo": "2025타경512823",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 숭의동 303-92 샤인힐 7층702호",
+    "status": "approved"
+  },
+  {
+    "id": "d9093028-6d9e-4829-8a10-c3a65cddfa9e",
+    "auctionNo": "2025타경512791",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 남동구 구월동 1121-3 창우노블리안 1동 9층903호",
+    "status": "approved"
+  },
+  {
+    "id": "ab9278a3-081b-4294-b487-5c309f87b826",
+    "auctionNo": "2026타경382",
+    "court": "고양지원 5계",
+    "address": "경기도 고양시 일산동구 장항동 877 호수마을아파트 317동 12층1204호",
+    "status": "approved"
+  },
+  {
+    "id": "a9918c31-6fec-4584-9540-1d3608ac93e2",
+    "auctionNo": "2026타경535",
+    "court": "고양지원 5계",
+    "address": "경기도 고양시 일산서구 탄현동 1640 일산두산위브더제니스 102동 41층4106호",
+    "status": "approved"
+  },
+  {
+    "id": "5df85b15-39d2-4599-9ebc-3343844cd112",
+    "auctionNo": "2025타경512427",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 도화동 457-4 엔에스파크 3층306호",
+    "status": "approved"
+  },
+  {
+    "id": "8d88a04f-fa72-4463-87c1-40fc0c838e4e",
+    "auctionNo": "2025타경512484",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 숭의동 339-14 스타뷰 5층501호",
+    "status": "approved"
+  },
+  {
+    "id": "3d98314e-1ccb-4717-9755-617ddab92f59",
+    "auctionNo": "2025타경11267",
+    "court": "김천지원 5계",
+    "address": "경상북도 구미시 인의동 578 인동서한이다음 101동 2층 201호",
+    "status": "approved"
+  },
+  {
+    "id": "39451a81-fd34-449d-ac5a-9e82cfb9da5b",
+    "auctionNo": "2025타경512706",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 남동구 구월동 1121-3 창우노블리안 1동 6층602호",
+    "status": "approved"
+  },
+  {
+    "id": "05db6993-d25a-4a4d-8d0d-f3732a9c2301",
+    "auctionNo": "2025타경10375",
+    "court": "서울남부지방법원 16계",
+    "address": "서울특별시 구로구 개봉동 338-19 제5층 제502호",
+    "status": "approved"
+  },
+  {
+    "id": "7d181661-3a4e-4ba8-8efe-c024c16d1fac",
+    "auctionNo": "2025타경513721",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 도화동 437-1 스타뷰 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "ef0c874d-8278-435a-9fdd-00121481862e",
+    "auctionNo": "2025타경511042",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 남동구 간석동 123-19 대준블루인 10층1003호",
+    "status": "approved"
+  },
+  {
+    "id": "6176c46b-6f03-4f6f-88e1-41cc2ba0f828",
+    "auctionNo": "2025타경512989",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 주안동 1422-9 엠버빌2 5층504호",
+    "status": "approved"
+  },
+  {
+    "id": "8f7c56e6-6881-409b-9538-7283bdedf140",
+    "auctionNo": "2024타경527001",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 남동구 만수서로 17, 4층401호",
+    "status": "approved"
+  },
+  {
+    "id": "d686e1a8-2ef7-4294-8bd1-e7bfc8b9d010",
+    "auctionNo": "2025타경512974",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 숭의동 2-72 삼성프린스빌 6층601호",
+    "status": "approved"
+  },
+  {
+    "id": "e4ce37f5-195a-4335-8b03-e7db921fd7e0",
+    "auctionNo": "2025타경9451",
+    "court": "대구지방법원 1계",
+    "address": "경상북도 칠곡군 약목면 관호리 952 삼주강변타운 101동 2층206호",
+    "status": "approved"
+  },
+  {
+    "id": "63309d77-7a85-4efc-9fdc-fe915b718e91",
+    "auctionNo": "2025타경513290",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 미추홀구 숭의동 146-6 신영아이폴리스1차 6층602호",
+    "status": "approved"
+  },
+  {
+    "id": "ad5f165f-c335-46ca-b07b-26a19bb7e643",
+    "auctionNo": "2025타경22426",
+    "court": "부산지방법원 2계",
+    "address": "부산광역시 금정구 부곡동 896-4 5층42호",
+    "status": "approved"
+  },
+  {
+    "id": "c1abbe5a-7b87-4b91-bbde-cc470d68d60f",
+    "auctionNo": "2025타경514189",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 767-163 파크팰리스 3층303호",
+    "status": "approved"
+  },
+  {
+    "id": "71e5604e-ec0c-4ae7-85c2-c127dcb8dc82",
+    "auctionNo": "2025타경52258",
+    "court": "서울서부지방법원 3계",
+    "address": "서울특별시 은평구 역촌동 31-21 신하우스 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "e614e625-ed8c-44d4-8408-55f3963e2668",
+    "auctionNo": "2026타경500834",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 남동구 구월동 1144-10 룩소르주상복합아파트 4층407호",
+    "status": "approved"
+  },
+  {
+    "id": "c5a44a38-b658-40e3-8da4-4905b01d3c2f",
+    "auctionNo": "2025타경10260",
+    "court": "거창지원 2계",
+    "address": "경상남도 거창군 거창읍 김천리 255-21 제3차세륭아파트 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "b6f7dd8b-a9fe-4dc4-bc54-e5cc7423701c",
+    "auctionNo": "2026타경500767",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 부평구 부평동 204-9 투엠캐슬 5층505호",
+    "status": "approved"
+  },
+  {
+    "id": "6ebe1dad-e616-4a6e-b5f0-891f11d8a195",
+    "auctionNo": "2026타경500248",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 부평구 부평동 767-15 플로렌스 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "02147d9b-8a76-4716-9f5a-77cb26ab6980",
+    "auctionNo": "2025타경11133",
+    "court": "김천지원 5계",
+    "address": "경상북도 구미시 형곡동 333-1 6층603호",
+    "status": "approved"
+  },
+  {
+    "id": "fdc1788a-d944-4ddc-b2e5-80b23e2b5275",
+    "auctionNo": "2024타경569067",
+    "court": "인천지방법원 14계",
+    "address": "인천광역시 미추홀구 아암대로29번길 16, 105동 6층601호 (용현동,인천용현엑슬루타워)",
+    "status": "approved"
+  },
+  {
+    "id": "c1de3369-80fa-4a2a-9635-640069a66efe",
+    "auctionNo": "2025타경513732",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 180-19 투엠레뷰 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "89902135-5a0d-4da2-89c1-3277364de1a7",
+    "auctionNo": "2025타경509444",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 116-9 유엔어스 6층601호",
+    "status": "approved"
+  },
+  {
+    "id": "895b32c8-0058-4b83-b320-5064bfbdbfaf",
+    "auctionNo": "2025타경506742",
+    "court": "인천지방법원 2계",
+    "address": "인천광역시 부평구 길주로 623, 101-2002호 (삼산동,대덕리치아노)",
+    "status": "approved"
+  },
+  {
+    "id": "a175e989-a1f6-4b6f-993f-6d92fde5395e",
+    "auctionNo": "2026타경501332",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 부평구 부평동 407-5 타워팰리스 에이 6층606호",
+    "status": "approved"
+  },
+  {
+    "id": "b60fd37a-f2d7-43d8-be25-5ec285496efd",
+    "auctionNo": "2025타경22325",
+    "court": "부산지방법원 2계",
+    "address": "부산광역시 동래구 온천동 1129-4 온천대동다숲 101동 9층906호",
+    "status": "approved"
+  },
+  {
+    "id": "8487fdc8-339f-4d32-aea0-f0337bae92a7",
+    "auctionNo": "2024타경581982",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 미추홀구 미추로 31-1, 4층401호 (숭의동,프라임시티)",
+    "status": "approved"
+  },
+  {
+    "id": "65245fe6-9f05-45f2-8ae0-98c7b1247ff8",
+    "auctionNo": "2026타경600180",
+    "court": "대전지방법원 5계",
+    "address": "대전광역시 중구 용두동 99-4 극동늘푸른아파트 102동 3층303호",
+    "status": "approved"
+  },
+  {
+    "id": "3023fed9-7c18-463d-93f0-8884d2fdcb0d",
+    "auctionNo": "2025타경34305",
+    "court": "광주지방법원 7계",
+    "address": "광주광역시 광산구 운남동 776-1 운남주공2단지아파트 201동 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "315eedc1-4506-4e74-83ef-0d5b3eddccca",
+    "auctionNo": "2025타경1807",
+    "court": "서울서부지방법원 3계",
+    "address": "서울특별시 서대문구 홍은동 190-27 2층",
+    "status": "approved"
+  },
+  {
+    "id": "298e579a-67c7-4204-befc-29e20c9c3df5",
+    "auctionNo": "2026타경501245",
+    "court": "인천지방법원 8계",
+    "address": "인천광역시 부평구 청천동 6-15 우진드림캐슬 4층401호",
+    "status": "approved"
+  },
+  {
+    "id": "4dbdb1fd-a819-4204-9c3e-accb97f126d9",
+    "auctionNo": "2025타경3955",
+    "court": "포항지원 4계",
+    "address": "경상북도 포항시 남구 오천읍 용덕리 384 오천제일맨션5차 106동 4층401호",
+    "status": "approved"
+  },
+  {
+    "id": "39866b58-478d-45e2-be9b-33fc11e2912e",
+    "auctionNo": "2025타경73933",
+    "court": "의정부지방법원 8계",
+    "address": "경기도 포천시 신북면 가채리 30-2 거산아파트 101동 1층 115호",
+    "status": "approved"
+  },
+  {
+    "id": "3e5a7db9-df1e-4cb9-885f-f7d6229e29e8",
+    "auctionNo": "2025타경32238",
+    "court": "대구서부지원 1계",
+    "address": "대구광역시 달성군 다사읍 매곡리 302 강창동서아파트 102동 13층1313호",
+    "status": "approved"
+  },
+  {
+    "id": "05da2f5f-3474-4211-bba4-85c1395ba5a3",
+    "auctionNo": "2025타경73611",
+    "court": "의정부지방법원 8계",
+    "address": "경기도 의정부시 의정부동 165-2 은가람 2층 204호",
+    "status": "approved"
+  },
+  {
+    "id": "4f81e1b1-3e1a-4434-bd27-891932db928d",
+    "auctionNo": "2025타경5339",
+    "court": "장흥지원 2계",
+    "address": "전라남도 장흥군 장흥읍 원도리 329 장흥코아루해피트리 제106동 제1층 제104호",
+    "status": "approved"
+  },
+  {
+    "id": "c13563ef-6337-4d7c-b6c9-8fd527e8d06a",
+    "auctionNo": "2025타경1421",
+    "court": "원주지원 2계",
+    "address": "강원특별자치도 원주시 단구동 1517-1 대림아파트 108동 1층103호",
+    "status": "approved"
+  },
+  {
+    "id": "b89eb7fe-d3f3-4c56-abbc-c0c02f1b344e",
+    "auctionNo": "2025타경1838(1)",
+    "court": "인천지방법원 13계",
+    "address": "인천광역시 연수구 송도동 30-3 송도센트로드 에이동 18층1813호",
+    "status": "approved"
+  },
+  {
+    "id": "a5e20a59-e678-4810-baf9-02300772c21c",
+    "auctionNo": "2025타경72820",
+    "court": "의정부지방법원 2계",
+    "address": "경기도 의정부시 의정부동 136-15 현대탑캐슬 3층 304호",
+    "status": "approved"
+  },
+  {
+    "id": "214d4d89-e054-405e-90f2-f69f06f7af4a",
+    "auctionNo": "2025타경22057",
+    "court": "통영지원 7계",
+    "address": "경상남도 거제시 연초면 오비리 1056 신우마리나타운 106동 3층303호",
+    "status": "approved"
+  },
+  {
+    "id": "1f979f63-a640-487a-8d9b-085affb9edb6",
+    "auctionNo": "2025타경31311",
+    "court": "진주지원 3계",
+    "address": "경상남도 하동군 진교면 고룡리 3 미진스위트빌 103동 14층1408호",
+    "status": "approved"
+  },
+  {
+    "id": "0b336fe4-2c4b-4700-8751-26e6ea6c1e49",
+    "auctionNo": "2025타경11359",
+    "court": "김천지원 1계",
+    "address": "경상북도 구미시 구평동 429 부영 제201동 제15층 제1505호",
+    "status": "approved"
+  },
+  {
+    "id": "68445595-5855-483f-b882-524f2885f9af",
+    "auctionNo": "2025타경963",
+    "court": "대구지방법원 6계",
+    "address": "경상북도 경산시 중방동 319-83 디동 2층209호",
+    "status": "approved"
+  },
+  {
+    "id": "7cca60c7-3eb0-40e6-aeba-7cab24b055e2",
+    "auctionNo": "2025타경1040",
+    "court": "대구지방법원 6계",
+    "address": "경상북도 경산시 정평동 130 정평현대타운 110동 2층203호",
+    "status": "approved"
+  },
+  {
+    "id": "1a055142-cb9d-4a6c-9a08-db78f96b5278",
+    "auctionNo": "2025타경12762",
+    "court": "서울남부지방법원 16계",
+    "address": "서울특별시 금천구 시흥동 789-6 리브가 제304호",
+    "status": "approved"
+  },
+  {
+    "id": "2d8372b8-6824-4683-b2a5-d90f0069c814",
+    "auctionNo": "2025타경5335",
+    "court": "부산동부지원 2계",
+    "address": "부산광역시 해운대구 재송동 1048-3 센텀우신골든빌 107동 6층602호",
+    "status": "approved"
+  },
+  {
+    "id": "53351a5e-394f-43b5-b8a3-9e1ae839c547",
+    "auctionNo": "2025타경511504",
+    "court": "인천지방법원 25계",
+    "address": "인천광역시 서구 청라동 115-1 청라제일풍경채 309동 8층805호",
+    "status": "approved"
+  },
+  {
+    "id": "358aada1-2836-4471-a636-8f18aca46336",
+    "auctionNo": "2025타경71523",
+    "court": "남양주지원 5계",
+    "address": "경기도 남양주시 다산동 4002-1 플루리움 214동 21층2104호",
+    "status": "approved"
+  },
+  {
+    "id": "491f4cae-d480-40aa-a3dd-3d3b16cd1672",
+    "auctionNo": "2025타경64309",
+    "court": "고양지원 13계",
+    "address": "경기도 고양시 일산서구 탄현동 1640 일산두산위브더제니스 105동 30층3006호",
+    "status": "approved"
+  },
+  {
+    "id": "a3965b59-1fe3-4a5f-ab3a-9c659f4b0c7a",
+    "auctionNo": "2025타경30902",
+    "court": "충주지원 1계",
+    "address": "충청북도 충주시 용관동 172-5 더푸른리버뷰아파트 103동 2층210호",
+    "status": "approved"
+  },
+  {
+    "id": "a534958c-f95d-48e8-99bb-f117dd0c722b",
+    "auctionNo": "2026타경60451",
+    "court": "고양지원 11계",
+    "address": "경기도 고양시 일산동구 식사동 1565 위시티블루밍5단지 507동 3층302호",
+    "status": "approved"
+  },
+  {
+    "id": "e906eb53-3f16-4459-94ba-98cbd6e91afa",
+    "auctionNo": "2025타경8926",
+    "court": "서울남부지방법원 16계",
+    "address": "서울특별시 양천구 신월동 63-1 제5층 제501호",
+    "status": "approved"
+  },
+  {
+    "id": "03b46d1a-b598-4dc6-b81b-2218dcdcdef3",
+    "auctionNo": "2025타경21166",
+    "court": "통영지원 7계",
+    "address": "경상남도 거제시 옥포동 1916-2 자유에이스빌 5층502호",
+    "status": "approved"
+  },
+  {
+    "id": "a3584faf-5ad0-4483-9efd-fa12a6281c41",
+    "auctionNo": "2024타경111653",
+    "court": "창원지방법원 8계",
+    "address": "경상남도 김해시 계동로102번길 17-27, 303동 5층 502호 (대청동,갑오마을)",
+    "status": "approved"
+  },
+  {
+    "id": "aa33a5e2-5518-4ca6-9a07-e779338bfad6",
+    "auctionNo": "2025타경20417",
+    "court": "논산지원 3계",
+    "address": "충청남도 계룡시 두마면 두계리 67 계룡더샵아파트 110동 4층401호",
+    "status": "approved"
+  },
+  {
+    "id": "0db0c0b3-57a2-41f6-a258-81d3459fd1c0",
+    "auctionNo": "2025타경63490",
+    "court": "고양지원 11계",
+    "address": "경기도 고양시 덕양구 화정동 870 544동 1층103호",
+    "status": "approved"
+  },
+  {
+    "id": "40b56f38-23f4-4949-afac-4f0e4bb52cf3",
+    "auctionNo": "2026타경10330",
+    "court": "천안지원 4계",
+    "address": "충청남도 천안시 동남구 목천읍 삼성리 9-12 원앙마을부영아파트 110동 6층603호",
+    "status": "approved"
+  },
+  {
+    "id": "f305e88d-9d49-4f07-9d36-8d6f9e297bc7",
+    "auctionNo": "2025타경5381",
+    "court": "부산동부지원 2계",
+    "address": "부산광역시 남구 대연동 1918 정성재아파트 101동 504호",
+    "status": "approved"
+  },
+  {
+    "id": "8fce1b11-9f07-45a9-8d30-ccb7b98696d3",
+    "auctionNo": "2026타경100092",
+    "court": "대구지방법원 9계",
+    "address": "경상북도 영천시 야사동 671 한신더휴영천퍼스트 103동 5층504호",
+    "status": "approved"
+  },
+  {
+    "id": "fe570bb0-2856-4b2d-8b1f-148b8035e1ad",
+    "auctionNo": "2024타경112100",
+    "court": "서울북부지방법원 8계",
+    "address": "서울특별시 도봉구 삼양로162가길 42-33, 디동 4층402호 (쌍문동,엘지라인하우스)",
+    "status": "approved"
+  },
+  {
+    "id": "b0516198-2ae2-4bfd-8caa-d18c3c560c50",
+    "auctionNo": "2025타경475",
+    "court": "포항지원 4계",
+    "address": "경상북도 포항시 북구 양덕동 786-1 양덕트리니엔3차 301동 2층207호",
+    "status": "approved"
+  },
+  {
+    "id": "93482af8-94ac-47fd-9da4-a0b782743c47",
+    "auctionNo": "2025타경503300",
+    "court": "대전지방법원 12계",
+    "address": "대전광역시 유성구 노은동 553-8 노은스타돔아파트 11층1119호",
+    "status": "approved"
+  },
+  {
+    "id": "2da259a0-2524-4cad-9f79-1949fca861dc",
+    "auctionNo": "2025타경11213",
+    "court": "김천지원 3계",
+    "address": "경상북도 구미시 비산동 489-1 비산전원리빙필 101동 1층 106호",
+    "status": "approved"
+  },
+  {
+    "id": "da67c358-be27-4c13-b999-d3457b7734d1",
+    "auctionNo": "2025타경11488",
+    "court": "창원지방법원 1계",
+    "address": "경상남도 김해시 관동동 452-1 팔판마을1단지부영이그린타운 104동 3층304호",
+    "status": "approved"
+  },
+  {
+    "id": "d7ff482d-3adf-49ca-8380-09102455fb8e",
+    "auctionNo": "2025타경20836",
+    "court": "군산지원 5계",
+    "address": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 101동 10층1003호",
+    "status": "approved"
+  },
+  {
+    "id": "6a733f21-5caa-4bd4-a123-9fdd0688de02",
+    "auctionNo": "2025타경11118",
+    "court": "김천지원 5계",
+    "address": "경상북도 구미시 구평동 474-4 부영아파트 801동 10층1004호",
+    "status": "approved"
+  },
+  {
+    "id": "66eecce6-0de0-46e8-a345-eb06c2292dc1",
+    "auctionNo": "2025타경22213",
+    "court": "부산지방법원 2계",
+    "address": "부산광역시 영도구 영선동4가 245-1 영도대원아파트 5동 1층101호",
+    "status": "approved"
+  },
+  {
+    "id": "972a1c70-8fc5-4498-b1ee-da3de1cfbd72",
+    "auctionNo": "2025타경425",
+    "court": "김천지원 5계",
+    "address": "경상북도 구미시 공단동 251 파라디아 108동 21층2107호",
+    "status": "approved"
+  },
+  {
+    "id": "638d6f8e-4eae-4182-8c60-b9631da74e1d",
+    "auctionNo": "2025타경64797",
+    "court": "고양지원 11계",
+    "address": "경기도 고양시 덕양구 주교동 589-13 인정파크뷰 104동 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "5821fb55-39fb-4c3e-b7aa-07bbd44918a6",
+    "auctionNo": "2025타경2896",
+    "court": "부산지방법원 2계",
+    "address": "부산광역시 동구 수정동 248-36 모티더베스트빌 15층1501호",
+    "status": "approved"
+  },
+  {
+    "id": "805a65a8-cfeb-45ec-bd1d-48b894ed4236",
+    "auctionNo": "2025타경507863",
+    "court": "인천지방법원 27계",
+    "address": "인천광역시 부평구 부평동 496-6 휴플러스1차 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "a3832508-5aa1-4888-967c-5c62bc43a9cc",
+    "auctionNo": "2025타경104522",
+    "court": "서울중앙지방법원 1계",
+    "address": "서울특별시 관악구 신림동 509-2 소노캐슬 2층202호",
+    "status": "approved"
+  },
+  {
+    "id": "78130dcb-3731-44a6-a529-613031722cff",
+    "auctionNo": "2025타경507580(4)",
+    "court": "인천지방법원 14계",
+    "address": "인천광역시 서구 가좌동 235-4 월드세라믹빌라 16동 지하층2호",
+    "status": "approved"
+  },
+  {
+    "id": "c31f5fb7-6d3c-48d2-be00-6334aac7e3f4",
+    "auctionNo": "2025타경12726",
+    "court": "서울북부지방법원 5계",
+    "address": "서울특별시 강북구 수유동 482-21 서현펠리스 3층 301호",
+    "status": "approved"
+  },
+  {
+    "id": "b35ed549-d056-4d69-be72-2d790331ed4e",
+    "auctionNo": "2025타경10214",
+    "court": "거창지원 2계",
+    "address": "경상남도 거창군 거창읍 대동리 97 주공아파트 110동 1층110호",
+    "status": "approved"
+  },
+  {
+    "id": "860a2736-7774-4b5f-b535-547e610e22d1",
+    "auctionNo": "2025타경30531",
+    "court": "정읍지원 1계",
+    "address": "전북특별자치도 고창군 고창읍 교촌리 522 벽산블루밍아파트 101동 2층207호",
+    "status": "approved"
+  },
+  {
+    "id": "106d10c7-ed7b-4812-a073-3e1f98400c94",
+    "auctionNo": "2025타경30818",
+    "court": "강릉지원 3계",
+    "address": "강원특별자치도 강릉시 입암동 713 강릉입암동천년가밸로채아파트 102동 9층907호",
+    "status": "approved"
+  },
+  {
+    "id": "c5dfba0c-f92f-444f-9f6b-269a7cfb55ce",
+    "auctionNo": "2025타경22400",
+    "court": "부산지방법원 2계",
+    "address": "부산광역시 부산진구 부암동 48-3 타워베르빌 7층705호",
+    "status": "approved"
+  },
+  {
+    "id": "8baf2c3f-ea61-476e-a25e-bc37a695122d",
+    "auctionNo": "2025타경100386",
+    "court": "안동지원 1계",
+    "address": "경상북도 안동시 정하동 240-2 현진에버빌아파트 104동 10층1005호",
+    "status": "approved"
+  },
+  {
+    "id": "d84ab93b-33e3-4352-a880-fee04d1308d0",
+    "auctionNo": "2023타경4907",
+    "court": "통영지원 3계",
+    "address": "경상남도 거제시 거제대로 3696, 103동 2층203호 (옥포동,미진타워펠리스)",
+    "status": "approved"
+  },
+  {
+    "id": "5cf52830-0709-4216-9721-6da0c0478518",
+    "auctionNo": "2024타경34687",
+    "court": "전주지방법원 4계",
+    "address": "전북특별자치도 전주시 덕진구 안덕원로 285, 나동 4층 401호",
+    "status": "approved"
+  },
+  {
+    "id": "ccf3b21e-42b4-4e13-824d-dec91da72ad2",
+    "auctionNo": "2025타경22517",
+    "court": "부산지방법원 2계",
+    "address": "부산광역시 금정구 구서동 563-40 금강부광아파트 101동 9층904호",
+    "status": "approved"
+  },
+  {
+    "id": "f315ad57-f7ca-419d-9f58-d9d600c8d223",
+    "auctionNo": "2025타경13646(2)",
+    "court": "서울북부지방법원 7계",
+    "address": "서울특별시 강북구 미아동 791-1938 삼성빌리지 103동 제3층 제301호",
+    "status": "approved"
+  },
+  {
+    "id": "c957b0b7-eb8d-4326-9707-a6d09fa17a25",
+    "auctionNo": "2025타경512988",
+    "court": "인천지방법원 20계",
+    "address": "인천광역시 부평구 부평동 416-4 아이씨티2 4층404호",
+    "status": "approved"
+  },
+  {
+    "id": "94bf513a-5e30-4eaa-ab89-0d38f51c04ef",
+    "auctionNo": "2024타경116775",
+    "court": "서울북부지방법원 7계",
+    "address": "서울특별시 성북구 삼양로9길 9-9, 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "9151f00f-ddd4-4f41-a30c-84d72736c8c2",
+    "auctionNo": "2025타경53455",
+    "court": "성남지원 2계",
+    "address": "경기도 광주시 능평동 424-6 1층101호",
+    "status": "approved"
+  },
+  {
+    "id": "4c16b812-8fb5-49d1-a62f-ff36644388d7",
+    "auctionNo": "2025타경504154(1)",
+    "court": "대전지방법원 7계",
+    "address": "세종특별자치시 어진동 649 호수의아침 3층323호",
+    "status": "approved"
+  },
+  {
+    "id": "79628ce0-042d-45e5-aeb1-316900195af4",
+    "auctionNo": "2025타경55051",
+    "court": "수원지방법원 7계",
+    "address": "경기도 수원시 권선구 권선동 1011-14 올림픽공원대우미래사랑 101동 6층705호",
+    "status": "approved"
+  },
+  {
+    "id": "d6af96ab-3842-42aa-90e5-7abacc6fed5c",
+    "auctionNo": "2025타경100899",
+    "court": "안양지원 1계",
+    "address": "경기도 안양시 동안구 호계동 924-35 창성빌리지 다동 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "55efa108-492d-4540-b873-b2fcea1cde61",
+    "auctionNo": "2025타경11949",
+    "court": "서울남부지방법원 4계",
+    "address": "서울특별시 양천구 신정동 913-8 신목아트빌 제5층 제502호",
+    "status": "approved"
+  },
+  {
+    "id": "0eb3d693-8cc8-43d2-9597-bce35baa34be",
+    "auctionNo": "2025타경1197",
+    "court": "충주지원 4계",
+    "address": "충청북도 음성군 음성읍 읍내리 692-1 청솔아파트 5층506호",
+    "status": "approved"
+  },
+  {
+    "id": "35682b28-0011-403f-a78f-ffad4418b043",
+    "auctionNo": "2025타경30685",
+    "court": "충주지원 4계",
+    "address": "충청북도 충주시 중앙탑면 용전리 696 신우희가로아파트 106동 6층602호",
+    "status": "approved"
+  },
+  {
+    "id": "7828df89-1f6d-488e-aa6d-a6dadc9ef0d3",
+    "auctionNo": "2025타경13204",
+    "court": "서울남부지방법원 4계",
+    "address": "서울특별시 금천구 독산동 884-26 성주아트빌 제4층 제403호",
+    "status": "approved"
+  },
+  {
+    "id": "22074093-315a-4143-bf4d-b8392ce110c5",
+    "auctionNo": "2024타경278",
+    "court": "인천지방법원 10계",
+    "address": "인천광역시 남동구 선수촌로 55, 106동 28층2803호 (구월동,구월아시아드선수촌센트럴자이)",
+    "status": "approved"
+  },
+  {
+    "id": "d89a2431-1ebe-4ebe-a885-7053ab8b71f8",
+    "auctionNo": "2025타경51315",
+    "court": "서울동부지방법원 5계",
+    "address": "서울특별시 광진구 구의동 31-1 현진빌 에이동 6층601호",
+    "status": "approved"
+  },
+  {
+    "id": "95f6c45a-68e5-4087-b1b9-3f37a28c4a69",
+    "auctionNo": "2024타경11452",
+    "court": "인천지방법원 9계",
+    "address": "인천광역시 남동구 구월로 65, 105동 4층401호 (간석동,현대홈타운아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "90bac9bc-96b4-4369-81c3-978f359d83b0",
+    "auctionNo": "2025타경41159",
+    "court": "평택지원 2계",
+    "address": "경기도 평택시 경기대로 1576, 102동 2층203호 (독곡동,한일아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "1e03cca5-78db-4d96-b61f-09ca54700d46",
+    "auctionNo": "2024타경121326",
+    "court": "대전지방법원 5계",
+    "address": "대전광역시 서구 대덕대로175번길 60, 8층817호 (둔산동,메르하우젠)",
+    "status": "approved"
+  },
+  {
+    "id": "3d7a9f5c-bfea-4d9c-8c17-be5c9b76be6c",
+    "auctionNo": "2024타경64311",
+    "court": "서울동부지방법원 7계",
+    "address": "서울특별시 광진구 영화사로16나길 7, 2층201호 (구의동,욱현하이브)",
+    "status": "approved"
+  },
+  {
+    "id": "895b71f6-b09c-49f5-8bf1-a98610eb1da0",
+    "auctionNo": "2025타경289",
+    "court": "강릉지원 3계",
+    "address": "강원특별자치도 삼척시 원당동 117 한양아파트 101동 5층503호",
+    "status": "approved"
+  },
+  {
+    "id": "b16bb165-5dd9-43fe-b484-5006c51bdb86",
+    "auctionNo": "2025타경51809",
+    "court": "서산지원 2계",
+    "address": "충청남도 당진시 신평면 거산리 875 당진신평코아루아파트 102동 16층1602호",
+    "status": "approved"
+  },
+  {
+    "id": "5fc5e569-aaaf-405c-9fb9-77b34b98c628",
+    "auctionNo": "2025타경30518",
+    "court": "강릉지원 3계",
+    "address": "강원특별자치도 동해시 용정동 260-2 범주아파트 206동 5층 504호",
+    "status": "approved"
+  },
+  {
+    "id": "4f177691-b94f-40e1-857f-d42faec25974",
+    "auctionNo": "2025타경100370(2)",
+    "court": "안동지원 1계",
+    "address": "경상북도 봉화군 봉화읍 내성리 332-2 반송주택 1층301호",
+    "status": "approved"
+  },
+  {
+    "id": "effc3b30-8a74-44e7-b94c-5ebfe7d1eb47",
+    "auctionNo": "2024타경17139",
+    "court": "인천지방법원 23계",
+    "address": "인천광역시 미추홀구 석정로329번길 46, 가동 1층102호",
+    "status": "approved"
+  },
+  {
+    "id": "f6a46d7a-e166-455c-b90d-f4a63015fe4e",
+    "auctionNo": "2026타경100097",
+    "court": "대구지방법원 1계",
+    "address": "대구광역시 중구 남산동 2466-1 보성황실아파트 106동 15층1503호",
+    "status": "approved"
+  },
+  {
+    "id": "be9694bb-0ac1-437d-8f4c-9014fd79d786",
+    "auctionNo": "2025타경100337",
+    "court": "안동지원 1계",
+    "address": "경상북도 안동시 용상동 974-1 경동아파트 14층1410호",
+    "status": "approved"
+  },
+  {
+    "id": "aba99c7f-42a6-4f87-890e-a6553a523ccb",
+    "auctionNo": "2025타경508112",
+    "court": "인천지방법원 1계",
+    "address": "* 철근콩크리트조\n51.402㎡\n지하실 16.368㎡",
+    "status": "approved"
+  },
+  {
+    "id": "c4a3b647-04ab-467e-b11d-558368b91ce3",
+    "auctionNo": "2025타경969",
+    "court": "서울북부지방법원 4계",
+    "address": "서울특별시 노원구 공릉동 557-25 지하층비01호",
+    "status": "approved"
+  },
+  {
+    "id": "b308861b-1ff3-477f-b246-dfc2d08f9416",
+    "auctionNo": "2024타경27389",
+    "court": "통영지원 2계",
+    "address": "경상남도 거제시 장평로6길 23, 105동 1층103호 (장평동,대한아파트)",
+    "status": "approved"
+  },
+  {
+    "id": "6dbb9f5b-1d67-45ff-92a5-71fefe313760",
+    "auctionNo": "2024타경137687",
+    "court": "서울남부지방법원 5계",
+    "address": "서울특별시 양천구 신월로24길 20-1, 제1층 제103호",
+    "status": "approved"
+  },
+  {
+    "id": "a35450f8-064a-48f6-b770-797d773b248c",
+    "auctionNo": "2024타경3074",
+    "court": "서울남부지방법원 8계",
+    "address": "서울특별시 구로구 새말로9길 46, 제6층 제602호 (구로동, 삼성빌딩)",
+    "status": "approved"
+  },
+  {
+    "id": "1b1e3308-e839-40b3-b8c2-80758c6d265a",
+    "auctionNo": "2025타경10706",
+    "court": "서울북부지방법원 6계",
+    "address": "서울특별시 강북구 삼양로163가길 24, 4층402호",
+    "status": "approved"
+  },
+  {
+    "id": "a2b7d8a4-7efb-471d-8f17-8ab8c07f4007",
+    "auctionNo": "2025타경12879",
+    "court": "울산지방법원 8계",
+    "address": "경상남도 양산시 덕계동 1103 덕계동일스위트2차 106동 1층104호",
+    "status": "approved"
+  },
+  {
+    "id": "e72ecd0c-0899-4d55-9697-098cb8762a9f",
+    "auctionNo": "2025타경21990",
+    "court": "부산지방법원 6계",
+    "address": "부산광역시 부산진구 개금동 1-7 개금우드빌 109동 17층1702호",
+    "status": "approved"
+  },
+  {
+    "id": "f8235deb-2339-43d4-9ee0-b5fed7fd4da6",
+    "auctionNo": "2025타경30863",
+    "court": "충주지원 1계",
+    "address": "충청북도 충주시 중앙탑면 용전리 696 신우희가로아파트 109동 15층1504호",
+    "status": "approved"
+  },
+  {
+    "id": "64d1f6f3-4004-45d9-8c8e-08068d443cb5",
+    "auctionNo": "2025타경21915",
+    "court": "부산지방법원 1계",
+    "address": "부산광역시 부산진구 범천동 849-2 대동레미안센트럴시티5 14층1406호",
+    "status": "approved"
+  },
+  {
+    "id": "73b3a451-bb5c-482f-88d3-3149223f1d0a",
+    "auctionNo": "2025타경51962",
+    "court": "청주지방법원 5계",
+    "address": "충청북도 청주시 상당구 탑동 297-75 석탑아파트 다동 605호",
+    "status": "approved"
+  },
+  {
+    "id": "1ad7cb3b-9ce2-47bd-90b6-e9f3f452bd00",
+    "auctionNo": "2025타경508643",
+    "court": "인천지방법원 22계",
+    "address": "인천광역시 미추홀구 숭의동 346-5 진성투토펠리체 14층1408호",
+    "status": "approved"
+  },
+  {
+    "id": "62d5abf7-5bc4-49fe-8573-438621f6fce9",
+    "auctionNo": "2025타경509952",
+    "court": "인천지방법원 22계",
+    "address": "인천광역시 서구 청라동 159-1 청라롯데캐슬 201동 13층1307호",
+    "status": "approved"
+  },
+  {
+    "id": "7e640978-3ad5-4469-863c-cf5719a84d6f",
+    "auctionNo": "2025타경31364",
+    "court": "진주지원 3계",
+    "address": "경상남도 진주시 일반성면 개암리 477-12 일반성 에이원아파트 101동 8층806호",
+    "status": "approved"
+  },
+  {
+    "id": "07aba022-f81e-407a-8c27-82fcfbfd5caf",
+    "auctionNo": "2025타경13793",
+    "court": "서울남부지방법원 11계",
+    "address": "서울특별시 구로구 개봉동 326-24 제1층 제101호",
+    "status": "approved"
+  },
+  {
+    "id": "22a30216-cc6e-484c-9d12-18bf30daa620",
+    "auctionNo": "2026타경368",
+    "court": "고양지원 4계",
+    "address": "경기도 고양시 일산서구 일산동 576-34 2층201호",
+    "status": "approved"
+  },
+  {
+    "id": "26dbc5d6-3fd1-4989-b229-93ce8c79b6c7",
+    "auctionNo": "2026타경50120",
+    "court": "서울서부지방법원 1계",
+    "address": "* 1층 66.78㎡, 2층 66.78㎡, 지층 66.78㎡",
+    "status": "approved"
+  },
+  {
+    "id": "312697dc-33ee-40c7-9927-43a93e47ac1b",
+    "auctionNo": "2026타경50130(5)",
+    "court": "평택지원 4계",
+    "address": "경기도 평택시 비전동 874 시대한우리아파트 103동 2층204호",
+    "status": "approved"
+  },
+  {
+    "id": "d7009032-3762-44af-b2c1-75c5437e5da8",
+    "auctionNo": "2025타경12696",
+    "court": "서울남부지방법원 14계",
+    "address": "서울특별시 금천구 독산동 961-9 메트로시티 제2층 제203호",
+    "status": "approved"
+  },
+  {
+    "id": "fe9a2309-79a9-402a-85e9-a464aa67636a",
+    "auctionNo": "2025타경1382",
+    "court": "울산지방법원 8계",
+    "address": "경상남도 양산시 평산동 564 태원아파트 107동 12층 1206호",
+    "status": "approved"
+  },
+  {
+    "id": "e152614f-8352-48ce-858d-f46d8290a310",
+    "auctionNo": "2025타경30298",
+    "court": "남원지원 1계",
+    "address": "전북특별자치도 남원시 노암동 220-1 비안노암아파트 8층 809호",
+    "status": "approved"
+  }
+]

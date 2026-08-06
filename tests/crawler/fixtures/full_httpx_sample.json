@@ -1,0 +1,120 @@
+[
+  {
+    "memo": "",
+    "link": "https://www.tankauction.com/ca/caView.php?tid=2033",
+    "views": 18,
+    "auctionNo": "2003타경10431",
+    "address": "충청남도 예산군 오가면 신석리 16-15 오가우성임대아파트 11층 1111호",
+    "totalUnits": 299,
+    "usage": "아파트",
+    "area": "40.95",
+    "builtYear": "1997.03.13",
+    "bidDate": "2005.01.03",
+    "appraisal_price": 27000000,
+    "min_price": 9261000,
+    "sale_price": null,
+    "naver_lowest_price": 0,
+    "gap_margin_sold_price": null,
+    "gap_margin": null,
+    "new_case_gap_margin": null,
+    "real_trade_count": "",
+    "bid_info": "2003-05-03\n2003-06-07\n2004-07-12\n2005-01-03\n2005-02-04\n2005-02-04",
+    "owner": "미○○○○○(주)",
+    "appraiser": "값없음",
+    "official_land_price": 0,
+    "tenant_info": "임차인: 1 건, 임차보증금합계: 5,000,000원",
+    "special_note": "없음",
+    "elevator": "없음",
+    "parking": "없음",
+    "land_area": "없음",
+    "deunggi_info": "2003-08-09 강제경매 신○○",
+    "education_setup": "중학교: 임성 (986m), 삽교 (2.4km)\n고등학교: 삽교 (2.6km)",
+    "lease_info": "임차인: 1 김○○\n점유: 주거용 전부\n전입/확정/배당: 전입:0000-00-01 / 확정:0000-00-01 / 배당:0000-00-01\n보증금/차임: 보:5,000,000원 / 월:150,000원",
+    "naver_price_detail": "면적 조건에 맞는 호가 매물 없음",
+    "transaction_prices": "",
+    "naver_id": "105761",
+    "record_time": "2026-07-17T01:12:29",
+    "extraData": {
+      "fileInfo": {
+        "items": [
+          {
+            "idx": 3620,
+            "sn": 2003010431,
+            "ctgrCd": "AC",
+            "ctgrNm": "문건/송달",
+            "filePath": "/FILE/CA/AC/2011/2003/AC-2011-2003010431.html",
+            "note": "",
+            "thumb": "",
+            "content": "",
+            "wdt": "0000-00-00",
+            "seq": 1
+          },
+          {
+            "idx": 458018,
+            "sn": 2003010431,
+            "ctgrCd": "BA",
+            "ctgrNm": "전경도",
+            "filePath": "/FILE/CA/BA/2011/2003/BA-2011-2003010431-01.jpg",
+            "note": "",
+            "thumb": "/FILE/CA/BA/2011/2003/T_BA-2011-2003010431-01.jpg",
+            "content": "",
+            "wdt": "0000-00-00",
+            "seq": 1
+          },
+          {
+            "idx": 458019,
+            "sn": 2003010431,
+            "ctgrCd": "BC",
+            "ctgrNm": "위치도",
+            "filePath": "/FILE/CA/BC/2011/2003/BC-2011-2003010431-01.jpg",
+            "note": "",
+            "thumb": "/FILE/CA/BC/2011/2003/T_BC-2011-2003010431-01.jpg",
+            "content": "",
+            "wdt": "0000-00-00",
+            "seq": 1
+          },
+          {
+            "idx": 458020,
+            "sn": 2003010431,
+            "ctgrCd": "BD",
+            "ctgrNm": "개황도",
+            "filePath": "/FILE/CA/BD/2011/2003/BD-2011-2003010431-01.jpg",
+            "note": "",
+            "thumb": "/FILE/CA/BD/2011/2003/T_BD-2011-2003010431-01.jpg",
+            "content": "",
+            "wdt": "0000-00-00",
+            "seq": 1
+          }
+        ],
+        "fileGrp": {
+          "0": {
+            "ctgrNm": "사진보기",
+            "idx": ""
+          },
+          "AC": {
+            "ctgrNm": "문건/송달",
+            "idx": 3620
+          }
+        },
+        "fileGrpView": {
+          "AC": {
+            "ctgrNm": "문건/송달",
+            "idx": 3620,
+            "spt": 2011,
+            "sn": 2003010431,
+            "file": "AC-2011-2003010431.html",
+            "wdt": "0000-00-00"
+          }
+        },
+        "dfImg": "/FILE/CA/BA/2011/2003/BA-2011-2003010431-01.jpg"
+      },
+      "rcaseInfo": {
+        "items": []
+      },
+      "hit": 18,
+      "x": 0,
+      "y": 0,
+      "histCnt": 6
+    }
+  }
+]

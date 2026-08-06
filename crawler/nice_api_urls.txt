@@ -1,0 +1,12 @@
+https://niceauction.co.kr/api/v1/auth/login-check
+https://niceauction.co.kr/api/v1/code/list
+https://niceauction.co.kr/api/v1/court/list
+https://niceauction.co.kr/api/v1/media/img/1953800477158390805/jpg/cf_200_200
+https://niceauction.co.kr/api/v1/media/img/1953800477158390805/jpg/cf_369_293
+https://niceauction.co.kr/api/v1/media/img/1953800477158390805/jpg/cf_70_70
+https://niceauction.co.kr/api/v1/media/img/1953800477158391829/jpg/cf_200_200
+https://niceauction.co.kr/api/v1/media/img/1953800477158391829/jpg/cf_70_70
+https://niceauction.co.kr/api/v1/media/img/1953800477158392853/jpg/cf_200_200
+https://niceauction.co.kr/api/v1/media/img/1953800477158392853/jpg/cf_70_70
+https://niceauction.co.kr/api/v1/obj/1874376?privacy=true
+https://niceauction.co.kr/api/v1/site/server-time

@@ -82,17 +82,21 @@ export function isMetropolitanArea(city: string | null | undefined): boolean {
 const LOW_PRICE_NONMETRO_THRESHOLD_WON = 200_000_000;
 
 /**
- * 용도가 오피스텔이거나, 비수도권(지방)이면서 공시가 2억 이하인 물건인지 여부.
- * 해당하면 주택수·규제지역과 무관하게 감정가80%/낙찰가90% 정책이 최우선 적용된다.
+ * 오피스텔 또는 지방 아파트 공시가 2억 이하인지 여부.
+ * - 오피스텔: 공시가와 관계없이 특례 대출정책을 적용한다.
+ * - 지방 아파트: 비수도권이면서 공시가가 2억 이하일 때만 특례를 적용한다.
+ * 해당하면 주택수·규제지역과 무관하게 특례 정책이 최우선 적용된다.
  */
 export function isOfficetelOrLowPriceNonMetro(item: {
   usage?: string | null;
   city?: string | null;
   officialLandPrice?: number | null;
 }): boolean {
-  if ((item.usage ?? "").includes("오피스텔")) return true;
+  const usage = item.usage ?? "";
+  if (usage.includes("오피스텔")) return true;
   const officialLandPrice = item.officialLandPrice ?? 0;
   return (
+    usage.includes("아파트") &&
     !isMetropolitanArea(item.city) &&
     officialLandPrice > 0 &&
     officialLandPrice <= LOW_PRICE_NONMETRO_THRESHOLD_WON
@@ -101,7 +105,7 @@ export function isOfficetelOrLowPriceNonMetro(item: {
 
 /**
  * 회원정보(주택수·생애최초 여부)와 물건의 규제지역 여부로 적용할 대출 정책을 선택한다.
- * - 오피스텔이거나 비수도권 공시가 2억 이하인 물건은 주택수·규제지역 무관하게 최우선 적용.
+ * - 오피스텔 또는 지방 아파트 공시가 2억 이하 물건은 주택수·규제지역 무관하게 최우선 적용.
  * - 규제지역: 무주택만 대출 가능(감정가 비율만 적용, 생애최초/일반 구분), 1주택 이상은 불가.
  * - 비규제지역: 무주택 일반/생애최초/1주택 이상(사업자대출)로 구분.
  */

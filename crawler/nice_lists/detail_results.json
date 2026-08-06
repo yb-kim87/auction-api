@@ -1,0 +1,3875 @@
+[
+  {
+    "auctionId": "022fc4b2-e450-4beb-bd1a-f978bbc69d05",
+    "objId": "2081497951334564051",
+    "buildingRegistry": "",
+    "tenantDetail": "임차인: 2 박OO\n점유: 58.49㎡ / 2012.01.24.~ / 2014.01.23.\n전입/확정/배당: 전입:2010-01-25 / 확정:2012-03-22 / 배당:2022-01-06\n보증금/차임: 보:26,000,000원\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "박OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 6층608호",
+    "gamjungAmt": "49000000",
+    "minAmt": "49000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "78c24cbf-c339-4796-a833-cbdd2870c5cb",
+    "objId": "1968450458301235225",
+    "buildingRegistry": "갑(1) 2022-02-16 소유권보존신탁재산처분에의한신탁 주OOOOOOOOO\n갑(2) 2022-04-15 소유권이전1번신탁등기말소 조OO\n을(1) 2022-04-25 근저당권설정 주OOOOOOO 216,000,000원 (말소기준등기)\n갑(3) 2024-08-12 압류 국OOOOOOO\n갑(4) 2025-05-14 압류 서OOOOOO\n갑(5) 2025-09-12 임의경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 김OO\n점유: 25층2501호 / 2023.05.10. / 부터 / 2024.05.09. / 까지\n전입/확정/배당: 전입:2023-05-19\n보증금/차임: 보:10,000,000원\n대항력: 없음\n기타: 주거및점포임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2022-04-25",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 서구 청라동 96-9 리베라움더레이크플러스  25층2501호",
+    "gamjungAmt": "307000000",
+    "minAmt": "150430000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "59a8fbf3-b384-400d-821c-4025afcb61ad",
+    "objId": "2008315763311509689",
+    "buildingRegistry": "갑(1) 1998-06-02 소유권이전 조OO\n갑(2) 2005-10-26 소유권이전 배OO\n갑(3) 2017-02-03 소유권이전 서OO O OO\n갑(4) 2022-11-03 공유자전원지분전부이전 김OO\n을(7) 2023-10-12 근저당권설정 주OOOOOOO 55,000,000원 (말소기준등기)\n갑(5) 2025-06-25 가압류 토OOO 46,531,559원\n갑(6) 2025-12-30 임의경매개시결정 주OOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2023-10-12",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 창원시 성산구 남양동 23 위드파크아파트 409동 10층1005호",
+    "gamjungAmt": "184000000",
+    "minAmt": "128800000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "6a3a7151-a089-40cf-935c-a318f5667641",
+    "objId": "1970987199964905491",
+    "buildingRegistry": "갑(1) 2012-05-07 소유권보존신탁 한OOOOOOOOOOOO\n갑(2) 2012-10-12 소유권이전1번신탁등기말소 안OO\n을(1) 2012-10-12 근저당권설정 주OOOOOOO 210,000,000원 (말소기준등기)\n을(6) 2022-09-30 근저당권설정 주OOOOOOO 120,000,000원\n을(7) 2023-11-10 근저당권설정 하OOOOOOOO 120,000,000원\n갑(12) 2024-11-20 압류 국O\n갑(13) 2025-04-07 가압류 신OOOOO 86,966,678원\n갑(14) 2025-04-17 가압류 박OO 51,247,031원\n갑(15) 2025-06-09 가압류 중OOOOO 241,823,374원\n갑(16) 2025-06-27 가압류 중OOOOO 8,825,242원\n갑(17) 2025-06-27 가압류 중OOOOO 7,463,721원\n갑(18) 2025-07-30 가압류 주OOOOOOO 37,652,583원\n갑(19) 2025-09-19 임의경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 박OO\n점유: 2019. 2. 26. / ~\n전입/확정/배당: 전입:2019-02-27 / 확정:2019-02-27 / 배당:2025-10-28\n보증금/차임: 보:270,000,000원\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n박OO : 보증금 390,000,000원 중 120,000,000원은 2020. 12. 29.에 증액(증액분에 대한 확정일자는 2020. 12. 31.임)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2012-10-12",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "박OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 서구 청라동 115-1 청라제일풍경채 305동 11층1102호",
+    "gamjungAmt": "731000000",
+    "minAmt": "511700000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "8b4b08de-b38b-440d-bd0c-fae67fd8e5c9",
+    "objId": "1973523999329616848",
+    "buildingRegistry": "갑(1) 2013-01-03 소유권보존 이OO O OO\n갑(2) 2013-06-07 공유자전원지분전부이전 장OO\n갑(3) 2021-12-09 소유권이전 강OO\n을(3) 2023-12-29 주택임차권 임OO 239,000,000원 (인수)\n갑(4) 2025-09-25 강제경매개시결정 주OOOOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 2021. 11. 25.~ / 2023. 11. 23.\n전입/확정/배당: 전입:2021-11-25 / 확정:2021-10-12 / 배당:2025-11-26\n보증금/차임: 보:239,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차인\n\n[기타사항]\n- 임OO: 주택임차권등기권자로서 주택임차권등기일은 2023. 12. 29. 임\n- 주OOOOOOO(임차인 임OO): 경매신청권자이며 주택임대차보호법 제3조의2 제7항 제9호의 기관으로 임차인 임OO으로\n부터 보증금반환채권을 계약으로 양수함. 보증금 전액을 배당받지 못하더라도 잔존 임차보\n증금반환채권을 포기하고 주택임차권등기 말소에 동의한다는 취지의 확약서를 제출함\n을구 순위 3번 주택임차권등기(다만 주OOOOOOO의 말소동의 확약서가 제출됨)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-09-25",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-12-29",
+          "holder": "임OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 부평구 부평동 147-7 그랜드오피스텔  6층602호",
+    "gamjungAmt": "230000000",
+    "minAmt": "112700000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "4c446460-534a-4431-aac4-106006bde5c4",
+    "objId": "1930399776029802661",
+    "buildingRegistry": "갑(3) 2009-10-20 소유권이전 주OOOOOOOOO\n갑(5) 2009-10-23 소유권이전 하OO\n갑(6) 2011-05-20 소유권이전 차OO\n을(3) 2011-05-20 근저당권설정 주OOOOOOO 132,000,000원 (말소기준등기)\n갑(9) 2024-08-08 가압류 신OOO 25,125,401원\n갑(10) 2025-05-23 강제경매개시결정(9번가압류의본압류로의이행) 신OOOOOOO\n갑(11) 2025-07-31 압류 국OOOOOOO\n갑(12) 2025-11-14 임의경매개시결정 유OOOOOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2011-05-20",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 아산시 권곡동 96-1 서해그랑블2차아파트 201동 1층104호",
+    "gamjungAmt": "217000000",
+    "minAmt": "151900000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "0883a735-2703-43ab-badd-51f62d6009c0",
+    "objId": "1954679709153362572",
+    "buildingRegistry": "갑(9) 2018-04-20 소유권이전 김OO\n갑(10) 2022-08-12 소유권이전 이OO\n갑(11) 2025-07-28 소유권이전 손OOO OO\n갑(12) 2025-08-04 강제경매개시결정 금OOOOOOO (말소기준등기)\n갑(13) 2025-09-03 가압류 주OOOOOOOOOOOO 19,292,691원",
+    "tenantDetail": "임차인: 1 정OO\n전입/확정/배당: 전입:2025-02-18\n대항력: 있음\n기타: 주거임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-08-04",
+        "holder": "금OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "정OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상북도 영천시 망정동 129 영천망정1단지1주공아파트 101동 14층1401호",
+    "gamjungAmt": "53300000",
+    "minAmt": "53300000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "50155d10-ee00-4a06-9978-fcbd6436f46b",
+    "objId": "1977872962937683972",
+    "buildingRegistry": "갑(8) 2013-12-23 소유권이전 우OO\n갑(9) 2020-04-24 소유권이전 주OOOOOOO\n을(5) 2024-05-07 주택임차권 엄OO 90,000,000원\n갑(10) 2025-04-18 압류 기OOOOO (말소기준등기)\n갑(11) 2025-10-01 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 엄OO\n점유: 전유부분건물의전부 / 2020.4.24.~\n전입/확정/배당: 전입:2020-04-13 / 확정:2020-04-10\n보증금/차임: 보:90,000,000원\n대항력: 있음\n기타: 주거주택임차권자\n\n[기타사항]\n엄OO:매수인에게 대항할 수 있는 을구 순위 5번 주택임차권등기권자임(2024.5.7. 제9884호). 등기된 주택임차권자의 보증금\n은 주OOOOOOO(이 사건 신청채권자, 2025.9.30.경매신청으로 배당요구 간주)가 대위변제함. 배당에서 보증금 90,000,000원\n이 전액 배당되지 아니하면 잔액을 매수인이 인수함\n주택임차권등기(2024.5.7. 제9884호). 배당에서 보증금 90,000,000원 전액이 배당되지 아니하면 매수인이 인수함\n미납관리비 1,298,140원(2025.10.23.현재 현황조사 기준)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2025-04-18",
+        "holder": "기OOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "엄OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "미납관리비 1,298,140원(2025.10.23.현재 현황조사 기준)",
+      "source": "structured_registry"
+    },
+    "addr": "전라남도 광양시 중동 1665 성호2차아파트 210동 19층1904호",
+    "gamjungAmt": "71000000",
+    "minAmt": "25446000",
+    "objEtc": "미납관리비 1,298,140원(2025.10.23.현재 현황조사 기준)"
+  },
+  {
+    "auctionId": "ff299b9c-651a-42be-8feb-9234bba2fed0",
+    "objId": "1924465121787117759",
+    "buildingRegistry": "갑(1) 2002-06-04 소유권보존 주OOOOO\n갑(2) 2002-07-27 소유권이전 곽OO\n을(1) 2002-10-02 근저당권설정 현OOOOOOO 130,000,000원 (말소기준등기)\n을(2) 2004-01-30 근저당권설정 현OOOOOOO 120,000,000원\n을(3) 2020-09-23 근저당권설정 주OOOOOOO 240,000,000원\n을(4) 2022-06-23 근저당권설정 주OOOOOOO 120,000,000원\n갑(5) 2025-05-08 임의경매개시결정 주OOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2002-10-02",
+        "holder": "현OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "대구광역시 달서구 송현동 906 우방송현하이츠 102동 5층502호",
+    "gamjungAmt": "553000000",
+    "minAmt": "270970000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "a5e165b1-a89e-4c06-97c5-81afb658b8eb",
+    "objId": "2081495854476165532",
+    "buildingRegistry": "",
+    "tenantDetail": "임차인: 2 조OO\n점유: 58.49㎡ / 2014.04.21.~ / 2016.04.20.\n전입/확정/배당: 전입:2014-05-19 / 확정:2016-04-18 / 배당:2022-01-07\n보증금/차임: 보:30,000,000원\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "조OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 7층702호",
+    "gamjungAmt": "49000000",
+    "minAmt": "49000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "e358537c-2115-496f-bd95-6ee7d01ad772",
+    "objId": "1967363677170434064",
+    "buildingRegistry": "갑(1) 2020-02-04 소유권보존 흥OOOOOOOOOOOO\n을(1) 2020-02-04 근저당권설정 주OOOOOOO 74,400,000원 (말소기준등기)\n갑(2) 2025-09-05 강제경매개시결정 장OO",
+    "tenantDetail": "임차인: 2 장OO\n점유: 전부 / 2019.6.1.~\n전입/확정/배당: 전입:2019-05-27 / 확정:2019-05-27\n보증금/차임: 보:135,000,000원\n대항력: 있음\n기타: 주거점유자\n\n[기타사항]\n장OO:신청채권자이며 배당요구일은 경매신청일(2025.09.03.)임.\n1. 특별매각조건 있음(전세사기피해자 우선매수권행사는 1회에 한함) 2. 대지권의 목적인 토지에 별도등기 있음 3. 미납관리비 44,000원 있음(2025.9월 기준)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2020-02-04",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "장OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "1. 특별매각조건 있음(전세사기피해자 우선매수권행사는 1회에 한함) 2. 대지권의 목적인 토지에 별도등기 있음 3. 미납관리비 44,000원 있음(2025.9월 기준)",
+      "source": "structured_registry"
+    },
+    "addr": "전라남도 광양시 광양읍 덕례리 1844 흥한에르가 104동 3층303호",
+    "gamjungAmt": "197000000",
+    "minAmt": "137900000",
+    "objEtc": "특별매각조건 있음(전세사기피해자 우선매수권행사는 1회에 한함), 대지권의 목적인 토지에 별도등기 있음, 미납관리비 44,000원 있음"
+  },
+  {
+    "auctionId": "7cc3bbbe-9a50-48fc-b0a3-98d4aa64e47f",
+    "objId": "1965248604733964955",
+    "buildingRegistry": "갑(2) 2003-04-07 소유권이전 박OO\n갑(3) 2021-04-28 소유권이전 조OO\n을(7) 2021-07-29 근저당권설정 주OOOOOOOOOO 180,000,000원 (말소기준등기)\n을(8) 2023-05-22 주택임차권 유OO 280,000,000원\n갑(8) 2024-05-07 가압류 주OOOOOOOOOO 24,836,321원\n갑(9) 2024-12-27 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 유OO\n점유: 전유부분전부 / 2021.4.15-20 / 23.4.14\n전입/확정/배당: 전입:2021-04-15 / 확정:2021-03-24 / 배당:2025-02-21\n보증금/차임: 보:280,000,000원\n대항력: 있음\n기타: 주거임차권자\n\n[기타사항]\n주택임대차보호법에 의해 임차인 유OO의 우선변제권을 승계(양수)한 주OOOOOOO가 이 사건 신청채권자임.\n을구 순위 8번 주택임차권등기의 등기권리자 유OO과 주OOOOOOO에게 이 권리를 양도한 임차인 유OO은 동일인임.\n매수인에게 대항할 수 있는 을구 순위 8번 임차권등기(2023.5.22.자)있음. 배당에서 보증금이 전액 변제되지 않으면 잔액을 매 수인이 인수함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2021-07-29",
+        "holder": "주OOOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "유OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 은평구 녹번동  156-51  5층503호",
+    "gamjungAmt": "317000000",
+    "minAmt": "317000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "6145ebe1-c04c-490f-89c9-b0da9e8c75dd",
+    "objId": "1915017654393896992",
+    "buildingRegistry": "갑(5) 2019-11-20 소유권이전신탁\n갑(6) 2022-02-28 소유권이전5번신탁등기말소 주OOOOOOOO\n갑(7) 2023-11-22 압류 양OO (말소기준등기)\n갑(8) 2023-12-04 압류 양OOOOO\n을(1) 2024-03-12 주택임차권 최OO 140,000,000원\n갑(9) 2025-04-14 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 최OO\n점유: 1320호 / 2022.03.02.~\n전입/확정/배당: 전입:2022-03-02 / 확정:2022-02-10\n보증금/차임: 보:140,000,000원\n대항력: 있음\n기타: 주거주택임차권자\n\n[기타사항]\n최OO:주택임차권등기권자로서 주택임차권등기일은 2024.3.12.이며, 임대차보증금반환채권을 경매신청채권자인 주택도시보증\n공사에 양도하였으며 신청채권자 주OOOOOOO가 임대차보증금을 대위변제하고 임대차보증금반환채권을 양수함.\n매수인에게 대항할 수 있는 을구 1번 임차권등기[2024.3.12. 등기 제11675호, 임대차보증금: 140,000,000원, 전입일자: 2022.3.2., 확정일자: 2022.2.10.]있음. 배당에서 보증금 전액이 변제되지 아니하면 잔액을 매수인이 인수함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2023-11-22",
+        "holder": "양OO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "최OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 양산시 물금읍 가촌리 1290-2 양산유림노르웨이아침  13층1320호",
+    "gamjungAmt": "141000000",
+    "minAmt": "141000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "926f390f-773a-4464-8e0b-4b4eb142678b",
+    "objId": "1913857773590806560",
+    "buildingRegistry": "갑(1) 2020-11-05 소유권보존 주OOOOOOOOO\n갑(2) 2020-12-03 소유권이전 장OO\n갑(3) 2023-08-29 압류 서OOOOOO (말소기준등기)\n을(1) 2023-12-29 주택임차권 문OO 357,000,000원 (인수)\n갑(4) 2024-03-27 압류 은OOOOOOOOO\n갑(5) 2024-05-13 압류 은OOOOO\n갑(6) 2025-04-02 강제경매개시결정 한OOOOOOO\n갑(7) 2025-04-15 압류 국OOOOOOO",
+    "tenantDetail": "임차인: 1 문OO\n점유: 전부 / 2022.03.18. / ~\n전입/확정/배당: 전입:2022-03-18 / 확정:2022-02-25\n보증금/차임: 보:357,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 조사된내용없음임차권자\n\n임차인: 2 송OO\n점유: 703호\n전입/확정/배당: 전입:2025-02-07\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n문OO:\n1. 한OOOOOOO는 신청채권자이며, 임차권자 문OO의 본건 임차보증금반환채권을 양수함\n2. 을구 순위 1번 주택임차권등기의 등기권리자 문OO와 주택도시보증공사에게 권리를 양도한 임차인 문OO는 동일인임\n1. 한OOOOOOO(양도전:임차인 문OO)로부터 2026.03.20.자에 ‘임차보증금에 대하여 우선변제권만 주장하고 대항력은 포기 하며, 전액을 변제받지 못하더라도 임차권등기를 말소해 주겠다.’는 내용의 확약서가 제출됨",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2023-08-29",
+        "holder": "서OOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-12-29",
+          "holder": "문OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "문OO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "송OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "1. 한OOOOOOO(양도전:임차인 문OO)로부터 2026.03.20.자에 ‘임차보증금에 대하여 우선변제권만 주장하고 대항력은 포기 하며, 전액을 변제받지 못하더라도 임차권등기를 말소해 주겠다.’는 내용의 확약서가 제출됨",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 은평구 신사동 20-29 명진하이빌  7층703호",
+    "gamjungAmt": "364000000",
+    "minAmt": "232960000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "78045599-11f2-4179-89f4-41f505197163",
+    "objId": "1952142847775867706",
+    "buildingRegistry": "갑(1) 2014-10-24 소유권보존 주OOOOO\n갑(2) 2014-12-01 소유권이전 조OO\n을(3) 2016-11-04 근저당권설정 대OOOOOOOO 118,800,000원 (말소기준등기)\n갑(4) 2024-10-31 가압류 대OOOOOOO 40,589,304원\n갑(5) 2024-12-04 가압류 주OOOOOOO 51,804,638원\n갑(6) 2025-07-25 임의경매개시결정 대OOOOOOOO",
+    "tenantDetail": "임차인: 2 정OO\n점유: 전부 / 2020.08.21.~ / 현재까지\n전입/확정/배당: 전입:2020-09-22 / 확정:무 / 배당:2025-10-10\n보증금/차임: 보:5,000,000원\n대항력: 없음\n기타: 주거임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2016-11-04",
+        "holder": "대OOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "정OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상북도 영천시 봉동 805 봉동 선원가와인 아파트 103동 4층401호",
+    "gamjungAmt": "111000000",
+    "minAmt": "111000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "5a0ff4cf-e6ef-4f25-a1a2-716533655f88",
+    "objId": "2081495868116042529",
+    "buildingRegistry": "",
+    "tenantDetail": "임차인: 2 전OO\n점유: 58.49㎡ / 2019.12.11.~ / 2021.12.10.\n전입/확정/배당: 전입:2021-02-15 / 확정:2021-02-15 / 배당:2022-01-05\n보증금/차임: 보:5,000,000원\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "전OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 7층704호",
+    "gamjungAmt": "49000000",
+    "minAmt": "49000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "00a6e23e-7876-4997-a067-a5729c336b50",
+    "objId": "1939899748324474888",
+    "buildingRegistry": "갑(6) 2007-12-03 소유권이전 김OO\n갑(8) 2021-04-12 소유권이전 조OO\n갑(10) 2021-10-14 압류 고OO (말소기준등기)\n갑(14) 2023-01-06 압류 계OOOOOOOOO\n을(5) 2023-06-02 주택임차권 박OO 250,000,000원\n갑(18) 2024-04-15 가압류 주OOOOOOOOOOO 300,000,000원\n갑(20) 2024-12-12 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 문패상501호전체 / 2021.04.10.-\n전입/확정/배당: 전입:2021-04-12 / 확정:2021-05-12 / 배당:2025-02-18\n보증금/차임: 보:250,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차인\n\n[기타사항]\n박OO:주택임차권등기권자로 주택임차권등기일은 2023. 6. 2.임.\n주OOOOOOO(서울북부관리센터):경매신청채권자이며, 주택임차권자 박OO의 본건 임차보증금반환채권을 주택임대차보호\n법 제3조의2 제7항에 따라 양수함.\n주OOOOOOO(양도전:임차인 박OO)로부터 ‘임차보증금에 대하여 우선변제권만 주장하고 대항력은 포기하며, 전액을 변제 받지 못하더라도 임차권등기를 말소해 주겠다.’는 내용의 확약서가 제출됨.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2021-10-14",
+        "holder": "고OO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "주OOOOOOO(양도전:임차인 박OO)로부터 ‘임차보증금에 대하여 우선변제권만 주장하고 대항력은 포기하며, 전액을 변제 받지 못하더라도 임차권등기를 말소해 주겠다.’는 내용의 확약서가 제출됨.",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 은평구 신사동  30-42  5층501호",
+    "gamjungAmt": "280000000",
+    "minAmt": "179200000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "d1b41f73-eb88-4d59-a27c-ef0361a11145",
+    "objId": "2016647867795505190",
+    "buildingRegistry": "갑(1) 2010-10-20 소유권보존 주OOOOOOOOO\n갑(2) 2010-12-08 소유권이전 이OO\n을(1) 2010-12-08 근저당권설정 주OOOOOOO 370,000,000원 (말소기준등기)\n을(2) 2022-01-21 근저당권설정 중OOOOO 540,000,000원\n갑(5) 2025-09-10 가압류 주OOOOOOOOOO 11,474,466원\n갑(6) 2025-10-01 가압류 중OOOOO 133,214,423원\n갑(7) 2025-12-02 가압류 주OOOOOOOO 400,000,000원\n갑(8) 2025-12-10 가압류 주OOOOOOOO 378,097,532원\n갑(9) 2026-01-26 임의경매개시결정 중OOOOO\n갑(10) 2026-02-20 임의경매개시결정 유OOOOOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2010-12-08",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 고양시 일산동구 식사동 1504 위시티일산자이4단지 410동 12층1201호",
+    "gamjungAmt": "844000000",
+    "minAmt": "590800000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "028e6693-c2fd-463f-9e61-c010c7786346",
+    "objId": "1944534349021970914",
+    "buildingRegistry": "갑(4) 2015-12-24 소유권이전 정OO\n갑(5) 2021-11-26 소유권이전 주OOOOOOOO\n을(8) 2023-11-28 주택임차권 임OO 107,000,000원 (인수)\n갑(6) 2025-07-09 강제경매개시결정 주OOOOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 1 임OO\n점유: 전부 / 2021.11.22. / 부터\n전입/확정/배당: 전입:2021-11-22 / 확정:2021-11-30\n보증금/차임: 보:107,000,000원\n대항력: 있음\n기타: 주거주택임차권자\n\n[기타사항]\n임OO:경매신청채권자는 임차인의 대위변제자임. 경매신청채권자의 배당요구일 2025.7.8.\n매수인에게 대항할 수 있는 을구 8번 임차권등기(2023.11.28.등기) 있음(임대차보증금 107,000,000원, 전입일자 2021.11.22. 확 정일자 2021.11.30.). 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함.\n미납관리비 1,072,750원 있음(2024.7.부터 2025.6.까지)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-07-09",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-11-28",
+          "holder": "임OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "임OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "미납관리비 1,072,750원 있음(2024.7.부터 2025.6.까지)",
+      "source": "structured_registry"
+    },
+    "addr": "전라남도 광양시 중동 1663 금광1차아파트 101동 7층702호",
+    "gamjungAmt": "97000000",
+    "minAmt": "43456000",
+    "objEtc": "미납관리비 1,072,750원 있음(2024.7.부터 2025.6.까지)"
+  },
+  {
+    "auctionId": "927e3787-997e-488d-b8bf-61ac7f3b630a",
+    "objId": "1959752880105717777",
+    "buildingRegistry": "갑(2) 2016-12-15 1번김보경지분전부이전 최OO\n갑(11) 2020-02-12 소유권이전신탁\n갑(13) 2020-09-23 소유권이전11번신탁등기말소 주OOOOOOOOOOOO\n을(5) 2023-06-27 근저당권설정공동담보목록 유OO 513,500,000원 (말소기준등기)\n갑(16) 2025-08-18 임의경매개시결정 파OO",
+    "tenantDetail": "임차인: 1 김OO\n점유: 미상 / 미상\n전입/확정/배당: 전입:2021-04-12\n대항력: 있음\n기타: 주거임차인\n\n임차인: 2 이OO\n점유: 전부 / 2021.04.11. / ~2023.04.11.\n전입/확정/배당: 전입:2021-04-12 / 확정:2021-04-12 / 배당:2025-09-11\n보증금/차임: 보:20,000,000원\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n김OO:임차인 이OO과 부부 사이로 동일세대에 거주함.\n-제시외 건물 포함 -건축물대장상 위반건축물 표기[주거 무단증축]",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정공동담보목록",
+        "date": "2023-06-27",
+        "holder": "유OO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "이OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "-제시외 건물 포함 -건축물대장상 위반건축물 표기[주거 무단증축]",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 강서구 화곡동 46-31 라움  제6층 제601호",
+    "gamjungAmt": "239600000",
+    "minAmt": "98140000",
+    "objEtc": "-제시외 건물 포함\n-건축물대장상 위반건축물 표기[주거 무단증축]"
+  },
+  {
+    "auctionId": "fe1dbf4e-fdd4-4f02-b055-5083f269fe77",
+    "objId": "1935182705381605866",
+    "buildingRegistry": "갑(1) 2017-03-27 소유권보존 오OO O OO\n갑(2) 2017-06-05 공유자전원지분전부 이전 장OO\n갑(3) 2021-04-12 소유권이전 오OO\n갑(4) 2022-06-03 압류 동OOOOOO (말소기준등기)\n을(5) 2023-05-04 주택임차권 김OO 250,000,000원\n갑(5) 2023-07-11 압류 의OOO\n갑(6) 2024-01-18 압류 남OOOOO\n갑(7) 2024-11-04 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 김OO\n점유: 503호전부 / 2021.03.19.~ / 2023.12.06.\n전입/확정/배당: 전입:2021-03-22 / 확정:2021-02-19 / 배당:2025-03-31\n보증금/차임: 보:250,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주택임차권자\n\n[기타사항]\n1. 주OOOOOOO가 임차권자 김OO의 임대차보증금 반환청구권을 양수하였고, 이 사건 강제경매신청채권자임(대항력 및\n우선변제권 승계)\n2. 매수인에게 대항할 수 있는 임차권등기(을구 5번)가 있으나, 주OOOOOOO(양도전: 임차인 김OO)로부터 “임차보증금\n에 대하여 우선변제권만 주장하고 대항력은 포기한다. 전액을 변제받지 못하더라도 매수인에 대한 잔존 임대차보증금 반환\n청구권을 포기하고 임차권등기를 말소하는 것에 동의한다”는 취지의 확약서(2026.7.1.자) 제출됨",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2022-06-03",
+        "holder": "동OOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 의정부시 의정부동  7-33 이안팰리스 5층 503호",
+    "gamjungAmt": "264000000",
+    "minAmt": "184800000",
+    "objEtc": "주택도시보증공사는 우선변제권만 주장하고 대항력은 포기한다는 확약서가 제출됨"
+  },
+  {
+    "auctionId": "69689329-e437-4b3a-9258-6d776c081459",
+    "objId": "1913905300440612896",
+    "buildingRegistry": "갑(2) 2015-09-22 소유권이전 김OO\n갑(3) 2021-12-17 소유권이전 서OO\n을(10) 2024-01-09 주택임차권 허OOOOOOOOOO O 160,000,000원 (인수)\n갑(4) 2025-04-02 강제경매개시결정 주OOOOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 1 망OOOOOOOOOO\n점유: 전부 / 2021.12.17. / 부터\n전입/확정/배당: 전입:2021-12-06 / 확정:2021-12-30\n보증금/차임: 보:160,000,000원\n대항력: 없음\n기타: 주택임차권자\n\n[기타사항]\n망 허남욱의 상속인 허진회:신청채권자 임차인으로부터 보증금반환채권을 양수받음.\n을구 순위번호 10번 임차권설정등기(2024. 1. 9. 제1746호).\n1.매수인에게 대항할 수 있는 을구 순위번호 10번 임차권설정등기(2024. 1. 9. 제1746호)있음.(임대차보증금 160,000,000원, 전 입일 2021.12.06. 확정일자 2021.12.30.). 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-04-02",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2024-01-09",
+          "holder": "허OOOOOOOOOO O"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "망OOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "1.매수인에게 대항할 수 있는 을구 순위번호 10번 임차권설정등기(2024. 1. 9. 제1746호)있음.(임대차보증금 160,000,000원, 전 입일 2021.12.06. 확정일자 2021.12.30.). 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 천안시 서북구 쌍용동 1914 주공아파트 410동 2층205호",
+    "gamjungAmt": "147000000",
+    "minAmt": "4153000",
+    "objEtc": "1.매수인에게 대항할 수 있는 을구 순위번호 10번 임차권설정등기(2024. 1. 9. 제1746호)있음.(임대차보증금 160,000,000원, 전입일 2021.12.06. 확정일자 2021.12.30.). 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함"
+  },
+  {
+    "auctionId": "02f4cd78-9412-4fea-8257-98be5ea56d3a",
+    "objId": "1955041918157062311",
+    "buildingRegistry": "갑(1) 2017-09-01 소유권보존 김OO O OO\n갑(2) 2017-11-17 공유자전원지분전부이전 황OO\n갑(3) 2022-09-07 가압류 주OOOOOOO 392,000,000원 (말소기준등기)\n을(1) 2024-06-04 주택임차권 정OO 200,000,000원 (인수)\n갑(4) 2025-08-04 강제경매개시결정 한OOOOOOO",
+    "tenantDetail": "임차인: 1 정OO\n점유: 101-301호57.17㎡전부 / 2022.05.30.~\n전입/확정/배당: 전입:2022-05-30 / 확정:2022-05-16\n보증금/차임: 보:200,000,000원\n대항력: 없음\n분석: HF 승계\n기타: 주거임차권자\n\n[기타사항]\n정OO:주택임차권등기권자로서 주택임차권등기일은 2024.06.04.임.\n한OOOOOOO:경매신청채권자 겸 주택임차권자인 정OO의 임차보증금반환채권 양수인으로서 배당요구일자는 경매신청일\n(2025.08.01.)임. 매각대금에서 보증금 전액을 배당받지 못하더라도 잔존 임차보증금반환채권을 포기하고 주택임차권등기의 말\n소에 동의한다는 취지의 확약서를 제출함.\n을구 순위번호 1번 주택임차권등기(다만 한OOOOOOO로부터 보증금 전액을 배당받지 못하더라도 잔존 임차보증금반환채 권을 포기하고 주택임차권등기 말소에 동의한다는 취지의 확약서가 2026.06.22. 제출됨)\n호실출입문에 단전단수안내문이 부착되어 있음.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "가압류",
+        "date": "2022-09-07",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2024-06-04",
+          "holder": "정OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "정OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": true,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "호실출입문에 단전단수안내문이 부착되어 있음.",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 부평구 부평동 528-9 더갤러리  3층101-301호",
+    "gamjungAmt": "203000000",
+    "minAmt": "203000000",
+    "objEtc": "호실출입문에 단전단수안내문이 부착되어 있음."
+  },
+  {
+    "auctionId": "b2447a2c-a8c3-48d2-b912-fc6ab2c8018e",
+    "objId": "2042378667144774155",
+    "buildingRegistry": "갑(1) 1992-10-02 소유권이전 서OO\n을(9) 2020-03-20 근저당권설정 동OOOOOOO 33,600,000원 (말소기준등기)\n을(10) 2023-08-01 근저당권설정 구OO 40,000,000원\n을(11) 2023-09-12 근저당권설정 구OO 35,000,000원\n을(12) 2024-05-30 근저당권설정 구OO 26,000,000원\n갑(8) 2026-04-03 임의경매개시결정 구OOOOOOOOOOO\n갑(9) 2026-04-28 가압류 동OOOOOOO 18,897,779원\n갑(10) 2026-05-11 가압류 농OOOOO 10,066,643원",
+    "tenantDetail": "[기타사항]\n본건 구분건물은 공부상 4동으로 등재돼 있으나 통칭 라동으로 표기돼 있고, 공부상 소재지 지번은 '경남 창원시 마산회원구 합성동 694-1번지'이나 대지권의 목적인 토지는 '경남 창원시 마산회원구 합성동 694-1번지 외 5필지임. 구분건물의 대지권의 목적인 감정서상 기호(2) 토지는 지목이 '답'이나 현황 건부지로 이용중.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2020-03-20",
+        "holder": "동OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "본건 구분건물은 공부상 4동으로 등재돼 있으나 통칭 라동으로 표기돼 있고, 공부상 소재지 지번은 '경남 창원시 마산회원구 합성동 694-1번지'이나 대지권의 목적인 토지는 '경남 창원시 마산회원구 합성동 694-1번지 외 5필지임. 구분건물의 대지권의 목적인 감정서상 기호(2) 토지는 지목이 '답'이나 현황 건부지로 이용중.",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 창원시 마산회원구 합성동 694-1 무학아파트 4동 1층101호",
+    "gamjungAmt": "124000000",
+    "minAmt": "86800000",
+    "objEtc": "본건 구분건물은 공부상 4동으로 등재돼 있으나 통칭 라동으로 표기돼 있고, 공부상 소재지 지번은 '경남 창원시 마산회원구 합성동 694-1번지'이나 대지권의 목적인 토지는 '경남 창원시 마산회원구 합성동 694-1번지 외 5필지임. 구분건물의 대지권의 목적인 감정서상 기호(2) 토지는 지목이 '답'이나 현황 건부지로 이용중. "
+  },
+  {
+    "auctionId": "b9c9fe37-4fba-457f-8a45-8c57ad8388d8",
+    "objId": "1950330966379594618",
+    "buildingRegistry": "갑(2) 1999-10-22 공유자전원지분전부이전 권OO\n갑(7) 2007-11-28 소유권이전 이OO\n갑(8) 2008-11-14 소유권이전 조OO\n갑(9) 2016-07-19 소유권이전 송OO\n을(17) 2021-07-20 근저당권설정 주OOOOOOOOOO 288,000,000원 (말소기준등기)\n갑(12) 2025-07-22 임의경매개시결정 에OOOOOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2021-07-20",
+        "holder": "주OOOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "대구광역시 북구 침산동 233-3 대한동아침산2차무지개아파트 205동 3층304호",
+    "gamjungAmt": "205000000",
+    "minAmt": "205000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "dad18af6-11cc-4fc6-9b30-971fe3ce355f",
+    "objId": "1927185666530083779",
+    "buildingRegistry": "갑(2) 2010-01-25 소유권이전 김OO\n갑(3) 2021-02-26 소유권이전 서OO\n을(3) 2021-05-13 근저당권설정 주OOOOOOOOO 100,000,000원 (말소기준등기)\n을(4) 2022-09-16 주택임차권 전OO 375,000,000원 (인수)\n갑(4) 2023-07-11 가압류 현OOOO 25,218,296원\n갑(5) 2023-11-01 가압류 신OOO 20,249,066원\n갑(8) 2024-11-04 강제경매개시결정 주OOOOOOO\n갑(9) 2024-12-24 압류 해OOOOOOOOOO\n갑(10) 2025-04-28 압류 서OOOOOOOOOO",
+    "tenantDetail": "임차인: 1 동OO\n전입/확정/배당: 전입:2024-10-17\n대항력: 없음\n기타: 주거임차인\n\n임차인: 3 전OO\n점유: 전부 / 2021.2.26-20 / 23.2.25\n전입/확정/배당: 전입:2021-02-26 / 확정:2020-12-24 / 배당:2025-01-08\n보증금/차임: 보:375,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차권자\n\n[기타사항]\n주택임대차보호법에 의해 임차권등기의 등기권리자 전OO의 권리를 승계(양수)한 주OOOOOOO가 이 사건 신청채권자임.\n을구 순위 4번 주택임차권등기의 등기권리자 전OO과 주OOOOOOO에게 위 권리를 양도한 임차인 전OO은 동일인임.\n2025. 1. 8.자 권리신고 및 배당요구신청은 위 신청채권자의 대리인이 함.\n1.본건 전유부분의 면적 중 경량철골구조(조립식패널)24.855㎡는 \"특정건축물 정리에 관한 특별조치법\"에 따라 2015.1.16. 사용 승인 되었음. 2.주OOOOOOO가 이 사건 신청채권자이고, 신청채권자는 전OO의 임차보증금반환 채권을 양수한 승계인으로 배당금으로 보증금 전액을 변제받지 못하더라도 매수인에 대하여 잔존 임대차보증금반환청구권을 포기하며 임차권등기 말소에 동의한다는 확약서를 제출함(2026.04.29.자)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2021-05-13",
+        "holder": "주OOOOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2022-09-16",
+          "holder": "전OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "동OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "전OO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "1.본건 전유부분의 면적 중 경량철골구조(조립식패널)24.855㎡는 \"특정건축물 정리에 관한 특별조치법\"에 따라 2015.1.16. 사용 승인 되었음. 2.주OOOOOOO가 이 사건 신청채권자이고, 신청채권자는 전OO의 임차보증금반환 채권을 양수한 승계인으로 배당금으로 보증금 전액을 변제받지 못하더라도 매수인에 대하여 잔존 임대차보증금반환청구권을 포기하며 임차권등기 말소에 동의한다는 확약서를 제출함(2026.04.29.자)",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 서대문구 북가좌동  277-10 에코빌(3차) 4층402호",
+    "gamjungAmt": "387000000",
+    "minAmt": "247680000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "8b3d286d-c070-439f-9997-893e6b1a7f56",
+    "objId": "2081495945836495811",
+    "buildingRegistry": "",
+    "tenantDetail": "임차인: 2 홍OO\n점유: 58.49㎡ / 2021.05.15.~ / 2023.05.14.\n전입/확정/배당: 전입:2015-04-28 / 확정:2021-04-20 / 배당:2022-01-05\n보증금/차임: 보:25,000,000원\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "홍OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 7층706호",
+    "gamjungAmt": "49000000",
+    "minAmt": "49000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "78cc8cb4-8ab1-4b15-9e84-dd63b1ed4d8b",
+    "objId": "2039129426158944268",
+    "buildingRegistry": "갑(2) 2012-12-04 소유권이전 박OO\n갑(3) 2020-06-05 소유권이전 백OO\n갑(4) 2023-04-18 압류 부OOOOO (말소기준등기)\n을(5) 2024-02-22 주택임차권 유OO 170,000,000원\n갑(5) 2024-11-29 강제경매개시결정 주OOOOOOO\n갑(6) 2024-12-16 압류 국OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2020.5.22.~ / 2024.5.22.\n전입/확정/배당: 전입:2020-05-22 / 확정:2020-05-06 / 배당:2025-02-14\n보증금/차임: 보:170,000,000원\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n유OO:임차보증금 중 금8,500,000원은 2022.2.19.자로 증액되었으며 증액분에 대한 확정일자는 2022.4.14.임\n주OOOOOOO(임차인 유OO):주택임차권자인 유OO의 임차보증금반환채권을 (일부)양수한 승계인으로서 경매신청채권자\n임.\n을구 순위 5번 주택임차권등기(배당에서 보증금이 전액 변제되지 아니하면 매수인이 잔액을 인수함)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2023-04-18",
+        "holder": "부OOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 부평구 부평동  379-3 청솔스타빌 5층501호",
+    "gamjungAmt": "180000000",
+    "minAmt": "43218000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "cd94f6e4-2e93-4680-96ca-5bc14845b4e0",
+    "objId": "1913882956359794720",
+    "buildingRegistry": "갑(1) 2022-09-06 소유권보존 김OO O OO\n갑(2) 2022-09-06 공유자전원지분전부이전신탁\n갑(3) 2023-09-27 소유권이전2번신탁등기말소 김OO O OO\n갑(4) 2023-09-27 공유자전원지분전부이전 유OO\n을(4) 2023-09-27 근저당권설정공동담보목록 농OOOOOOO 340,800,000원 (말소기준등기)\n갑(5) 2025-04-01 임의경매개시결정 농OOO\n갑(6) 2025-04-30 압류 인OOOOO\n갑(7) 2025-06-13 압류 인OOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정공동담보목록",
+        "date": "2023-09-27",
+        "holder": "농OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 미추홀구 숭의동 432-17 정다운주택 주건축물제1동  5층502호",
+    "gamjungAmt": "310000000",
+    "minAmt": "106330000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "811225bd-d98d-48e4-afb7-1bf308471ff1",
+    "objId": "1935835286139306393",
+    "buildingRegistry": "갑(6) 2014-12-11 1번곽재환지분전부이전 유OO\n갑(8) 2016-01-29 6번소유권이전등기말소\n갑(9) 2016-01-29 공유자전원지분전부이전 안OO\n갑(11) 2016-01-29 소유권이전신탁\n갑(12) 2016-05-23 소유권이전11번신탁등기말소 안OO\n을(23) 2022-12-19 근저당권설정 김OO 150,000,000원 (말소기준등기)\n갑(13) 2023-05-09 가압류 기OOOOO 95,000,000원\n갑(14) 2023-05-11 가압류 충OOOOOOOOO 30,512,086원\n갑(15) 2023-05-31 가압류 중OOOOO 5,541,243원\n갑(16) 2023-08-09 가압류 주OOOOOOO 21,146,682원\n을(24) 2024-08-16 주택임차권 박OO 220,000,000원 (인수)\n갑(17) 2025-04-07 압류 은OOOOOOOOO\n갑(18) 2025-06-16 강제경매개시결정 박OO",
+    "tenantDetail": "임차인: 3 박OO\n점유: 전유부분전부 / 2022.08.10.~\n전입/확정/배당: 전입:2022-08-10 / 확정:2022-07-11 / 배당:2025-07-02\n보증금/차임: 보:220,000,000원\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n박OO:강제경매 신청채권자와 동일인임.\n이 사건 강제경매는 이 사건 매각부동산에 대한 임차보증금반환을 명한 집행권원에 기한 것임.\n1.토지에 관하여 별도등기 있음 (갑구 36번 가압류결정, 갑구 34번 소유권이전청구권가등기, 을구 21,22,23,24,25,26,27,29,30,34,35,36,37,38,39,40,41,42번 근저당권 설정등기) 2. 매수인에게 대항할 수 있는 을구 순위 24번 주택임차권등기(2024. 8. 16. 제105023호) 있음. 배당에서 보증금이 전액 변제되 지 아니하면 잔액을 매수인이 인수함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2022-12-19",
+        "holder": "김OO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2024-08-16",
+          "holder": "박OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "박OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 은평구 구산동 26-1 삼창빌라 에이동 5층502호",
+    "gamjungAmt": "280000000",
+    "minAmt": "224000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "968f99a0-af51-4190-a97a-a969fab99667",
+    "objId": "2040928745908339609",
+    "buildingRegistry": "갑(1) 2016-06-03 소유권보존 주OOOOOOO\n을(1) 2016-06-03 근저당권설정 주OOOOOOO 64,080,000원\n을(2) 2024-09-12 주택임차권 진OO 160,800,000원\n갑(2) 2026-04-01 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 주OOOOOOOOOOOO\n점유: 전부 / 2021.02.28.~ / 2025.01.20.\n전입/확정/배당: 전입:2021-03-02 / 확정:2021-03-02 / 배당:2026-06-12\n보증금/차임: 보:160,800,000원\n대항력: 없음\n기타: 주거주택임차권자\n\n[기타사항]\n주OOOOOOO:경매신청권자, 임차보증금반환채권을 주택임차권자 진OO으로부터 승계함",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "광주광역시 북구 용봉동 1475 용봉동 도나우270 104동 5층502호",
+    "gamjungAmt": "267000000",
+    "minAmt": "186900000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "48af2fdf-42d5-493e-ab82-92fd7b795173",
+    "objId": "1943447032601509895",
+    "buildingRegistry": "갑(1) 2008-03-31 소유권보존 송OOOOOOOOOOOO\n갑(2) 2008-03-31 소유권이전 장OO\n갑(4) 2018-10-08 소유권이전 배OO\n을(1) 2018-10-08 근저당권설정 한OOOOOOOOO 218,400,000원 (말소기준등기)\n갑(5) 2024-12-16 가압류 신OOO 11,707,405원\n갑(6) 2025-01-09 압류 영OO\n갑(7) 2025-02-18 가압류 주OOOOOOOOOO 24,933,537원\n갑(8) 2025-02-24 가압류 주OOOOOOO 12,547,692원\n갑(9) 2025-02-25 가압류 웰OOOOO 16,051,820원\n갑(10) 2025-03-12 가압류 한OOOOO 6,369,890원\n갑(11) 2025-07-03 임의경매개시결정 한OOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2018-10-08",
+        "holder": "한OOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상북도 영천시 문내동 1-1 영천대동다숲아파트 102동 9층905호",
+    "gamjungAmt": "280000000",
+    "minAmt": "196000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "e601fbc5-e934-4ac8-9b62-18cfb1135702",
+    "objId": "1973161880948048835",
+    "buildingRegistry": "갑(2) 2001-05-16 소유권이전 곽OO\n갑(3) 2022-02-04 소유권이전 주OOOOOOO\n갑(4) 2023-04-17 압류 경OOOOO (말소기준등기)\n을(7) 2024-02-20 주택임차권 이OO 120,000,000원 (인수)\n갑(5) 2025-04-08 압류 목OO\n갑(6) 2025-09-29 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 이OO\n점유: 본건전부 / 2022.02.10~\n전입/확정/배당: 전입:2022-01-14 / 확정:2022-01-14\n보증금/차임: 보:120,000,000원\n대항력: 있음\n기타: 주거주택임차권자\n\n[기타사항]\n이OO:\n- 경매신청채권자가 대위변제함.\n- 임대차보증금 대위변제금액: 120,000,000원\n- 경매신청채권자가 제출한 집행권원에 따르면 이OO는 2024. 6. 12. 임대차보증금을 경매신청채권자로부터 대위변제를 받고\n채무자 및 소유자에게 이 사건 목적물의 인도를 마친 상태라고 함.\n매수인에게 대항할 수 있는 을구 순위 7번 주택임차권등기(2024.02.20. 접수 제4261호, 임차권자: 이OO) 있음(임차보증금: 120,000,000원, 전입일자: 2022.01.14., 점유개시일자: 2022.02.10., 확정일자: 2022.01.14.). 배당에서 보증금이 전액 변제되지 않 으면 잔액을 매수인이 인수함.\n임차인 등이 배당에서 보증금을 전액 변제받지 못하면 잔액을 매수인이 인수함. 현황조사보고서에 의하면 2025. 9. 기준 미납관리비 약 2,700,000원 있음.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2023-04-17",
+        "holder": "경OOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2024-02-20",
+          "holder": "이OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "임차인 등이 배당에서 보증금을 전액 변제받지 못하면 잔액을 매수인이 인수함. 현황조사보고서에 의하면 2025. 9. 기준 미납관리비 약 2,700,000원 있음.",
+      "source": "structured_registry"
+    },
+    "addr": "전라남도 목포시 옥암동 994 영신그린빌 101동 11층1101호",
+    "gamjungAmt": "150000000",
+    "minAmt": "67200000",
+    "objEtc": "임차인 등이 배당에서 보증금을 전액 변제받지 못하면 잔액을 매수인이 인수함.\n현황조사보고서에 의하면 2025. 9. 기준 미납관리비 약 2,700,000원 있음."
+  },
+  {
+    "auctionId": "1dc8c58c-6873-4f7a-9f4c-f1a0f0047b29",
+    "objId": "1913905666724986912",
+    "buildingRegistry": "갑(3) 2021-11-25 소유권이전 박OO\n갑(4) 2023-09-07 소유권이전 김OO\n갑(5) 2024-02-16 압류 국OOOOOOO (말소기준등기)\n을(3) 2024-03-11 주택임차권 전OOO OO 155,000,000원\n갑(6) 2024-05-08 압류 해OOOOOO\n갑(7) 2025-02-24 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 박OO\n대항력: 없음\n기타: 조사된내용없음임차권자\n\n[기타사항]\n박OO: 주OOOOOOO(임차인 전원철, 박OO)는 경매신청채권자로 임차인 전원철, 박OO의 임차보증금반환채권 양수인임\n(대항력및우선변제권 승계\n매수인에게 대항할 수 있는 을구 3번 임차권등기(임대차보증금 155,000,000원, 전입일자 2021.11.24. 확정일자 2021.11.24.)\n- 주OOOOOOO(임차인 전원철, 박OO)는 경매신청채권자로 임차인 전원철, 박OO의 임차보증금반환채권 양수인임(대항력 및우선변제권 승계) - 매수인에게 대항할 수 있는 을구 3번 임차권등기(임대차보증금 155,000,000원, 전입일자 2021.11.24. 확정일자 2021.11.24.)가 있으므로 배당에서 전액 변제되지 아니하면 잔액을 매수인이 인수함(또는 잔액은 매수인에게 인수될 수 있음)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2024-02-16",
+        "holder": "국OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "박OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "- 주OOOOOOO(임차인 전원철, 박OO)는 경매신청채권자로 임차인 전원철, 박OO의 임차보증금반환채권 양수인임(대항력 및우선변제권 승계) - 매수인에게 대항할 수 있는 을구 3번 임차권등기(임대차보증금 155,000,000원, 전입일자 2021.11.24. 확정일자 2021.11.24.)가 있으므로 배당에서 전액 변제되지 아니하면 잔액을 매수인이 인수함(또는 잔액은 매수인에게 인수될 수 있음)",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 천안시 동남구 신방동 874 성지새말아파트 208동 8층802호",
+    "gamjungAmt": "148000000",
+    "minAmt": "24875000",
+    "objEtc": "- 주택도시보증공사(임차인 전원철, 박화란)는 경매신청채권자로 임차인 전원철, 박화란의 임차보증금반환채권 양수인임(대항력및우선변제권 승계)\n- 매수인에게 대항할 수 있는 을구 3번 임차권등기(임대차보증금 155,000,000원, 전입일자 2021.11.24. 확정일자 2021.11.24.)가 있으므로 배당에서 전액 변제되지 아니하면 잔액을 매수인이 인수함(또는 잔액은 매수인에게 인수될 수 있음)"
+  },
+  {
+    "auctionId": "66b95702-2c6b-41be-bafa-5a161fd59e47",
+    "objId": "1932637561633636459",
+    "buildingRegistry": "갑(3) 2021-04-07 소유권이전 박OO\n갑(4) 2022-01-04 압류 국OOOOOOO (말소기준등기)\n갑(5) 2022-04-07 가압류 한OOOOOOO 10,651,205원\n을(5) 2023-06-23 주택임차권 박OO 156,000,000원\n갑(6) 2024-06-13 소유권이전 박OO\n갑(7) 2024-07-12 임의경매개시결정 박OO\n갑(8) 2024-08-07 압류 국OOOOOOO\n갑(9) 2024-08-08 압류 북OOOOOO\n갑(10) 2025-02-13 압류 계OOOOOOOOO\n갑(11) 2025-02-17 압류 인OOOO\n갑(12) 2025-07-17 압류 관OOOOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 404호전부 / 2021.03.17.~ / 2023.03.16.\n전입/확정/배당: 전입:2021-03-17 / 확정:2021-02-09\n보증금/차임: 보:156,000,000원\n대항력: 있음\n기타: 주택임차권자의 승계인\n\n[기타사항]\n주택도시보증공사:주택임차권자 박OO(임차권등기일 2023.06.23.)의 임차보증금반환채권 양수인임.\n매수인에게 대항할 수 있는 을구 5번 주택임차권등기(임차보증금 금156,000,000원, 전입일자 2021.03.17., 확정일자 2021.02.09.) 있음. 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함.\n-재매각. 매수보증금은 최저매각가격의 10분의 2임. -오피스텔임.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2022-01-04",
+        "holder": "국OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "-재매각. 매수보증금은 최저매각가격의 10분의 2임. -오피스텔임.",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 남동구 구월동  1139-5 제이앤제이오피스텔 4층404호",
+    "gamjungAmt": "150000000",
+    "minAmt": "6052000",
+    "objEtc": "-재매각. 매수보증금은 최저매각가격의 10분의 2임.\n-오피스텔임."
+  },
+  {
+    "auctionId": "a7335b29-be78-47c6-bc35-d56cef2578c8",
+    "objId": "2081498158969389469",
+    "buildingRegistry": "갑(1) 1996-06-11 소유권보존 주OOOOOOO\n을(1) 1996-06-15 근저당권설정 주OOOOOOO 2,138,500,000원 (말소기준등기)\n을(2) 2018-05-23 주택임차권 박OO 18,000,000원\n갑(2) 2021-12-23 임의경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 박OO\n점유: 708호 / 2012.11.16.~ / 2013.11.15.\n전입/확정/배당: 전입:2018-04-30 / 확정:2012-12-26 / 배당:2022-03-03\n보증금/차임: 보:18,000,000원\n대항력: 없음\n기타: 주거임차권자\n\n[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "1996-06-15",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "박OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 7층708호",
+    "gamjungAmt": "47000000",
+    "minAmt": "47000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "19d0a745-ddba-43bb-ba5f-ef2f51860b3a",
+    "objId": "1944534003981746658",
+    "buildingRegistry": "갑(1) 2001-08-30 소유권보존 이OO\n갑(2) 2002-03-11 소유권이전 신OO\n갑(5) 2021-05-31 소유권이전 강OO\n을(9) 2023-07-13 주택임차권 이OO 295,000,000원\n갑(6) 2025-07-08 강제경매개시결정 주OOOOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 3 주OOOOOOOOOOOO\n점유: 전부 / 2021.05.31. / ~ / 2023.05.31.\n전입/확정/배당: 전입:2021-06-01 / 확정:2021-06-10 / 배당:2025-09-05\n보증금/차임: 보:295,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 조사된내용없음임차권자\n\n임차인: 2 조OO\n점유: 201호\n전입/확정/배당: 전입:2023-12-19\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n주OOOOOOO:\n1. 주OOOOOOO는 신청채권자이며, 임차권자 이OO의 본건 임차보증금반환채권을 양수함.\n2. 을구 순위 9번 주택임차권등기의 등기권리자 이OO과 주OOOOOOO에게 권리를 양도한 임차인 이OO은 동일인임\n1. 집합건축물대장상 2025년 6월 12일자로 주택과-13590(2025.6.11.)호에 의거 위반건축물 표시등재[위반사항:1층(주차장) 25㎡ 콘크리트/판넬 주거용] 되어 있음(감정평가서 참조) 2. 주OOOOOOO(양도전:임차인 이OO)로부터 2026.04.23.자에 ‘임차보증금에 대하여 우선변제권만 주장하고 대항력은 포기 하며, 전액을 변제받지 못하더라도 임차권등기를 말소해 주겠다.’는 내용의 확약서가 제출됨",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-07-08",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "조OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "1. 집합건축물대장상 2025년 6월 12일자로 주택과-13590(2025.6.11.)호에 의거 위반건축물 표시등재[위반사항:1층(주차장) 25㎡ 콘크리트/판넬 주거용] 되어 있음(감정평가서 참조) 2. 주OOOOOOO(양도전:임차인 이OO)로부터 2026.04.23.자에 ‘임차보증금에 대하여 우선변제권만 주장하고 대항력은 포기 하며, 전액을 변제받지 못하더라도 임차권등기를 말소해 주겠다.’는 내용의 확약서가 제출됨",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 은평구 신사동 11-30  3층201호",
+    "gamjungAmt": "310000000",
+    "minAmt": "248000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "06ce6c8b-8f11-48e3-ac49-f88f1a960594",
+    "objId": "1913882816001605664",
+    "buildingRegistry": "갑(1) 2018-09-04 소유권보존 전O\n갑(2) 2018-10-17 소유권이전 정OO\n을(3) 2023-08-02 주택임차권 김OO 270,000,000원 (인수)\n갑(23) 2025-02-21 강제경매개시결정 주OOOOOOOOOO (말소기준등기)\n갑(24) 2025-03-13 압류 국OOOOOOO\n갑(25) 2025-05-26 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 김OO\n점유: 705호71.39㎡전부 / 2021.06.14.~\n전입/확정/배당: 전입:2021-06-15 / 확정:2021-05-07\n보증금/차임: 보:270,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차권자\n\n[기타사항]\n김OO:주택임차권등기권자로서 주택임차권등기일은 2023.08.02.임.\n주OOOOOOO(임차인:김OO):경매신청채권자 겸 주택임차권자인 김OO의 임차보증금반환채권 양수인으로서 배당요구일자\n는 경매신청일(2025.05.21.)임. 매각대금에서 보증금 전액을 배당받지 못하더라도 잔존 임차보증금반환채권을 포기하고 주택임\n차권등기의 말소에 동의한다는 취지의 확약서를 제출함.\n을구 순위번호 3번 주택임차권등기(다만 주OOOOOOO로부터 주택임차권등기 말소 동의 확약서가 2026.07.03. 제출됨)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-02-21",
+        "holder": "주OOOOOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-08-02",
+          "holder": "김OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 부평구 부평동 439-2 태강씨티  7층705호",
+    "gamjungAmt": "267000000",
+    "minAmt": "267000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "ac17a32e-634c-4400-a154-ff3c6862d670",
+    "objId": "1913905207821991968",
+    "buildingRegistry": "갑(3) 2021-11-22 소유권이전2번신탁등기말소 한OO\n갑(4) 2022-05-20 소유권이전 정OO\n을(1) 2022-11-11 근저당권설정 곽OO 150,000,000원 (말소기준등기)\n갑(5) 2023-05-18 압류 국OOOOOOO\n을(2) 2023-11-30 주택임차권 이OO 180,000,000원 (인수)\n갑(6) 2025-02-04 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 이OO\n점유: 전부 / 2021.11.22. / 부터\n전입/확정/배당: 전입:2021-11-23 / 확정:2021-10-29\n보증금/차임: 보:180,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차권자\n\n[기타사항]\n이OO: 신청채권과 동일채권임\n을구 순위번호 2번 임차권설정등기(2023.11.30. 제106438호)\n- 주택임차권의 승계인인 주OOOOOOO로부터 우선변제권만 주장하고 대항력을 포기하며, 배당금으로 임대차보증금 반환 채권 전액을 변제받지 못하더라도 매수인에 대한 잔존 임대차보증금 반환청구권을 포기하고 임차권등기를 말소하는 것에 동의 한다는 확약서가 제출됨",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2022-11-11",
+        "holder": "곽OO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-11-30",
+          "holder": "이OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "- 주택임차권의 승계인인 주OOOOOOO로부터 우선변제권만 주장하고 대항력을 포기하며, 배당금으로 임대차보증금 반환 채권 전액을 변제받지 못하더라도 매수인에 대한 잔존 임대차보증금 반환청구권을 포기하고 임차권등기를 말소하는 것에 동의 한다는 확약서가 제출됨",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 천안시 동남구 영성동 48-9  6층603호",
+    "gamjungAmt": "197000000",
+    "minAmt": "137900000",
+    "objEtc": "- 주택임차권의 승계인인 주택도시보증공사로부터 우선변제권만 주장하고 대항력을 포기하며, 배당금으로 임대차보증금 반환채권 전액을 변제받지 못하더라도 매수인에 대한 잔존 임대차보증금 반환청구권을 포기하고 임차권등기를 말소하는 것에 동의한다는 확약서가 제출됨"
+  },
+  {
+    "auctionId": "8c769315-8dff-4565-885e-5a009d6104a8",
+    "objId": "1942827612279668833",
+    "buildingRegistry": "갑(4) 2013-09-02 소유권이전 배OO\n갑(5) 2018-07-25 소유권이전 강OO\n을(5) 2022-10-27 근저당권설정 약OOOOOOO 21,600,000원 (말소기준등기)\n갑(6) 2025-06-10 소유권이전 강OO\n갑(7) 2025-07-01 임의경매개시결정 약OOOOOOO\n갑(8) 2025-07-07 가압류 농OOOOOOOOOOOO 46,333,633원",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2022-10-27",
+        "holder": "약OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상북도 칠곡군 왜관읍 왜관리 347-5 왜관아파트 104동 4층408호",
+    "gamjungAmt": "50000000",
+    "minAmt": "35000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "9f1f24a0-136c-4295-8356-dcd2f7abab12",
+    "objId": "2040928754435358776",
+    "buildingRegistry": "갑(1) 2016-06-03 소유권보존 주OOOOOOO\n을(1) 2016-06-03 근저당권설정 주OOOOOOO 64,080,000원\n을(2) 2024-09-11 주택임차권 김OO 160,800,000원\n갑(2) 2026-03-31 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2026.06.10. / ~2025.01.03 / .\n전입/확정/배당: 전입:2016-06-08 / 확정:2016-06-01 / 배당:2026-06-11\n보증금/차임: 보:160,800,000원\n대항력: 없음\n기타: 주거주택임차권자\n\n[기타사항]\n주OOOOOOO:경매신청권자, 임차보증금반환채권을 주택임차권자 김OO로부터 승계함",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "광주광역시 북구 용봉동 1475 용봉동 도나우270 103동 10층1004호",
+    "gamjungAmt": "270000000",
+    "minAmt": "189000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "0d7fbad8-4ec2-4357-9ed3-5d4b77535e99",
+    "objId": "2081498276166631602",
+    "buildingRegistry": "",
+    "tenantDetail": "[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 8층801호",
+    "gamjungAmt": "49000000",
+    "minAmt": "49000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "dca26f30-484f-4c30-b05a-5d4c3b0c7c0f",
+    "objId": "2039129420542771909",
+    "buildingRegistry": "갑(1) 2017-12-05 소유권보존 성OO\n갑(2) 2018-02-22 소유권이전 이OO\n갑(3) 2023-05-19 압류 부OOOOO (말소기준등기)\n갑(4) 2023-05-26 가압류 주OOOOOOO 1,011,000,000원\n갑(5) 2023-11-15 압류 남OOOOOOOOO\n갑(6) 2024-01-26 압류 서OOOO\n을(1) 2024-02-15 주택임차권 김OO 171,000,000원\n갑(7) 2024-05-13 가압류 대OOOOOOOOOOOO 48,400,637원\n갑(8) 2024-11-27 강제경매개시결정 주OOOOOOO\n갑(9) 2024-12-16 압류 국OOOOOOO\n갑(10) 2025-11-28 압류 의OOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2022.1.21.~ / 2024.1.20.\n전입/확정/배당: 전입:2022-01-21 / 확정:2021-11-10 / 배당:2024-11-25\n보증금/차임: 보:170,500,000원\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n주OOOOOOO(임차인:김OO):주택임차권자인 김OO의 임차보증금반환채권을 양수한 승계인으로서 신청채권자이며 권리\n신고 및 배당요구일자는 이 사건 신청일임.\n을구 순위 1번 주택임차권등기(배당에서 보증금이 전액 변제되지 아니하면 매수인이 잔액을 인수함)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2023-05-19",
+        "holder": "부OOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 남동구 간석동  106-10 하이네스주건축물 1동 2층201호",
+    "gamjungAmt": "169000000",
+    "minAmt": "40577000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "78851944-cdce-45e6-8986-d74053b36517",
+    "objId": "1952505205845132154",
+    "buildingRegistry": "갑(1) 2020-10-27 소유권보존 주OOOOOOO\n갑(2) 2020-10-30 소유권이전 이OO\n을(1) 2020-10-30 근저당권설정 계OOOOOO 247,500,000원 (말소기준등기)\n갑(3) 2022-08-31 압류 남OOOOOO\n갑(10) 2023-09-01 가압류 경OOOOOOO 28,331,000원\n갑(10-1) 2024-12-23 10번가압류변경 24,654,210원\n갑(11) 2023-10-05 압류 포OOOOO\n갑(12) 2025-02-03 압류 국OOOOOOO\n갑(13) 2025-02-18 압류 부OO\n갑(14) 2025-06-05 압류 포OO\n갑(15) 2025-08-04 임의경매개시결정 계OOOOOO",
+    "tenantDetail": "임차인: 1 석OO\n전입/확정/배당: 전입:2020-11-03\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2020-10-30",
+        "holder": "계OOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "석OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 부천시 소사구 소사본동 113-2 해송파크뷰  6층605호",
+    "gamjungAmt": "317000000",
+    "minAmt": "221900000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "77ca21f4-439d-4890-a554-ed300888b482",
+    "objId": "2039479119586001014",
+    "buildingRegistry": "갑(1) 2016-06-03 소유권보존 주OOOOOOO\n을(1) 2016-06-03 근저당권설정 주OOOOOOO 64,080,000원\n을(2) 2024-09-06 주택임차권 오OO 160,800,000원\n갑(2) 2026-03-27 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2020.06.05.~ / 2025.02.04.\n전입/확정/배당: 전입:2020-06-08 / 확정:2020-05-19 / 배당:2026-06-10\n보증금/차임: 보:160,800,000원\n대항력: 없음\n기타: 주거주택임차권자\n\n[기타사항]\n주OOOOOOO:경매신청권자, 임차보증금반환채권을 주택임차권자 오OO로부터 승계함",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "광주광역시 북구 용봉동 1475 용봉동 도나우270 103동 9층902호",
+    "gamjungAmt": "271000000",
+    "minAmt": "189700000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "e3c54b58-0a13-457b-8c85-743fabd062f9",
+    "objId": "1915956574753390592",
+    "buildingRegistry": "갑(2) 2021-07-02 소유권이전 김OO\n갑(3) 2023-07-18 소유권이전 정OO\n갑(4) 2024-04-05 강제경매개시결정 장OO (말소기준등기)",
+    "tenantDetail": "임차인: 1 예OO\n점유: 501호 / 미상\n전입/확정/배당: 전입:2024-01-29\n대항력: 있음\n기타: 미상임차인\n\n임차인: 2 장OO\n점유: 501호전부 / 2021.07.02.~ / 2023.07.02.\n전입/확정/배당: 전입:2021-07-02 / 확정:2021-06-10 / 배당:2024-04-04\n보증금/차임: 보:265,000,000원\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n장OO:경매신청채권자로 배당요구일은 경매신청일임.\n주식회사 우리은행(장OO):임차인 장OO의 임대차보증금 중 230,400,000원에 대한 질권자임.\n1. 제시외 건물 포함 2. 매수인에게 대항할 수 있는 임차인 있음(임대차보증금 265,000,000원, 전입일자 2021. 7. 2., 확정일자 2021. 6. 10.). 배당에 서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2024-04-05",
+        "holder": "장OO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "예OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "장OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "1. 제시외 건물 포함 2. 매수인에게 대항할 수 있는 임차인 있음(임대차보증금 265,000,000원, 전입일자 2021. 7. 2., 확정일자 2021. 6. 10.). 배당에 서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함.",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 노원구 상계동  1098-21 티파니 5층501호",
+    "gamjungAmt": "245000000",
+    "minAmt": "4414000",
+    "objEtc": "제시외 건물 포함"
+  },
+  {
+    "auctionId": "c7a6e156-25c1-4366-820c-a5704a6ea754",
+    "objId": "1962652415190630420",
+    "buildingRegistry": "갑(2) 2002-02-04 소유권이전 노OO\n갑(3) 2022-02-15 소유권이전 문OO\n을(6) 2022-02-15 근저당권설정 정OOOOOOO 72,000,000원 (말소기준등기)\n갑(4) 2022-05-12 가압류 유OOO 500,000,000원\n갑(5) 2023-02-03 가압류 신OOOOO 187,000,000원\n갑(6) 2025-02-03 압류 서OOOOOO\n갑(7) 2025-03-12 압류 서OOOOOOOO\n갑(8) 2025-08-28 임의경매개시결정 정OOOOOOO",
+    "tenantDetail": "임차인: 1 심OO\n점유: 미상 / 미상\n전입/확정/배당: 전입:2024-04-26\n대항력: 없음\n기타: 미상임차인\n\n[기타사항]\n현황조사보고서에 의하면 2025. 8. 기준 미납관리비 약 2,200,000원 있음.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2022-02-15",
+        "holder": "정OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "심OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "현황조사보고서에 의하면 2025. 8. 기준 미납관리비 약 2,200,000원 있음.",
+      "source": "structured_registry"
+    },
+    "addr": "전라남도 목포시 용해동 339 용해3단지아파트 302동 2층203호",
+    "gamjungAmt": "81000000",
+    "minAmt": "36288000",
+    "objEtc": "현황조사보고서에 의하면 2025. 8. 기준 미납관리비 약 2,200,000원 있음."
+  },
+  {
+    "auctionId": "e37023ee-2ff0-4c2c-abed-16e3d81ec6a9",
+    "objId": "2081497974860415881",
+    "buildingRegistry": "",
+    "tenantDetail": "임차인: 2 최OO\n점유: 58.49㎡ / 2008.12.16.~ / 2010.11.16.\n전입/확정/배당: 전입:2022-01-10 / 확정:2022-01-10 / 배당:2022-01-11\n보증금/차임: 보:18,000,000원\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "최OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 8층803호",
+    "gamjungAmt": "49000000",
+    "minAmt": "49000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "e8089d5f-9290-4e73-8017-bc83a85d838c",
+    "objId": "1990560114251137051",
+    "buildingRegistry": "갑(1) 1990-09-07 소유권이전 이OO\n갑(2) 2021-03-17 소유권이전 김OO\n을(5) 2022-03-08 근저당권설정 주OOOOOOOOOOO 65,000,000원 (말소기준등기)\n갑(3) 2025-11-10 임의경매개시결정 주OOOOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2022-03-08",
+        "holder": "주OOOOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상북도 안동시 용상동 1475 용상제2아파트 6동 5층504호",
+    "gamjungAmt": "103000000",
+    "minAmt": "72100000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "d7faba2e-dc6c-4e18-869d-5545467fbb6f",
+    "objId": "1938009895819281366",
+    "buildingRegistry": "갑(1) 2004-01-19 소유권보존 주OOOOOOOOO\n갑(2) 2004-11-04 소유권이전 남OO\n을(4) 2005-03-15 근저당권설정 성OOOOOO 26,000,000원 (말소기준등기)\n을(8) 2016-11-23 근저당권설정 성OOOOOO 144,000,000원\n갑(15) 2022-03-14 가압류 서OOOOO 24,132,000원\n갑(16) 2022-05-11 가압류 대OOOOOOO 20,000,000원\n갑(17) 2024-06-12 가압류 소OOOOOOOOO 39,325,205원\n갑(18) 2025-06-11 소유권이전 남OOO OO\n갑(19) 2025-06-16 임의경매개시결정 성OOOOOO",
+    "tenantDetail": "[기타사항]\n대지권 대상 중 \"1384-1번지\" 토지는 공부상 지목이 \"임야\"이나, 현황 \"대\"임",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2005-03-15",
+        "holder": "성OOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "대지권 대상 중 \"1384-1번지\" 토지는 공부상 지목이 \"임야\"이나, 현황 \"대\"임",
+      "source": "structured_registry"
+    },
+    "addr": "대구광역시 수성구 만촌동 1382  1층101호",
+    "gamjungAmt": "225000000",
+    "minAmt": "157500000",
+    "objEtc": "대지권 대상 중 \"1384-1번지\" 토지는 공부상 지목이 \"임야\"이나, 현황 \"대\"임"
+  },
+  {
+    "auctionId": "77ebb7d2-a50a-4b6f-96cc-f17ba3aa1cc8",
+    "objId": "1924640398890762648",
+    "buildingRegistry": "갑(1) 2017-09-26 소유권보존 정OO O OO\n갑(2) 2017-09-29 공유자전원지분전부이전신탁\n갑(3) 2017-12-26 소유권이전2번신탁등기말소 정OO O OO\n갑(4) 2017-12-26 공유자전원지분전부이전 최OO\n갑(5) 2021-01-28 소유권이전 이OO\n을(3) 2023-04-06 주택임차권 양O 267,000,000원 (인수)\n갑(7) 2025-05-15 강제경매개시결정 주OOOOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOO\n점유: 401호전부 / 2021.01.25.~\n전입/확정/배당: 전입:2021-01-25 / 확정:2020-12-14 / 배당:2025-07-28\n보증금/차임: 보:267,000,000원\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n주OOOOOOO:신청채권자 주OOOOOOO가 주택임차권자 양O의 우선변제권을 승계함.\n매수인에게 대항할 수 있는 을구 순위 3번 주택임차권등기(2023.04.06. 제42157호) 있음. 배당에서 보증금이 전액 변제되지 아 니하면 잔액을 매수인이 인수함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-05-15",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-04-06",
+          "holder": "양O"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 은평구 구산동 308-146 고은명가  4층401호",
+    "gamjungAmt": "321000000",
+    "minAmt": "256800000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "08a3c8fb-02f2-4fc3-b4ab-7df07412bc74",
+    "objId": "1955042007126639099",
+    "buildingRegistry": "갑(3) 2010-12-07 소유권이전 옥OO\n갑(4) 2022-04-12 소유권이전 오OO\n을(5) 2024-05-01 주택임차권 심OO 140,000,000원\n갑(7) 2025-07-31 강제경매개시결정 주OOOOOOO (말소기준등기)\n갑(8) 2025-08-08 압류 광OO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2022.4.5.-20 / 24.4.4.\n전입/확정/배당: 전입:2022-04-05 / 확정:2022-02-28 / 배당:2025-09-09\n보증금/차임: 보:140,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차권자\n\n[기타사항]\n심OO:주택임차권등기권자로 주택임차권등기일은 2024.5.1.임.\n주OOOOOOO:경매신청채권자로 임차인 심OO의 임차보증금반환채권 양수인임(우선변제권 승계).\n해당사항없음\n해당사항없음\n2026.5.11.자로 주택임차권의 승계인 주OOOOOOO는 우선변제권만 주장하고, 대항력을 포기한다는 확약서 제출함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-07-31",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "2026.5.11.자로 주택임차권의 승계인 주OOOOOOO는 우선변제권만 주장하고, 대항력을 포기한다는 확약서 제출함.",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 광주시 문형동 683-13 에이동 2층 203호",
+    "gamjungAmt": "109000000",
+    "minAmt": "53410000",
+    "objEtc": "2026.5.11.자로 주택임차권의 승계인 주택도시보증공사는 우선변제권만 주장하고, 대항력을 포기한다는 확약서 제출함."
+  },
+  {
+    "auctionId": "a6cc62d2-1bd2-408d-bbf6-3f658dd4af21",
+    "objId": "1944534071006724508",
+    "buildingRegistry": "갑(1) 2020-12-15 소유권보존신탁 우OOOOOOOOOOOO\n갑(2) 2020-12-15 소유권이전1번신탁등기말소 주OOOOOOOOOO O\n갑(3) 2020-12-15 2번이경희지분전부이전 주OOOOOOOOOO\n갑(4) 2020-12-15 공유자전원지분전부이전신탁\n갑(5) 2021-08-11 소유권이전4번신탁등기말소 이OOO OO\n갑(6) 2021-08-11 5번주식회사에쓰제이디앤씨지분전부이전 이OO\n을(1) 2024-09-13 주택임차권 이OO 330,000,000원\n갑(7) 2025-07-10 강제경매개시결정 이OO (말소기준등기)\n갑(8) 2025-08-25 압류 부OO\n갑(9) 2026-02-09 압류 남OOOOOO",
+    "tenantDetail": "임차인: 2 이OO\n점유: 401호전부 / 2021.08.11.~ / 2025.03.31.\n전입/확정/배당: 전입:2021-08-11 / 확정:2021-07-07 / 배당:2025-07-09\n보증금/차임: 보:330,000,000원\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n이OO은 경매신청채권자로 배당요구일자는 경매신청일임\n매수인에게 대항할 수 있는 을구 1번 임차권등기(2024.09.13. 제77710호) ※ 배당에서 전액 변제되지 아니하면 잔액을 매수인이 인수함\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-07-10",
+        "holder": "이OO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 부천시 원미구 춘의동 155-6 에쓰제이로얄팰리스  4층2동401호",
+    "gamjungAmt": "400000000",
+    "minAmt": "280000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "431a2576-2f4d-4fc8-88d6-66694afd0e79",
+    "objId": "1919496967092700112",
+    "buildingRegistry": "갑(16) 2022-02-03 15번소유권이전등기말소\n을(11) 2022-10-26 전세권설정 손OO 45,000,000원 (인수)\n갑(18) 2024-12-12 소유권이전 주OOOOOOOOOO\n갑(19) 2024-12-20 강제경매개시결정 주OOOOOOO (말소기준등기)\n갑(21) 2025-03-26 압류 무OO",
+    "tenantDetail": "임차인: 1 손OO\n점유: 101동106호 / 2022.10.20.~ / 2026.10.20.\n전입/확정/배당: 전입:2022-11-15\n보증금/차임: 보:45,000,000원\n대항력: 있음\n기타: 주거전세권자\n\n[기타사항]\n손OO:전세권설정등기일은 2022.10.26.임\n전입일자는 대항력 있는 임차인으로 현황조사 되었으며, 매수인에게 대항할 수 있는 임차인일 경우 배당에서 보증금이 전액\n변제되지 아니하면 잔액을 매수인이 인수할 수 있음\n을구 11번 전세권(2022.10.26. 등기)은 말소되지 않고 매수인에게 인수됨\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2024-12-20",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "전세권설정",
+          "date": "2022-10-26",
+          "holder": "손OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "손OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "전북특별자치도 무주군 안성면 1213-1 사전리 리벤빌 101동 1층 106호",
+    "gamjungAmt": "73100000",
+    "minAmt": "4214000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "40c1e22b-cbd0-485b-891a-85fae87de94e",
+    "objId": "2038393538214888321",
+    "buildingRegistry": "갑(1) 2016-06-03 소유권보존 주OOOOOOO\n을(1) 2016-06-03 근저당권설정 주OOOOOOO 64,080,000원\n을(2) 2024-09-20 주택임차권 박OO 160,800,000원\n갑(2) 2026-03-25 강제경매개시결정 주OOOOOOO\n갑(3) 2026-05-26 압류 국OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2020.07.09.~ / 2025.02.03\n전입/확정/배당: 전입:2020-07-21 / 확정:2020-06-09 / 배당:2026-06-09\n보증금/차임: 보:160,800,000원\n대항력: 없음\n기타: 주거주택임차권자\n\n[기타사항]\n주OOOOOOO:경매신청권자, 임차보증금반환채권을 주택임차권자 박OO으로부터 승계함",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "광주광역시 북구 용봉동 1475 용봉동 도나우270 102동 10층1004호",
+    "gamjungAmt": "271000000",
+    "minAmt": "189700000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "00573b88-9c89-4d63-b16f-65cdb30a6e3d",
+    "objId": "2039129508614767051",
+    "buildingRegistry": "갑(6) 2021-09-24 소유권이전5번신탁등기말소 구OO\n갑(7) 2021-10-15 소유권이전 문OO\n을(1) 2023-09-07 주택임차권 선OO 168,000,000원\n갑(8) 2023-10-17 가압류 주OOOOOOO 1,023,000,000원 (말소기준등기)\n갑(9) 2023-10-23 압류 영OOOOOO\n갑(10) 2024-07-15 강제경매개시결정 주OOOOOOO\n갑(11) 2025-04-24 압류 미OOOOOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2021.9.24.~ / 2023.12.28.\n전입/확정/배당: 전입:2021-09-24 / 확정:2021-09-06 / 배당:2024-09-24\n보증금/차임: 보:168,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차인\n\n[기타사항]\n주OOOOOOO(임차인:선OO):주택임차권자인 선OO의 임차보증금반환채권을 양수한 승계인으로서 경매신청채권자임. 이\n사건에서 임차보증금 전액을 배당받지 못하더라도 매수인에 대한 잔존 임차보증금반환채권을 포기하고 주택임차권등기의 말소\n에 동의한다는 취지의 확약서를 제출함\n- 을구 순위 1번 주택임차권등기(다만 주OOOOOOO의 말소동의 확약서가 제출됨) - 별도등기(대지권 목적토지1,2 각 을구1번 구분지상권설정등기)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "가압류",
+        "date": "2023-10-17",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 미추홀구 주안동  215-8 창우빌라트2 3층302호",
+    "gamjungAmt": "144000000",
+    "minAmt": "100800000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "a08548dd-b16a-4f4d-b979-c1776ae9f9ca",
+    "objId": "1950331033316491926",
+    "buildingRegistry": "을(1) 2017-01-20 근저당권설정 한OOOOOOO 152,790,000원 (말소기준등기)\n갑(5) 2021-09-08 4번소유권이전등기말소\n갑(6) 2021-09-08 소유권이전 김OO\n갑(9) 2025-02-05 가압류 신OO 50,518,800원\n갑(10) 2025-07-29 강제경매개시결정(9 번가압류의 본압류로의 이행) 신OO",
+    "tenantDetail": "임차인: 1 김OO\n점유: 전부\n전입/확정/배당: 전입:2021-08-24\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n김OO: 임대차관계는 불분명함(현황조사서 참조)\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2017-01-20",
+        "holder": "한OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "전북특별자치도 김제시 검산동 1080-1 김제검산화산샬레2차아파트 203동 15층1503호",
+    "gamjungAmt": "295000000",
+    "minAmt": "206500000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "b467a5aa-66a8-4b70-bdf0-bd1e34f42216",
+    "objId": "2081495993571869141",
+    "buildingRegistry": "",
+    "tenantDetail": "임차인: 2 이OO\n점유: 58.49㎡ / 2021.01.21.~ / 2023.01.20.\n전입/확정/배당: 전입:2022-01-05 / 확정:2022-01-05 / 배당:2022-01-12\n보증금/차임: 보:3,000,000원\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n이OO:임대차계약서상 임차인 박재득의 어머니 이OO 전입\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 8층805호",
+    "gamjungAmt": "49000000",
+    "minAmt": "49000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "b3f86cc3-e81a-4955-9816-595af294d0c4",
+    "objId": "1917159459877028829",
+    "buildingRegistry": "갑(1) 2002-12-20 소유권보존 장OO O OO\n갑(2) 2003-06-04 공유자전원지분전부이전 김OO\n갑(3) 2008-01-09 소유권이전 김OO\n을(11) 2019-05-24 근저당권설정 현OOOOOOOO 182,000,000원 (말소기준등기)\n갑(6) 2024-03-18 가압류 서OOOOOOO 23,622,697원\n갑(7) 2024-04-18 가압류 신OOOOO 30,627,432원\n갑(8) 2024-09-25 임의경매개시결정 현OOOO\n갑(9) 2024-11-20 압류 강OOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2019-05-24",
+        "holder": "현OOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 강북구 미아동 215-41  뉴월드빌라 2층202호",
+    "gamjungAmt": "295000000",
+    "minAmt": "236000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "fa303561-2df2-4849-98ab-45b66ecb16ec",
+    "objId": "2033705126895551115",
+    "buildingRegistry": "갑(2) 2017-07-20 소유권이전신탁\n갑(3) 2019-12-11 소유권이전2번신탁등기말소 이OO\n을(1) 2019-12-11 근저당권설정 농OOOOOOO 129,600,000원 (말소기준등기)\n갑(4) 2024-12-10 가압류 신OOOOOOOOOOOO 588,000,000원\n을(2) 2025-04-22 근저당권설정 주OOOOOOO 1,300,000,000원\n갑(5) 2025-07-29 임의경매개시결정 농OOO",
+    "tenantDetail": "임차인: 1 조OO\n전입/확정/배당: 전입:2024-06-11\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n조OO:권리신고 없으므로 점유관계 및 임대차관계 알 수 없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2019-12-11",
+        "holder": "농OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "조OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "부산광역시 사하구 하단동 618-6 아람센트럴시티  3층305호",
+    "gamjungAmt": "203000000",
+    "minAmt": "69629000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "36dae494-1b50-4c39-bf8a-d005f1029a79",
+    "objId": "2035855355736490884",
+    "buildingRegistry": "갑(1) 2016-06-03 소유권보존 주OOOOOOO\n을(1) 2016-06-03 근저당권설정 주OOOOOOO 64,080,000원\n을(2) 2024-09-10 주택임차권 윤OO 160,800,000원\n갑(2) 2026-03-19 강제경매개시결정 주OOOOOOO\n갑(3) 2026-05-21 압류 국OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2021.05.28.~ / 2025.02.07.\n전입/확정/배당: 전입:2021-04-09 / 확정:2021-04-29 / 배당:2026-03-18\n보증금/차임: 보:160,800,000원\n대항력: 없음\n기타: 주거주택임차권자\n\n[기타사항]\n주OOOOOOO:경매신청권자, 임차보증금반환채권을 주택임차권자 윤OO으로부터 승계함",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "광주광역시 북구 용봉동 1475 용봉동 도나우270 101동 4층406호",
+    "gamjungAmt": "257000000",
+    "minAmt": "179900000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "728020ae-e09b-4c4d-97d8-005944709f78",
+    "objId": "1915957715813794592",
+    "buildingRegistry": "갑(8) 2022-01-06 소유권이전 한OO\n을(18) 2022-01-06 208.8분의199.42근저당권설정 인OOOOOOOO 1,526,400,000원 (말소기준등기)\n갑(9) 2023-03-30 소유권이전 한OO",
+    "tenantDetail": "[기타사항]\n- 통칭 '미하우스7차' - 오피스텔임. - 토지 등기사항전부증명서상 대지권등기 경료 이전에 설정된 근저당권(을구 순위번호 18번) 있음. -주식회사 주현이엔지로부터 유치권존재확인 판결정본(인천지법 2025가단216430)이 첨부된 ‘보정서’가 2026. 5. 19.자로 제출됨",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "208.8분의199.42근저당권설정",
+        "date": "2022-01-06",
+        "holder": "인OOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "- 통칭 '미하우스7차' - 오피스텔임. - 토지 등기사항전부증명서상 대지권등기 경료 이전에 설정된 근저당권(을구 순위번호 18번) 있음. -주식회사 주현이엔지로부터 유치권존재확인 판결정본(인천지법 2025가단216430)이 첨부된 ‘보정서’가 2026. 5. 19.자로 제출됨",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 미추홀구 용현동  630-62  6층601호",
+    "gamjungAmt": "292000000",
+    "minAmt": "49076000",
+    "objEtc": "- 통칭 '미하우스7차'\n- 오피스텔임.\n- 토지 등기사항전부증명서상 대지권등기 경료 이전에 설정된 근저당권(을구 순위번호 18번) 있음.\n-주식회사 주현이엔지로부터 유치권존재확인 판결정본(인천지법 2025가단216430)이 첨부된 ‘보정서’가 2026. 5. 19.자로 제출됨"
+  },
+  {
+    "auctionId": "c217ee34-f62e-400d-b5e1-0dae74ef467a",
+    "objId": "1913895220303364128",
+    "buildingRegistry": "갑(18) 2018-06-21 소유권이전 정OO\n갑(19) 2022-04-22 소유권이전 정OO\n을(5) 2024-04-04 주택임차권 박OO 180,000,000원 (인수)\n갑(20) 2025-03-24 강제경매개시결정 주OOOOOOO (말소기준등기)\n갑(21) 2025-04-28 압류 국OOOOOOO",
+    "tenantDetail": "임차인: 1 박OO\n점유: 전부\n전입/확정/배당: 전입:2022-03-31 / 확정:2022-03-04\n보증금/차임: 보:180,000,000원\n대항력: 있음\n기타: 주거임차권자\n\n[기타사항]\n박OO:주택임차권등기권자로 주택임차권등기일은 2024.4.4.임. 주OOOOOOO가 경매신청채권자로 임차인 박OO의 임차보\n증금반환채권 양수인임(대항력 및 우선변제권 승계)\n을구 5번 임차권등기(임대차보증금 180,000,000원, 전입일자 2022.3.31., 확정일자 2022.3.4.)가 있으므로 배당에서 전액 변제되 지 아니하면 잔액은 매수인에게 인수될 수 있음.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-03-24",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2024-04-04",
+          "holder": "박OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "박OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 광주시 송정동 406-23  2층 203호",
+    "gamjungAmt": "180000000",
+    "minAmt": "14824000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "1735a2d6-6eba-4bc1-8e12-29d70f17d483",
+    "objId": "1957374847436718585",
+    "buildingRegistry": "갑(4) 2010-02-04 소유권이전 3번신탁등기말소 현OO\n갑(5) 2021-10-19 소유권이전 주OOOOOOOOO\n을(3) 2023-09-12 주택임차권 윤OO 70,000,000원 (인수)\n갑(6) 2024-07-24 압류 서OOOOO (말소기준등기)\n갑(7) 2024-10-30 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 103동1306호전부 / 2021.09.10.~\n전입/확정/배당: 전입:2021-09-30 / 확정:2021-09-15 / 배당:2024-10-29\n보증금/차임: 보:70,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차권자\n\n[기타사항]\n윤OO:주택임차권등기권자로서 주택임차권등기일은 2023.09.12.임. 위 윤OO의 주택임차권은 이 사건 경매신청채권자인 주택\n도시보증공사에게 승계되었고, 2024.10.29. 배당요구함.\n-신청채권자 주OOOOOOO는 \"우선변제권만 주장하고 대항력을 포기하며, 매수인에 대해 배당받지 못하는 잔액에 대한 임\n대차보증금 반환청구권을 포기하고, 임차권등기를 말소하는 것에 동의한다\"는 대항력포기확약서(2026.06.19.자)를 제출함.\n-신청채권자 주OOOOOOO는 \"우선변제권만 주장하고 대항력을 포기하며, 매수인에 대해 배당받지 못하는 잔액에 대한 임 대차보증금 반환청구권을 포기하고, 임차권등기를 말소하는 것에 동의한다\"는 대항력포기확약서(2026.06.19.자)를 제출함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2024-07-24",
+        "holder": "서OOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-09-12",
+          "holder": "윤OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "-신청채권자 주OOOOOOO는 \"우선변제권만 주장하고 대항력을 포기하며, 매수인에 대해 배당받지 못하는 잔액에 대한 임 대차보증금 반환청구권을 포기하고, 임차권등기를 말소하는 것에 동의한다\"는 대항력포기확약서(2026.06.19.자)를 제출함.",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 사천시 정동면 풍정리 388-1 삼성아파트 103동 13층1306호",
+    "gamjungAmt": "80000000",
+    "minAmt": "56000000",
+    "objEtc": "-신청채권자 주택도시보증공사는 \"우선변제권만 주장하고 대항력을 포기하며, 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기를 말소하는 것에 동의한다\"는 대항력포기확약서(2026.06.19.자)를 제출함."
+  },
+  {
+    "auctionId": "41027e0a-c4d0-4727-af8b-5508a77cb6c7",
+    "objId": "1913466963175145504",
+    "buildingRegistry": "갑(7) 2011-10-20 소유권이전 김OO\n갑(8) 2017-04-06 소유권이전 정OO O OO\n갑(9) 2021-02-05 공유자전원지분전부 이전 권OO\n을(7) 2024-04-11 주택임차권 송OO 70,000,000원 (인수)\n갑(10) 2025-03-31 강제경매개시결정 주OOOOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 1 송OO\n점유: 전부 / 2021.1.25.부 / 터\n전입/확정/배당: 전입:2021-01-25 / 확정:2021-02-03\n보증금/차임: 보:70,000,000원\n대항력: 있음\n기타: 주거임차권자\n\n[기타사항]\n송OO:경매신청채권자는 임차권자의 대위변제자임. 경매신청일(배당요구일)은 2025.3.28.임\n1. 체납관리비 699,710원 있음(2025. 4. 17.기준) 2. 신청채권자로부터 을구 순위 7번 주택임차권등기(2024.4.11.등기)에 대해 우선변제권만 주장하고 대항력은 포기하며 임차권 등기말소에 동의한다는 2026.6.19.자 확약서가 제출되어 보증금을 배당에서 전액 변제받지 못하더라도 잔액을 매수인이 인수하 지 않음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-03-31",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2024-04-11",
+          "holder": "송OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "송OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "1. 체납관리비 699,710원 있음(2025. 4. 17.기준) 2. 신청채권자로부터 을구 순위 7번 주택임차권등기(2024.4.11.등기)에 대해 우선변제권만 주장하고 대항력은 포기하며 임차권 등기말소에 동의한다는 2026.6.19.자 확약서가 제출되어 보증금을 배당에서 전액 변제받지 못하더라도 잔액을 매수인이 인수하 지 않음",
+      "source": "structured_registry"
+    },
+    "addr": "전라남도 광양시 중동 1665 성호2차아파트 205동 13층1308호",
+    "gamjungAmt": "73000000",
+    "minAmt": "73000000",
+    "objEtc": "체납관리비 699,710원 있음(2025. 4. 17.기준)"
+  },
+  {
+    "auctionId": "ef5de7d9-310d-49d7-8941-c8d56c803812",
+    "objId": "2081500115175997943",
+    "buildingRegistry": "",
+    "tenantDetail": "임차인: 1 김OO\n점유: 58.49㎡ / 2011.02.24.~ / 2013.02.23.\n전입/확정/배당: 전입:2009-02-06 / 확정:2011-03-16 / 배당:2022-01-10\n보증금/차임: 보:14,270,000원\n대항력: 없음\n기타: 주거임차권자\n\n[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 8층806호",
+    "gamjungAmt": "47000000",
+    "minAmt": "47000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "bf51a107-dbe2-403e-9b03-0fb18b76a96f",
+    "objId": "2006503741355720733",
+    "buildingRegistry": "갑(2) 2014-09-22 소유권이전 배OO\n갑(3) 2020-08-21 소유권이전 권OO\n갑(4) 2021-12-17 압류 의OOO (말소기준등기)\n갑(5) 2022-04-11 압류 안OOOOO\n갑(6) 2022-09-20 가압류 주OOOOOOO 2,071,000,000원\n을(5) 2022-12-27 주택임차권 안OO 241,000,000원\n갑(7) 2025-03-13 압류 남OOOOO\n갑(8) 2025-12-23 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 2021.5.10.-2 / 023.2.28.\n전입/확정/배당: 전입:2021-05-10 / 확정:2021-04-06 / 배당:2026-03-12\n보증금/차임: 보:241,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차인\n\n[기타사항]\n주OOOOOOO:주OOOOOOO(양도전: 임차인 안OO)로부터 ‘임차보증금에 대하여 우선변제권만 주장하고 대항력은 포\n기하며, 전액을 변제받지 못하더라도 임차권등기를 말소에 동의한다’는 확약서가 2026.5.20.자로 제출됨\n오피스텔(주거)로 이용중임",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2021-12-17",
+        "holder": "의OOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "오피스텔(주거)로 이용중임",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 의정부시 호원동 240-21 진원엠 엠1동 7층 702호",
+    "gamjungAmt": "272000000",
+    "minAmt": "133280000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "c5129422-8098-446b-99e5-e3a04e259823",
+    "objId": "2000703553261273474",
+    "buildingRegistry": "갑(3) 2019-02-13 소유권이전신탁\n갑(4) 2020-02-26 소유권이전3번신탁등기말소 정OO\n갑(5) 2020-04-14 소유권이전 사OO\n갑(6) 2023-08-30 가압류 주OOOOOOO 1,279,000,000원 (말소기준등기)\n을(1) 2024-02-22 주택임차권 김OO 369,000,000원 (인수)\n갑(7) 2025-10-10 압류 서OOOOO\n갑(8) 2025-12-11 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2022.02.03. / ~\n전입/확정/배당: 전입:2022-02-03 / 확정:2021-12-27 / 배당:2026-03-10\n보증금/차임: 보:369,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거주택임차권자\n\n[기타사항]\n주OOOOOOO:이 사건 신청채권자로 주택임차권자 김OO의 지위를 승계하여 권리신고 및 배당요구함\n특별매각조건 : 주택도시공사는 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기 를 말소하는 것을 조건으로 매각",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "가압류",
+        "date": "2023-08-30",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2024-02-22",
+          "holder": "김OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "특별매각조건 : 주택도시공사는 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기 를 말소하는 것을 조건으로 매각",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 구로구 구로동 98-14 마인드에코프라움  제4층 제401호",
+    "gamjungAmt": "373000000",
+    "minAmt": "373000000",
+    "objEtc": "임차인 및 임차권승계인 주택도시보증공사의 매수인에 대한 대항력 포기조건 매각"
+  },
+  {
+    "auctionId": "29006a28-b2d4-422d-8090-06a06b7c2273",
+    "objId": "2003604391927480977",
+    "buildingRegistry": "갑(1) 2002-07-10 소유권보존 대OOOOO\n갑(2) 2007-09-07 소유권이전 이OO\n갑(3) 2011-03-04 소유권이전 미OOOO O OO\n갑(4) 2015-09-10 공유자전원지분전부이전 박OO\n을(12) 2024-04-30 근저당권설정 한OOOOOOO 144,000,000원 (말소기준등기)\n갑(5) 2024-09-26 가압류 주OOOOOOOOOOO 162,575,098원\n을(13) 2024-10-21 근저당권설정 주OOOOOOOOOOO 60,000,000원\n갑(6) 2025-01-14 압류 춘OOOOO\n갑(7) 2025-01-22 가압류 하OOOO 15,469,534원\n갑(9) 2025-03-14 압류 춘OO\n갑(11) 2025-12-12 임의경매개시결정 주OOOOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2024-04-30",
+        "holder": "한OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "강원특별자치도 춘천시 퇴계동 1015 퇴계(6)주공아파트 602동 1층105호",
+    "gamjungAmt": "209000000",
+    "minAmt": "146300000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "28b29187-0d72-4bb9-93b0-f0467fab5c60",
+    "objId": "2031144208147939339",
+    "buildingRegistry": "갑(3) 2010-03-03 소유권이전 주OOOOOOO\n갑(5) 2013-07-11 소유권이전 이OO\n을(2) 2013-07-11 근저당권설정 주OOOOOOO 66,000,000원 (말소기준등기)\n을(4) 2022-05-16 근저당권설정공동담보목록 주OOOOOOO 55,000,000원\n갑(6) 2026-02-13 소유권이전 이OO\n갑(7) 2026-03-03 임의경매개시결정 주OOOOOOO\n갑(8) 2026-03-23 가압류 주OOOOOOOOOO 33,541,617원",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2013-07-11",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 김해시 부곡동 800-3 월산마을부영아파트 404동 10층1001호",
+    "gamjungAmt": "122000000",
+    "minAmt": "85400000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "89a31528-b610-47c2-964b-511e244767c6",
+    "objId": "1972436802119664010",
+    "buildingRegistry": "갑(7) 2005-09-07 소유권이전 김OO\n갑(9) 2008-05-16 소유권이전 김OO\n갑(12) 2018-11-28 소유권이전 김OO\n을(5) 2024-05-16 주택임차권 한OOOOOOO 70,000,000원 (인수)\n갑(13) 2025-09-18 강제경매개시결정 서OOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 1 한OOOOOOO\n점유: 전부\n전입/확정/배당: 전입:2017-11-28 / 확정:2017-11-13\n보증금/차임: 보:70,000,000원\n대항력: 없음\n분석: SGI 승계\n기타: 주거주택임차권자\n\n[기타사항]\n1. 서OOOOO OOOO(임차권자:한국주택도시공사)로부터 2026.1.27.자에 ‘임차보증금에 대하여 우선변제권만 주장하고 대항 력은 포기하며, 전액을 변제받지 못하더라도 임차권등기를 말소해 주겠다.’는 내용의 확약서가 제출됨 2. 본건 공동주택의 대지권 토지 지번은 '신장동 627-4'이나, 실제 2002.6.22. 토지분할로 '신장동 627-4' 및 '신장동 627-14'임",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-09-18",
+        "holder": "서OOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2024-05-16",
+          "holder": "한OOOOOOO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "한OOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": true,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "1. 서OOOOO OOOO(임차권자:한국주택도시공사)로부터 2026.1.27.자에 ‘임차보증금에 대하여 우선변제권만 주장하고 대항 력은 포기하며, 전액을 변제받지 못하더라도 임차권등기를 말소해 주겠다.’는 내용의 확약서가 제출됨 2. 본건 공동주택의 대지권 토지 지번은 '신장동 627-4'이나, 실제 2002.6.22. 토지분할로 '신장동 627-4' 및 '신장동 627-14'임",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 평택시 신장동 627-14  1층102호",
+    "gamjungAmt": "83000000",
+    "minAmt": "58100000",
+    "objEtc": "1. 서울보증보험 주식회사(임차권자:한국주택도시공사)로부터 2026.1.27.자에 ‘임차보증금에 대하여 우선변제권만 주장하고 대항력은 포기하며, 전액을 변제받지 못하더라도 임차권등기를 말소해 주겠다.’는 내용의 확약서가 제출됨\n2. 본건 공동주택의 대지권 토지 지번은 '신장동 627-4'이나, 실제 2002.6.22. 토지분할로 '신장동 627-4' 및 '신장동 627-14'임"
+  },
+  {
+    "auctionId": "e78666eb-4ed0-45f3-bff1-2f75d566c162",
+    "objId": "2034767854456275848",
+    "buildingRegistry": "갑(5) 2003-01-29 소유권이전 오OO\n갑(6) 2009-05-29 소유권이전 박OO\n을(6) 2016-04-15 근저당권설정 광OOOOOOOOO 78,000,000원 (말소기준등기)\n을(7) 2018-05-02 근저당권설정 광OOOOOOOOO 36,000,000원\n갑(7) 2018-10-31 소유권이전 최OO\n갑(8) 2020-09-03 압류 광OOOOOOOOO\n갑(9) 2021-12-10 가압류 롯OOOO 31,422,116원\n갑(10) 2022-03-15 압류 국OOOOOOO\n갑(11) 2022-11-25 압류 북OOOOOOOO\n갑(12) 2023-04-03 가압류 소OOOOOOOOO 9,995,869원\n갑(13) 2026-03-11 압류 북OOOOOOOO\n갑(14) 2026-03-16 임의경매개시결정 광OOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2016-04-15",
+        "holder": "광OOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "광주광역시 북구 문흥동 996-3 104동 10층1001호",
+    "gamjungAmt": "129000000",
+    "minAmt": "90300000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "3378dfd3-8c9f-496c-b29b-29d21abb139f",
+    "objId": "1931939276463800334",
+    "buildingRegistry": "갑(13) 2006-11-07 12번재성이십일종합 건설주식회사지분전부이전 완OOOOOOO\n갑(16) 2007-10-23 소유권이전 탁OO\n갑(18) 2013-07-01 소유권이전 강OO\n갑(21) 2021-01-25 가압류 이OO 20,000,000원 (말소기준등기)\n을(8) 2021-03-02 주택임차권 김OO 100,000,000원\n갑(22) 2021-07-08 가압류 주OOOOOOO 634,990,132원\n갑(23) 2023-03-30 압류 창OOOOO\n갑(24) 2024-07-24 강제경매개시결정 김OO\n갑(25) 2025-08-08 압류 창OO",
+    "tenantDetail": "임차인: 2 김OO\n점유: 201호전부 / 2017.09.19.~\n전입/확정/배당: 전입:2017-09-21 / 확정:2017-09-21 / 배당:2024-07-24\n보증금/차임: 보:100,000,000원\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n김OO: 대항력 주의 요함. 임차인은 경매신청채권자이고, 배당요구일자는 경매신청일임. 주택임차권등기일은 2021.03.02.임.\n매수인에게 대항할 수 있는 을구 순위 8번 주택임차권등기(2021.03.02. 접수 제5231호) 있음. 배당에서 보증금 전액이 변제되 지 않으면 잔액을 매수인이 인수하고, 주택임차권등기는 말소되지 아니하고 매수인에게 인수됨.\n-대항력 주의 요함. -매수인에게 대항할 수 있는 임차인으로 배당에서 보증금 전액을 배당 받지 못하면 그 잔액을 매수인이 인수함. -제시목록 및 등기사항전부증명서상 전유면적이 59.4579㎡이나 집합건축물대장 전유면적 59.4575㎡임. 집합건물대장상 전유면 적(59.4575㎡) 기준으로 감정평가함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "가압류",
+        "date": "2021-01-25",
+        "holder": "이OO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "-대항력 주의 요함. -매수인에게 대항할 수 있는 임차인으로 배당에서 보증금 전액을 배당 받지 못하면 그 잔액을 매수인이 인수함. -제시목록 및 등기사항전부증명서상 전유면적이 59.4579㎡이나 집합건축물대장 전유면적 59.4575㎡임. 집합건물대장상 전유면 적(59.4575㎡) 기준으로 감정평가함.",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 사천시 정동면 예수리 650-2 재성햇살채아파트 102동 2층201호",
+    "gamjungAmt": "92000000",
+    "minAmt": "6618000",
+    "objEtc": "-대항력 주의 요함.\n-매수인에게 대항할 수 있는 임차인으로 배당에서 보증금 전액을 배당 받지 못하면 그 잔액을 매수인이 인수함.\n-제시목록 및 등기사항전부증명서상 전유면적이 59.4579㎡이나 집합건축물대장 전유면적 59.4575㎡임. 집합건물대장상 전유면적(59.4575㎡) 기준으로 감정평가함."
+  },
+  {
+    "auctionId": "1f78162f-713f-426f-bcf6-eb893eabcc5d",
+    "objId": "1921943039937348570",
+    "buildingRegistry": "갑(1) 2018-05-03 소유권보존 주OOOOOOOO\n을(3) 2023-09-27 주택임차권 남OOOOOOOOOOOO 100,000,000원 (인수)\n갑(2) 2024-09-05 강제경매개시결정 주OOOOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 2 남OOOOOOOOOOOO\n점유: 전유부분건물의전부 / 2023.01.16\n전입/확정/배당: 전입:2023-01-16 / 확정:2023-01-16 / 배당:2024-08-29\n보증금/차임: 보:100,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차권자\n\n[기타사항]\n남영현 이미영(망남지은의상속인):주택임차권 등기권자임(2023.9.27. 제17262호). 등기된 주택임차권자의 보증금은 주택도시보\n증공사가 대위변제함. 주OOOOOOO로부터 배당금으로 임대차보증금 반환채권 전액을 변제받지 못하더라도 매수인에 대한\n잔존 임대차보증금 반환청구권을 포기하고 임차권등기 말소에 동의한다는 확약서(2026.4.24.자)가 제출 됨",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2024-09-05",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-09-27",
+          "holder": "남OOOOOOOOOOOO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "남OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "전라남도 고흥군 고흥읍 서문리 215-3 고흥 센트럴파크 1차 8층1811호",
+    "gamjungAmt": "153000000",
+    "minAmt": "85680000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "50535d2a-b61f-4d35-bf19-85cc376e48b9",
+    "objId": "2081499913258009079",
+    "buildingRegistry": "",
+    "tenantDetail": "임차인: 2 윤OO\n점유: 58.49㎡ / 2021.02.21.~ / 2023.02.20.\n전입/확정/배당: 전입:2021-02-22 / 배당:2022-01-10\n보증금/차임: 보:2,000,000원\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "윤OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 8층807호",
+    "gamjungAmt": "49000000",
+    "minAmt": "49000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "116990b2-a1ad-4ce2-9230-e4ac7d4138ea",
+    "objId": "1984033577691512997",
+    "buildingRegistry": "갑(2) 2019-09-20 소유권이전1번신탁등기말소 이OO O OO\n갑(3) 2019-09-20 공유자전원지분전부이전신탁\n갑(4) 2020-03-13 소유권이전3번신탁등기말소 이OO O OO\n갑(5) 2020-03-13 공유자전원지분전부이전 강OO\n을(3) 2023-07-14 주택임차권 조OO 178,000,000원\n갑(6) 2025-10-28 강제경매개시결정 주OOOOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2021.6.28.-2 / 023.6.27.\n전입/확정/배당: 전입:2021-06-28 / 확정:2021-04-27 / 배당:2025-12-08\n보증금/차임: 보:178,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차인\n\n[기타사항]\n주OOOOOOO:주OOOOOOO(양도전: 임차인 조OO)로부터 ‘임차보증금에 대하여 우선변제권만 주장하고 대항력은 포\n기하며, 전액을 변제받지 못하더라도 임차권등기를 말소에 동의한다’는 확약서가 2026.7.1.자로 제출됨\n오피스텔 1개호로 이용중임",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-10-28",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "오피스텔 1개호로 이용중임",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 의정부시 의정부동 210-13 가우디캐슬 17층 1705호",
+    "gamjungAmt": "229000000",
+    "minAmt": "160300000",
+    "objEtc": "주택도시보증공사는 우선변제권만 주장하고 대항력은 포기한다는 확약서가 제출됨\n"
+  },
+  {
+    "auctionId": "61e61ac6-1f72-4e1b-9664-7fe97b63e68d",
+    "objId": "1913907268206723104",
+    "buildingRegistry": "갑(11) 2011-06-29 소유권이전 이OO\n갑(12) 2012-02-20 소유권이전 서OO\n갑(13) 2024-08-27 가압류 대OOOOOOO 55,394,989원 (말소기준등기)\n갑(14) 2025-02-10 압류 수OOOOOOOOO\n갑(15) 2025-03-26 강제경매개시결정(1 3번가압류의 본압류로의 이행) 대OOOOOOO\n갑(16) 2025-11-20 압류 수OOOOO",
+    "tenantDetail": "임차인: 2 박OO\n점유: 전부(방3칸) / 2015.06.29.~2025.(현재점유)\n전입/확정/배당: 전입:2015-07-13 / 확정:2015-05-27 / 배당:2025-05-28\n보증금/차임: 보:120,000,000원\n대항력: 있음\n기타: 주거임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "가압류",
+        "date": "2024-08-27",
+        "holder": "대OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "박OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "대구광역시 수성구 범물동 1261 범물하이츠 105동 15층1505호",
+    "gamjungAmt": "151000000",
+    "minAmt": "105700000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "508f34b8-a8ef-49b2-a894-51b9f43b5b2c",
+    "objId": "2003604408285266304",
+    "buildingRegistry": "갑(1) 2006-06-05 소유권보존 대OOOOO\n갑(2) 2006-06-29 소유권이전 황OO\n갑(3) 2016-05-20 소유권이전 안OO\n을(7) 2021-03-22 근저당권설정 춘OOOOOOOOOOOO 196,800,000원 (말소기준등기)\n을(8) 2021-07-13 근저당권설정 권OO 13,000,000원\n갑(5) 2023-11-20 압류 국OOOOOOO\n갑(9) 2025-12-12 임의경매개시결정 춘OOOOOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2021-03-22",
+        "holder": "춘OOOOOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "강원특별자치도 춘천시 퇴계동 1031 뜨란채아파트 1011동 7층704호",
+    "gamjungAmt": "293000000",
+    "minAmt": "205100000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "861a7351-44fd-4933-ae3d-4b885a6453ef",
+    "objId": "2081496037968576929",
+    "buildingRegistry": "",
+    "tenantDetail": "임차인: 2 신OO\n점유: 58.49㎡ / 2014.04.26.~ / 2016.04.25.\n전입/확정/배당: 전입:2015-01-09 / 확정:2019-09-16 / 배당:2022-01-06\n보증금/차임: 보:30,000,000원\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "신OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 8층808호",
+    "gamjungAmt": "49000000",
+    "minAmt": "49000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "22499b30-1340-4aa7-b244-a90cdd58f258",
+    "objId": "2041651703710744988",
+    "buildingRegistry": "갑(13) 2021-03-25 소유권이전 이OO\n갑(15) 2021-05-27 소유권이전 이OO\n을(16) 2023-07-24 주택임차권 노O 200,000,000원\n갑(19) 2024-05-29 가압류 주OOOOOOO 520,000,000원 (말소기준등기)\n갑(20) 2024-10-10 강제경매개시결정 노O\n갑(21) 2025-04-10 압류 서OOOO",
+    "tenantDetail": "임차인: 3 노O\n점유: 전부 / 2021.05.27. / ~ / 2023.05.26.\n전입/확정/배당: 전입:2021-06-08 / 확정:2021-04-19 / 배당:2024-10-22\n보증금/차임: 보:200,000,000원\n대항력: 있음\n기타: 주거주택임차권자\n\n[기타사항]\n노O:경매신청채권자이고, 주택임차권등기권자로서 주택임차권 등기일자는 2023.07.24.임\n매수인에게 대항할 수 있는 임차인이 있음(임대차보증금 200,000,000원, 전입일 2021.06.08., 확정일자 2021.04.19.). 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "가압류",
+        "date": "2024-05-29",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "노O",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 강서구 화곡동  456-13  제4층 제401호",
+    "gamjungAmt": "239000000",
+    "minAmt": "122368000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "532b379b-d9b3-4a09-96d8-c5b30d9daafc",
+    "objId": "1959868749146227078",
+    "buildingRegistry": "갑(1) 1995-11-24 소유권이전 임OO\n갑(2) 2011-09-15 소유권이전 신OO\n갑(3) 2023-07-12 소유권이전청구권가등기 이OO (인수)\n갑(4) 2024-02-26 압류 서OOOOOO (말소기준등기)\n갑(5) 2024-07-09 압류 서OOOOOOOO\n갑(6) 2024-10-11 강제경매개시결정 정OO",
+    "tenantDetail": "임차인: 2 정OO\n점유: 전부 / 2017.10.20.~\n전입/확정/배당: 전입:2017-10-20 / 확정:2017-10-20 / 배당:2024-10-10\n보증금/차임: 보:83,000,000원\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n정OO:신청채권자임\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2024-02-26",
+        "holder": "서OOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "소유권이전청구권가등기",
+          "date": "2023-07-12",
+          "holder": "이OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "정OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상북도 포항시 북구 용흥동  12-1 하나로타운1차 13층1305호",
+    "gamjungAmt": "112000000",
+    "minAmt": "78400000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "3ab37455-6f28-4ba9-a0b0-aff0363488a3",
+    "objId": "2026796718326022196",
+    "buildingRegistry": "갑(1) 2018-05-29 소유권보존 향OOOOOOOOOOOO\n을(1) 2018-05-29 근저당권설정 주OOOOOOO 102,000,000원 (말소기준등기)\n을(2) 2024-06-17 주택임차권 이OO 178,000,000원\n갑(3) 2026-02-20 강제경매개시결정 주OOOOOOO\n갑(4) 2026-05-07 압류 국OOOOOOO",
+    "tenantDetail": "임차인: 1 이OO\n점유: 전부\n전입/확정/배당: 전입:2022-09-22 / 확정:2019-05-21\n보증금/차임: 보:178,000,000원\n대항력: 없음\n기타: 주택임차권자\n\n[기타사항]\n이OO:주OOOOOOO(신청채권자)가 임차보증금반환채권을 주택임차권자 이OO로부터 승계함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2018-05-29",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "광주광역시 광산구 송정동 731-1 송정크레지움센트럴  11층1104호",
+    "gamjungAmt": "206000000",
+    "minAmt": "144200000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "d4a4d041-304f-4f66-98ac-331dda139566",
+    "objId": "1953592594181128199",
+    "buildingRegistry": "갑(1) 2006-12-26 소유권보존 정OOOOOOOOOOOO\n갑(4) 2008-03-13 소유권이전 김OO\n갑(6) 2014-12-05 소유권이전 조OO\n을(5) 2014-12-05 근저당권설정 주OOOOOOO 58,800,000원 (말소기준등기)\n갑(9) 2025-01-10 가압류 현OOO 19,941,410원\n갑(10) 2025-02-27 가압류 신OOO 37,210,795원\n갑(11) 2025-08-04 임의경매개시결정 한OOOOOOOO\n갑(12) 2025-08-28 강제경매개시결정(10번가압류의본압류로의이행) 신OOOOOOO",
+    "tenantDetail": "[기타사항]\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2014-12-05",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 당진시 시곡동 136-1 우민늘사랑아파트 106동 17층1701호",
+    "gamjungAmt": "56000000",
+    "minAmt": "27440000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "a7aa6c1f-a862-4d81-8ea5-0a1f756d3568",
+    "objId": "2074237485482770961",
+    "buildingRegistry": "갑(5) 2005-10-26 소유권이전 오OO\n갑(9) 2016-03-14 소유권이전 조OO\n갑(10) 2017-07-28 소유권이전 한OO\n을(7) 2024-10-18 주택임차권 최OO 77,000,000원 (인수)\n갑(13) 2025-09-15 강제경매개시결정 강OO (말소기준등기)",
+    "tenantDetail": "임차인: 1 최OO\n점유: 101호 / 2022.10.12.\n전입/확정/배당: 전입:2022-10-12 / 확정:2022-09-08\n보증금/차임: 보:77,000,000원\n대항력: 있음\n기타: 주거임차권자\n\n[기타사항]\n최OO:주택임차권등기권자로서 주택임차권등기일은 2024.10.18.임\n매수인에게 대항할 수 있는 을구 순위 7번 주택임차권등기(임대차보증금 77,000,000원, 전입일자 2022.10.12., 확정일자 2022.9.8.)가 있으므로 배당에서 전액 변제되지 아니하면 잔액을 매수인이 인수함",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-09-15",
+        "holder": "강OO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2024-10-18",
+          "holder": "최OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "최OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 계양구 작전동 852-39 호산빌라  1층101호",
+    "gamjungAmt": "91000000",
+    "minAmt": "63700000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "ba636348-8aad-47fe-86fa-178651fc678c",
+    "objId": "2081498356613382593",
+    "buildingRegistry": "",
+    "tenantDetail": "[기타사항]\n토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 밀양시 하남읍 수산리 489-14 동촌아파트 1동 9층901호",
+    "gamjungAmt": "49000000",
+    "minAmt": "49000000",
+    "objEtc": "토지에 관하여 별도등기 있으나, 근저당권자인 국민은행이 말소신청 하겠다고 함.(2026.6.10.자 확인서 제출)"
+  },
+  {
+    "auctionId": "fef1e416-275b-4acf-9c47-ec63b36ce961",
+    "objId": "1935473263329149050",
+    "buildingRegistry": "갑(1) 1995-06-08 소유권이전 박OO\n을(1) 1995-06-08 근저당권설정 주OOOOOOO 18,200,000원 (말소기준등기)\n을(6) 2005-02-18 전세권설정 주OOOOOO 15,000,000원\n갑(4) 2019-05-15 가압류 충OOOOOOO 36,597,142원\n갑(7) 2021-08-05 압류 국OOOOOOO\n갑(8) 2022-03-02 압류 서OO\n갑(11) 2024-06-21 압류 서OOOOO\n갑(12) 2025-05-01 임의경매개시결정 주OOOOOOOOOO",
+    "tenantDetail": "[기타사항]\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "1995-06-08",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 당진시 순성면 봉소리 205 세안근로자복지아파트 1동 5층507호",
+    "gamjungAmt": "40000000",
+    "minAmt": "13720000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "6d3d6c3e-9c8f-498e-9bd7-f918dd30be50",
+    "objId": "1928587627531862663",
+    "buildingRegistry": "갑(3) 2019-08-02 소유권이전 2번신탁등기말소 오OO\n갑(4) 2019-08-02 소유권이전 박OO\n갑(5) 2023-01-03 압류 강OOOOO (말소기준등기)\n갑(6) 2023-05-16 압류 남OOOOOO\n을(1) 2023-09-06 주택임차권 김OO 179,000,000원\n갑(7) 2024-04-08 압류 의OOO\n갑(8) 2024-11-29 압류 의OOO\n갑(9) 2025-05-02 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 3 주OOOOOOOOOOOO\n점유: 전부\n전입/확정/배당: 전입:2019-07-30 / 배당:2025-07-21\n보증금/차임: 보:179,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차인\n\n임차인: 2 조OO\n전입/확정/배당: 전입:2024-04-23\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n주OOOOOOO:주OOOOOOO(양도전: 임차인 김OO)로부터 ‘임차보증금에 대하여 우선변제권만 주장하고 대항력은 포\n기하며, 전액을 변제받지 못하더라도 임차권등기를 말소에 동의한다’는 확약서가 2026.7.1.자로 제출됨\n오피스텔로 이용중",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2023-01-03",
+        "holder": "강OOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "조OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "오피스텔로 이용중",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 의정부시 의정부동 206-6 드림팰리스 2층 203호",
+    "gamjungAmt": "184000000",
+    "minAmt": "128800000",
+    "objEtc": "주택도시보증공사는 우선변제권만 주장하고 대항력은 포기한다는 확약서가 제출됨\n"
+  },
+  {
+    "auctionId": "05221377-bfda-4f52-8061-0abd9b6879a1",
+    "objId": "1976422951905395330",
+    "buildingRegistry": "갑(2) 2020-01-22 소유권이전1번신탁등기말소 윤OO O OO\n갑(3) 2020-01-22 공유자전원지분전부이전신탁\n갑(4) 2020-06-15 소유권이전3번신탁등기말소 윤OO O OO\n갑(5) 2020-06-19 공유자전원지분전부이전 김OO\n갑(6) 2022-10-13 압류 계OOOOO (말소기준등기)\n갑(7) 2023-07-20 압류 부OOOOO\n을(1) 2024-05-08 주택임차권 조OO 177,000,000원\n갑(8) 2025-09-30 강제경매개시결정 주OOOOOOO\n갑(9) 2025-10-14 압류 국OOOOOOO",
+    "tenantDetail": "임차인: 1 EOOOOOOOOOOOO\n점유: 미상 / 미상\n전입/확정/배당: 전입:2025-09-05\n대항력: 없음\n기타: 주거임차인\n\n임차인: 2 IOOOOOOOOOOO\n점유: 미상 / 미상\n전입/확정/배당: 전입:2025-09-05\n대항력: 없음\n기타: 주거임차인\n\n임차인: 4 주OOOOOOOOOOOO\n점유: 709호전부 / 2022.05.14 ~ / 2024.07.15\n전입/확정/배당: 전입:2022-05-16 / 확정:2022-04-25 / 배당:2025-12-31\n보증금/차임: 보:177,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거주택임차권자\n\n[기타사항]\n주OOOOOOO:이 사건 신청채권자로 주택임차권자 조OO의 지위를 승계하여 권리신고 및 배당요구함\n특별매각조건 : 주택도시공사는 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기 를 말소하는 것을 조건으로 매각",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2022-10-13",
+        "holder": "계OOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "EOOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "IOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "특별매각조건 : 주택도시공사는 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기 를 말소하는 것을 조건으로 매각",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 금천구 독산동 151-3 에스엠벨리체  제7층 제709호",
+    "gamjungAmt": "170000000",
+    "minAmt": "108800000",
+    "objEtc": "임차인 및 임차권승계인 주택도시보증공사의 매수인에 대한 대항력 포기조건 매각"
+  },
+  {
+    "auctionId": "5e5b966c-e6da-41a3-aa27-f3df7433f49d",
+    "objId": "1957941025217446292",
+    "buildingRegistry": "갑(13) 2010-02-08 소유권이전 우OO\n갑(16) 2020-11-27 소유권이전 김OO\n갑(17) 2021-04-28 소유권이전 김OO\n갑(18) 2022-02-11 압류 시OOOOO (말소기준등기)\n갑(19) 2023-05-24 압류 울OOOOO\n을(21) 2023-08-14 주택임차권 한OOOOOOO 90,000,000원\n갑(20) 2024-01-24 압류 서OOOO\n갑(21) 2025-08-18 강제경매개시결정 서OOOOO",
+    "tenantDetail": "임차인: 1 서OOOOOOOOOOOO\n점유: 전부 / 2021.1.4.\n전입/확정/배당: 전입:2020-12-21 / 확정:2020-12-17 / 배당:2025-08-04\n보증금/차임: 보:90,000,000원\n대항력: 없음\n분석: SGI 승계\n기타: 주거임차인\n\n[기타사항]\n서OOOOO OOOO(임차인:한OOOOOOO):임차권자 한OOOOOOO의 임차보증금반환채권 양수인 겸 경매신청채권자\n로 배당요구일자는 경매신청일이며, 보증금 전액을 배당받지 못하더라도 잔존 임차보증금반환채권을 포기하고 주택임차권등기\n말소에 동의한다는 취지의 확약서를 제출함\n한OOOOOOO(입주자:윤성희):임차보증금반환채권의 양도인으로 주택임차권등기일은 2023.8.14.임(양수인:신청채권자 서울보\n증보험 주식회사)\n윤성희: 한OOOOOOO의 입주자임\n을구 21번 주택임차권등기(다만 서OOOOO OOOO의 말소동의 확약서가 제출됨)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2022-02-11",
+        "holder": "시OOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "서OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": true,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 남구 문학동 397-20 학산주택  지층비02호",
+    "gamjungAmt": "61000000",
+    "minAmt": "29890000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "fa48ebd6-6175-4673-8172-c74a823afafd",
+    "objId": "1930761971762725825",
+    "buildingRegistry": "갑(1) 2010-11-24 소유권보존 주OOOOOOOO\n갑(2) 2011-03-04 소유권이전 이OO\n갑(4) 2020-06-08 소유권이전 안OO\n을(3) 2020-06-08 근저당권설정 한OOOOOOO 390,720,000원 (말소기준등기)\n을(4) 2020-06-08 근저당권설정 서OOOOOOOO 60,000,000원\n을(9) 2022-06-20 근저당권설정 소OOOOOOOOOOOO 265,200,000원\n갑(7) 2023-01-09 압류 남OOOOOOOOO\n갑(8) 2023-01-11 압류 남OOOOO\n갑(9) 2023-04-12 압류 국OOOOOOO\n갑(10) 2023-07-24 가압류 인OOOOOOO 55,543,283원\n갑(13) 2025-06-02 임의경매개시결정 한OOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2020-06-08",
+        "holder": "한OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 남동구 논현동 732-1 인천논현힐스테이트 104동 19층1901호",
+    "gamjungAmt": "680000000",
+    "minAmt": "680000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "57202b5f-7c13-46fb-a4b5-05a04c6e4768",
+    "objId": "2002872192194315132",
+    "buildingRegistry": "갑(6) 2020-02-14 소유권이전 5번신탁등기말소 정OOOOOOOOOOOO\n갑(7) 2020-02-14 소유권이전 이OO\n갑(8) 2022-08-10 압류 수OOOOO (말소기준등기)\n을(5) 2023-07-06 주택임차권 정OO 200,000,000원\n갑(9) 2023-12-27 가압류 신OOOOO 28,314,606원\n갑(10) 2024-04-05 압류 국OOOOOOO\n갑(11) 2024-09-06 압류 충OO\n갑(12) 2024-11-05 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 정OO\n점유: 목적물전부\n전입/확정/배당: 전입:2020-02-14 / 확정:2020-01-14\n보증금/차임: 보:200,000,000원\n대항력: 있음\n기타: 주거임차권자\n\n[기타사항]\n정OO: 정OO은 주택임차권등기권자로서 주택임차권등기일은 2023.7.6.임.\n주OOOOOOO는 경매신청채권자로 임차권자 정OO의 임차보증금반환채권 양수인임(대항력및우선변제권 승계)\n보증금 75,000,000원 확정일자 2020.1.14.\n보증금 200,000,000원(125,000,000원 증액) 확정일자 2022.2.7.\n매수인에게 대항할 수 있는 을구 5번 임차권등기[임대차보증금 7천5백만원, 전입일자 2020.2.14. 확정일자 2020.1.14.(증액된 임대차보증금 2억원, 확정일자 2022.2.7.)]가 있으므로 배당에서 전액 변제되지 아니하면 잔액은 매수인에게 인수될 수 있음\n매수인에게 대항할 수 있는 을구 5번 임차권등기[임대차보증금 7천5백만원, 전입일자 2020.2.14. 확정일자 2020.1.14.(증액된 임대차보증금 2억원, 확정일자 2022.2.7.)]가 있으므로 배당에서 전액 변제되지 아니하면 잔액은 매수인에게 인수될 수 있음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2022-08-10",
+        "holder": "수OOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "정OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "매수인에게 대항할 수 있는 을구 5번 임차권등기[임대차보증금 7천5백만원, 전입일자 2020.2.14. 확정일자 2020.1.14.(증액된 임대차보증금 2억원, 확정일자 2022.2.7.)]가 있으므로 배당에서 전액 변제되지 아니하면 잔액은 매수인에게 인수될 수 있음",
+      "source": "structured_registry"
+    },
+    "addr": "충청북도 충주시 중앙탑면 용전리 721 충주시티자이 115동 3층305호",
+    "gamjungAmt": "209000000",
+    "minAmt": "54788000",
+    "objEtc": "매수인에게 대항할 수 있는 을구 5번 임차권등기[임대차보증금 7천5백만원, 전입일자 2020.2.14. 확정일자 2020.1.14.(증액된 임대차보증금 2억원, 확정일자 2022.2.7.)]가 있으므로 배당에서 전액 변제되지 아니하면 잔액은 매수인에게 인수될 수 있음"
+  },
+  {
+    "auctionId": "7b782521-d780-4223-83af-80eb193152f8",
+    "objId": "1915963775207342464",
+    "buildingRegistry": "갑(1) 2004-10-15 소유권보존 순OOOOOOOOOOOO\n갑(3) 2022-05-20 가압류 서OOOOOOOOO 155,000,000원 (말소기준등기)\n을(9) 2024-01-26 주택임차권 나OO 65,000,000원\n갑(4) 2024-05-08 강제경매개시결정 나OO",
+    "tenantDetail": "임차인: 2 나OO\n점유: 503호전부 / 2020.02.20.~\n전입/확정/배당: 전입:2020-02-20 / 확정:2020-01-31 / 배당:2024-05-07\n보증금/차임: 보:65,000,000원\n대항력: 있음\n기타: 주거임차인\n\n임차인: 3 정OO\n전입/확정/배당: 전입:2024-05-10\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n나OO:이 사건 신청채권자임. 대항력 주의 요함.\n매수인에게 대항할 수 있는 을구 순위 9번 주택임차권등기(2024.01.26. 접수 제2869호) 있음. 배당에서 보증금 전액이 변제되 지 않으면 잔액을 매수인이 인수하고, 주택임차권등기는 말소되지 아니하고 매수인에게 인수됨.\n-매수인에게 대항할 수 있는 임차인으로 배당에서 보증금 전액을 배당 받지 못하면 그 잔액을 매수인이 인수함. -대항력 주의 요함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "가압류",
+        "date": "2022-05-20",
+        "holder": "서OOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "나OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "정OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "-매수인에게 대항할 수 있는 임차인으로 배당에서 보증금 전액을 배당 받지 못하면 그 잔액을 매수인이 인수함. -대항력 주의 요함.",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 진주시 봉곡동  478-6 순화몽페레씨티빌 4층503호",
+    "gamjungAmt": "63000000",
+    "minAmt": "2220000",
+    "objEtc": "-매수인에게 대항할 수 있는 임차인으로 배당에서 보증금 전액을 배당 받지 못하면 그 잔액을 매수인이 인수함.\n-대항력 주의 요함."
+  },
+  {
+    "auctionId": "031e768f-abfc-430f-ab95-a21118258d6a",
+    "objId": "1913907222811770912",
+    "buildingRegistry": "갑(2) 2012-09-28 소유권이전 홍OO\n갑(3) 2014-09-15 소유권이전 권OOO OO\n을(13) 2020-09-07 전세권설정 류OO 140,000,000원 (말소기준등기)\n을(14) 2024-10-16 주택임차권 류OO 140,000,000원\n갑(4) 2025-03-13 강제경매개시결정 류OO\n갑(5) 2025-04-17 3번권만전지분가압류 신OOOOOOO 4,067,355원\n갑(6) 2025-05-13 3번권만전지분가압류 김OO 35,000,000원\n갑(7) 2026-01-14 3번권만전지분압류 북OOOOOO",
+    "tenantDetail": "임차인: 3 류OO\n점유: 구분건물전부 / 2020.09.07.~ / 2022.09.06.\n전입/확정/배당: 전입:2020-09-25 / 배당:2025-04-17\n보증금/차임: 보:140,000,000원\n대항력: 있음\n기타: 주거전세권자\n\n임차인: 2 류OO\n점유: 전유부분전부 / 2020.09.07.~\n전입/확정/배당: 전입:2020-09-25 / 확정:2020-08-18\n보증금/차임: 보:145,000,000원\n대항력: 없음\n기타: 주거임차권자\n\n[기타사항]\n류OO: 임차보증금 145,000,000원 중 5,000,000원은 2022.07.27.자로 증액되었으며, 증액된 부분에 대한 확정일자는\n2022.09.01.자임.\n경매신청채권자이고, 전세권자이면서 주택임차권등기권자로서 전세권설정등기일은 2020.09.07.이고, 주택임차권등기일은\n2024.10.16.임.\n매수인에게 대항할 수 있는 을구 순위 14 임차권등기(2024.10.16. 등기) 있음[임차보증금 140,000,000(1차), 145,000,000(2차), 전입일 2020.09.25., 확정일자 2020.08.18.(140,000,000원), 2022.09.01.(증액된 5,000,000원)]. 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함.\n- 칠곡화성타운 입주자대표회의에서 본 경매목적물에 채권이 있음을 안내하는 공문을 2025.04.04.자로 제출함(2024년 9월 ~ 2025년 2월분까지 공용부분 체납관리비 및 연체료 703,200원)=> 칠곡화성타운 입주자대표회의 전화번호 053-323-7804번으로 문의 가능)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "전세권설정",
+        "date": "2020-09-07",
+        "holder": "류OO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "류OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "류OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "- 칠곡화성타운 입주자대표회의에서 본 경매목적물에 채권이 있음을 안내하는 공문을 2025.04.04.자로 제출함(2024년 9월 ~ 2025년 2월분까지 공용부분 체납관리비 및 연체료 703,200원)=> 칠곡화성타운 입주자대표회의 전화번호 053-323-7804번으로 문의 가능)",
+      "source": "structured_registry"
+    },
+    "addr": "대구광역시 북구 동천동  880-3 칠곡화성타운 103동 12층1207호",
+    "gamjungAmt": "149000000",
+    "minAmt": "25043000",
+    "objEtc": "- 칠곡화성타운 입주자대표회의에서 본 경매목적물에 채권이 있음을 안내하는 공문을 2025.04.04.자로 제출함(2024년 9월 ~ 2025년 2월분까지 공용부분 체납관리비 및 연체료 703,200원)=> 칠곡화성타운 입주자대표회의 전화번호 053-323-7804번으로 문의 가능)"
+  },
+  {
+    "auctionId": "b7a0c16b-1fb9-415d-992f-73af50e70f78",
+    "objId": "2026795936583254198",
+    "buildingRegistry": "갑(1) 2018-03-29 소유권보존 진OO O OO\n갑(2) 2018-04-16 공유자전원지분전부이전 이OO\n갑(3) 2023-05-19 소유권이전 김OO\n을(1) 2023-10-05 주택임차권 김OO 336,000,000원\n갑(4) 2026-02-13 강제경매개시결정 주OOOOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 3 주OOOOOOOOOOOO\n점유: 전부 / 2021.10.01.~ / 2023.10.01.\n전입/확정/배당: 전입:2021-10-01 / 확정:2021-09-09 / 배당:2026-02-11\n보증금/차임: 보:336,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주택임차권자\n\n임차인: 2 김OO\n전입/확정/배당: 전입:2025-04-08\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n김OO: 주택임차권등기권리자로서 주택임차권등기일은 2023. 10. 05.임\n주OOOOOOO(임차인 김OO): 경매신청채권자이고 임차인 김OO의 임차보증금반환채권 양수인으로서, 보증금 전액을 배\n당받지 못하더라도 잔존 임차보증금반환채권을 포기하고 주택임차권등기 말소에 동의한다는 취지의 확약서를 제출함\n을구 순위 1번 주택임차권등기(다만 주OOOOOOO의 말소동의 확약서가 제출됨)",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2026-02-13",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "김OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 부천시 오정구 고강동 313-15 아침애  4층401호",
+    "gamjungAmt": "355000000",
+    "minAmt": "173950000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "4ab1b4b5-b01f-46b6-8f13-8aa7d4e97018",
+    "objId": "1969899936514310172",
+    "buildingRegistry": "갑(2) 2021-04-08 소유권이전1번신탁등기말소 주OOOOOOOO\n갑(3) 2021-08-02 소유권이전 장OO\n을(3) 2023-08-02 주택임차권 김OO 266,000,000원\n갑(4) 2025-09-17 압류 강OOOOOOOOO (말소기준등기)\n갑(5) 2025-09-18 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2021.08.02. / ~ / 2024.01.22.\n전입/확정/배당: 전입:2021-08-02 / 확정:2021-07-05 / 배당:2025-12-18\n보증금/차임: 보:266,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거주택임차권자\n\n[기타사항]\n주OOOOOOO:이 사건 신청채권자로 주택임차권자 김OO의 지위를 승계하여 권리신고 및 배당요구함\n특별매각조건 : 주택도시공사는 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기 를 말소하는 것을 조건으로 매각",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2025-09-17",
+        "holder": "강OOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "특별매각조건 : 주택도시공사는 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기 를 말소하는 것을 조건으로 매각",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 강서구 화곡동 938-7 웰타운에이  제11층 제1102호",
+    "gamjungAmt": "268000000",
+    "minAmt": "171520000",
+    "objEtc": "임차인 및 임차권승계인 주택도시보증공사의 매수인에 대한 대항력 포기조건 매각"
+  },
+  {
+    "auctionId": "c7115ed5-eaa2-41f7-9f76-aee72a675cbb",
+    "objId": "2039479124665303568",
+    "buildingRegistry": "갑(3) 2012-12-20 소유권이전 채OO\n갑(5) 2015-01-15 소유권이전 김OO\n갑(6) 2017-07-28 소유권이전 정OO\n을(10) 2024-12-04 근저당권설정 무OOOOOO 154,000,000원 (말소기준등기)\n을(11) 2025-02-24 근저당권설정 주OOOOOOO 31,200,000원\n갑(7) 2025-10-02 가압류 토OOO 68,971,768원\n갑(8) 2025-10-28 가압류 제OOOOOOO 12,607,808원\n갑(9) 2025-11-10 가압류 신OOO 5,128,583원\n갑(11) 2026-03-26 임의경매개시결정 파OOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2024-12-04",
+        "holder": "무OOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "광주광역시 광산구 신창동 1187 신창부영아파트 111동 5층502호",
+    "gamjungAmt": "263000000",
+    "minAmt": "184100000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "e8b68174-908e-4ff5-b34a-33aeac2abce9",
+    "objId": "2043491468135366698",
+    "buildingRegistry": "갑(4) 2008-06-18 소유권이전 옥OO\n갑(5) 2009-07-30 소유권이전 이OO\n을(9) 2011-06-10 근저당권설정 주OOOOOOO 38,400,000원 (말소기준등기)\n을(10) 2012-07-09 근저당권설정 주OOOOOOO 26,717,600원\n갑(6) 2024-10-16 임의경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 이OO\n점유: 미상 / 미상\n전입/확정/배당: 전입:2021-05-03\n대항력: 없음\n기타: 주거임차인\n\n[기타사항]\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2011-06-10",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 거제시 옥포동  1265-5 신원심포니하우스 15층1513호",
+    "gamjungAmt": "60000000",
+    "minAmt": "20580000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "6d6ed58c-5000-4bc6-9bb8-bc17faff366a",
+    "objId": "1927500706185478144",
+    "buildingRegistry": "갑(1) 2013-12-17 소유권보존 협OOOOOOOOOOOO\n갑(2) 2014-01-02 소유권이전 조OO\n을(6) 2024-08-23 근저당권설정 주OOOOOOO 239,800,000원 (말소기준등기)\n을(7) 2024-09-25 주택임차권 문OO 210,000,000원\n갑(7) 2025-05-22 강제경매개시결정 문OO",
+    "tenantDetail": "임차인: 2 문OO\n점유: 전부 / 2022.08.25 ~\n전입/확정/배당: 전입:2024-08-26 / 확정:2022-07-27 / 배당:2025-05-20\n보증금/차임: 보:185,000,000원\n대항력: 없음\n기타: 주거임차권자\n\n[기타사항]\n문OO:경매신청채권자로 배당요구일자는 경매신청일임.\n주택임차권등기일은 2024. 9. 25.임.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2024-08-23",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "문OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "부산광역시 기장군 정관읍 용수리 1318 정관협성르네상스타운 106동 2층205호",
+    "gamjungAmt": "412000000",
+    "minAmt": "288400000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "f5e86f48-9e0f-4c91-87dd-13fd375112b0",
+    "objId": "2005415223007117775",
+    "buildingRegistry": "갑(2) 2004-03-02 소유권이전 김OO\n갑(3) 2015-01-15 소유권이전 최OO\n갑(4) 2017-11-17 소유권이전 남OO\n을(6) 2017-11-17 근저당권설정 한OOOOOOO 325,200,000원 (말소기준등기)\n갑(5) 2024-07-22 압류 북OOOOOO\n갑(6) 2025-03-06 가압류 신OO 110,780,000원\n갑(7) 2025-03-31 가압류 김OO 12,810,000원\n갑(8) 2025-12-17 강제경매개시결정(6번가압류의본압류로의이행) 신OO\n갑(9) 2026-01-20 임의경매개시결정 한OOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2017-11-17",
+        "holder": "한OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "대구광역시 북구 구암동 785 화성그랜드파크 308동 1층101호",
+    "gamjungAmt": "371000000",
+    "minAmt": "259700000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "57ccc571-e146-4434-92a7-227d704a6047",
+    "objId": "2076414140666085397",
+    "buildingRegistry": "갑(1) 2023-02-24 소유권보존 동OOOOOOOOOOOO\n갑(2) 2023-03-28 소유권이전 이OO\n을(1) 2023-04-06 근저당권설정 강OOOOOOO 168,000,000원 (말소기준등기)\n을(2) 2023-06-07 근저당권설정 임OO 60,000,000원\n갑(4) 2023-11-22 임의경매개시결정 임OO\n갑(5) 2023-12-11 가압류 전OO 80,000,000원\n갑(6) 2024-01-15 가압류 서OOOOOO 17,043,153원",
+    "tenantDetail": "[기타사항]\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2023-04-06",
+        "holder": "강OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "강원특별자치도 강릉시 포남동  1117 강릉역동도센트리움 101동 22층 2203호",
+    "gamjungAmt": "280000000",
+    "minAmt": "196000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "ecd2e293-69d1-4842-b805-d7f57a2f6158",
+    "objId": "2034405267357041631",
+    "buildingRegistry": "갑(1) 2020-07-20 소유권보존신탁 코OOOOOOOOOOOO\n갑(2) 2020-08-14 소유권이전1번신탁등기말소 주OOOOOOOOO\n갑(3) 2020-08-27 소유권이전 문OO\n을(2) 2020-08-27 근저당권설정 천OOOOOOO 79,300,000원 (말소기준등기)\n갑(4) 2026-03-06 임의경매개시결정 천OOOOOOO",
+    "tenantDetail": "임차인: 2 김OO\n점유: 711호 / 2023.8.12.\n전입/확정/배당: 전입:2023-08-14 / 확정:2023-08-14 / 배당:2026-03-20\n보증금/차임: 보:15,000,000원\n대항력: 없음\n기타: 주거임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2020-08-27",
+        "holder": "천OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 천안시 서북구 백석동 1096 백석동주식회사제이케이개발건물  7층711호",
+    "gamjungAmt": "111000000",
+    "minAmt": "77700000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "5d9fcbaf-907e-40d0-928d-d5c7462af574",
+    "objId": "1921816316998583147",
+    "buildingRegistry": "갑(1) 2022-10-18 소유권보존 호OOOOOOOOOOOO\n을(1) 2022-10-18 근저당권설정 주OOOOOOO 120,000,000원 (말소기준등기)\n을(2) 2023-12-21 근저당권설정 우OOOOOOOO 160,000,000원\n갑(2) 2023-12-27 가압류 김OO 875,191,256원\n을(3) 2024-08-06 주택임차권 김OO 247,500,000원\n갑(3) 2025-05-08 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 김OO\n점유: 전부 / 2022.11.15.~\n전입/확정/배당: 전입:2023-05-31 / 확정:2023-11-02\n보증금/차임: 보:247,500,000원\n대항력: 없음\n기타: 주거임차권자\n\n[기타사항]\n주OOOOOOO(임차인 김OO) : 경매신청채권자로 임차인 김OO의 임차보증금반환채권 양수인\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2022-10-18",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 102동 5층502호",
+    "gamjungAmt": "306000000",
+    "minAmt": "306000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "8e6c48ad-0720-4d76-bdd4-bbeab7d537c2",
+    "objId": "1973523830437577521",
+    "buildingRegistry": "갑(3) 2001-04-02 소유권이전 민OO\n갑(4) 2019-06-28 소유권이전 유OO\n갑(5) 2023-05-15 가압류 주OOOOOOO 110,000,000원 (말소기준등기)\n갑(6) 2024-03-12 압류 양OOOOO\n을(5) 2024-10-14 주택임차권 황OO 272,000,000원\n갑(7) 2025-09-29 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 이OO\n점유: 미상 / 미상\n전입/확정/배당: 전입:2025-06-02\n대항력: 없음\n기타: 주거임차인\n\n임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2022.10.01. / ~\n전입/확정/배당: 전입:2022-09-30 / 확정:2022-09-16 / 배당:2025-12-29\n보증금/차임: 보:272,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거주택임차권자\n\n[기타사항]\n주OOOOOOO:이 사건 신청채권자로 주택임차권자 황OO의 지위를 승계하여 권리신고 및 배당요구함\n특별매각조건 : 주택도시공사는 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기 를 말소하는 것을 조건으로 매각",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "가압류",
+        "date": "2023-05-15",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "특별매각조건 : 주택도시공사는 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기 를 말소하는 것을 조건으로 매각",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 강서구 화곡동 56-570  제1층 제101호",
+    "gamjungAmt": "218000000",
+    "minAmt": "139520000",
+    "objEtc": "임차인 및 임차권승계인 주택도시보증공사의 매수인에 대한 대항력 포기조건 매각"
+  },
+  {
+    "auctionId": "bcb316eb-aca7-44ef-9bc6-0a55247359a2",
+    "objId": "1992731895800004626",
+    "buildingRegistry": "갑(2) 2017-09-19 소유권이전신탁\n갑(3) 2017-10-24 소유권이전2번신탁등기말소 디OOOOOOOOOOOO\n갑(4) 2017-10-24 소유권이전 김OO\n을(1) 2017-10-24 근저당권설정 주OOOOOOO 174,000,000원 (말소기준등기)\n갑(5) 2023-07-13 압류 수OOOOO\n갑(7) 2025-11-18 임의경매개시결정 에OOOOOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2017-10-24",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 수원시 권선구 금곡동 1113-5 로얄팰리스  8층802호",
+    "gamjungAmt": "181000000",
+    "minAmt": "126700000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "88034eb7-48a8-40e8-a461-8420b8e77085",
+    "objId": "1976423150618935420",
+    "buildingRegistry": "갑(5) 2020-07-29 소유권이전 김OO\n갑(6) 2021-04-01 소유권이전 오OO\n을(12) 2021-04-01 근저당권설정 반OOOOOOO 78,000,000원 (말소기준등기)\n갑(7) 2025-07-04 가압류 경OOOOOOO 14,240,000원\n갑(8) 2025-09-03 가압류 반OOOOOOO 27,762,449원\n갑(9) 2025-09-26 임의경매개시결정 반OOOOOOO",
+    "tenantDetail": "임차인: 1 TOOOOOOOO\n점유: 101호 / 미상\n전입/확정/배당: 전입:2021-04-23\n대항력: 없음\n기타: 주거임차인\n\n임차인: 3 전OO\n점유: 101호전부 / 2025.05.12.- / 2027.05.12.\n전입/확정/배당: 전입:2025-05-16 / 확정:2025-08-05 / 배당:2025-10-27\n보증금/차임: 보:20,000,000원\n대항력: 없음\n기타: 주거임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2021-04-01",
+        "holder": "반OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "TOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "전OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 안산시 단원구 선부동 1032-8 동아빌라  1층101호",
+    "gamjungAmt": "141000000",
+    "minAmt": "69090000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "7792af14-1aab-43c7-8bea-cb66c08b5220",
+    "objId": "1977872651728715780",
+    "buildingRegistry": "갑(2) 2019-11-21 소유권이전신탁\n갑(3) 2020-05-13 소유권이전2번신탁등기말소 이OO\n갑(4) 2020-05-13 소유권이전 송OO\n을(1) 2020-05-13 근저당권설정 농OOOOOOO 225,600,000원 (말소기준등기)\n갑(5) 2025-01-20 가압류 인OOOOOOO 50,602,266원\n갑(6) 2025-10-01 임의경매개시결정 농OOO",
+    "tenantDetail": "임차인: 1 김OO\n전입/확정/배당: 전입:2020-06-01\n대항력: 없음\n기타: 주거임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2020-05-13",
+        "holder": "농OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 미추홀구 주안동 89-23 어반스뷰6차  4층401호",
+    "gamjungAmt": "201000000",
+    "minAmt": "201000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "991cb1ab-c711-42f5-ab3a-be2039fb735f",
+    "objId": "1993094946504049630",
+    "buildingRegistry": "갑(1) 1994-12-29 소유권이전 서OOOOOOOOOOOO\n을(3) 2015-09-02 근저당권설정 주OOOOOOO 3,400,000,000원 (말소기준등기)\n을(4) 2015-09-02 근저당권설정 주OOOOOOO 744,400,000원\n을(5) 2015-09-02 근저당권설정 주OOOOOOO 890,000,000원\n을(6) 2015-09-02 근저당권설정 주OOOOOOO 636,000,000원\n을(7) 2018-09-20 근저당권설정 주OOOOOOO 1,300,000,000원\n을(8) 2022-04-08 근저당권설정 주OOOOOOO 480,000,000원\n을(9) 2022-07-08 근저당권설정 주OOOOOOO 1,200,000,000원\n갑(4) 2025-11-14 임의경매개시결정 주OOOOOOOO\n갑(5) 2025-11-21 압류 칠OO\n갑(6) 2026-01-13 가압류 서OOOOOOOOO 47,576,350원",
+    "tenantDetail": "임차인: 1 이OO\n점유: 101-1315호\n전입/확정/배당: 전입:2023-02-21\n대항력: 없음\n기타: 주거임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2015-09-02",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상북도 칠곡군 약목면 관호리 952 삼주강변타운 101동 13층1315호",
+    "gamjungAmt": "32500000",
+    "minAmt": "22750000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "4e8cd460-b7e6-4c3f-b95f-214a45e56095",
+    "objId": "1960840121708183670",
+    "buildingRegistry": "갑(1) 2013-01-11 소유권보존 송OOOOOOOOOOOO\n갑(2) 2013-03-29 소유권이전 김OO\n을(1) 2013-03-29 근저당권설정 주OOOOOOO 392,700,000원 (말소기준등기)\n을(2) 2013-03-29 근저당권설정 송OOOOOO 96,000,000원\n을(5) 2021-11-10 근저당권설정 엠OOOOOOO 422,500,000원\n을(8) 2021-11-19 근저당권설정 배OO 50,000,000원\n을(11) 2025-07-03 근저당권설정 배OO 60,000,000원\n갑(10) 2025-08-25 임의경매개시결정 유OOOOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2013-03-29",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "인천광역시 연수구 송도동 157 송도해모로월드뷰 305동 8층803호",
+    "gamjungAmt": "880000000",
+    "minAmt": "616000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "0483d8b3-62e1-459f-8221-41c609849687",
+    "objId": "1988744794096009882",
+    "buildingRegistry": "갑(4) 2013-12-31 소유권이전 손OO\n갑(5) 2018-12-06 소유권이전 김OO\n갑(6) 2020-10-28 소유권이전 김OO\n을(7) 2020-10-28 근저당권설정 주OOOOOOO 59,400,000원 (말소기준등기)\n을(8) 2025-07-24 근저당권설정 로OOOOOOOOOOO 13,500,000원\n을(9) 2025-07-24 전세권설정 로OOOOOOOOOOO 5,000,000원\n갑(7) 2025-11-10 임의경매개시결정 로OOOOOOO\n갑(8) 2026-02-24 가압류 비OOOOOO 5,258,818원",
+    "tenantDetail": "임차인: 1 로OOOOOOOOOOO\n점유: 건물전부 / 2025.07.24. / ~2026.07.23.\n보증금/차임: 보:5,000,000원\n대항력: 없음\n기타: 주거전세권자\n\n[기타사항]\n로OOOOOOO OOOO:신청채권자 겸 전세권자임. 전세권설정등기일은 2025.7.24.자 임.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2020-10-28",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "로OOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상남도 김해시 삼계동 1435 화정마을부영아파트 601동 1층108호",
+    "gamjungAmt": "103000000",
+    "minAmt": "72100000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "d3ab1827-864e-4bad-8951-81f8e9a4a124",
+    "objId": "1921816317858414623",
+    "buildingRegistry": "갑(1) 2022-10-18 소유권보존 호OOOOOOOOOOOO\n을(1) 2022-10-18 근저당권설정 주OOOOOOO 120,000,000원 (말소기준등기)\n을(2) 2023-12-12 근저당권설정 주OOOOOOOO 100,000,000원\n을(3) 2024-09-06 주택임차권 강OO 240,000,000원\n갑(2) 2025-05-08 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 강OO\n점유: 전부 / 2022.10.31.~\n전입/확정/배당: 전입:2022-10-31 / 확정:2022-10-31\n보증금/차임: 보:240,000,000원\n대항력: 없음\n기타: 주거임차권자\n\n[기타사항]\n주OOOOOOO(임차인 강OO) : 경매신청채권자로서 임차인 강OO의 임차보증금반환채권 양수인\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2022-10-18",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "강OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 102동 3층304호",
+    "gamjungAmt": "304000000",
+    "minAmt": "304000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "c134ea3e-1756-4701-b2d8-a71315541668",
+    "objId": "2031143935300075908",
+    "buildingRegistry": "갑(4) 2010-07-02 소유권이전신탁\n갑(4-1) 2010-07-21 4번소유권경정\n갑(6) 2011-03-16 소유권이전4번신탁등기말소 노OO\n을(5) 2021-05-28 근저당권설정 주OOOOOOO 110,000,000원 (말소기준등기)\n을(6) 2021-06-16 근저당권설정 한OOOOOOOO 157,200,000원\n갑(7) 2026-03-03 강제경매개시결정 김OO",
+    "tenantDetail": "임차인: 2 김OO\n점유: 전부 / 2020.01.08.~\n전입/확정/배당: 전입:2020-01-08 / 확정:2019-12-09 / 배당:2026-03-23\n보증금/차임: 보:110,000,000원\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n김OO: 이 사건 경매신청 채권자임.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2021-05-28",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "세종특별자치시  조치원읍 죽림리 396 자이아파트 119동 1층102호",
+    "gamjungAmt": "261000000",
+    "minAmt": "261000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "77e5d3ba-a536-45d3-85b6-1df1172813d3",
+    "objId": "1969900216039506422",
+    "buildingRegistry": "갑(10) 2006-11-20 소유권이전 김OO\n갑(12) 2018-03-16 소유권이전 이OO\n갑(13) 2018-08-16 소유권이전 홍OO\n을(9) 2018-08-16 근저당권설정 주OOOOOOOOOOOO 90,000,000원 (말소기준등기)\n을(10) 2018-10-23 근저당권설정 김OO 15,000,000원\n을(11) 2019-03-28 근저당권설정 김OO 6,500,000원\n을(14) 2022-09-01 주택임차권 한OOOOOOO 132,000,000원\n갑(20) 2025-09-16 강제경매개시결정 서OOOOO",
+    "tenantDetail": "임차인: 1 AOOOOOOOOOOOO\n점유: 302호 / 미상\n전입/확정/배당: 전입:2022-10-05\n대항력: 없음\n기타: 주거임차인\n\n임차인: 2 AOOOOOOOOOOOO\n점유: 302호 / 미상\n전입/확정/배당: 전입:2022-10-05\n대항력: 없음\n기타: 주거임차인\n\n임차인: 4 알OOOOOOOOOOOO\n점유: 302호 / 2022.09.30.- / 2023.09.29.\n전입/확정/배당: 전입:2022-10-05 / 배당:2025-11-14\n보증금/차임: 보:6,000,000원\n대항력: 없음\n기타: 주거임차인\n\n임차인: 5 서OOOOOOOOOOOO\n점유: 전부 / 2018.07.30.-\n전입/확정/배당: 전입:2018-07-24 / 확정:2018-07-05\n보증금/차임: 보:132,000,000원\n대항력: 없음\n분석: SGI 승계\n기타: 주거임차권자\n\n[기타사항]\n서OOOOO주식회사 (임차권자 한OOOOOOO 승계인):경매신청채권자임. 주택임대차보호법 제3조의 2 제7항에 해당하는\n임차보증금 우선변제권 승계인임.\n2026. 2. 26.자로 신청채권자 서OOOOO OOOO로부터 우선변제권만 주장하고, 잔존 임차보증금반환청구 및 대항력을 포기하여 임차권등기 말소에 동의한다는 확약서가 제출됨.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2018-08-16",
+        "holder": "주OOOOOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "AOOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "AOOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "알OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "서OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": true,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "2026. 2. 26.자로 신청채권자 서OOOOO OOOO로부터 우선변제권만 주장하고, 잔존 임차보증금반환청구 및 대항력을 포기하여 임차권등기 말소에 동의한다는 확약서가 제출됨.",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 안산시 단원구 와동 776-3  3층302호",
+    "gamjungAmt": "172000000",
+    "minAmt": "120400000",
+    "objEtc": "2026. 2. 26.자로 신청채권자 서울보증보험 주식회사로부터 우선변제권만 주장하고, 잔존 임차보증금반환청구 및 대항력을 포기하여 임차권등기 말소에 동의한다는 확약서가 제출됨."
+  },
+  {
+    "auctionId": "3d5c85a4-1f50-46d2-9f40-6ee5203470d5",
+    "objId": "1981496640397116283",
+    "buildingRegistry": "갑(1) 2022-08-30 소유권보존신탁재산처분에의한신탁 주OOOOOOOO\n갑(2) 2023-02-02 소유권이전1번신탁등기말소 정OO\n을(1) 2023-02-02 근저당권설정 에OOOOOOOOOOOO 10,000,000원 (말소기준등기)\n갑(3) 2023-02-02 소유권이전신탁 주OOOOOO OOOO\n갑(4) 2025-10-21 임의경매개시결정 평OOOOOO",
+    "tenantDetail": "임차인: 2 정OO\n점유: 413호 / 2023. 2. / 2.~2025. 10. / 31.(신고일 / 현재 거주중)\n전입/확정/배당: 전입:2023-02-02 / 배당:2025-10-31\n보증금/차임: 보:60,000,000원\n대항력: 없음\n기타: 주거임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2023-02-02",
+        "holder": "에OOOOOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "정OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 수원시 권선구 서둔동 425  4층413호",
+    "gamjungAmt": "453000000",
+    "minAmt": "221970000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "99fdad73-0eaf-4747-b5ec-38363dd9f9b3",
+    "objId": "1933881270866018492",
+    "buildingRegistry": "갑(2) 2019-08-16 소유권이전 1번신탁등기말소 조OO O OOO\n갑(3) 2019-08-16 공유자전원지분전부 이전 신탁\n갑(4) 2019-09-27 소유권이전 3번신탁등기말소 김OO\n갑(5) 2022-12-07 압류 의OOOOOO (말소기준등기)\n을(1) 2024-12-23 주택임차권 박OO 274,000,000원\n갑(6) 2025-06-11 강제경매개시결정 박OO",
+    "tenantDetail": "임차인: 3 박OO\n점유: 전부 / 2019.09.27.~ / 2021.09.26.\n전입/확정/배당: 전입:2019-09-27 / 확정:2019-09-04 / 배당:2025-09-05\n보증금/차임: 보:274,000,000원\n대항력: 있음\n기타: 주택임차권자\n\n[기타사항]\n박OO : 이 사건 신청채권자로 주택임차권등기일은 2024.12.23.임\n- 을구 1번 주택임차권등기와 관련하여 매수인에게 대항할 수 있는 임차인이 있음(임대차보증금 274,000,000원, 전입일자 2019.09.27., 확정일자 2019.09.04.) - 배당에서 보증금이 전액 변제되지 아니하면 매수인이 인수함",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2022-12-07",
+        "holder": "의OOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "박OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 강서구 화곡동 926-3 메종드로제  제2층 제203호",
+    "gamjungAmt": "328000000",
+    "minAmt": "85983000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "ee12a7b9-cc09-4cda-a4d2-b703f5853053",
+    "objId": "2034405535255625923",
+    "buildingRegistry": "갑(1) 2017-05-04 소유권보존 유OOOOOOOO\n을(1) 2017-05-04 근저당권설정 주OOOOOOO 65,160,000원\n을(2) 2025-02-21 주택임차권 강OO 168,900,000원\n갑(2) 2026-03-13 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2017.11.21.\n전입/확정/배당: 전입:2017-12-05 / 확정:2017-12-05 / 배당:2026-05-19\n보증금/차임: 보:168,900,000원\n대항력: 없음\n기타: 주거주택임차권자\n\n임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2017.11.21.\n전입/확정/배당: 전입:2017-12-05 / 확정:2019-12-16 / 배당:2026-05-19\n보증금/차임: 보:175,350,000원\n대항력: 없음\n기타: 주거주택임차권자\n\n임차인: 2 주OOOOOOOOOOOO\n점유: 전부 / 2017.11.21.\n전입/확정/배당: 전입:2017-12-05 / 확정:2022-07-15 / 배당:2026-05-19\n보증금/차임: 보:181,350,000원\n대항력: 없음\n기타: 주거주택임차권자\n\n[기타사항]\n주OOOOOOO:경매신청권자, 임차보증금반환채권을 주택임차권자 강OO으로부터 승계함",
+    "rightsStructured": {
+      "baselineRight": null,
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "광주광역시 북구 운암동 1769 수하임아파트 101동 15층1503호",
+    "gamjungAmt": "209000000",
+    "minAmt": "146300000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "1ef673de-36c2-418a-b565-a88f8ffaa1be",
+    "objId": "2075324409047941289",
+    "buildingRegistry": "갑(1) 1994-12-29 소유권이전 서OOOOOOOOOOOO\n을(3) 2015-09-02 근저당권설정 주OOOOOOO 3,400,000,000원 (말소기준등기)\n을(4) 2015-09-02 근저당권설정 주OOOOOOO 744,400,000원\n을(5) 2015-09-02 근저당권설정 주OOOOOOO 890,000,000원\n을(6) 2015-09-02 근저당권설정 주OOOOOOO 636,000,000원\n을(7) 2018-09-20 근저당권설정 주OOOOOOO 1,300,000,000원\n을(8) 2022-04-08 근저당권설정 주OOOOOOO 480,000,000원\n을(9) 2022-07-08 근저당권설정 주OOOOOOO 1,200,000,000원\n갑(4) 2025-11-14 임의경매개시결정 주OOOOOOOO\n갑(5) 2025-11-21 압류 칠OO\n갑(6) 2026-01-13 가압류 서OOOOOOOOO 47,576,350원",
+    "tenantDetail": "임차인: 1 심OO\n점유: 101-1316\n전입/확정/배당: 전입:2022-02-21\n대항력: 없음\n기타: 주거임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2015-09-02",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "심OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상북도 칠곡군 약목면 관호리 952 삼주강변타운 101동 13층1316호",
+    "gamjungAmt": "32500000",
+    "minAmt": "22750000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "b8036b5c-a01e-4936-9b22-b03a2f10fdc2",
+    "objId": "1976422978656665787",
+    "buildingRegistry": "갑(2) 2021-12-27 소유권이전신탁\n갑(3) 2022-06-21 소유권이전2번신탁등기말소 주OOOOO\n갑(4) 2022-06-21 소유권이전 황OO\n을(1) 2023-12-07 주택임차권 박OO 350,000,000원 (인수)\n갑(5) 2025-09-26 강제경매개시결정 주OOOOOOO (말소기준등기)",
+    "tenantDetail": "임차인: 1 김OO\n점유: 미상 / 미상\n전입/확정/배당: 전입:2025-03-20\n대항력: 있음\n기타: 주거임차인\n\n임차인: 3 주OOOOOOOOOOOO\n점유: 전부 / 2022.06.21.~ / 2024.06.20.\n전입/확정/배당: 전입:2022-06-14 / 확정:2022-06-07 / 배당:2025-12-02\n보증금/차임: 보:350,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차권자\n\n[기타사항]\n박OO : 주택임차권 등기일은 2023. 12. 7.\n주OOOOOOO : 이 사건 신청채권자로 주택임차권자 박OO의 지위를 승계하여 권리신고 및 배당요구함\n특별매각조건 : 채권자는 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기를 말 소하는 것을 조건으로 매각",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2025-09-26",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-12-07",
+          "holder": "박OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        },
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "특별매각조건 : 채권자는 매수인에 대해 배당받지 못하는 잔액에 대한 임대차보증금 반환청구권을 포기하고, 임차권등기를 말 소하는 것을 조건으로 매각",
+      "source": "structured_registry"
+    },
+    "addr": "서울특별시 강서구 화곡동 936-6 트러스트  제3층 제301호",
+    "gamjungAmt": "360000000",
+    "minAmt": "288000000",
+    "objEtc": "임차인 및 주택임차권 승계인 주택도시보증공사의 매수인에 대한 대항력 포기 조건 매각"
+  },
+  {
+    "auctionId": "3ab96ee5-8adf-48a6-a4a1-2d0009f2eed5",
+    "objId": "2028969953079590928",
+    "buildingRegistry": "갑(2) 2009-01-23 소유권이전 강OO\n갑(3) 2012-07-09 소유권이전 공OO O OO\n갑(4) 2018-10-26 공유자전원지분전부이전 전OO\n갑(5) 2023-11-15 소유권이전 하OO\n을(7) 2024-10-31 주택임차권 곽OO 185,000,000원 (인수)\n갑(6) 2025-03-11 가압류 삼OOO 3,932,608원 (말소기준등기)\n갑(7) 2025-06-17 가압류 신OOO 15,277,544원\n갑(8) 2026-02-26 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 곽OO\n점유: 전부\n전입/확정/배당: 전입:2022-10-25 / 확정:2022-10-25\n보증금/차임: 보:185,000,000원\n대항력: 있음\n기타: 주거주택임차권자\n\n[기타사항]\n곽OO:등기사항증명서 참조\n을구 7번 대항력 있는 주택임차권등기 있으며, 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함.\n최선순위 대항력 있는 임차인 있으며, 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "가압류",
+        "date": "2025-03-11",
+        "holder": "삼OOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2024-10-31",
+          "holder": "곽OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "곽OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "최선순위 대항력 있는 임차인 있으며, 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함.",
+      "source": "structured_registry"
+    },
+    "addr": "충청북도 청주시 서원구 죽림동 295 청주가경뜨란채3단지아파트 303동 10층1003호",
+    "gamjungAmt": "197000000",
+    "minAmt": "197000000",
+    "objEtc": "최선순위 대항력 있는 임차인 있으며, 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수함."
+  },
+  {
+    "auctionId": "722d560e-2fa4-4dfc-8154-63f9b5c37601",
+    "objId": "1918095164400730208",
+    "buildingRegistry": "갑(1) 2022-10-18 소유권보존 호OOOOOOOOOOOO\n을(1) 2022-10-18 근저당권설정 주OOOOOOO 120,000,000원 (말소기준등기)\n갑(2) 2023-12-27 가압류 김OO 875,191,256원\n을(2) 2023-12-29 근저당권설정 주OOOOO 334,603,200원\n을(3) 2024-10-04 주택임차권 이OO 235,000,000원\n갑(3) 2025-04-29 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 이OO\n점유: 전부 / 2022.10.28.~\n전입/확정/배당: 전입:2022-10-28 / 확정:2022-10-20\n보증금/차임: 보:235,000,000원\n대항력: 없음\n기타: 주거임차권자\n\n[기타사항]\n주OOOOOOO(임차인 이OO) : 경매신청채권자로 임차인 이OO의 임차보증금반환채권 양수인\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2022-10-18",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "전북특별자치도 익산시 송학동 902 송학크레지움캐슬 102동 2층201호",
+    "gamjungAmt": "295000000",
+    "minAmt": "295000000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "17a539ee-8cc5-470a-8c2e-c50cd91b79cc",
+    "objId": "1960840193061683705",
+    "buildingRegistry": "갑(14) 2020-10-28 소유권이전 김OO\n갑(16) 2022-02-18 소유권이전 강OO\n갑(17) 2023-03-06 압류 인OOOOO (말소기준등기)\n을(15) 2024-03-21 주택임차권 석OO 157,000,000원\n갑(18) 2024-09-24 압류 안OO\n갑(19) 2025-08-22 강제경매개시결정 주OOOOOOO\n갑(20) 2026-02-04 압류 시OOOOO",
+    "tenantDetail": "임차인: 1 주OOOOOOOOOOOO\n점유: 전부 / 2022.01.28.~\n전입/확정/배당: 전입:2022-01-28 / 확정:2022-01-11\n보증금/차임: 보:157,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차권자\n\n[기타사항]\n주OOOOOOO (임차권자 석OO 승계인):신청채권자임. 주택임대차보호법 제3조의 2 제7항에 해당하는 임차보증금 우선변제권 승계인임.\n2025.11.07.자로 신청채권자 주OOOOOOO로부터 우선변제권만 주장하고 대항력을 포기하며, 임차권등기 말소에 동의하겠다는 확약서가 제출됨.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2023-03-06",
+        "holder": "인OOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "주OOOOOOOOOOOO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "2025.11.07.자로 신청채권자 주OOOOOOO로부터 우선변제권만 주장하고 대항력을 포기하며, 임차권등기 말소에 동의하겠다는 확약서가 제출됨.",
+      "source": "structured_registry"
+    },
+    "addr": "경기도 안산시 상록구 사동 1324-12  3층302호",
+    "gamjungAmt": "170000000",
+    "minAmt": "58310000",
+    "objEtc": "2025.11.07.자로 신청채권자 주택도시보증공사로부터 우선변제권만 주장하고 대항력을 포기하며, 임차권등기 말소에 동의하겠다는 확약서가 제출됨."
+  },
+  {
+    "auctionId": "6b84b533-1b8c-463e-b6fa-c9151e4358e6",
+    "objId": "1965189097446179694",
+    "buildingRegistry": "갑(1) 2017-12-26 소유권보존신탁 국OOOOOOOOOOOO\n갑(2) 2018-01-22 소유권이전1번신탁등기말소 이OO\n갑(4) 2020-07-20 소유권이전 이OO\n을(2) 2020-07-20 근저당권설정 원OOOOOOOO 153,600,000원 (말소기준등기)\n을(4) 2020-11-10 근저당권설정 이OO 50,000,000원\n을(5) 2020-12-31 근저당권설정 김OO 130,000,000원\n갑(5) 2022-09-30 압류 원OOOOO\n갑(6) 2025-09-04 임의경매개시결정 원OOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2020-07-20",
+        "holder": "원OOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "강원특별자치도 원주시 단계동 1184 원주봉화산푸르지오 109동 12층1201호",
+    "gamjungAmt": "282000000",
+    "minAmt": "197400000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "682ecca8-4d9b-47a0-a687-04a7d8f91900",
+    "objId": "1965551367909016214",
+    "buildingRegistry": "갑(3) 2008-09-29 소유권이전신탁\n갑(4) 2010-01-29 소유권이전3번신탁등기말소 주OOOOOOOO\n갑(5) 2010-01-29 소유권이전 양OO\n갑(10) 2022-01-24 압류 구OOOOO (말소기준등기)\n을(7) 2023-09-05 주택임차권 이OO 300,000,000원 (인수)\n갑(11) 2025-09-05 강제경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 이OO\n점유: 전부 / 2021.07.21.~\n전입/확정/배당: 전입:2021-09-03 / 확정:2021-09-03 / 배당:2025-09-02\n보증금/차임: 보:300,000,000원\n대항력: 없음\n분석: HUG 승계\n기타: 주거임차권자\n\n[기타사항]\n임차권자 이OO의 임차보증금을 주OOOOOOO가 대위변제후 이 사건 경매신청\n- 매수인에게 대항할 수 있는 을구 순위 7번 임차권등기(2023. 9. 5.등기, 임차보증금: 3억원, 전입일: 2021. 9. 3, 확정일자: 2021. 9. 3.) 있고 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수하나, 임차보증금을 대위변제후 임차권자 이OO의 지위를 승계한 주OOOOOOO로부터 배당에서 보증금을 전액 변제받지 못하더라도 매수인에 대한 잔존 임차보증 금 반환청구권을 포기하고 임차권등기를 말소하는 것에 동의한다는 확약서가 제출됨",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "압류",
+        "date": "2022-01-24",
+        "holder": "구OOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-09-05",
+          "holder": "이OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": false,
+          "isHug": true,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "- 매수인에게 대항할 수 있는 을구 순위 7번 임차권등기(2023. 9. 5.등기, 임차보증금: 3억원, 전입일: 2021. 9. 3, 확정일자: 2021. 9. 3.) 있고 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수하나, 임차보증금을 대위변제후 임차권자 이OO의 지위를 승계한 주OOOOOOO로부터 배당에서 보증금을 전액 변제받지 못하더라도 매수인에 대한 잔존 임차보증 금 반환청구권을 포기하고 임차권등기를 말소하는 것에 동의한다는 확약서가 제출됨",
+      "source": "structured_registry"
+    },
+    "addr": "강원특별자치도 원주시 반곡동 1802 반곡벽산블루밍2차아파트 201동 7층705호",
+    "gamjungAmt": "312000000",
+    "minAmt": "218400000",
+    "objEtc": "- 매수인에게 대항할 수 있는 을구 순위 7번 임차권등기(2023. 9. 5.등기,  임차보증금: 3억원, 전입일: 2021. 9. 3, 확정일자: 2021. 9. 3.) 있고 배당에서 보증금이 전액 변제되지 아니하면 잔액을 매수인이 인수하나, 임차보증금을 대위변제후 임차권자 이옥화의 지위를 승계한 주택도시보증공사로부터 배당에서 보증금을 전액 변제받지 못하더라도 매수인에 대한 잔존 임차보증금 반환청구권을 포기하고 임차권등기를 말소하는 것에 동의한다는 확약서가 제출됨 "
+  },
+  {
+    "auctionId": "3e459406-98e1-4fa1-876f-cac196a01985",
+    "objId": "1953230030343503968",
+    "buildingRegistry": "갑(1) 1997-08-11 소유권이전 이OO\n을(1) 1997-08-11 근저당권설정 주OOOOOOO 15,600,000원 (말소기준등기)\n을(4) 2007-10-22 근저당권설정 주OOOOOOO 36,000,000원\n을(5) 2016-12-27 근저당권설정 주OOOOOOO 54,000,000원\n갑(2) 2018-02-13 가압류 이OO 152,000,000원\n갑(3) 2025-08-01 임의경매개시결정 주OOOOOOO",
+    "tenantDetail": "임차인: 1 이OO\n점유: 미상\n전입/확정/배당: 전입:1997-08-04\n대항력: 있음\n기타: 주거임차인\n\n[기타사항]\n전입인 이OO : 임대차관계 불분명",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "1997-08-11",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "이OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "강원특별자치도 원주시 태장동 128-1 태장동보렉스아파트 801동 3층307호",
+    "gamjungAmt": "101000000",
+    "minAmt": "49490000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "e8999e0c-9cc0-4013-8d34-bef2a7ef5fd2",
+    "objId": "1960840282471661981",
+    "buildingRegistry": "갑(1) 2011-01-20 소유권보존 에OOOOOOOOOOOO\n갑(6) 2011-04-21 소유권이전 코OOOOOOOOOOOO\n갑(7) 2017-01-25 소유권이전 전OO\n을(3) 2017-01-25 근저당권설정 대OOOOOOO 140,400,000원 (말소기준등기)\n갑(8) 2025-08-21 강제경매개시결정 신OOOOOO",
+    "tenantDetail": "[기타사항]\n해당사항없음\n해당사항없음",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2017-01-25",
+        "holder": "대OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "경상북도 김천시 부곡동 416-7 김천한성사랑채주상복합 13층 1307호",
+    "gamjungAmt": "194000000",
+    "minAmt": "135800000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "c7e60711-3c2c-482a-b137-08f3c6515bd3",
+    "objId": "1952142946631417863",
+    "buildingRegistry": "갑(3) 2000-06-19 2번서영심,2번정명숙,2번정석균을제외한공유자전원지분전부이전 정OO\n갑(4) 2000-07-05 3번소유권이전등기말소\n갑(5) 2001-07-12 2번서영심지분전부이전 정OO\n갑(6) 2002-07-08 공유자전원지분전부이전 김OO\n갑(7) 2005-04-15 소유권이전 김OO\n을(5) 2018-04-06 근저당권설정 주OOOOOOOOOOOO 100,100,000원 (말소기준등기)\n을(5-2) 2024-08-29 5번근저당권부채권질권설정 전OOOOOOOOO 100,100,000원\n을(5-3) 2024-08-29 5번근저당권부채권질권설정 고OO 36,000,000원\n을(5-4) 2024-08-29 5번근저당권부채권질권설정 전OO 45,000,000원\n을(6) 2018-06-08 근저당권설정 주OOOOOOOOOOOO 20,000,000원\n을(6-2) 2024-08-29 6번근저당권부채권질권설정 전OOOOOOOOO 20,000,000원\n을(7) 2020-12-04 근저당권설정 주OOOOOOOOOOOO 66,000,000원\n을(7-2) 2024-08-29 7번근저당권부채권질권설정 전OOOOOOOOO 66,000,000원\n갑(26) 2025-07-30 임의경매개시결정 주OOOOOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2018-04-06",
+        "holder": "주OOOOOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "광주광역시 남구 진월동 249 대주아파트 101동 1층102호",
+    "gamjungAmt": "322000000",
+    "minAmt": "144256000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "0ee6a05a-276d-4a29-a360-17e265291394",
+    "objId": "1957941168847192236",
+    "buildingRegistry": "갑(2) 2015-05-21 소유권이전 강OO\n갑(3) 2021-11-23 소유권이전 김OO\n을(11) 2023-11-03 주택임차권 김OO 125,000,000원 (인수)\n갑(4) 2024-12-13 가압류 인OOOOOOO 20,000,000원 (말소기준등기)\n갑(5) 2025-07-21 가압류 신OOO 15,351,720원\n갑(6) 2025-08-12 강제경매개시결정 김OO",
+    "tenantDetail": "임차인: 2 김OO\n점유: 전유부분전부 / 2020.09.16~2 / 023.11.20.\n전입/확정/배당: 전입:2020-09-17 / 확정:2020-06-29 / 배당:2025-08-25\n보증금/차임: 보:125,000,000원\n대항력: 있음\n기타: 주거임차권자\n\n[기타사항]\n김OO:경매신청채권자\n매수인에게 대항할 수 있는 을구 11번 임차권등기가 있으므로 배당에서 전액 변제되지 않으면 잔액은 매수인에게 인수될 수 있음.",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "가압류",
+        "date": "2024-12-13",
+        "holder": "인OOOOOOO"
+      },
+      "assumedRights": [
+        {
+          "type": "주택임차권",
+          "date": "2023-11-03",
+          "holder": "김OO"
+        }
+      ],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": true,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "대구광역시 달성군 다사읍 서재리 145 서재보성타운 109동 4층401호",
+    "gamjungAmt": "105000000",
+    "minAmt": "25211000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "3b7818e8-4060-41c7-af49-7b904ddfa95e",
+    "objId": "2076427515202634251",
+    "buildingRegistry": "갑(1) 2023-07-18 소유권보존 주OOOOOOO\n을(2) 2023-10-17 근저당권설정 주OOOOOOO 2,592,000,000원 (말소기준등기)\n을(4) 2025-10-14 근저당권설정 강O 300,000,000원\n갑(2) 2025-10-28 가압류 신OOOOO 500,000,000원\n갑(3) 2026-01-29 가압류 월OOOOOOO 1,014,843,461원\n갑(4) 2026-02-06 가압류 월OOOOOOO 427,298,312원\n을(4-1) 2025-12-05 4번근저당권가처분공동담보목록 신OOOOO\n갑(5) 2026-02-06 임의경매개시결정 케OOOOOOOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2023-10-17",
+        "holder": "주OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "전라남도 무안군 무안읍 교촌리 415-2 백년가클래스 103동 1,2층303호",
+    "gamjungAmt": "453000000",
+    "minAmt": "317100000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "8d8bc3c8-161d-4f5d-9633-168f7b42b853",
+    "objId": "2027157514264510880",
+    "buildingRegistry": "갑(5) 2007-01-10 소유권이전 양OO\n갑(7) 2012-01-27 소유권이전 김OO\n갑(8) 2015-01-27 소유권이전 허OO\n갑(9) 2026-02-13 강제경매개시결정 동OOOOOOOOOOOO (말소기준등기)",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "강제경매개시결정",
+        "date": "2026-02-13",
+        "holder": "동OOOOOOOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 천안시 동남구 목천읍 신계리 422 천안목천동우1차아파트 107동 1층106호",
+    "gamjungAmt": "44456000",
+    "minAmt": "31119000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "85fd6d44-a868-40fc-9622-c88e4f2a3fa4",
+    "objId": "2027157474154382182",
+    "buildingRegistry": "갑(1) 1996-04-30 소유권보존 주OOOOOO\n갑(6) 2004-06-30 소유권이전 김OO\n을(7) 2006-05-29 근저당권설정 부OOOOOOO 16,000,000원 (말소기준등기)\n을(9) 2025-12-26 근저당권설정공동담보목록 서OO 10,000,000원\n갑(8) 2026-02-12 임의경매개시결정 서OO",
+    "tenantDetail": "[기타사항]\n감정평가서 참조",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2006-05-29",
+        "holder": "부OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "감정평가서 참조",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 천안시 동남구 병천면 병천리 308 아우내아파트  4층402호",
+    "gamjungAmt": "33000000",
+    "minAmt": "23100000",
+    "objEtc": "감정평가서 참조"
+  },
+  {
+    "auctionId": "96ebd25a-4350-4672-9431-a1d68f73ea33",
+    "objId": "2076778897738826693",
+    "buildingRegistry": "갑(1) 1996-04-30 소유권보존 주OOOOOO\n갑(6) 2004-06-30 소유권이전 김OO\n을(7) 2006-05-29 근저당권설정 부OOOOOOO 16,000,000원 (말소기준등기)\n을(9) 2025-12-26 근저당권설정공동담보목록 서OO 10,000,000원\n갑(8) 2026-02-12 임의경매개시결정 서OO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2006-05-29",
+        "holder": "부OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 천안시 동남구 병천면 병천리 308 아우내아파트  4층404호",
+    "gamjungAmt": "33000000",
+    "minAmt": "23100000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "bdf8184d-3af9-4213-ab8f-14362ee05fc8",
+    "objId": "2076778903573103075",
+    "buildingRegistry": "갑(1) 1996-04-30 소유권보존 주OOOOOO\n갑(5) 2004-06-30 소유권이전 김OO\n을(7) 2006-05-29 근저당권설정 부OOOOOOO 16,000,000원 (말소기준등기)\n을(9) 2025-12-26 근저당권설정공동담보목록 서OO 10,000,000원\n갑(7) 2026-02-12 임의경매개시결정 서OO",
+    "tenantDetail": "임차인: 1 김OO\n점유: 412호\n전입/확정/배당: 전입:2021-06-08\n대항력: 없음\n기타: 주거임차인",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2006-05-29",
+        "holder": "부OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [
+        {
+          "name": "김OO",
+          "opposability": false,
+          "isHug": false,
+          "isSgi": false,
+          "isHf": false,
+          "excludeInsureCondition": false
+        }
+      ],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 천안시 동남구 병천면 병천리 308 아우내아파트  4층412호",
+    "gamjungAmt": "33000000",
+    "minAmt": "23100000",
+    "objEtc": ""
+  },
+  {
+    "auctionId": "be5eabf8-c202-4d71-a07b-e48728582ecb",
+    "objId": "2027157470891213286",
+    "buildingRegistry": "갑(26) 2014-02-24 소유권이전 서OO\n갑(32) 2020-11-24 소유권이전 김OO\n갑(34) 2020-11-24 소유권이전 김OO\n을(11) 2021-10-21 근저당권설정 한OOOOOOO 140,910,000원 (말소기준등기)\n갑(38) 2022-05-18 가압류 충OOOOOOO 36,259,470원\n갑(40) 2023-10-16 가압류 신OOO 33,298,468원\n갑(41) 2026-02-12 강제경매개시결정(38번가압류의본압류로의이행) 충OOOOOOO",
+    "tenantDetail": "",
+    "rightsStructured": {
+      "baselineRight": {
+        "type": "근저당권설정",
+        "date": "2021-10-21",
+        "holder": "한OOOOOOO"
+      },
+      "assumedRights": [],
+      "tenants": [],
+      "specNoteFullText": "",
+      "source": "structured_registry"
+    },
+    "addr": "충청남도 천안시 서북구 쌍용동 1273 현대아파트 401동 19층1903호",
+    "gamjungAmt": "178000000",
+    "minAmt": "124600000",
+    "objEtc": ""
+  }
+]

@@ -1,0 +1,3 @@
+isMemberShip: bool
+isPaid: bool
+obj: dict

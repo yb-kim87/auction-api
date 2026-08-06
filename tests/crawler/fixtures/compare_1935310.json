@@ -1,0 +1,65 @@
+{
+  "diff_count": 12,
+  "diffs": [
+    {
+      "field": "views",
+      "selenium": 266,
+      "httpx": 265
+    },
+    {
+      "field": "address",
+      "selenium": "경기 화성시 장안면 사곡리 93-4, 1층101호 외 1필지",
+      "httpx": "경기도 화성시 장안면 기린길 18, 1층101호"
+    },
+    {
+      "field": "builtYear",
+      "selenium": "2016.03.02",
+      "httpx": "값없음"
+    },
+    {
+      "field": "bid_info",
+      "selenium": "없음",
+      "httpx": "2023-10-31\n2023-11-30\n2026-06-12\n2026-07-20"
+    },
+    {
+      "field": "official_land_price",
+      "selenium": 66100000,
+      "httpx": 0
+    },
+    {
+      "field": "special_note",
+      "selenium": "공시가 1억이하",
+      "httpx": "없음"
+    },
+    {
+      "field": "elevator",
+      "selenium": "0대 / 0대",
+      "httpx": "0"
+    },
+    {
+      "field": "parking",
+      "selenium": "5대",
+      "httpx": "없음"
+    },
+    {
+      "field": "land_area",
+      "selenium": "65.552",
+      "httpx": "없음"
+    },
+    {
+      "field": "deunggi_info",
+      "selenium": "토지2. 부분 2015. 8. 31.근저당권",
+      "httpx": "값없음"
+    },
+    {
+      "field": "education_setup",
+      "selenium": "유치원: 우정병설 (878m)\n초등학교: 우정 (861m)\n중학교: 장안여자 (725m), 삼괴 (1.9km), 두레자연 (2.2km)\n고등학교: 삼괴 (1.9km), 두레자연 (2.2km)",
+      "httpx": ""
+    },
+    {
+      "field": "record_time",
+      "selenium": "2026-07-16T22:28:39",
+      "httpx": "2026-07-16T22:19:48"
+    }
+  ]
+}

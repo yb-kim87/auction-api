@@ -1,0 +1,4 @@
+addr: 경기 군포시 당동 749-1, 1동 17층1702호 (당동,그랑시티2) 외 8필지
+bldgNm: 
+yongdoCd: 2020104
+yejungYongdoNm: 

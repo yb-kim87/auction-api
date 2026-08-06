@@ -1,0 +1,68 @@
+[
+  {
+    "dspslDxdyId": "2064094526191960248",
+    "chasu": 1,
+    "dxdyYmd": "2026-06-23T10:30:00+09:00",
+    "bidBgngYmd": null,
+    "bidEndYmd": null,
+    "dxdyPlcNm": "제101호 경매법정",
+    "gamjungAmt": "847000000",
+    "minAmt": "847000000",
+    "bidDpslPrc": "84700000",
+    "bidDpslRate": 10,
+    "auctnDxdyRsltCd": 67000003,
+    "auctnDxdyRslt": "유찰",
+    "auctnDxdyKndCd": 68000001,
+    "isMaegakResult": false,
+    "maegakResult": {
+      "bidderCnt": "0",
+      "bidder": "",
+      "amt": "0",
+      "secondAmt": "0"
+    }
+  },
+  {
+    "dspslDxdyId": "2069562991317090782",
+    "chasu": 2,
+    "dxdyYmd": "2026-07-28T10:00:00+09:00",
+    "bidBgngYmd": null,
+    "bidEndYmd": null,
+    "dxdyPlcNm": "제101호 경매법정",
+    "gamjungAmt": "847000000",
+    "minAmt": "592900000",
+    "bidDpslPrc": "0",
+    "bidDpslRate": 0,
+    "auctnDxdyRsltCd": 0,
+    "auctnDxdyRslt": "",
+    "auctnDxdyKndCd": 68000001,
+    "isMaegakResult": false,
+    "maegakResult": {
+      "bidderCnt": "0",
+      "bidder": "",
+      "amt": "0",
+      "secondAmt": "0"
+    }
+  },
+  {
+    "dspslDxdyId": "2069562991317091806",
+    "chasu": 2,
+    "dxdyYmd": "2026-08-04T14:00:00+09:00",
+    "bidBgngYmd": null,
+    "bidEndYmd": null,
+    "dxdyPlcNm": "제101호 경매법정",
+    "gamjungAmt": "847000000",
+    "minAmt": "0",
+    "bidDpslPrc": "0",
+    "bidDpslRate": 10,
+    "auctnDxdyRsltCd": 0,
+    "auctnDxdyRslt": "",
+    "auctnDxdyKndCd": 68000002,
+    "isMaegakResult": false,
+    "maegakResult": {
+      "bidderCnt": "0",
+      "bidder": "",
+      "amt": "0",
+      "secondAmt": "0"
+    }
+  }
+]

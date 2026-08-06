@@ -1,0 +1,28 @@
+{
+  "auctionNo_ours": "2025타경20905",
+  "address_ours": "강원특별자치도 원주시 단계동 1184 원주봉화산푸르지오 109동 12층1201호",
+  "addr_nice": "강원특별자치도 원주시 단계동 1184 원주봉화산푸르지오 109동 12층1201호",
+  "appraisedValue_ours": "282000000",
+  "gamjungAmt_nice": "282000000",
+  "minPrice_ours": "197400000",
+  "minAmt_nice": "197400000",
+  "buildingRegistry_ours_len": 239,
+  "deunggiLst_nice_count": 1,
+  "tenantDetail_ours_len": 154,
+  "imchainLst_nice_count": 0,
+  "maegakMyungse_nice": {
+    "myungsePeopleLst": [],
+    "myungsePeopleLstOrg": [],
+    "choeSeonSungWi": "2020. 7. 20. 근저당권",
+    "writeYmd": "2026-06-02",
+    "dstrtDemnYmd": "2025. 12. 8.",
+    "imchaDesc": "",
+    "magakDesc": "",
+    "jisangDesc": "",
+    "myungseDesc": ""
+  },
+  "specialNote_ours": "공시가 1~2억",
+  "objEtc_nice": "",
+  "bidInfo_ours": "1차 2026-07-20 유찰 282,000,000원\n2차 2026-10-12 변경 197,400,000원\n3차 2026-08-24 진행 197,400,000원",
+  "dspslDxdyLst_nice_count": 5
+}

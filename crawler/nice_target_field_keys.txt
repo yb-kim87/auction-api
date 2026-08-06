@@ -1,0 +1,151 @@
+objId: 2064094504968782008
+objType: 76000001
+objKind: 102000001
+sagunId: 2064092240401138067
+sagun: dict(41 keys)
+objNo: 1
+saYear: 2024
+saNo: 79330
+courtCd: 56000008
+jdbnCd: 1004
+jdbnNm: 경매4계
+court: dict(9 keys)
+pictures: list(17 items)
+maegakdaesangCd: 1000001
+initRegYmd: 
+dspslDxdyYmd: 2026-07-28T10:00:00+09:00
+dspslDxdyLst: list(3 items)
+dspslDxdySaleLst: list(2 items)
+prevDspslDxdyYmd: 2026-07-28T10:30:00+09:00
+dspslPlcNm: 제101호 경매법정
+soyujaNm: 윤OO
+chamujaNm: 주OOO OOOO
+chaeonjaNm: 케OOOOOOOOOOOO
+dstrtDemnLst: list(1 items)
+yongdoCd: 2020104
+yongdoCd1: 202
+yongdoCd2: 20201
+yejungYongdoNm: 
+auctnLstDvsCd: 59000003
+auctnGdsUsgCd: 62000001
+gamjungAmt: 847000000
+minAmt: 592900000
+maegakAmt: 0
+gamjungAmtRate: 70
+maegakAmtRate: 0
+dspslGdsRmk: 
+bidDpslPrc: 59290000
+bidDpslRate: 10
+objEtc: 
+prevObjEtc: 
+addr: 경기도 남양주시 진접읍 금곡리 1115 진접신도브래뉴아파트 2208동 OO OOOO
+tojiAddr: 경기도 남양주시 진접읍 금곡리 1115 진접신도브래뉴아파트 2208동 OO OOOO
+roadAddr: 경기도 남양주시 진접읍 해밀예당1로236번길 3, 2208동 OO OOOO OOOOOOOOOOOO
+addrNoPrivacy: 경기도 남양주시 진접읍 금곡리 1115 진접신도브래뉴아파트 2208동 4층 403호
+tojiAddrNoPrivacy: 경기도 남양주시 진접읍 금곡리 1115 진접신도브래뉴아파트 2208동 4층 403호
+roadAddrNoPrivacy: 경기도 남양주시 진접읍 해밀예당1로236번길 3, 2208동 4층 403호 (진접신도브래뉴아파트)
+postcode: 12061
+storagePlace: 
+bldgNm: 진접신도브래뉴아파트
+kaptCode: A47294806
+pnuCd: 4136025328111150000
+pnuArea1: 41
+pnuArea2: 41360
+pnuArea3: 41360253
+lat: 37.72121503090551
+lng: 127.20608703642812
+x: 0
+y: 0
+tojiArea: 98.26960000000001
+tojiAreaJiboon: 98.26960000000001
+tojiJesioeAreaIn: 0
+tojiJesioeAreaOut: 0
+tojiJesioeAreaInJiboon: 0
+tojiJesioeAreaOutJiboon: 0
+bldgArea: 159.8568
+bldgAreaJiboon: 159.8568
+bldgJesioeAreaOut: 0
+bldgJesioeAreaIn: 0
+bldgJesioeAreaInJiboon: 0
+bldgJesioeAreaOutJiboon: 0
+tojiGamjungAmt: 338800000
+tojiJesioeGamjungInAmt: 0
+tojiJesioeGamjungOutAmt: 0
+bldgGamjungAmt: 508200000
+bldgJesioeGamjungInAmt: 0
+bldgJesioeGamjungOutAmt: 0
+totalGamjungAmt: 847000000
+jeonipSedae: 
+etcGamjungAmt: 0
+gwanribi: 
+juminCenterInfo: 
+uchalCnt: 1
+objProgStatusCd: 9000004
+objStatusCd: 6000001
+auctnGdsStatCd: 72000002
+auctnDxdyGdsStatCd: 73000001
+specialObjCdList: list(3 items)
+bidDvsCd: 61000001
+bidBgngYmd: None
+bidEndYmd: None
+realMulKindCd: 64000001
+useLawAs: list(0 items)
+useLawBs: list(17 items)
+gamjungDescGrpLst: list(1 items)
+gamjungDesc: 
+objList: list(2 items)
+imchainLst: list(0 items)
+maegakMyungse: dict(9 keys)
+maegakMyungseCrawler: dict(9 keys)
+aroundDspslStats: list(0 items)
+saedaePdfLst: list(1 items)
+gamjungPdfLst: list(1 items)
+maegakPdfLst: list(2 items)
+geonchukmulPdfLst: list(1 items)
+tojidaejangPdfLst: list(0 items)
+deunggiPdfLst: list(1 items)
+deunggiLst: list(1 items)
+naverUrls: list(1 items)
+asilCode: 20125613
+malsoFirstDt: 2015-09-25T00:00:00Z
+taskStatusCd: 8000002
+viewTotal: 6
+dailyViewList: list(2 items)
+isFavorite: False
+isAlarm: False
+isPartnerObj: False
+favoriteRate: 0
+userObjFavoriteCategoryId: 0
+favoriteCategory: 
+favoriteMemo: 
+favoriteMsg: 
+deunggiStatus: done
+roi1: 0
+roi2: 0
+roi3: 0
+roi4: 0
+kapt: dict(62 keys)
+tags: None
+landTradePriceLst: None
+aptTradePriceLst: list(142 items)
+shouseTradePriceLst: None
+rhouseTradePriceLst: None
+officetelTradePriceLst: None
+nplCompany: 0
+npl: None
+metadata: dict(8 keys)
+isScrap: False
+aptSidoGuNm: 남양주시
+aptTradeStaticSidoGu: dict(9 keys)
+aptTradeRankSidoGu: dict(6 keys)
+aptUmdNm: 진접읍 금곡리
+aptTradeStaticUmd: dict(9 keys)
+aptTradeRankUmd: dict(6 keys)
+isNiceAnalysis: False
+noteIdLite: 0
+noteIdPro: 2077992320250150972
+isMemberShip: False
+isPaid: False
+housePrice: dict(24 keys)
+updatedAt: 2026-07-26T12:48:50.736399+09:00
+createdAt: 2026-06-09T06:17:33.647198+09:00
