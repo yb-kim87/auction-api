@@ -59,11 +59,20 @@ export function normalizeCrawlAuctionNo(raw: string): string | null {
   return null;
 }
 
+/** 크롤 소스별 물건 링크 형식 검증. 원래 탱크옥션 전용이었는데, 나이스옥션
+ * 작업창(2026-08-07)도 같은 저장 파이프라인(mapCrawledItem/
+ * importCrawledItem)을 그대로 재사용하면서 여기서 막혔다 — 탱크 링크
+ * 판정 로직은 그대로 두고 나이스 링크 패턴만 추가했다. */
 export function isValidTankAuctionLink(link: string): boolean {
   const trimmed = link.trim();
   if (!trimmed) return true;
-  if (!trimmed.includes("tankauction.com")) return false;
-  return /\/(ca|pa)\/(caView|paView)\.php/.test(trimmed);
+  if (trimmed.includes("tankauction.com")) {
+    return /\/(ca|pa)\/(caView|paView)\.php/.test(trimmed);
+  }
+  if (trimmed.includes("niceauction.co.kr")) {
+    return /\/auction\/detail\/\d+/.test(trimmed);
+  }
+  return false;
 }
 
 export function isMeaningfulCrawlAddress(address: string): boolean {

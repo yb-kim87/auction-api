@@ -24,17 +24,27 @@ DEFAULT_HEADERS = {
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "ko-KR,ko;q=0.9",
     "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
     ),
-    # 실제 브라우저로 물건 상세 페이지를 열면 이 헤더들이 자동으로
-    # 붙는다 — 이게 없는 순수 API 호출은 비회원 12건 한도(실측,
-    # 2026-07-30)에 걸리지만, 브라우저(Selenium)로 정상 접근하면 전혀
-    # 안 걸리는 걸 확인했다. Referer는 물건마다 달라야 해서 여기 기본값
-    # 대신 fetch_obj_detail에서 매번 채운다.
-    "sec-ch-ua": '"Not;A=Brand";v="8", "Chromium";v="128", "Google Chrome";v="128"',
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": '"Windows"',
+    # 이전엔 sec-ch-ua 3종만 넣었는데 그래도 비회원 12건 한도(2026-07-30
+    # 실측)에 걸렸다. 2026-08-06 실제 브라우저 캡처 헤더(Sec-Fetch-*,
+    # Priority, GA 쿠키)를 그대로 추가하고 http2=True로 붙였더니 100건
+    # 연속 성공(code=0)했다 — 이 전체 세트가 진짜 필요조건으로 보인다.
+    # Referer는 물건마다 달라야 해서 여기 기본값 대신 fetch_obj_detail에서
+    # 매번 채운다. Cookie는 로그인 세션이 아니라 GA 트래킹 쿠키일 뿐이라
+    # 계정 없이도 동작한다(실측 확인).
+    "Sec-Ch-Ua": '"Not-A.Brand";v="24", "Chromium";v="146"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"macOS"',
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Dest": "empty",
+    "Priority": "u=1, i",
+    "Cookie": (
+        "_ga=GA1.1.157066428.1785904692; "
+        "_ga_MGNYXFKQXH=GS2.1.s1785904691$o1$g1$t1785904860$j13$l0$h0"
+    ),
 }
 
 # 경매(76000001)만 대상 — 공매/기타는 이번 범위 밖.
@@ -43,7 +53,10 @@ OBJ_TYPE_AUCTION = "76000001"
 
 def make_client() -> httpx.AsyncClient:
     return httpx.AsyncClient(
-        base_url=BASE_URL, headers=DEFAULT_HEADERS, timeout=CRAWL_TIMEOUT
+        base_url=BASE_URL,
+        headers=DEFAULT_HEADERS,
+        timeout=CRAWL_TIMEOUT,
+        http2=True,
     )
 
 

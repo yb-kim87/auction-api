@@ -1,0 +1,34 @@
+[
+  {
+    "objId": "1965189097446179694",
+    "raw": {
+      "link": "https://niceauction.co.kr/auction/detail/1965189097446179694",
+      "auctionNo": "2025타경20905",
+      "court": "원주지원",
+      "address": "강원특별자치도 원주시 단계동 1184 원주봉화산푸르지오 109동 12층1201호",
+      "usage": "아파트",
+      "area": "72.8686",
+      "sharedArea": "",
+      "bidDate": "2026.10.12",
+      "appraisedValue": "282000000",
+      "minPrice": "197400000",
+      "salePrice": null,
+      "owner": "이OO",
+      "specialNote": "",
+      "landShare": "43.27440000000001",
+      "buildingRegistry": "갑(1) 2017-12-26 소유권보존신탁 국OOOOOOOOOOOO\n갑(2) 2018-01-22 소유권이전1번신탁등기말소 이OO\n갑(4) 2020-07-20 소유권이전 이OO\n을(2) 2020-07-20 근저당권설정 원OOOOOOOO 153,600,000원 (말소기준등기)\n을(4) 2020-11-10 근저당권설정 이OO 50,000,000원\n을(5) 2020-12-31 근저당권설정 김OO 130,000,000원\n갑(5) 2022-09-30 압류 원OOOOO\n갑(6) 2025-09-04 임의경매개시결정 원OOOOOOOO",
+      "tenantDetail": "",
+      "lawdCd": "51130",
+      "umdNm": null,
+      "jibun": null,
+      "recordTime": ""
+    },
+    "result": {
+      "skipped": true,
+      "unchanged": false,
+      "created": false,
+      "item": null,
+      "reason": "invalid_link"
+    }
+  }
+]
