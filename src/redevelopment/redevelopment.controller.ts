@@ -14,6 +14,48 @@ export class RedevelopmentController {
     return this.service.listZones();
   }
 
+  /** 경계 자동 추출 실패 로그 — 어떤 도면이 왜 실패했는지 쌓아 두고
+   * 유형별로 알고리즘을 고치는 데 쓴다(사용자 요청, 2026-08-06). */
+  @Get("trace-failures")
+  async listTraceFailures(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.listTraceFailures();
+  }
+
+  @Post("trace-failures")
+  async recordTraceFailure(
+    @Headers() headers: Record<string, string>,
+    @Body()
+    body: {
+      zoneId?: string | null;
+      zoneName?: string;
+      imageUrl?: string;
+      imageWidth?: number;
+      imageHeight?: number;
+      reason?: string;
+      summary?: string;
+      detail?: Record<string, unknown> | null;
+    },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.recordTraceFailure(body);
+  }
+
+  @Patch("trace-failures/:id/resolve")
+  async resolveTraceFailure(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.resolveTraceFailure(id);
+  }
+
+  @Delete("trace-failures/:id")
+  async deleteTraceFailure(@Headers() headers: Record<string, string>, @Param("id") id: string) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.deleteTraceFailure(id);
+  }
+
   @Post("zones")
   async createZone(
     @Headers() headers: Record<string, string>,

@@ -46,6 +46,7 @@ import { LectureProgress } from "./lecture-replay/entities/lecture-progress.enti
 import { LectureQuestion } from "./lecture-replay/entities/lecture-question.entity";
 import { LectureNote } from "./lecture-replay/entities/lecture-note.entity";
 import { RedevelopmentZone } from "./redevelopment/entities/redevelopment-zone.entity";
+import { RedevelopmentTraceFailure } from "./redevelopment/entities/redevelopment-trace-failure.entity";
 
 const entities = [
   Auction,
@@ -93,6 +94,7 @@ const entities = [
   LectureQuestion,
   LectureNote,
   RedevelopmentZone,
+  RedevelopmentTraceFailure,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

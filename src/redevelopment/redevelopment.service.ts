@@ -3,6 +3,10 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { IsNull, Not, Repository } from "typeorm";
 import { Auction } from "../auctions/auction.entity";
 import { RedevelopmentPoint, RedevelopmentZone } from "./entities/redevelopment-zone.entity";
+import {
+  RedevelopmentTraceFailure,
+  TraceFailureReason,
+} from "./entities/redevelopment-trace-failure.entity";
 
 /** 표준 레이 캐스팅(ray casting) 알고리즘 — 점이 다각형 내부에 있는지
  * 판별한다. 꼭짓점이 시계/반시계 어느 방향으로 그려졌든 동작한다. */
@@ -46,7 +50,77 @@ export class RedevelopmentService {
     private readonly zoneRepo: Repository<RedevelopmentZone>,
     @InjectRepository(Auction)
     private readonly auctionRepo: Repository<Auction>,
+    @InjectRepository(RedevelopmentTraceFailure)
+    private readonly traceFailureRepo: Repository<RedevelopmentTraceFailure>,
   ) {}
+
+  listTraceFailures() {
+    return this.traceFailureRepo.find({ order: { lastSeenAt: "DESC", createdAt: "DESC" } });
+  }
+
+  /** 경계 자동 추출 실패를 기록한다.
+   *
+   * 같은 이미지가 반복 실패해도 행을 쌓지 않고 횟수만 올린다 — 관리자가
+   * 같은 구역을 여러 번 열어보는 게 자연스러운 흐름이라, 그때마다 새 행이
+   * 생기면 목록이 금방 쓸모없어진다. */
+  async recordTraceFailure(input: {
+    zoneId?: string | null;
+    zoneName?: string;
+    imageUrl?: string;
+    imageWidth?: number;
+    imageHeight?: number;
+    reason?: string;
+    summary?: string;
+    detail?: Record<string, unknown> | null;
+  }) {
+    const VALID: TraceFailureReason[] = ["NO_RED", "NOT_ENCLOSED", "TOO_SMALL", "TOO_LARGE"];
+    const reason = VALID.includes(input.reason as TraceFailureReason)
+      ? (input.reason as TraceFailureReason)
+      : "NOT_ENCLOSED";
+    const imageUrl = (input.imageUrl ?? "").trim();
+    if (!imageUrl) throw new BadRequestException("실패한 이미지 URL이 필요합니다.");
+
+    const now = new Date();
+    const existing = await this.traceFailureRepo.findOne({ where: { imageUrl } });
+    if (existing) {
+      existing.occurrences += 1;
+      existing.lastSeenAt = now;
+      existing.reason = reason;
+      existing.summary = input.summary ?? existing.summary;
+      existing.detail = input.detail ?? existing.detail;
+      existing.zoneId = input.zoneId ?? existing.zoneId;
+      existing.zoneName = input.zoneName ?? existing.zoneName;
+      // 다시 실패했다면 아직 해결된 게 아니다.
+      existing.resolvedAt = null;
+      return this.traceFailureRepo.save(existing);
+    }
+    return this.traceFailureRepo.save(
+      this.traceFailureRepo.create({
+        zoneId: input.zoneId ?? null,
+        zoneName: input.zoneName ?? "",
+        imageUrl,
+        imageWidth: input.imageWidth ?? 0,
+        imageHeight: input.imageHeight ?? 0,
+        reason,
+        summary: input.summary ?? "",
+        detail: input.detail ?? null,
+        occurrences: 1,
+        lastSeenAt: now,
+      }),
+    );
+  }
+
+  async resolveTraceFailure(id: string) {
+    const row = await this.traceFailureRepo.findOne({ where: { id } });
+    if (!row) throw new NotFoundException("실패 기록을 찾을 수 없습니다.");
+    row.resolvedAt = new Date();
+    return this.traceFailureRepo.save(row);
+  }
+
+  async deleteTraceFailure(id: string) {
+    await this.traceFailureRepo.delete(id);
+    return { ok: true };
+  }
 
   listZones() {
     return this.zoneRepo.find({ order: { createdAt: "ASC" } });
