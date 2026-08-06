@@ -72,16 +72,16 @@ export function saleBrokerageRate(salePriceWon: number): number {
   return 0.007;
 }
 
-/** 양도소득세 과세표준 구간별 세율/누진공제액 */
+/** 종합소득세 과세표준 구간별 기본세율/누진공제액(국세청 2023년 귀속 이후 기준) */
 const CAPITAL_GAINS_TAX_BRACKETS: Array<{ upTo: number; rate: number; deduction: number }> = [
   { upTo: 14_000_000, rate: 0.06, deduction: 0 },
   { upTo: 50_000_000, rate: 0.15, deduction: 1_260_000 },
-  { upTo: 88_000_000, rate: 0.24, deduction: 5_220_000 },
-  { upTo: 150_000_000, rate: 0.35, deduction: 14_900_000 },
-  { upTo: 300_000_000, rate: 0.38, deduction: 19_400_000 },
-  { upTo: 500_000_000, rate: 0.4, deduction: 25_400_000 },
-  { upTo: 1_000_000_000, rate: 0.42, deduction: 35_400_000 },
-  { upTo: Infinity, rate: 0.45, deduction: 65_400_000 },
+  { upTo: 88_000_000, rate: 0.24, deduction: 5_760_000 },
+  { upTo: 150_000_000, rate: 0.35, deduction: 15_440_000 },
+  { upTo: 300_000_000, rate: 0.38, deduction: 19_940_000 },
+  { upTo: 500_000_000, rate: 0.4, deduction: 25_940_000 },
+  { upTo: 1_000_000_000, rate: 0.42, deduction: 35_940_000 },
+  { upTo: Infinity, rate: 0.45, deduction: 65_940_000 },
 ];
 
 export function capitalGainsTaxBracket(taxBaseWon: number): { rate: number; deduction: number } {
