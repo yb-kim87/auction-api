@@ -92,11 +92,21 @@ export function isOfficetelOrLowPriceNonMetro(item: {
   city?: string | null;
   officialLandPrice?: number | null;
 }): boolean {
-  const usage = item.usage ?? "";
-  if (usage.includes("오피스텔")) return true;
+  return isOfficetel(item) || isLowPriceNonMetroApartment(item);
+}
+
+export function isOfficetel(item: { usage?: string | null }): boolean {
+  return (item.usage ?? "").includes("오피스텔");
+}
+
+export function isLowPriceNonMetroApartment(item: {
+  usage?: string | null;
+  city?: string | null;
+  officialLandPrice?: number | null;
+}): boolean {
   const officialLandPrice = item.officialLandPrice ?? 0;
   return (
-    usage.includes("아파트") &&
+    (item.usage ?? "").includes("아파트") &&
     !isMetropolitanArea(item.city) &&
     officialLandPrice > 0 &&
     officialLandPrice <= LOW_PRICE_NONMETRO_THRESHOLD_WON
@@ -116,9 +126,13 @@ export function selectLoanPolicy(
   item?: { usage?: string | null; city?: string | null; officialLandPrice?: number | null },
 ): LoanPolicyLike | null {
   const byId = (id: string) => policies.find((p) => p.id === id) ?? null;
-  if (item && isOfficetelOrLowPriceNonMetro(item)) {
-    const special = byId("officetel_or_low_price_nonmetro");
-    if (special) return special;
+  if (item && isOfficetel(item)) {
+    const officetel = byId("officetel");
+    if (officetel) return officetel;
+  }
+  if (item && isLowPriceNonMetroApartment(item)) {
+    const lowPriceApartment = byId("low_price_nonmetro_apartment");
+    if (lowPriceApartment) return lowPriceApartment;
   }
   if (regulatedArea) {
     if (criteria.housingCount > 0) return byId("regulated_owner");

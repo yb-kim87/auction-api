@@ -79,8 +79,8 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     sortOrder: 5,
   },
   {
-    id: "officetel_or_low_price_nonmetro",
-    label: "오피스텔 · 지방 아파트 공시가 2억 이하(주택수 무관)",
+    id: "officetel",
+    label: "오피스텔(공시가·주택수 무관)",
     loanRatio: 0.9,
     appraisalRatio: 0.8,
     regulatedArea: false,
@@ -89,7 +89,20 @@ export const DEFAULT_LOAN_POLICIES: Array<Omit<LoanPolicy, "id"> & { id: string 
     roomDeductionTarget: "none",
     sortOrder: 6,
   },
+  {
+    id: "low_price_nonmetro_apartment",
+    label: "비수도권 공시가 2억 이하 아파트(주택수 무관)",
+    loanRatio: 0.9,
+    appraisalRatio: 0.8,
+    regulatedArea: false,
+    loanUnavailable: false,
+    businessLoanOnly: false,
+    roomDeductionTarget: "none",
+    sortOrder: 7,
+  },
 ];
+
+const LEGACY_SPECIAL_POLICY_ID = "officetel_or_low_price_nonmetro";
 
 @Injectable()
 export class LoanPolicyService implements OnModuleInit {
@@ -101,10 +114,26 @@ export class LoanPolicyService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    // 기존 통합 특례 정책을 두 정책으로 분리한다. 관리자가 저장한 비율과 방공제
+    // 기준은 그대로 복사해 배포 직후 계산 결과가 달라지지 않게 한다.
+    const legacySpecial = await this.loanPolicyRepo.findOne({
+      where: { id: LEGACY_SPECIAL_POLICY_ID },
+    });
+
     for (const defaults of DEFAULT_LOAN_POLICIES) {
       const exists = await this.loanPolicyRepo.findOne({ where: { id: defaults.id } });
       if (!exists) {
-        await this.loanPolicyRepo.save(this.loanPolicyRepo.create(defaults));
+        const initial =
+          legacySpecial && (defaults.id === "officetel" || defaults.id === "low_price_nonmetro_apartment")
+            ? {
+                ...defaults,
+                loanRatio: legacySpecial.loanRatio,
+                appraisalRatio: legacySpecial.appraisalRatio,
+                loanUnavailable: legacySpecial.loanUnavailable,
+                roomDeductionTarget: legacySpecial.roomDeductionTarget,
+              }
+            : defaults;
+        await this.loanPolicyRepo.save(this.loanPolicyRepo.create(initial));
         continue;
       }
       // 관리자가 조정하는 loanRatio/appraisalRatio/loanUnavailable은 보존하고,
@@ -125,7 +154,10 @@ export class LoanPolicyService implements OnModuleInit {
   }
 
   findAll() {
-    return this.loanPolicyRepo.find({ order: { sortOrder: "ASC" } });
+    const knownPolicyIds = new Set(DEFAULT_LOAN_POLICIES.map((policy) => policy.id));
+    return this.loanPolicyRepo
+      .find({ order: { sortOrder: "ASC" } })
+      .then((policies) => policies.filter((policy) => knownPolicyIds.has(policy.id)));
   }
 
   async updatePolicy(
