@@ -13,3 +13,4 @@ venv/
 
 # 대법원 경매정보 원본 응답(사진 base64 포함, 수 MB) — 경량 버전만 커밋
 crawler/courtauction_probe/detail_response.json
+_*.txt
