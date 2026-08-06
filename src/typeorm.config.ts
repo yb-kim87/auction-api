@@ -48,6 +48,8 @@ import { LectureNote } from "./lecture-replay/entities/lecture-note.entity";
 import { RedevelopmentZone } from "./redevelopment/entities/redevelopment-zone.entity";
 import { RedevelopmentTraceFailure } from "./redevelopment/entities/redevelopment-trace-failure.entity";
 import { HousingOfficialPrice } from "./housing-price/entities/housing-official-price.entity";
+import { NiceCrawlerStateRow } from "./nice-crawler/entities/nice-crawler-state.entity";
+import { NiceCrawlerLogRow } from "./nice-crawler/entities/nice-crawler-log.entity";
 
 const entities = [
   Auction,
@@ -97,6 +99,8 @@ const entities = [
   RedevelopmentZone,
   RedevelopmentTraceFailure,
   HousingOfficialPrice,
+  NiceCrawlerStateRow,
+  NiceCrawlerLogRow,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

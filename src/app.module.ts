@@ -22,6 +22,7 @@ import { LectureReplayModule } from "./lecture-replay/lecture-replay.module";
 import { DbMaintenanceModule } from "./db-maintenance/db-maintenance.module";
 import { RedevelopmentModule } from "./redevelopment/redevelopment.module";
 import { HousingPriceModule } from "./housing-price/housing-price.module";
+import { NiceCrawlerModule } from "./nice-crawler/nice-crawler.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -48,6 +49,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     DbMaintenanceModule,
     RedevelopmentModule,
     HousingPriceModule,
+    NiceCrawlerModule,
   ],
 })
 export class AppModule implements NestModule {
