@@ -445,3 +445,43 @@ naverPrice/education/실거래가/factTags 등은 애초에 탱크옥션이 아�
 3. 병행 운영 → 안정성 확인 후 나이스옥션 메인 전환, 탱크옥션은
    미납관리비 보조 수단으로만 유지.
 4. ~~이용약관/제휴 조건 검토~~ — 제휴 완료로 해소(2026-08-06).
+
+## 追記 (2026-08-07) — 나이스옥션 작업창 착수(탱크옥션과 완전 병렬)
+
+사용자 결정: "기존 탱크옥션 작업창을 그대로 두고, 나이스(작업창) 탭을
+하나 만들어서 탱크옥션 작업창과 동일한 기능을 하게 만들고 나이스에서
+크롤을 진행해서 문제가 안 나올 때까지 점검하면서 점점 옮겨간다."
+
+### 1차 범위(구현 완료, auction-api)
+- 탱크옥션 작업창(`crawler.controller.ts`/`crawler.service.ts`)은
+  전혀 수정하지 않음 — 완전히 별도 모듈 `src/nice-crawler/`로 신설.
+- `nice_crawler_state`(진행상태 단일 행)/`nice_crawler_log` 테이블
+  (마이그레이션 `1784283000000-CreateNiceCrawlerTables`).
+- `GET/POST /nice-crawler/{status,logs,start,stop,progress,worker-log,
+  import-item}` — 관리자 세션 인증(status/logs/start/stop)과 로컬
+  워커용 `x-crawler-secret` 인증(progress/worker-log/import-item)을
+  기존 탱크 패턴 그대로 분리.
+- **물건 저장 파이프라인은 새로 만들지 않았다** — 기존
+  `mapCrawledItem`(crawler-item.mapper.ts)과
+  `AuctionsService.importCrawledItem`을 그대로 재사용. 저장 스키마가
+  이미 크롤 소스에 비의존적으로 설계돼 있고(어떤 raw 필드든
+  auctionNo/address/link 등 공통 형태면 저장됨), `nice_parsers.py`가
+  이미 "탱크옥션 텍스트 포맷과 호환되는 buildingRegistry/tenantDetail로
+  변환"하도록 설계돼 있어(§4 참고) 별도 저장 로직이 필요 없었다.
+
+### 프론트(auction)
+- `NiceCrawlerWorkPanel.tsx`(신규) — 시작/중지, 진행 상태(목록수집·
+  매칭·처리·신규·갱신·스킵 카운트), 로그. 탱크 작업창(1,090줄, 매일
+  작업/알고리즘/부가세 등 서브탭 포함)은 그대로 두고, admin 페이지의
+  **바깥쪽 최상위 탭**으로 "나이스(작업창)"를 하나 추가해 완전히
+  독립시켰다(`CrawlerWorkPanel.tsx` 파일 자체는 한 줄도 안 건드림).
+
+### 다음 단계(미착수)
+- 로컬 워커(`crawler/nice_worker.py`) — 기존 `nice_client.py`(API
+  클라이언트, 2026-08-06 확인된 브라우저 헤더 우회 포함)/
+  `nice_parsers.py`(필드 변환)/`nice_match_our_db.py`(사건번호+법원명
+  매칭)를 재조립해 `/nice-crawler/*`를 폴링하는 워커로 묶는 작업.
+  실제 niceauction.co.kr 호출 + 운영 DB 쓰기가 발생하므로, 만들고
+  나서 바로 대량 실행하지 않고 소수 건으로 먼저 검증할 것(2026-08-06
+  주택공시가격 임포트 사고 — 사전 소규모 검증 없이 대량 작업을 바로
+  돌려 운영 DB 다운 사고가 났던 교훈).
