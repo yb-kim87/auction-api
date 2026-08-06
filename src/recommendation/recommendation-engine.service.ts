@@ -201,6 +201,7 @@ export class RecommendationEngineService {
           usage: item.usage,
           city: item.city,
           officialLandPrice: item.officialLandPrice,
+          specialNote: item.specialNote,
         });
         // 방공제(방빼기) — 실제 임차인 유무와 무관하게 지역 기준 최우선변제금액을
         // 정책에 지정된 적용 대상(감정가/낙찰가/둘 다) 기준 금액에서 min 계산

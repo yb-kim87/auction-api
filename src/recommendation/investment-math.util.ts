@@ -79,7 +79,18 @@ export function isMetropolitanArea(city: string | null | undefined): boolean {
   return c.startsWith("서울") || c.startsWith("경기") || c.startsWith("인천");
 }
 
+function isVerifiedNonMetropolitanArea(city: string | null | undefined): boolean {
+  return Boolean(city?.trim()) && !isMetropolitanArea(city);
+}
+
 const LOW_PRICE_NONMETRO_THRESHOLD_WON = 200_000_000;
+
+/** 탱크옥션 특이사항의 공시가 구간 중 2억 이하가 확정되는 값만 보조 근거로 쓴다.
+ * 숫자형 공시가격이 없을 때에만 사용하며, "2~3억" 등 경계 초과 구간은 포함하지 않는다. */
+export function hasTankLowPriceBand(specialNote?: string | null): boolean {
+  const text = (specialNote ?? "").replace(/\s+/g, "");
+  return text.includes("공시가1억이하") || text.includes("공시가1~2억");
+}
 
 /**
  * 오피스텔 또는 비수도권 공시가 2억 이하 주택인지 여부.
@@ -104,6 +115,7 @@ export function isLowPriceNonMetroHome(item: {
   usage?: string | null;
   city?: string | null;
   officialLandPrice?: number | null;
+  specialNote?: string | null;
 }): boolean {
   const officialLandPrice = item.officialLandPrice ?? 0;
   const usage = item.usage ?? "";
@@ -112,9 +124,10 @@ export function isLowPriceNonMetroHome(item: {
   );
   return (
     isEligibleHome &&
-    !isMetropolitanArea(item.city) &&
-    officialLandPrice > 0 &&
-    officialLandPrice <= LOW_PRICE_NONMETRO_THRESHOLD_WON
+    isVerifiedNonMetropolitanArea(item.city) &&
+    (officialLandPrice > 0
+      ? officialLandPrice <= LOW_PRICE_NONMETRO_THRESHOLD_WON
+      : hasTankLowPriceBand(item.specialNote))
   );
 }
 
@@ -128,7 +141,12 @@ export function selectLoanPolicy(
   criteria: { housingCount: number; firstTimeBuyer: boolean },
   regulatedArea: boolean,
   policies: LoanPolicyLike[],
-  item?: { usage?: string | null; city?: string | null; officialLandPrice?: number | null },
+  item?: {
+    usage?: string | null;
+    city?: string | null;
+    officialLandPrice?: number | null;
+    specialNote?: string | null;
+  },
 ): LoanPolicyLike | null {
   const byId = (id: string) => policies.find((p) => p.id === id) ?? null;
   if (item && isOfficetel(item)) {
