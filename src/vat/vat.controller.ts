@@ -251,7 +251,15 @@ export class VatController {
           { sigunguCd, bjdongCd, bun, ji },
           dong.trim(),
         );
-        return { ...exposed, useAprDay: titleUseAprDay ?? exposed.useAprDay };
+        return {
+          ...exposed,
+          useAprDay: titleUseAprDay ?? exposed.useAprDay,
+          housingLedgerDongNm: exposed.housingLedgerPk
+            ? dong.trim().endsWith("동")
+              ? dong.trim()
+              : `${dong.trim()}동`
+            : undefined,
+        };
       }
       // 동/호로 못 찾으면 표제부로 폴백(사람이 오타를 냈거나 API 표기
       // 형식이 다를 수 있음).
@@ -278,6 +286,7 @@ export class VatController {
     useAprDay?: string;
     strctCdNm?: string;
     mainPurpsCdNm?: string;
+    housingLedgerPk?: string;
   } | null> {
     const dongNm = dong.endsWith("동") ? dong : `${dong}동`;
     // hoNm은 "호" 접미사를 붙이면 매칭이 0건으로 나온다(실측: "2202호"는
@@ -375,6 +384,15 @@ export class VatController {
     // 정확히 일치, 2026-07-21) — 반올림 없이 원래 정밀도를 그대로 넘긴다.
     const totArea = sum("1") + sum("2");
     const first = rows[0];
+    // mgmBldrgstPk(관리건축물대장PK) — 국토부 주택 공시가격 CSV(2024년분~)가
+    // 이 값을 연계키로 제공해, 동/호 단위 정확한 공시가격을 조인하는 데
+    // 쓴다(사용자 요청, 2026-08-06: "나이스옥션이 쓰는 방식으로 우리
+    // 자체적으로 공시가를 가져올 순 없나?"). API가 숫자로 주므로 문자열로
+    // 통일해 저장한다.
+    const housingLedgerPk =
+      first.mgmBldrgstPk != null && first.mgmBldrgstPk !== ""
+        ? String(first.mgmBldrgstPk)
+        : undefined;
     return {
       totArea,
       // 전유부 API에는 사용승인일(신축연도) 필드가 없다 — 호출부에서
@@ -383,6 +401,7 @@ export class VatController {
       strctCdNm: typeof first.strctCdNm === "string" ? first.strctCdNm : undefined,
       mainPurpsCdNm:
         typeof first.mainPurpsCdNm === "string" ? first.mainPurpsCdNm : undefined,
+      housingLedgerPk,
     };
   }
 

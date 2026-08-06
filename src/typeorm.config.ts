@@ -47,6 +47,7 @@ import { LectureQuestion } from "./lecture-replay/entities/lecture-question.enti
 import { LectureNote } from "./lecture-replay/entities/lecture-note.entity";
 import { RedevelopmentZone } from "./redevelopment/entities/redevelopment-zone.entity";
 import { RedevelopmentTraceFailure } from "./redevelopment/entities/redevelopment-trace-failure.entity";
+import { HousingOfficialPrice } from "./housing-price/entities/housing-official-price.entity";
 
 const entities = [
   Auction,
@@ -95,6 +96,7 @@ const entities = [
   LectureNote,
   RedevelopmentZone,
   RedevelopmentTraceFailure,
+  HousingOfficialPrice,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

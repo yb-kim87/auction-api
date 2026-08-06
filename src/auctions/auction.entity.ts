@@ -130,6 +130,20 @@ export class Auction {
   @Column({ type: "integer", nullable: true })
   vatGroundFloors!: number | null;
 
+  /** 건축물대장 표제부에서 이 물건이 속한 동(棟)에 매칭된 관리건축물대장PK.
+   * 국토교통부_주택 공시가격 정보(data.go.kr 3073746, 연 1회 CSV 배치)가
+   * 2024년분부터 이 PK를 연계키로 제공해, 동/호 단위 정확한 공시가격을
+   * 조인할 수 있다 — 나이스옥션도 이 PK로 공시가격을 매칭하고 있음을
+   * 확인했다(2026-08-06). vatPnu와 마찬가지로 물건 고유값이라 한 번
+   * 확보하면 캐싱한다. */
+  @Column({ type: "text", nullable: true })
+  housingLedgerPk!: string | null;
+
+  /** 위 PK가 매칭된 동 이름(예: "307동") — housing_official_price 조인 시
+   * 호(號)와 함께 정확한 세대를 특정하는 데 쓴다. */
+  @Column({ type: "text", nullable: true })
+  housingLedgerDongNm!: string | null;
+
   @Column({ default: "" })
   bidDate!: string;
 

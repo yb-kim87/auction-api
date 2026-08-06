@@ -314,6 +314,8 @@ export class AuctionsService implements OnModuleInit {
       vatStructureName?: string | null;
       vatMainPurposeName?: string | null;
       vatGroundFloors?: number | null;
+      housingLedgerPk?: string | null;
+      housingLedgerDongNm?: string | null;
     },
   ) {
     const item = await this.auctionRepo.findOne({ where: { id } });
@@ -324,12 +326,16 @@ export class AuctionsService implements OnModuleInit {
     if (dto.vatStructureName !== undefined) item.vatStructureName = dto.vatStructureName;
     if (dto.vatMainPurposeName !== undefined) item.vatMainPurposeName = dto.vatMainPurposeName;
     if (dto.vatGroundFloors !== undefined) item.vatGroundFloors = dto.vatGroundFloors;
+    if (dto.housingLedgerPk !== undefined) item.housingLedgerPk = dto.housingLedgerPk;
+    if (dto.housingLedgerDongNm !== undefined) item.housingLedgerDongNm = dto.housingLedgerDongNm;
     await this.auctionRepo.save(item);
     return {
       vatPnu: item.vatPnu,
       vatStructureName: item.vatStructureName,
       vatMainPurposeName: item.vatMainPurposeName,
       vatGroundFloors: item.vatGroundFloors,
+      housingLedgerPk: item.housingLedgerPk,
+      housingLedgerDongNm: item.housingLedgerDongNm,
     };
   }
 

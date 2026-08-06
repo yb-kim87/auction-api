@@ -199,3 +199,53 @@
 - 숫자형 공시가격이 있으면 해당 숫자값이 항상 우선한다.
 - 소재지 `city`가 비어 있으면 비수도권 여부를 확정할 수 없으므로 이 특례를 적용하지 않는다.
 - 관리자 화면에서 두 정책을 독립적으로 수정·저장할 수 있다.
+
+---
+
+## 追記 (2026-08-06) — 주택 공시가격 자체 조회 파이프라인 기반 작업
+
+배경: 비수도권 공시가 2억 이하 특례(대출정책) 판정에 쓰는
+`officialLandPrice`가 탱크옥션이 안 줄 때 채울 방법이 없었다(사용자
+요청, 2026-08-06: "탱크옥션은 그럼 어디서 공시가를 가져왔는지 조사해볼래").
+
+### 조사 결과
+- VWorld의 `getApartHousingPriceWFS`(국가중점데이터 API, 기존 VWorld
+  키로 바로 호출됨 — 신규 키 불필요)를 실제 물건 9건으로 검증했으나,
+  PNU/평형 단위 **평균값**이라 대출 기준선(2억) 근처에서 실제 오분류가
+  1건 발생했다(월성우방타운: 실제 2억2,400만원인데 VWorld 전 그룹이
+  2억 이하로 나옴). 오피스텔은 3배 이상 차이나 아예 안 맞았다.
+- 나이스옥션 연동 조사 자료(`docs/niceauction-integration-research.md`)의
+  기존 캡처(`crawler/housePrice_full.json`)에서 `housePrice.postedPrice`
+  필드를 발견 — **동/호 단위 정확값**이고, `buildingLedgerPk`(관리건축물
+  대장PK)로 매칭하고 있음을 확인.
+- 이 매칭 키가 국토부의 **"주택 공시가격 정보"**(data.go.kr 3073746,
+  파일데이터) 자체 배포 CSV와 동일함을 확인 — 로그인·신청 불필요,
+  무료, 1,500만 건 이상, 연 1회 갱신, "24년부터 관리건축물대장PK를
+  연계키로 제공". 즉 나이스옥션이 하는 걸 우리도 그대로 할 수 있다.
+
+### 구현(이번 작업, auction-api)
+- `Auction.housingLedgerPk`/`housingLedgerDongNm` 추가 — 이미 호출 중인
+  건축물대장 API(`BUILDING_REGISTER_API_KEY`, VAT계산기용) 응답에 원래
+  있던 `mgmBldrgstPk` 필드를 추가로 뽑아 저장한다(실측 확인: 전유부/
+  표제부 응답 모두 이 필드를 준다). 새 API 호출 없이 기존 호출에
+  얹었다.
+- `housing_official_price` 테이블(마이그레이션
+  `1784282000000-AddHousingLedgerPkAndOfficialPrice`) — CSV 배치를
+  그대로 적재. `POST /housing-price/import`(x-crawler-secret 인증,
+  크롤러 배치 패턴과 동일)로 청크 업서트.
+- `crawler/import_housing_official_price.py` — CSV를 스트리밍 파싱해
+  청크(2,000행)로 API에 올린다. 실제 파일을 아직 못 받아 정확한 헤더를
+  확정 못 했으므로, 헤더 후보 목록으로 유연하게 매칭하고 `--dry-run`
+  으로 먼저 컬럼 매칭 결과를 확인하도록 만들었다.
+- 프론트(`auction`) VAT계산기(`ProfitCalculatorPanel.tsx`)가 자동계산
+  시 이 PK도 함께 캐싱한다. 이미 구조/용도/층수가 캐싱된 옛 물건은
+  PK만 보강 조회하도록 fetch 트리거 조건을 분리했다.
+
+### 보류(다음 단계)
+- 실제 CSV 파일 다운로드는 자동화하지 못했다(다운로드 버튼이 JS/세션
+  기반). 관리자가 브라우저로 받아 전달하면 임포트 진행.
+- 대출 계산 로직(`investment-math.util.ts`/`recommendation-engine.service.ts`)에
+  이 테이블을 fallback으로 연결하는 건 **일부러 보류**했다 — 데이터가
+  하나도 없는 상태에서 대출 판정 핫패스에 손대면 검증 없이 코드만
+  늘어난다. VWorld 때처럼 실제 데이터를 받은 뒤 샘플 대조로 검증하고
+  나서 연결한다.

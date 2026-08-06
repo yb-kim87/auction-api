@@ -277,6 +277,8 @@ export class AuctionsController {
       vatStructureName?: string | null;
       vatMainPurposeName?: string | null;
       vatGroundFloors?: number | null;
+      housingLedgerPk?: string | null;
+      housingLedgerDongNm?: string | null;
     },
   ) {
     const ctx = getAuthContext(headers);

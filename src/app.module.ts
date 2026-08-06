@@ -21,6 +21,7 @@ import { BidPlanModule } from "./bid-plan/bid-plan.module";
 import { LectureReplayModule } from "./lecture-replay/lecture-replay.module";
 import { DbMaintenanceModule } from "./db-maintenance/db-maintenance.module";
 import { RedevelopmentModule } from "./redevelopment/redevelopment.module";
+import { HousingPriceModule } from "./housing-price/housing-price.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -46,6 +47,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     LectureReplayModule,
     DbMaintenanceModule,
     RedevelopmentModule,
+    HousingPriceModule,
   ],
 })
 export class AppModule implements NestModule {
