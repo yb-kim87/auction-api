@@ -177,10 +177,14 @@ def build_tenant_info_summary(obj: dict) -> str:
     있었다). 탱크는 자체 API의 별도 메타(prsnCnt/dpstSum)를 쓰지만
     나이스는 그런 메타가 없어 imchainLst 항목 수·보증금 합계를 직접
     더해 구한다(parsers.py:_build_tenant_info_summary와 동일한 문구
-    포맷)."""
+    포맷). 데이터가 없을 때 빈 문자열 대신 탱크와 동일하게
+    "임차정보없음"을 명시적으로 반환한다(2026-08-07, 사용자에게 두
+    소스의 차이를 설명하다가 발견한 불일치 — 탱크는 leasMeta가 없으면
+    "임차정보없음"이라는 문구를 보여주는데 나이스는 빈 문자열이라
+    화면에 아무 것도 안 떴었다)."""
     imchain_lst = obj.get("imchainLst")
     if not isinstance(imchain_lst, list) or not imchain_lst:
-        return ""
+        return "임차정보없음"
     count = len(imchain_lst)
     deposit_sum = 0
     for item in imchain_lst:
@@ -192,7 +196,7 @@ def build_tenant_info_summary(obj: dict) -> str:
         except ValueError:
             continue
     if not count and not deposit_sum:
-        return ""
+        return "임차정보없음"
     return f"임차인: {count} 건, 임차보증금합계: {deposit_sum:,}원"
 
 
