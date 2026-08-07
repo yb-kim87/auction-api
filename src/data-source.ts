@@ -21,6 +21,7 @@ import { TagRule } from "./tags/tag-rule.entity";
 import { StrategyRule } from "./tags/strategy-rule.entity";
 import { StrategyLabel } from "./tags/strategy-label.entity";
 import { CrawlerConfigRow } from "./crawler/crawler-config.entity";
+import { AuctionAssignment, ServiceReport } from "./learning-board/learning-board.entity";
 
 /**
  * TypeORM CLI 전용 (migration:generate / migration:run 등).
@@ -53,6 +54,8 @@ export default new DataSource({
     StrategyRule,
     StrategyLabel,
     CrawlerConfigRow,
+    AuctionAssignment,
+    ServiceReport,
   ],
   migrations: ["src/migrations/*.ts"],
   synchronize: false,
