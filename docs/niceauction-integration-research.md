@@ -694,3 +694,47 @@ objId `1965189097446179694`(강원 원주지원, 2025타경20905, 아파트) 1�
 
 결과적으로 관리자는 "조회 시작" 버튼만 누르면 되고, 로컬에서 아무것도
 띄워둘 필요가 없다 — 탱크옥션 작업창과 완전히 동일한 사용 경험이다.
+
+## 追記 (2026-08-07, 7차) — 검색조건 UI를 탱크 CrawlerSearchPanel.tsx와 완전히 동일한 레이아웃으로 재구성
+
+사용자 스크린샷 2건으로 문제 제기: "나이스 작업창 레이아웃 들어간게
+없네... 필터내용이 하나도 없어" → 이어서 "작업창이랑 버튼하나 레이아웃
+하나 모든게 다 똑같고 동작은 나이스 경매로 돌아가는걸로 만들어야돼".
+
+원인 조사 결과, 탱크옥션의 실제 검색폼은 `CrawlerWorkPanel.tsx`가 아니라
+별도 컴포넌트 `CrawlerSearchPanel.tsx`(1283줄)에 있었다 — 이 컴포넌트를
+나이스 쪽에 전혀 재사용/이식하지 않고 직접 다른 스타일(컴팩트한 flex
+로우, `RangeField`)로 새로 짰던 것이 "레이아웃이 다르다"는 지적의
+근본 원인이었다.
+
+`CrawlerSearchPanel.tsx`를 처음부터 끝까지 읽어 다음을 그대로 이식했다
+(`NiceCrawlerWorkPanel.tsx` 전면 재작성):
+
+- 박스 구조: 헤더(제목+설명+접기버튼) → 관심조건(select+이름 입력+저장/삭제
+  버튼) → 탱크옥션 즐겨쓰는 검색(불러오기 버튼+select) → "검색조건" 안내문
+  → 필드들 → 제출 버튼. `border border-border rounded-sm bg-card` +
+  `border-t border-border p-4 space-y-5` 등 클래스까지 동일.
+- `RangeSelectRow`/`RangeInputRow`와 동일한
+  `grid grid-cols-1 sm:grid-cols-[6.5rem_1fr] gap-x-3 gap-y-1 text-sm
+  sm:items-center` 그리드 + "이상"/"이하" placeholder 스타일을 나이스
+  버전 `RangeInputRow`로 그대로 재현(나이스는 확정된 select 프리셋이
+  없는 필드가 대부분이라 전부 자유 입력으로 통일).
+- 필드 순서를 탱크와 동일하게: 사건번호(연도 select+타경+일련번호+물건
+  종류 select-then-chips, `NICE_YONGDO_OPTIONS` 사용) → 소재지(탱크는
+  시/도~동 select+칩이지만, 나이스는 pnuCd 체계가 완전히 달라 동일한
+  자리에 pnuCd 자유 입력 하나로 대체 — 꾸며내지 않고 정직하게 미실측
+  표시) → 매각기일(from~to) → [물건구분(경매/공매), 진행상태(복수
+  선택 select-then-chips, `NICE_PROGSTATUS_OPTIONS`)] 2열 → [감정가,
+  최저가, 대지면적, 보존등기, 건물면적, 유찰횟수, 감정가대비%,
+  감정회사명] RangeInputRow 2열 그리드 → [소유자, 채무자, 채권자] 3열 →
+  목록수 대신 "이번 실행 최대 처리 건수"(`maxItems`, 안전장치 안내문
+  포함) → 제출 버튼(탱크의 "주소 추가"에 대응하는 "조회 시작", 클릭 시
+  이름 입력했으면 관심조건 저장 후 `niceCrawlerStart()` 호출 — 탱크의
+  `handleAddUrls` 흐름과 동일한 패턴).
+- 상단 상태 박스(단계 배지/실행중 배지/통계 6칸/시작·중지 버튼)와 하단
+  로그 박스는 기존 그대로 유지(이미 탱크 작업창의 상응 요소와 구조가
+  일치했음).
+
+`npx tsc --noEmit`으로 확인 — `NiceCrawlerWorkPanel.tsx` 관련 타입
+에러 없음(다른 세션이 작업 중인 `page.tsx`의 무관한 기존 에러 1건은
+그대로 둠, 손대지 않음).
