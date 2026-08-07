@@ -9,6 +9,13 @@ export class AuctionAssignment {
   @Column({ default: "" }) address!: string;
   @Column({ type: "text", default: "" }) marketResearch!: string;
   @Column({ type: "text", default: "" }) phoneResearch!: string;
+  @Column({ type: "text", default: "" }) phoneBuyer!: string;
+  @Column({ type: "text", default: "" }) phoneSeller!: string;
+  @Column({ type: "text", default: "" }) phoneBidder!: string;
+  @Column({ type: "text", default: "" }) safetyResearch1!: string;
+  @Column({ type: "text", default: "" }) safetyResearch2!: string;
+  @Column({ type: "text", default: "" }) safetyResearch3!: string;
+  @Column({ type: "text", default: "" }) finalSafetyMargin!: string;
   @Column({ type: "bigint", default: 0 }) finalMarketPrice!: number;
   @Column({ type: "bigint", default: 0 }) targetBidPrice!: number;
   @Column({ type: "bigint", default: 0 }) requiredEquity!: number;
