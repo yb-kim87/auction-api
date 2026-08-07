@@ -20,6 +20,7 @@ export class AuctionAssignment {
   @Column({ type: "bigint", default: 0 }) finalMarketPrice!: number;
   @Column({ type: "bigint", default: 0 }) targetBidPrice!: number;
   @Column({ type: "bigint", default: 0 }) requiredEquity!: number;
+  @Column({ type: "bigint", default: 0 }) finalProfit!: number;
   @Column({ type: "text", default: "" }) memo!: string;
   @Column({ default: "draft" }) status!: string;
   @Column({ type: "text", default: "" }) coachFeedback!: string;
