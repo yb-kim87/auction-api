@@ -32,6 +32,9 @@ BASE_URL = "https://niceauction.co.kr"
 _YONGDO_MAP_PATH = Path(__file__).resolve().parent / "nice_yongdo_code_map.json"
 _YONGDO_CODE_MAP: dict[str, str] = json.loads(_YONGDO_MAP_PATH.read_text(encoding="utf-8"))
 
+_PROGSTATUS_MAP_PATH = Path(__file__).resolve().parent / "nice_progstatus_code_map.json"
+_PROGSTATUS_CODE_MAP: dict[str, str] = json.loads(_PROGSTATUS_MAP_PATH.read_text(encoding="utf-8"))
+
 
 def _s(value) -> str:
     if value is None:
@@ -67,6 +70,15 @@ def _infer_usage(obj: dict) -> str:
     return _YONGDO_CODE_MAP.get(str(yongdo_cd), "")
 
 
+def _case_state(obj: dict) -> str:
+    """objProgStatusCd(진행상태 코드) → 탱크 caseState와 같은 텍스트
+    (신건/유찰/재진행/변경/취하 등). yongdoCd와 같은 방식(코드표 조회)."""
+    code = obj.get("objProgStatusCd")
+    if code is None:
+        return ""
+    return _PROGSTATUS_CODE_MAP.get(str(code), "")
+
+
 def _pnu_parts(pnu: str) -> tuple[str, str]:
     """19자리 PNU → (lawdCd 5자리, umdNm은 텍스트라 PNU에서 못 뽑음 — 호출부에서 주소로 보강)."""
     pnu = _s(pnu)
@@ -97,6 +109,7 @@ def nice_obj_to_raw(obj: dict) -> dict:
         "court": court_nm,
         "address": addr,
         "usage": _infer_usage(obj),
+        "caseState": _case_state(obj),
         "area": building_area,
         "sharedArea": "",
         "bidDate": _format_bid_date(_s(obj.get("dspslDxdyYmd"))),
