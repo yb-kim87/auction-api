@@ -86,3 +86,44 @@
 
 과제제출 당시 입찰계획도 함께 저장(upsert)되므로, 코치는 이제 학생이
 과제제출 버튼을 눌렀을 때의 계산기 스냅샷 전체를 볼 수 있다.
+
+## 追記 (2026-08-07, 3차) — 과제 검토를 목록 인라인 대신 물건 상세로 이동해서 보는 방식으로 재설계
+
+사용자 제안: "그러면 제출된 과제는 관리자(코치)한테는 어떻게 보여?
+입찰계획까지 보이나?? 지금은 안보이는거 같아서" → "과제 물건번호를
+누르면 입찰계획으로 넘어가고 거기에 수강생이 과제로 제출한 정보가
+보이게 하는건 어떨까? 관리자는 해당 물건에 과제로 제출한 수강생
+이력을 누르면 그 정보로 보이게 하는거지".
+
+2차 追記에서 만든 "과제 검토" 목록 인라인 펼침(입찰계획 상세 그리드
++ 전화시세/안전마진 + 코치 피드백)을 걷어내고, 대신 **실제 물건 상세
+(수익계산기) 화면을 코치 보기 모드로 열어** 그 자리에서 확인하도록
+재설계했다 — 학생이 과제를 제출한 화면과 코치가 검토하는 화면이
+동일해져 UX 일관성이 생긴다.
+
+- `GET /learning-board/assignments/coach/:username/:auctionId`
+  (requireAdmin) 추가 — `findAssignmentByAuction()` 재사용, 임의
+  username 조회.
+- `ProfitCalculatorPanel.tsx`에 `coachViewUsername?: string | null` prop
+  추가. 지정되면:
+  - 입찰계획/과제 조회를 `fetchBidPlan`/`fetchAssignmentByAuction`
+    대신 `fetchCoachBidPlan`/`fetchCoachAssignmentByAuction`(코치 전용,
+    소유자 제한 없음)로 호출.
+  - "입찰계획 저장"/"과제제출" 토글 버튼과 실제 저장/제출 액션을 전부
+    숨기고 "코치 보기 모드" 배지로 대체 — 관리자 계정으로 실수 저장
+    방지. 두 박스(입찰계획/과제제출)는 항상 펼쳐진 읽기 전용 상태로
+    시작.
+  - 과제제출 박스 안에 코치 피드백 textarea + 저장 버튼을 새로 추가
+    (`updateCoachAssignment` 재사용) — 물건 상세에서 바로 피드백을
+    남길 수 있다.
+- `AuctionDetailModal.tsx`에 `coachViewUsername` prop 추가,
+  `ProfitCalculatorPanel`에 그대로 전달.
+- `AssignmentReviewTab.tsx`를 순수 목록으로 단순화 — 행을 누르면
+  `fetchAuctionsByIds([auctionId])`로 물건을 가져와
+  `AuctionDetailModal`을 `initialTab="profit"` +
+  `coachViewUsername={제출자}`로 연다. 기존 인라인 펼침/피드백 폼은
+  제거(모달 안에서 전부 처리).
+
+버그 수정(실사용 테스트 중 발견): 대출비율/이자율은 계산기에 이미
+%단위 숫자(예: 70, 4.5)로 저장돼 있는데 표시할 때 한 번 더 ×100을
+해서 "8000.0%"처럼 잘못 나오고 있었다 — 단위 변환 제거.
