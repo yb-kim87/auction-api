@@ -23,6 +23,21 @@ export class LearningBoardController {
     return this.service.listAllAssignmentsForCoach();
   }
 
+  /** 코치(관리자) 전용 — 과제 검토 목록에서 물건번호를 눌러 그 물건의
+   * 상세(수익계산기) 화면으로 이동했을 때, 특정 수강생이 제출한 과제를
+   * 조회한다(사용자 요청, 2026-08-07: "과제 물건번호를 누르면
+   * 입찰계획으로 넘어가고 거기에 수강생이 과제로 제출한 정보가
+   * 보이게 하는건 어떨까?"). */
+  @Get("assignments/coach/:username/:auctionId")
+  getAssignmentForCoach(
+    @Headers() h: Record<string, string>,
+    @Param("username") username: string,
+    @Param("auctionId") auctionId: string,
+  ) {
+    requireAdmin(getAuthContext(h));
+    return this.service.findAssignmentByAuction(username, auctionId);
+  }
+
   @Post("assignments")
   createAssignment(@Headers() h: Record<string, string>, @Body() b: Record<string, unknown>) {
     const auctionId = String(b.auctionId ?? "").trim();
