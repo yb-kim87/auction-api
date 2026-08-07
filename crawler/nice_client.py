@@ -127,9 +127,17 @@ def build_search_params(config: dict) -> dict:
     if config.get("specialObjCd"):
         params["specialObjCd"] = ",".join(config["specialObjCd"])
         params["specialObjCdMode"] = config.get("specialObjCdMode") or "exclude"
+    # 사건번호 검색 파라미터명은 caseYear/caseSerial이 아니라 saYear/saNo다
+    # (2026-08-07 발견 — caseYear/caseSerial로 보내면 나이스 API가 조용히
+    # 무시해 전체 결과가 그대로 나온다. 사용자가 2024타경35803을 탱크와
+    # 직접 비교해달라고 요청하면서 실측 중 발견한 버그. saYear/saNo는
+    # 검색 결과 아이템 필드명과 동일하며, 직접 objId 조회로 검증했다:
+    # {'saYear':'2024','saNo':'35803'} → 정확히 1건만 반환.)
+    if config.get("caseYear"):
+        params["saYear"] = config["caseYear"]
+    if config.get("caseSerial"):
+        params["saNo"] = config["caseSerial"]
     for key in (
-        "caseYear",
-        "caseSerial",
         "courtCd",
         "pnuCd",
         "dspslDxdyYmdStart",

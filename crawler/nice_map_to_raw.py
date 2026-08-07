@@ -25,6 +25,7 @@ from pathlib import Path
 from nice_parsers import (
     build_building_registry_text,
     build_tenant_detail_text,
+    build_tenant_info_summary,
 )
 
 BASE_URL = "https://niceauction.co.kr"
@@ -121,6 +122,7 @@ def nice_obj_to_raw(obj: dict) -> dict:
         "landShare": land_area,
         "buildingRegistry": build_building_registry_text(obj),
         "tenantDetail": build_tenant_detail_text(obj),
+        "tenantInfo": build_tenant_info_summary(obj),
         "lawdCd": lawd_cd or None,
         "umdNm": None,  # PNU만으로는 못 뽑음 — 주소 텍스트 파싱은 백엔드 cleanAddress가 처리
         "jibun": None,

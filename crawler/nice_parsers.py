@@ -169,6 +169,33 @@ def build_tenant_detail_text(obj: dict) -> str:
     return format_tenant_status_text({"rows": rows, "miscNotes": misc})
 
 
+def build_tenant_info_summary(obj: dict) -> str:
+    """탱크옥션 tenantInfo("임차인 요약", 예: "임차인: 3 건, 임차보증금합계:
+    175,000,000원")와 동일한 형식의 요약 텍스트를 imchainLst로 직접
+    계산한다(2026-08-07, 사용자가 2024타경35803을 탱크와 실제 비교
+    요청하면서 발견 — 이 필드가 나이스 임포트 물건에서 아예 비어
+    있었다). 탱크는 자체 API의 별도 메타(prsnCnt/dpstSum)를 쓰지만
+    나이스는 그런 메타가 없어 imchainLst 항목 수·보증금 합계를 직접
+    더해 구한다(parsers.py:_build_tenant_info_summary와 동일한 문구
+    포맷)."""
+    imchain_lst = obj.get("imchainLst")
+    if not isinstance(imchain_lst, list) or not imchain_lst:
+        return ""
+    count = len(imchain_lst)
+    deposit_sum = 0
+    for item in imchain_lst:
+        if not isinstance(item, dict):
+            continue
+        raw_value = str(item.get("bjMny") or "").strip()
+        try:
+            deposit_sum += int(raw_value) if raw_value else 0
+        except ValueError:
+            continue
+    if not count and not deposit_sum:
+        return ""
+    return f"임차인: {count} 건, 임차보증금합계: {deposit_sum:,}원"
+
+
 def build_rights_structured(obj: dict) -> dict:
     """권리분석 로직이 텍스트 정규식 추정 대신 우선 신뢰할 구조화 값.
     말소기준권리/인수여부/보증기관 승계 여부가 이미 판정되어 있다."""
