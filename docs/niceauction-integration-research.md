@@ -901,3 +901,47 @@ objId `1965189097446179694`(강원 원주지원, 2025타경20905, 아파트) 1�
 차이를 설명하는 과정에서, 데이터가 없을 때 탱크는 "임차정보없음"을
 명시 표시하는데 나이스는 빈 문자열이라 화면에 아무 것도 안 뜨는
 불일치를 추가로 발견해 함께 수정(`build_tenant_info_summary`).
+
+## 追記 (2026-08-07, 11차) — 매도분석 실행 조건 질문에 답하다 발견한 치명적 공백: paymentCompletedAt 미매핑
+
+사용자 질문: "현재 우리가 매도 결과 분석할때 경매 상태 어떨때만
+비교해서 가져오는거야?"
+
+### 실제 게이팅 조건 (resale-match.service.ts:processAuctionForResale)
+`캐이스 상태 텍스트(caseState="매각" 등)`가 아니라
+**`auction.paymentCompletedAt`(대금완납일)이 채워져 있어야만** 실행된다
+(추가 조건: `resaleMatchedTradeId`가 비어있어야, `lawdCd`/`umdNm`/
+`jibun` 파싱 성공해야). 탱크는 이 값을 `histInfo.items[].sta` 코드
+(1211=매각허가결정, 1216/1217=대금완납)로 채운다
+(crawler/parsers.py:_parse_bid_and_sale_dates).
+
+### 발견한 공백
+답변을 준비하며 `nice_map_to_raw.py`의 출력 키를 확인해보니
+`paymentCompletedAt`/`saleConfirmedAt`이 **아예 없었다** — 즉 나이스로
+수집한 물건은 지금까지 이 두 필드가 계속 null이었고, 그 결과
+`processAuctionForResale()`이 항상 `attempted: false`로 즉시 리턴돼
+**"매도분석" 체크박스를 켜고 나이스로 조회해도 단 한 건도 실제
+매칭 시도가 이뤄지지 않고 있었다**(9차 追記에서 연동했다고 기록한
+기능이 사실상 무동작 상태였음).
+
+### 수정
+나이스 obj 상세의 `sagun.sagunAuctionDtLst`(경매기일 이력 배열)에서
+동일한 정보를 뽑을 수 있음을 실측 확인(objId=1913467201256423456,
+2025타경71494):
+```
+dtKind="매각기일" auctionResult="매각"          2026-05-06  (낙찰)
+dtKind="매각결정기일" auctionResult="최고가매각허가결정"  2026-05-13  (매각허가결정 → saleConfirmedAt)
+dtKind="대금지급기한" auctionResult="기한후납부"  2026-06-26  (대금완납 → paymentCompletedAt)
+dtKind="배당기일" auctionResult="진행"           2026-07-29
+```
+`build_resale_dates(obj)`(nice_parsers.py 신규)가 `dtKind="매각결정기일"`
++결과에 "허가" 포함 → `saleConfirmedAt`, `dtKind="대금지급기한"`+결과에
+"납부" 포함(미납 제외, "기한후납부"도 납부로 인정) → `paymentCompletedAt`
+으로 매핑. 진행 중 물건(아직 매각/완납 전)에서는 두 값 모두 안전하게
+`None`을 반환하는 것도 확인(2024타경35803, 아직 진행 중).
+
+`nice_map_to_raw.py`에 배선 완료 — 이제 나이스로 "매각" 이후 단계까지
+간 물건을 수집하면 매도분석이 실제로 실행된다. 다음 실사용 테스트
+때 "매각" 진행상태로 검색해 확인 필요(이번 세션에선 아직 실운영
+"조회 시작"으로 완납된 나이스 물건을 실제로 수집·매도분석까지
+돌려보진 못함 — 코드 경로와 날짜 추출 로직만 실측 데이터로 검증).
