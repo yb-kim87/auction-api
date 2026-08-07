@@ -113,6 +113,67 @@ async def search_advanced(
     return data.get("list", []), data.get("paging", {}).get("totalRecords", 0)
 
 
+def build_search_params(config: dict) -> dict:
+    """NiceSearchConfig → 나이스 검색 API 쿼리 파라미터. nice_collect.py/
+    nice_worker.py 양쪽에서 공유(2026-08-07, 작업목록 스테이징 도입으로
+    분리되면서 중복을 피하려고 여기로 옮김)."""
+    params: dict = {}
+    if config.get("yongdoCd"):
+        params["yongdoCd"] = ",".join(config["yongdoCd"])
+    if config.get("objProgStatusCd"):
+        params["objProgStatusCd"] = ",".join(config["objProgStatusCd"])
+    if config.get("objTypes"):
+        params["objTypes"] = config["objTypes"]
+    if config.get("specialObjCd"):
+        params["specialObjCd"] = ",".join(config["specialObjCd"])
+        params["specialObjCdMode"] = config.get("specialObjCdMode") or "exclude"
+    for key in (
+        "caseYear",
+        "caseSerial",
+        "courtCd",
+        "pnuCd",
+        "dspslDxdyYmdStart",
+        "dspslDxdyYmdEnd",
+        "uchalCntStart",
+        "uchalCntEnd",
+        "gamjungAmtStart",
+        "gamjungAmtEnd",
+        "minAmtStart",
+        "minAmtEnd",
+        "gamjungAmtRateStart",
+        "gamjungAmtRateEnd",
+        "tojiAreaStart",
+        "tojiAreaEnd",
+        "bldgAreaStart",
+        "bldgAreaEnd",
+        "initRegYmdStart",
+        "initRegYmdEnd",
+        "gamjungCompanyNm",
+        "soyujaNm",
+        "chamujaNm",
+        "chaeonjaNm",
+    ):
+        value = config.get(key)
+        if value not in (None, ""):
+            params[key] = value
+    return params
+
+
+def obj_label(item: dict) -> str:
+    """검색 결과 아이템(상세조회 없이 목록 API가 이미 준 필드)만으로
+    작업목록에 보여줄 짧은 라벨을 만든다 — 탱크옥션 작업목록의
+    "사건번호 + 주소" 표시와 동등한 역할(작업목록 스테이징 단계에서는
+    상세조회를 하지 않으므로 목록 API 필드만으로 구성)."""
+    year = item.get("saYear") or ""
+    no = item.get("saNo") or ""
+    obj_no = item.get("objNo")
+    case = f"{year}타경{no}" if year and no else str(item.get("objId"))
+    if obj_no not in (None, "", 1):
+        case = f"{case}-{obj_no}"
+    addr = (item.get("addr") or item.get("roadAddr") or "").strip()
+    return f"{case} {addr}".strip()
+
+
 _LOC_RE = re.compile(r"<loc>https://niceauction\.co\.kr/auction/detail/(\d+)</loc>")
 
 

@@ -33,19 +33,48 @@ export class NiceCrawlerController {
     return this.service.clearLogs();
   }
 
-  @Post("start")
-  async start(
+  /** 탱크옥션의 "주소 추가"에 대응 — 검색조건으로 objId 작업목록을
+   * 수집만 하고(상세조회/저장 없음), 아직 실행은 하지 않는다. */
+  @Post("collect")
+  async collect(
     @Headers() headers: Record<string, string>,
     @Body() body: { search: NiceSearchConfig },
   ) {
     requireAdmin(getAuthContext(headers));
-    return this.service.start(body.search);
+    return this.service.collect(body.search);
+  }
+
+  /** 작업목록 편집(선택 삭제/모두 삭제/수동 추가) — 탱크옥션
+   * crawlerManageUrls와 동일한 계약. */
+  @Post("manage-urls")
+  async manageUrls(
+    @Headers() headers: Record<string, string>,
+    @Body()
+    body: { action: "add" | "remove" | "clear"; objId?: string; label?: string; indices?: number[] },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.manageUrls(body);
+  }
+
+  @Post("start")
+  async start(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { resaleAnalysisEnabled?: boolean },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.start({ resaleAnalysisEnabled: body?.resaleAnalysisEnabled });
   }
 
   @Post("stop")
   async stop(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
     return this.service.stop();
+  }
+
+  @Get("resale-run-summary")
+  async resaleRunSummary(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.getResaleRunSummary();
   }
 
   /** 로컬 워커 전용 상태 조회(secret 인증) — 관리자 세션이 없는 로컬

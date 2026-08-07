@@ -54,6 +54,17 @@ export class NiceCrawlerStateRow {
   @Column({ type: "text", nullable: true })
   searchConfig!: string | null;
 
+  /** 작업목록 스테이징(탱크옥션 "주소 추가"에 대응, 2026-08-07) —
+   * "수집"으로 만든 objId 목록을 관리자가 다듬은 뒤 "조회 시작"으로
+   * 처리한다. NiceCrawlerUrlEntry[] JSON. */
+  @Column({ type: "text", nullable: true })
+  urls!: string | null;
+
+  /** 이번 실행에서 "매도분석" 체크박스를 켰는지 — 탱크의
+   * runResaleAnalysisForExisting과 동일한 역할. */
+  @Column({ type: "boolean", default: false })
+  resaleAnalysisEnabled!: boolean;
+
   /** 워커가 마지막으로 상태를 보고한 시각 — 이게 너무 오래됐으면
    * running=true여도 워커가 죽었다고 판단할 수 있다(탱크옥션의
    * remoteWorker 하트비트 개념과 동일). */
