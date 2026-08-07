@@ -66,3 +66,23 @@
 ### 참고
 - `AuctionAssignment` 프론트 타입에 빠져 있던 `finalProfit` 필드를
   추가(백엔드 엔티티엔 있었으나 프론트 인터페이스에서 누락돼 있었음).
+
+## 追記 (2026-08-07, 2차) — 코치 검토 화면에 입찰계획 상세 추가
+
+사용자 확인 질문: "제출된 과제는 관리자(코치)한테는 어떻게 보여?
+입찰계획까지 보이나?? 지금은 안보이는거 같아서" — 실제로
+`AssignmentReviewTab.tsx`엔 요약 3개(입찰가/매도가/수익)만 보이고
+계산기 상세 입력값(대출비율/이자율/보유기간/인테리어비용/명도비/
+부가세 등)은 `auction_assignments`에 아예 저장되지 않아 보여줄 방법이
+없었다(입찰계획 전체 입력값은 `auction_bid_plans.inputsJson`에만
+있음).
+
+- `GET /bid-plans/coach/:username/:auctionId`(requireAdmin, 소유자
+  제한 없음) 추가 — `bidPlanService.findOne()`을 그대로 재사용.
+- `AssignmentReviewTab.tsx`에 행을 펼칠 때 이 API로 제출자의 저장된
+  입찰계획을 가져와 계산기 전체 입력값(라벨 매핑, `inputsJson` 파싱)
+  + 입찰계획 자체 메모를 함께 표시. 목록 헤더 요약에도 빠져 있던
+  "투입자금"(requiredEquity)을 추가.
+
+과제제출 당시 입찰계획도 함께 저장(upsert)되므로, 코치는 이제 학생이
+과제제출 버튼을 눌렀을 때의 계산기 스냅샷 전체를 볼 수 있다.
