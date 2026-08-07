@@ -200,6 +200,48 @@ def build_tenant_info_summary(obj: dict) -> str:
     return f"임차인: {count} 건, 임차보증금합계: {deposit_sum:,}원"
 
 
+def build_resale_dates(obj: dict) -> dict:
+    """매도분석(재판매 매칭)의 기준일 두 개 — 매각허가결정일
+    (saleConfirmedAt)과 대금완납일(paymentCompletedAt) — 을 나이스
+    obj에서 뽑는다(2026-08-07, 사용자 질문 "매도 결과 분석할때 경매
+    상태 어떨때만 비교해서 가져오는거야?"에 답하다가 발견 — 지금까지
+    나이스로 수집한 물건은 이 두 필드가 전혀 채워지지 않아
+    resale_match.processAuctionForResale()이 항상
+    `attempted: false`로 즉시 스킵됐다. 즉 나이스 물건은 "매도분석"
+    체크박스를 켜도 지금까지 단 한 건도 실제로 비교되지 않았다).
+
+    탱크는 histInfo.items[].sta 코드(1211=매각허가결정,
+    1216/1217=대금완납)로 이 두 날짜를 얻는다(parsers.py:
+    _parse_bid_and_sale_dates 참고). 나이스는 같은 개념을
+    `sagun.sagunAuctionDtLst`(경매기일 이력)에서 dtKind/auctionResult
+    조합으로 얻을 수 있음을 실측 확인했다(objId=1913467201256423456,
+    2025타경71494):
+      dtKind="매각결정기일", auctionResult="최고가매각허가결정"
+        → 매각허가결정일
+      dtKind="대금지급기한", auctionResult에 "납부" 포함(미납 제외,
+      "기한후납부"도 납부로 인정)
+        → 대금완납일
+    """
+    sagun = obj.get("sagun") if isinstance(obj.get("sagun"), dict) else {}
+    date_list = sagun.get("sagunAuctionDtLst") if isinstance(sagun, dict) else None
+    sale_confirmed_at = ""
+    payment_completed_at = ""
+    if isinstance(date_list, list):
+        for row in date_list:
+            if not isinstance(row, dict):
+                continue
+            kind = str(row.get("dtKind") or "")
+            result = str(row.get("auctionResult") or "")
+            dt = str(row.get("auctionDt") or "").split("T")[0]
+            if not dt:
+                continue
+            if kind == "매각결정기일" and "허가" in result:
+                sale_confirmed_at = dt
+            elif kind == "대금지급기한" and "납부" in result and "미납" not in result:
+                payment_completed_at = dt
+    return {"saleConfirmedAt": sale_confirmed_at, "paymentCompletedAt": payment_completed_at}
+
+
 def build_rights_structured(obj: dict) -> dict:
     """권리분석 로직이 텍스트 정규식 추정 대신 우선 신뢰할 구조화 값.
     말소기준권리/인수여부/보증기관 승계 여부가 이미 판정되어 있다."""

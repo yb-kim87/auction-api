@@ -24,6 +24,7 @@ from pathlib import Path
 
 from nice_parsers import (
     build_building_registry_text,
+    build_resale_dates,
     build_tenant_detail_text,
     build_tenant_info_summary,
 )
@@ -103,6 +104,7 @@ def nice_obj_to_raw(obj: dict) -> dict:
     land_area = _s(obj.get("tojiArea"))
 
     lawd_cd, bjdong_cd = _pnu_parts(_s(obj.get("pnuCd")))
+    resale_dates = build_resale_dates(obj)
 
     return {
         "link": f"{BASE_URL}/auction/detail/{obj_id}",
@@ -123,6 +125,8 @@ def nice_obj_to_raw(obj: dict) -> dict:
         "buildingRegistry": build_building_registry_text(obj),
         "tenantDetail": build_tenant_detail_text(obj),
         "tenantInfo": build_tenant_info_summary(obj),
+        "saleConfirmedAt": resale_dates["saleConfirmedAt"] or None,
+        "paymentCompletedAt": resale_dates["paymentCompletedAt"] or None,
         "lawdCd": lawd_cd or None,
         "umdNm": None,  # PNU만으로는 못 뽑음 — 주소 텍스트 파싱은 백엔드 cleanAddress가 처리
         "jibun": None,
