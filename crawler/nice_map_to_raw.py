@@ -7,14 +7,20 @@ raw 필드 형태로 변환한다(crawler-item.mapper.ts 계약과 1:1 대응).
   gamjungAmt/minAmt/maegakAmt(감정가/최저가/매각가), saYear+saNo(사건번호),
   dspslDxdyYmd(매각기일), tojiArea/bldgArea(면적), pnuCd(19자리 PNU).
 
-**불확실한 필드(주의)**: 나이스는 "아파트/오피스텔/연립" 같은 깔끔한
-용도 텍스트를 직접 주지 않는다(yejungYongdoNm="집합건물"처럼 법적
-분류만 줌). 대신 aptTradePriceLst/rhouseTradePriceLst/
-officetelTradePriceLst 중 어느 게 채워져 있는지로 추정한다 — 정확도
-100% 보장 못 함, 소규모 파일럿에서 반드시 육안 대조할 것.
+**용도(usage) 필드**: 처음엔 "나이스가 깔끔한 용도 텍스트를 안 준다"고
+오판해서(yejungYongdoNm이 "집합건물" 같은 법적 분류만 줌) 실거래가
+리스트 종류로 추정하는 휴리스틱을 썼었다. 사용자가 실제 화면 캡처로
+"아파트" 배지가 분명히 보인다고 지적해(2026-08-07) 다시 찾아보니,
+`yongdoCd`(예: 2020104)가 정확히 그 값이었고, `/api/v1/code/list`
+API가 코드→텍스트 변환표(예: 2020104→"아파트")를 공개로 제공하고
+있었다. 이 표를 `nice_yongdo_code_map.json`로 미리 받아두고 조회한다
+(96개, 자주 안 바뀌는 코드 체계라 매 요청마다 API를 부르지 않는다).
 """
 
 from __future__ import annotations
+
+import json
+from pathlib import Path
 
 from nice_parsers import (
     build_building_registry_text,
@@ -22,6 +28,9 @@ from nice_parsers import (
 )
 
 BASE_URL = "https://niceauction.co.kr"
+
+_YONGDO_MAP_PATH = Path(__file__).resolve().parent / "nice_yongdo_code_map.json"
+_YONGDO_CODE_MAP: dict[str, str] = json.loads(_YONGDO_MAP_PATH.read_text(encoding="utf-8"))
 
 
 def _s(value) -> str:
@@ -47,25 +56,15 @@ def _format_bid_date(iso: str) -> str:
 
 
 def _infer_usage(obj: dict) -> str:
-    """어느 실거래가 리스트가 채워져 있는지로 물건 용도를 추정한다
-    (§ 모듈 docstring의 불확실성 참고)."""
-    if obj.get("aptTradePriceLst"):
-        return "아파트"
-    if obj.get("officetelTradePriceLst"):
-        return "오피스텔"
-    if obj.get("rhouseTradePriceLst"):
-        return "연립다세대"
-    if obj.get("shouseTradePriceLst"):
-        return "단독주택"
-    if obj.get("landTradePriceLst"):
-        return "토지"
-    # 실거래가 리스트가 전부 비어있으면(상가·오래된 건물 등) 건물명
-    # 텍스트에서 흔한 키워드를 찾아본다 — 마지막 수단.
-    text = f"{_s(obj.get('bldgNm'))} {_s(obj.get('addrNoPrivacy'))}"
-    for kw in ["아파트", "오피스텔", "다세대", "연립", "상가", "단독주택"]:
-        if kw in text:
-            return kw
-    return ""
+    """yongdoCd를 코드표로 직접 변환한다(2026-08-07 수정 — 예전엔 실거래가
+    리스트 종류로 추정하는 휴리스틱을 썼는데, 사용자가 화면에 "아파트"
+    배지가 뜨는 걸 보고 재확인을 요청해 yongdoCd가 정확한 값임을 확인함).
+    코드표에 없는 값이면(신규 코드 추가 등) 빈 문자열을 반환한다 — 억지로
+    추정하지 않는다."""
+    yongdo_cd = obj.get("yongdoCd")
+    if yongdo_cd is None:
+        return ""
+    return _YONGDO_CODE_MAP.get(str(yongdo_cd), "")
 
 
 def _pnu_parts(pnu: str) -> tuple[str, str]:
