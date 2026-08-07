@@ -50,6 +50,7 @@ import { RedevelopmentTraceFailure } from "./redevelopment/entities/redevelopmen
 import { HousingOfficialPrice } from "./housing-price/entities/housing-official-price.entity";
 import { NiceCrawlerStateRow } from "./nice-crawler/entities/nice-crawler-state.entity";
 import { NiceCrawlerLogRow } from "./nice-crawler/entities/nice-crawler-log.entity";
+import { NiceSavedSearchRow } from "./nice-crawler/entities/nice-saved-search.entity";
 import { AuctionAssignment, ServiceReport } from "./learning-board/learning-board.entity";
 
 const entities = [
@@ -102,6 +103,7 @@ const entities = [
   HousingOfficialPrice,
   NiceCrawlerStateRow,
   NiceCrawlerLogRow,
+  NiceSavedSearchRow,
   AuctionAssignment,
   ServiceReport,
 ];

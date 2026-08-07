@@ -1,16 +1,23 @@
-"""나이스옥션 작업창 워커 — 1차(파일럿) 버전.
+"""나이스옥션 작업창 — 상시 폴링 워커.
 
-지금은 관리자 UI의 시작/중지 버튼을 폴링하는 상시 데몬이 아니라,
-**objId를 직접 지정해서 소수 건만 수동으로 검증**하는 스크립트다
-(사용자 요청, 2026-08-07: "문제가 안 나올 때까지 점검하면서 점점
-나이스로 옮겨갈 것" — 대량 자동화 전에 먼저 이 단계로 안전하게 검증).
+관리자 UI(나이스 작업창)의 "시작" 버튼을 누르면 백엔드가
+nice_crawler_state.running=true + searchConfig를 저장한다. 이 스크립트는
+그 상태를 주기적으로 폴링하다가 running=true를 보면:
+  1. searchConfig로 나이스 상세검색 API를 페이지네이션 호출해 objId를
+     maxItems까지 수집
+  2. 각 objId 상세 조회 → nice_map_to_raw로 변환 → /nice-crawler/import-item
+     으로 저장
+  3. 완료되면 running=false로 되돌리고 다시 대기
 
-사용:
-    python nice_worker.py --dry-run <objId> [<objId> ...]   # 저장 안 하고 매핑 결과만 출력
-    python nice_worker.py <objId> [<objId> ...]              # 실제로 운영 DB에 저장
+탱크옥션 작업창의 로컬 워커(항상 켜둔 채 폴링)와 동일한 운영 방식이다.
 
-전체 폴링 데몬(관리자 UI 시작/중지 버튼과 연동, 사이트맵 자동 수집)은
-이 파일럿이 검증된 뒤 다음 단계로 만든다.
+사용: python nice_worker.py
+      (포그라운드로 계속 실행 — Ctrl+C로 중지)
+
+안전장치: searchConfig.maxItems가 항상 상한이다(기본 50). 2026-08-06
+주택공시가격 대량 임포트로 운영 DB가 다운된 사고 이후, 이 워커는 절대
+무제한으로 돌지 않는다 — 한 번 시작에 처리할 건수를 관리자가 UI에서
+직접 정한다.
 """
 
 from __future__ import annotations
@@ -20,10 +27,11 @@ import io
 import json
 import os
 import sys
+import time
 
 import httpx
 
-from nice_client import fetch_obj_detail, make_client
+from nice_client import fetch_obj_detail, make_client, search_advanced
 from nice_map_to_raw import nice_obj_to_raw
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -31,62 +39,171 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="repla
 
 API_BASE = os.environ.get("PRODUCTION_API_URL", "https://auction-production-2c72.up.railway.app")
 CRAWLER_SECRET = os.environ.get("CRAWLER_SECRET", "local-crawler-secret")
+POLL_INTERVAL_SEC = 5
 REQUEST_DELAY_SEC = 0.8
+SEARCH_PAGE_SIZE = 100
+
+HEADERS = {"x-crawler-secret": CRAWLER_SECRET}
 
 
-async def process_one(client: httpx.AsyncClient, obj_id: str, dry_run: bool) -> dict:
-    obj = await fetch_obj_detail(client, obj_id)
-    raw = nice_obj_to_raw(obj)
-
-    if dry_run:
-        return {"objId": obj_id, "raw": raw}
-
-    api_client = httpx.Client(timeout=30.0)
-    resp = api_client.post(
-        f"{API_BASE}/nice-crawler/import-item",
-        json=raw,
-        headers={"x-crawler-secret": CRAWLER_SECRET},
-    )
-    resp.raise_for_status()
-    return {"objId": obj_id, "raw": raw, "result": resp.json()}
+def log(message: str, level: str = "info") -> None:
+    prefix = {"info": " ", "warn": "!", "error": "X"}.get(level, " ")
+    print(f"[{prefix}] {message}")
+    try:
+        httpx.post(
+            f"{API_BASE}/nice-crawler/worker-log",
+            json={"message": message, "level": level},
+            headers=HEADERS,
+            timeout=10.0,
+        )
+    except Exception:  # noqa: BLE001
+        pass  # 로그 전송 실패는 워커 진행을 막지 않는다.
 
 
-async def main() -> None:
-    args = sys.argv[1:]
-    dry_run = "--dry-run" in args
-    obj_ids = [a for a in args if a != "--dry-run"]
+def report(**patch) -> None:
+    try:
+        httpx.post(
+            f"{API_BASE}/nice-crawler/progress",
+            json=patch,
+            headers=HEADERS,
+            timeout=10.0,
+        )
+    except Exception as e:  # noqa: BLE001
+        print(f"[!] progress 보고 실패: {e}")
 
-    if not obj_ids:
-        print("사용법: python nice_worker.py [--dry-run] <objId> [<objId> ...]")
-        sys.exit(1)
 
-    print(f"대상 {len(obj_ids)}건, dry_run={dry_run}")
-    print(f"API_BASE={API_BASE}")
+def get_worker_status() -> dict | None:
+    try:
+        resp = httpx.get(f"{API_BASE}/nice-crawler/worker-status", headers=HEADERS, timeout=10.0)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as e:  # noqa: BLE001
+        print(f"[!] 상태 조회 실패: {e}")
+        return None
 
-    results = []
+
+def build_search_params(config: dict) -> dict:
+    """NiceSearchConfig → 나이스 검색 API 쿼리 파라미터."""
+    params: dict = {}
+    if config.get("yongdoCd"):
+        params["yongdoCd"] = ",".join(config["yongdoCd"])
+    if config.get("objProgStatusCd"):
+        params["objProgStatusCd"] = ",".join(config["objProgStatusCd"])
+    if config.get("objTypes"):
+        params["objTypes"] = config["objTypes"]
+    for key in (
+        "caseYear",
+        "caseSerial",
+        "courtCd",
+        "pnuCd",
+        "dspslDxdyYmdStart",
+        "dspslDxdyYmdEnd",
+        "uchalCntStart",
+        "uchalCntEnd",
+        "gamjungAmtStart",
+        "gamjungAmtEnd",
+        "minAmtStart",
+        "minAmtEnd",
+        "gamjungAmtRateStart",
+        "gamjungAmtRateEnd",
+        "tojiAreaStart",
+        "tojiAreaEnd",
+        "bldgAreaStart",
+        "bldgAreaEnd",
+        "initRegYmdStart",
+        "initRegYmdEnd",
+        "gamjungCompanyNm",
+        "soyujaNm",
+        "chamujaNm",
+        "chaeonjaNm",
+    ):
+        value = config.get(key)
+        if value not in (None, ""):
+            params[key] = value
+    return params
+
+
+async def collect_obj_ids(client: httpx.AsyncClient, config: dict, max_items: int) -> list[str]:
+    """상세검색 결과에서 objId를 max_items까지 페이지네이션 수집."""
+    params = build_search_params(config)
+    obj_ids: list[str] = []
+    page = 1
+    while len(obj_ids) < max_items:
+        page_size = min(SEARCH_PAGE_SIZE, max_items - len(obj_ids))
+        items, total = await search_advanced(client, params, page, page_size)
+        if not items:
+            break
+        obj_ids.extend(str(item["objId"]) for item in items)
+        report(phase="collecting_objids", totalObjIds=total)
+        log(f"검색 결과 {total:,}건 중 {len(obj_ids)}건 수집(페이지 {page})")
+        if len(items) < page_size:
+            break
+        page += 1
+        await asyncio.sleep(0.3)
+    return obj_ids[:max_items]
+
+
+async def run_once(config: dict) -> None:
+    max_items = int(config.get("maxItems") or 50)
+    log(f"검색 시작 — 최대 {max_items}건")
+    report(phase="collecting_objids", totalObjIds=0, matched=0, completed=0)
+
     async with make_client() as client:
+        obj_ids = await collect_obj_ids(client, config, max_items)
+        report(phase="fetching_details", matched=len(obj_ids))
+        log(f"상세 조회 대상 {len(obj_ids)}건")
+
+        import_client = httpx.Client(timeout=30.0)
+        completed = 0
         for i, obj_id in enumerate(obj_ids, start=1):
             try:
-                result = await process_one(client, obj_id, dry_run)
-                status = "OK"
+                obj = await fetch_obj_detail(client, obj_id)
+                raw = nice_obj_to_raw(obj)
+                resp = import_client.post(
+                    f"{API_BASE}/nice-crawler/import-item",
+                    json=raw,
+                    headers=HEADERS,
+                )
+                resp.raise_for_status()
+                result = resp.json()
+                label = raw.get("auctionNo") or obj_id
+                if result.get("skipped"):
+                    log(f"[{i}/{len(obj_ids)}] 스킵({result.get('reason')}): {label}", "warn")
+                else:
+                    tag = "신규" if result.get("created") else "갱신"
+                    log(f"[{i}/{len(obj_ids)}] {tag}: {label}")
             except Exception as e:  # noqa: BLE001
-                result = {"objId": obj_id, "error": str(e)}
-                status = f"ERROR: {e}"
-            results.append(result)
-            label = result.get("raw", {}).get("auctionNo") or obj_id
-            print(f"  [{i}/{len(obj_ids)}] {label} — {status}")
-            if i < len(obj_ids):
-                await asyncio.sleep(REQUEST_DELAY_SEC)
+                log(f"[{i}/{len(obj_ids)}] 실패(objId={obj_id}): {e}", "error")
+            completed += 1
+            report(phase="fetching_details", completed=completed)
+            await asyncio.sleep(REQUEST_DELAY_SEC)
 
-    out_path = "nice_worker_pilot_result.json"
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
-    print(f"\n결과 저장: {out_path}")
+    log(f"완료 — {completed}건 처리")
+    report(phase="idle", running=False, lastMessage=f"완료 — {completed}건 처리")
 
-    errors = [r for r in results if "error" in r]
-    if errors:
-        print(f"실패 {len(errors)}건 있음 — {out_path} 확인 필요")
+
+def main() -> None:
+    print(f"나이스 작업창 워커 시작 — API_BASE={API_BASE}, {POLL_INTERVAL_SEC}초마다 상태 폴링")
+    while True:
+        status = get_worker_status()
+        if status and status.get("running") and status.get("searchConfig"):
+            try:
+                config = json.loads(status["searchConfig"])
+            except (TypeError, ValueError):
+                log("searchConfig 파싱 실패", "error")
+                report(phase="error", running=False, error="searchConfig 파싱 실패")
+                time.sleep(POLL_INTERVAL_SEC)
+                continue
+            try:
+                asyncio.run(run_once(config))
+            except Exception as e:  # noqa: BLE001
+                log(f"워커 실행 중 오류: {e}", "error")
+                report(phase="error", running=False, error=str(e))
+        time.sleep(POLL_INTERVAL_SEC)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n중지됨")

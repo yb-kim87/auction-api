@@ -49,6 +49,11 @@ export class NiceCrawlerStateRow {
   @Column({ type: "text", nullable: true })
   error!: string | null;
 
+  /** 관리자가 "시작"을 누를 때 넘긴 NiceSearchConfig JSON — 로컬 워커가
+   * 폴링해서 이 조건으로 나이스 검색 API를 호출한다. */
+  @Column({ type: "text", nullable: true })
+  searchConfig!: string | null;
+
   /** 워커가 마지막으로 상태를 보고한 시각 — 이게 너무 오래됐으면
    * running=true여도 워커가 죽었다고 판단할 수 있다(탱크옥션의
    * remoteWorker 하트비트 개념과 동일). */

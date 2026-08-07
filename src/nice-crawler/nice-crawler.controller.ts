@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Headers, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Headers, Post, Query, ServiceUnavailableException } from "@nestjs/common";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { NiceCrawlerService } from "./nice-crawler.service";
 import type { NiceCrawlerPhase } from "./entities/nice-crawler-state.entity";
+import type { NiceSearchConfig } from "./nice-search.types";
 
 /** 나이스옥션 작업창 API — 탱크옥션 작업창(/crawler/*)과 완전히 별도.
  * 관리자 UI(NiceCrawlerWorkPanel.tsx)와 로컬 워커
@@ -33,15 +34,55 @@ export class NiceCrawlerController {
   }
 
   @Post("start")
-  async start(@Headers() headers: Record<string, string>) {
+  async start(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { search: NiceSearchConfig },
+  ) {
     requireAdmin(getAuthContext(headers));
-    return this.service.start();
+    return this.service.start(body.search);
   }
 
   @Post("stop")
   async stop(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
     return this.service.stop();
+  }
+
+  /** 로컬 워커 전용 상태 조회(secret 인증) — 관리자 세션이 없는 로컬
+   * 스크립트가 running/searchConfig를 폴링하는 용도. 화면용 /status와는
+   * 별도 경로다. */
+  @Get("worker-status")
+  async workerStatus(@Headers() headers: Record<string, string>) {
+    const secret = headers["x-crawler-secret"] ?? "";
+    const expected = process.env.CRAWLER_SECRET ?? "local-crawler-secret";
+    if (secret !== expected) {
+      throw new ServiceUnavailableException("크롤러 인증 실패");
+    }
+    return this.service.getStatus();
+  }
+
+  @Get("saved-searches")
+  async listSavedSearches(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.listSavedSearches();
+  }
+
+  @Post("saved-searches")
+  async saveSavedSearch(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { id?: string; name: string; search: NiceSearchConfig },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.saveSavedSearch(body);
+  }
+
+  @Post("saved-searches/delete")
+  async deleteSavedSearch(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { id: string },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.deleteSavedSearch(body.id);
   }
 
   /** 로컬 워커 전용(관리자 세션이 아니라 x-crawler-secret 인증). */
@@ -51,6 +92,7 @@ export class NiceCrawlerController {
     @Body()
     body: Partial<{
       phase: NiceCrawlerPhase;
+      running: boolean;
       totalObjIds: number;
       matched: number;
       completed: number;

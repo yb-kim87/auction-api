@@ -87,6 +87,32 @@ async def fetch_obj_detail(client: httpx.AsyncClient, obj_id: str) -> dict:
     return body.get("data", {}).get("obj", {})
 
 
+async def search_advanced(
+    client: httpx.AsyncClient, params: dict, page_no: int, page_size: int = 100
+) -> tuple[list[dict], int]:
+    """/api/v1/search/advanced/offset — 상세검색 필터로 물건 목록을 조회한다.
+    셀레니움으로 실제 폼을 조작해 파라미터명을 검증했다(2026-08-07,
+    docs/niceauction-integration-research.md). 반환값은 (이번 페이지 항목,
+    totalRecords)."""
+    query = {
+        "pageNo": page_no,
+        "pageSize": page_size,
+        "pageSortOrder": "objType_asc,dspslDxdyYmd_desc,saYear_desc,saNo_desc,objNo2_asc",
+        "objTypes": "경매",
+        "courtCdPnuCdMode": "pnuCd",
+        "specialObjCdMode": "include",
+        **params,
+    }
+    resp = await client.get("/api/v1/search/advanced/offset", params=query)
+    if resp.status_code >= 400:
+        raise RetryableError(f"나이스옥션 검색 API HTTP {resp.status_code}")
+    body = resp.json()
+    if body.get("code") != 0:
+        raise NonRetryableError(f"나이스옥션 검색 API 오류 응답: {body.get('msg')}")
+    data = body.get("data", {})
+    return data.get("list", []), data.get("paging", {}).get("totalRecords", 0)
+
+
 _LOC_RE = re.compile(r"<loc>https://niceauction\.co\.kr/auction/detail/(\d+)</loc>")
 
 

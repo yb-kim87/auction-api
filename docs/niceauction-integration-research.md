@@ -594,3 +594,73 @@ objId `1965189097446179694`(강원 원주지원, 2025타경20905, 아파트) 1�
   없음) 둘 다 확인했으나 이름 텍스트는 없음. PDF를 직접 열어야
   나올 수 있음(OCR 필요, 범위 밖).
 - kapt(K-apt 단지정보)는 물건마다 매칭 여부가 다름(이 샘플은 없음).
+
+## 追記 (2026-08-07, 5차) — 상세검색 파라미터 실측(셀레니움) + 전체 작업창 구현
+
+### 상세검색 파라미터 조사 방법과 결과
+사용자 제안대로 셀레니움으로 실제 브라우저를 띄워 `/search/total`(경매
+종합검색) 폼에 값을 입력하고 CDP 성능 로그로 실제 요청 URL을 캡처했다.
+추측(`gamjungAmtMin/Max` 등)이 전부 틀렸었고, 실제로는 `Start`/`End`
+접미사 패턴이었다:
+
+- `gamjungAmtStart/End`(감정가), `minAmtStart/End`(최저가),
+  `gamjungAmtRateStart/End`(감정가대비%), `tojiAreaStart/End`(토지면적),
+  `bldgAreaStart/End`(건물면적), `uchalCntStart/End`(유찰수),
+  `initRegYmdStart`(보존등기), `dspslDxdyYmdStart/End`(매각기일)
+- `gamjungCompanyNm`(감정회사명), `soyujaNm`/`chamujaNm`/`chaeonjaNm`
+  (소유자/채무자/채권자명), `pnuCd`(소재지, 법정동코드)
+- 필터 없음 1,146,233건 vs `yongdoCd` 필터 적용 256,654건으로 실제
+  작동을 대조 검증했다(무필터/필터 결과 건수 비교가 파라미터가 진짜
+  먹히는지 확인하는 가장 확실한 방법이었다).
+
+탱크옥션이 가진 상세검색 필터를 나이스도 거의 다 지원한다는 게
+확인됐다 — 지역코드(탱크: 자체 siCd/guCd, 나이스: 법정동코드 pnuCd)만
+체계가 달라 자동 변환이 어렵다.
+
+### 백엔드 확장
+- `NiceSearchConfig` 타입(`src/nice-crawler/nice-search.types.ts`) —
+  위 파라미터 그대로 필드명 사용. `maxItems`(이번 실행 최대 처리 건수)를
+  필수 필드로 둬서, 대량 실행 사고(2026-08-06 주택공시가격 임포트로
+  운영 DB 다운) 재발을 구조적으로 막는다 — 워커가 항상 이 상한 안에서만
+  움직인다.
+- `nice_saved_search` 테이블(마이그레이션 1784284000000) — 나이스
+  저장된 검색조건("관심조건"에 대응).
+- `nice_crawler_state.searchConfig` 컬럼 추가 — "조회 시작"을 누르면
+  조건을 여기 저장하고, 로컬 워커가 이걸 폴링해서 읽는다.
+- `POST /nice-crawler/start`가 이제 `{ search: NiceSearchConfig }`를
+  받는다. `GET /nice-crawler/worker-status`(secret 인증, 관리자
+  세션이 아닌 로컬 워커 전용) 신설 — 워커가 running/searchConfig를
+  읽는 경로를 관리자용 `/status`와 분리했다.
+- `GET/POST /nice-crawler/saved-searches`, `POST .../delete`.
+
+### 로컬 워커 — 상시 폴링 데몬으로 재작성
+`crawler/nice_worker.py`를 "objId 몇 개 수동 지정" 파일럿 스크립트에서
+탱크옥션 워커와 동일한 상시 폴링 데몬으로 재작성했다:
+1. `/nice-crawler/worker-status`를 5초마다 폴링
+2. `running=true`면 `searchConfig`로 `nice_client.search_advanced()`
+   (신설, `/api/v1/search/advanced/offset` 페이지네이션 호출)를 돌려
+   `maxItems`까지 objId 수집
+3. 각 objId 상세 조회 → `nice_map_to_raw` → `/nice-crawler/import-item`
+   저장, `/nice-crawler/progress`로 진행률 보고
+4. 완료되면 `running=false`로 되돌리고 다시 대기
+
+### 프론트 — 탱크와 동등한 필터 UI + 즐겨찾기
+`NiceCrawlerWorkPanel.tsx`에 탱크 작업창과 대응되는 필터 UI(용도 복수
+선택, 진행상태, 사건번호, 매각기일/유찰수/감정가/최저가/감정가대비/
+토지면적/건물면적/보존등기 범위, 감정회사명/소유자/채무자/채권자)를
+추가. 저장된 검색조건(관심조건) 저장/불러오기/삭제도 구현.
+
+**탱크옥션 즐겨찾기 불러오기**(사용자 요청) — 나이스는 로그인이 없어
+사이트 자체 즐겨찾기가 없다. 대신 기존 `/crawler/tank-favorite-searches`
+(탱크 로그인 계정의 즐겨찾기, 이미 구현돼 있던 것)를 그대로 재사용해
+불러온 뒤, 필드별로 확실히 대응되는 것만 나이스 조건으로 변환한다
+(`mapTankFavoriteToNiceConfig`): 용도(라벨 매칭)·진행상태·감정가·
+최저가·최저가율↔감정가대비·토지/건물면적·유찰수·매각기일·보존등기·
+사건번호. 지역코드·특수조건·해당층처럼 나이스에 대응 파라미터가 없는
+건 변환하지 않고 그대로 둔다(사용자 확인: "동작은 그에 대응하게
+나이스에 맞게 동작하도록").
+
+### 코드표 프론트 반영
+`nice_yongdo_code_map.json`(96개)/`nice_progstatus_code_map.json`
+(24개)을 `auction/src/lib/nice-crawler-codes.ts`로 변환해 용도/진행상태
+드롭다운에 그대로 사용.
