@@ -9,6 +9,7 @@ export class LearningBoardService {
   listAssignments(username: string) { return this.assignments.find({ where: { username }, order: { updatedAt: "DESC" } }); }
   createAssignment(username: string, body: Partial<AuctionAssignment>) { return this.assignments.save(this.assignments.create({ username, ...body, status: "draft" })); }
   async updateAssignment(username: string, id: string, body: Partial<AuctionAssignment>) { const row = await this.assignments.findOneBy({ id, username }); if (!row) throw new ForbiddenException("과제를 찾을 수 없습니다."); Object.assign(row, body); return this.assignments.save(row); }
+  async deleteAssignment(username: string, id: string) { const row = await this.assignments.findOneBy({ id, username }); if (!row) throw new ForbiddenException("과제를 찾을 수 없습니다."); await this.assignments.remove(row); return { ok: true }; }
   listReports(username: string) { return this.reports.find({ where: { username }, order: { createdAt: "DESC" } }); }
   createReport(username: string, body: Partial<ServiceReport>) { return this.reports.save(this.reports.create({ username, ...body, status: "received" })); }
 }

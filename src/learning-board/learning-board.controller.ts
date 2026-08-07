@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Headers, Param, Patch, Post } from "@nestjs/common";
 import { getAuthContext, requireSearchAccess } from "../common/auth-context";
 import { LearningBoardService } from "./learning-board.service";
 
@@ -9,6 +9,7 @@ export class LearningBoardController {
   @Get("assignments") listAssignments(@Headers() h: Record<string, string>) { return this.service.listAssignments(this.user(h)); }
   @Post("assignments") createAssignment(@Headers() h: Record<string, string>, @Body() b: Record<string, unknown>) { return this.service.createAssignment(this.user(h), b as never); }
   @Patch("assignments/:id") updateAssignment(@Headers() h: Record<string, string>, @Param("id") id: string, @Body() b: Record<string, unknown>) { return this.service.updateAssignment(this.user(h), id, b as never); }
+  @Delete("assignments/:id") deleteAssignment(@Headers() h: Record<string, string>, @Param("id") id: string) { return this.service.deleteAssignment(this.user(h), id); }
   @Get("reports") listReports(@Headers() h: Record<string, string>) { return this.service.listReports(this.user(h)); }
   @Post("reports") createReport(@Headers() h: Record<string, string>, @Body() b: Record<string, unknown>) { return this.service.createReport(this.user(h), b as never); }
 }
