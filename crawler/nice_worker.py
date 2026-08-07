@@ -75,6 +75,9 @@ def build_search_params(config: dict) -> dict:
         params["objProgStatusCd"] = ",".join(config["objProgStatusCd"])
     if config.get("objTypes"):
         params["objTypes"] = config["objTypes"]
+    if config.get("specialObjCd"):
+        params["specialObjCd"] = ",".join(config["specialObjCd"])
+        params["specialObjCdMode"] = config.get("specialObjCdMode") or "exclude"
     for key in (
         "caseYear",
         "caseSerial",
