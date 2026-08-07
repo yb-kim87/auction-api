@@ -1,6 +1,9 @@
 import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+import { type ChildProcess, spawn } from "child_process";
+import { existsSync } from "fs";
+import { join } from "path";
 import { AuctionsService } from "../auctions/auctions.service";
 import { mapCrawledItem } from "../crawler/crawler-item.mapper";
 import { NiceCrawlerLogRow } from "./entities/nice-crawler-log.entity";
@@ -20,6 +23,10 @@ const MAX_LOGS = 500;
 @Injectable()
 export class NiceCrawlerService {
   private readonly logger = new Logger(NiceCrawlerService.name);
+  /** 지금 실행 중인 워커 프로세스(있으면). 탱크옥션의 workerProcess와
+   * 같은 역할이지만, 나이스는 상시 서버가 아니라 실행마다 새로 뜨는
+   * 1회성 프로세스라 "현재 이번 실행분" 하나만 추적하면 된다. */
+  private workerProcess: ChildProcess | null = null;
 
   constructor(
     @InjectRepository(NiceCrawlerStateRow)
@@ -67,14 +74,26 @@ export class NiceCrawlerService {
     return { ok: true };
   }
 
-  /** 관리자가 검색조건과 함께 "시작"을 누르면 조건을 저장하고 running=true만
-   * 세운다. 실제 진행(검색 API 호출 → objId 수집 → 상세 조회 → 저장)은
-   * 로컬 워커가 이 플래그와 조건을 폴링해서 스스로 진행한다 — 탱크옥션
-   * 작업창의 워커 폴링 패턴과 동일. */
+  /** 관리자가 검색조건과 함께 "시작"을 누르면 백엔드가 그 자리에서
+   * 파이썬 워커 프로세스를 직접 spawn한다 — 탱크옥션 작업창
+   * (crawler.service.ts의 startWorker())과 동일한 방식이다(사용자 확인,
+   * 2026-08-07: "탱크옥션으로 할때는... 따로 내가 킨적은 없는거 같은데"
+   * → 백엔드가 자동으로 띄우는 구조였음을 재현). 처음엔 로컬 폴링
+   * 데몬(관리자가 직접 켜둬야 함)으로 만들었다가, 탱크와 동작 방식이
+   * 다르다는 지적을 받고 이 방식으로 바꿨다.
+   *
+   * 나이스는 로그인·브라우저가 필요 없어 탱크처럼 상시 떠 있는 로컬
+   * HTTP 서버(runner.py serve)를 둘 필요가 없다 — 매번 검색조건을 인자로
+   * 넘겨 1회 실행하고 끝나면 프로세스가 스스로 종료되는 쪽이 더 단순하고
+   * 좀비 프로세스 걱정도 없다. */
   async start(search: NiceSearchConfig) {
     if (!search || typeof search !== "object") {
       throw new BadRequestException("검색조건이 필요합니다.");
     }
+    if (this.workerProcess) {
+      throw new BadRequestException("이미 실행 중입니다. 먼저 중지해 주세요.");
+    }
+
     const state = await this.getOrCreateState();
     state.running = true;
     state.phase = "collecting_objids";
@@ -91,7 +110,85 @@ export class NiceCrawlerService {
       "info",
       `나이스옥션 작업창 시작 — 최대 ${search.maxItems ?? "?"}건`,
     );
+
+    this.spawnWorker(search);
     return state;
+  }
+
+  private crawlerDir() {
+    return join(process.cwd(), "crawler");
+  }
+
+  /** 탱크옥션 crawler.service.ts의 pythonCommand()와 동일한 탐색 순서 —
+   * 같은 서버(Railway 컨테이너/로컬 개발 PC)에서 이미 검증된 방식이라
+   * 그대로 재사용한다. */
+  private pythonCommand(): string {
+    const configured = process.env.PYTHON_PATH?.trim();
+    if (configured) return configured;
+    if (process.platform === "win32") {
+      const candidates = ["C:\\Python311\\python.exe", "C:\\Python312\\python.exe", "C:\\Python310\\python.exe"];
+      for (const candidate of candidates) {
+        if (existsSync(candidate)) return candidate;
+      }
+      return "py";
+    }
+    return "python3";
+  }
+
+  private spawnWorker(search: NiceSearchConfig) {
+    const script = join(this.crawlerDir(), "nice_worker.py");
+    if (!existsSync(script)) {
+      void this.appendLog("error", "nice_worker.py를 찾을 수 없습니다.");
+      void this.reportProgress(process.env.CRAWLER_SECRET ?? "local-crawler-secret", {
+        running: false,
+        phase: "error",
+        error: "nice_worker.py를 찾을 수 없습니다.",
+      });
+      return;
+    }
+
+    const command = this.pythonCommand();
+    const args = command === "py" ? ["-3", script, JSON.stringify(search)] : [script, JSON.stringify(search)];
+
+    const proc = spawn(command, args, {
+      cwd: this.crawlerDir(),
+      env: {
+        ...process.env,
+        PRODUCTION_API_URL: process.env.PUBLIC_API_URL ?? process.env.PRODUCTION_API_URL ?? "",
+        CRAWLER_SECRET: process.env.CRAWLER_SECRET ?? "local-crawler-secret",
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    this.workerProcess = proc;
+
+    proc.stdout?.on("data", (chunk: Buffer) => {
+      const text = chunk.toString().trim();
+      if (text) this.logger.log(`[nice-worker] ${text}`);
+    });
+    proc.stderr?.on("data", (chunk: Buffer) => {
+      const text = chunk.toString().trim();
+      if (text) this.logger.warn(`[nice-worker] ${text}`);
+    });
+
+    proc.on("exit", (code) => {
+      this.workerProcess = null;
+      if (code !== 0) {
+        void this.appendLog("error", `나이스 워커가 비정상 종료됐습니다(code=${code}).`);
+        void this.getOrCreateState().then((state) => {
+          if (state.running) {
+            state.running = false;
+            state.phase = "error";
+            state.error = `워커 프로세스 종료(code=${code})`;
+            void this.stateRepo.save(state);
+          }
+        });
+      }
+    });
+
+    proc.on("error", (err) => {
+      this.workerProcess = null;
+      void this.appendLog("error", `나이스 워커 실행 실패: ${err.message}`);
+    });
   }
 
   async stop() {
@@ -99,6 +196,10 @@ export class NiceCrawlerService {
     state.running = false;
     state.phase = "stopped";
     await this.stateRepo.save(state);
+    if (this.workerProcess) {
+      this.workerProcess.kill();
+      this.workerProcess = null;
+    }
     await this.appendLog("info", "나이스옥션 작업창 중지");
     return state;
   }

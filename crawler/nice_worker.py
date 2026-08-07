@@ -1,23 +1,19 @@
-"""나이스옥션 작업창 — 상시 폴링 워커.
+"""나이스옥션 작업창 워커 — 1회성 실행 스크립트.
 
-관리자 UI(나이스 작업창)의 "시작" 버튼을 누르면 백엔드가
-nice_crawler_state.running=true + searchConfig를 저장한다. 이 스크립트는
-그 상태를 주기적으로 폴링하다가 running=true를 보면:
-  1. searchConfig로 나이스 상세검색 API를 페이지네이션 호출해 objId를
-     maxItems까지 수집
-  2. 각 objId 상세 조회 → nice_map_to_raw로 변환 → /nice-crawler/import-item
-     으로 저장
-  3. 완료되면 running=false로 되돌리고 다시 대기
+탱크옥션 워커(crawler.service.ts의 startWorker())는 백엔드가 관리자의
+"조회 시작" 클릭 시점에 파이썬 프로세스를 직접 spawn한다 — 관리자가 로컬
+에서 별도로 뭔가를 켜둔 적이 없다(사용자 확인, 2026-08-07). 이 워커도
+같은 방식으로 바꿨다: 처음엔 상시 폴링 데몬으로 만들었었는데, 그러면
+관리자가 로컬 PC에서 계속 띄워둬야 해서 탱크와 동작 방식이 달랐다.
 
-탱크옥션 작업창의 로컬 워커(항상 켜둔 채 폴링)와 동일한 운영 방식이다.
+이제는 백엔드(NiceCrawlerService)가 "조회 시작"을 누르는 순간
+`python nice_worker.py '<NiceSearchConfig JSON>'` 형태로 1회 실행하고,
+이 스크립트는 검색→objId 수집→상세조회→저장까지 끝내고 종료한다.
+나이스는 로그인도 브라우저도 필요 없어(httpx만으로 충분) 탱크처럼
+상시 떠 있는 서버(runner.py serve)를 둘 이유가 없다 — 매번 짧게 실행하고
+끝내는 쪽이 더 단순하고 좀비 프로세스 걱정도 없다.
 
-사용: python nice_worker.py
-      (포그라운드로 계속 실행 — Ctrl+C로 중지)
-
-안전장치: searchConfig.maxItems가 항상 상한이다(기본 50). 2026-08-06
-주택공시가격 대량 임포트로 운영 DB가 다운된 사고 이후, 이 워커는 절대
-무제한으로 돌지 않는다 — 한 번 시작에 처리할 건수를 관리자가 UI에서
-직접 정한다.
+사용: python nice_worker.py '<NiceSearchConfig JSON 문자열>'
 """
 
 from __future__ import annotations
@@ -27,7 +23,6 @@ import io
 import json
 import os
 import sys
-import time
 
 import httpx
 
@@ -39,7 +34,6 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="repla
 
 API_BASE = os.environ.get("PRODUCTION_API_URL", "https://auction-production-2c72.up.railway.app")
 CRAWLER_SECRET = os.environ.get("CRAWLER_SECRET", "local-crawler-secret")
-POLL_INTERVAL_SEC = 5
 REQUEST_DELAY_SEC = 0.8
 SEARCH_PAGE_SIZE = 100
 
@@ -48,7 +42,7 @@ HEADERS = {"x-crawler-secret": CRAWLER_SECRET}
 
 def log(message: str, level: str = "info") -> None:
     prefix = {"info": " ", "warn": "!", "error": "X"}.get(level, " ")
-    print(f"[{prefix}] {message}")
+    print(f"[{prefix}] {message}", flush=True)
     try:
         httpx.post(
             f"{API_BASE}/nice-crawler/worker-log",
@@ -69,17 +63,7 @@ def report(**patch) -> None:
             timeout=10.0,
         )
     except Exception as e:  # noqa: BLE001
-        print(f"[!] progress 보고 실패: {e}")
-
-
-def get_worker_status() -> dict | None:
-    try:
-        resp = httpx.get(f"{API_BASE}/nice-crawler/worker-status", headers=HEADERS, timeout=10.0)
-        resp.raise_for_status()
-        return resp.json()
-    except Exception as e:  # noqa: BLE001
-        print(f"[!] 상태 조회 실패: {e}")
-        return None
+        print(f"[!] progress 보고 실패: {e}", flush=True)
 
 
 def build_search_params(config: dict) -> dict:
@@ -183,27 +167,23 @@ async def run_once(config: dict) -> None:
 
 
 def main() -> None:
-    print(f"나이스 작업창 워커 시작 — API_BASE={API_BASE}, {POLL_INTERVAL_SEC}초마다 상태 폴링")
-    while True:
-        status = get_worker_status()
-        if status and status.get("running") and status.get("searchConfig"):
-            try:
-                config = json.loads(status["searchConfig"])
-            except (TypeError, ValueError):
-                log("searchConfig 파싱 실패", "error")
-                report(phase="error", running=False, error="searchConfig 파싱 실패")
-                time.sleep(POLL_INTERVAL_SEC)
-                continue
-            try:
-                asyncio.run(run_once(config))
-            except Exception as e:  # noqa: BLE001
-                log(f"워커 실행 중 오류: {e}", "error")
-                report(phase="error", running=False, error=str(e))
-        time.sleep(POLL_INTERVAL_SEC)
+    if len(sys.argv) < 2:
+        print("사용법: python nice_worker.py '<NiceSearchConfig JSON>'")
+        sys.exit(1)
+    try:
+        config = json.loads(sys.argv[1])
+    except (TypeError, ValueError) as e:
+        log(f"검색조건 JSON 파싱 실패: {e}", "error")
+        report(phase="error", running=False, error=f"검색조건 JSON 파싱 실패: {e}")
+        sys.exit(1)
+
+    try:
+        asyncio.run(run_once(config))
+    except Exception as e:  # noqa: BLE001
+        log(f"워커 실행 중 오류: {e}", "error")
+        report(phase="error", running=False, error=str(e))
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n중지됨")
+    main()
