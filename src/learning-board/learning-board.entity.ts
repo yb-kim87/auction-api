@@ -12,6 +12,7 @@ export class AuctionAssignment {
   @Column({ type: "text", default: "" }) phoneBuyer!: string;
   @Column({ type: "text", default: "" }) phoneSeller!: string;
   @Column({ type: "text", default: "" }) phoneBidder!: string;
+  @Column({ type: "text", default: "" }) phoneFinal!: string;
   @Column({ type: "text", default: "" }) safetyResearch1!: string;
   @Column({ type: "text", default: "" }) safetyResearch2!: string;
   @Column({ type: "text", default: "" }) safetyResearch3!: string;
