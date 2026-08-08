@@ -45,6 +45,7 @@ import { LectureEnrollment } from "./lecture-replay/entities/lecture-enrollment.
 import { LectureProgress } from "./lecture-replay/entities/lecture-progress.entity";
 import { LectureQuestion } from "./lecture-replay/entities/lecture-question.entity";
 import { LectureNote } from "./lecture-replay/entities/lecture-note.entity";
+import { LectureSectionMaterial } from "./lecture-replay/entities/lecture-section-material.entity";
 import { RedevelopmentZone } from "./redevelopment/entities/redevelopment-zone.entity";
 import { RedevelopmentTraceFailure } from "./redevelopment/entities/redevelopment-trace-failure.entity";
 import { HousingOfficialPrice } from "./housing-price/entities/housing-official-price.entity";
@@ -99,6 +100,7 @@ const entities = [
   LectureProgress,
   LectureQuestion,
   LectureNote,
+  LectureSectionMaterial,
   RedevelopmentZone,
   RedevelopmentTraceFailure,
   HousingOfficialPrice,

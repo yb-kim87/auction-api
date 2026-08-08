@@ -8,6 +8,7 @@ import { LectureEnrollment } from "./entities/lecture-enrollment.entity";
 import { LectureProgress } from "./entities/lecture-progress.entity";
 import { LectureQuestion } from "./entities/lecture-question.entity";
 import { LectureNote } from "./entities/lecture-note.entity";
+import { LectureSectionMaterial } from "./entities/lecture-section-material.entity";
 import { LectureReplayService } from "./lecture-replay.service";
 import { LectureReplayController } from "./lecture-replay.controller";
 import { LectureReplayPublicController } from "./lecture-replay-public.controller";
@@ -25,6 +26,7 @@ import { UsersModule } from "../users/users.module";
       LectureProgress,
       LectureQuestion,
       LectureNote,
+      LectureSectionMaterial,
     ]),
     UsersModule,
   ],

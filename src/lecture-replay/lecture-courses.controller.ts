@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Headers, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Headers, Param, Post, Query, Res } from "@nestjs/common";
+import type { Response } from "express";
 import { getAuthContext, requireAuth } from "../common/auth-context";
 import { LectureReplayService } from "./lecture-replay.service";
 
@@ -84,5 +85,33 @@ export class LectureCoursesController {
   deleteNote(@Headers() headers: Record<string, string>, @Param("courseId") courseId: string, @Param("noteId") noteId: string) {
     const ctx = getAuthContext(headers); requireAuth(ctx);
     return this.service.deleteMyNote(ctx.username, courseId, noteId);
+  }
+
+  // ---------- 강의자료(주차별 파일) — 사용자 요청, 2026-08-08 ----------
+
+  @Get(":courseId/sections/:sectionId/materials")
+  listMaterials(
+    @Headers() headers: Record<string, string>,
+    @Param("courseId") courseId: string,
+    @Param("sectionId") sectionId: string,
+  ) {
+    const ctx = getAuthContext(headers); requireAuth(ctx);
+    return this.service.listMyMaterials(ctx.username, courseId, sectionId);
+  }
+
+  @Get(":courseId/materials/:materialId/download")
+  async downloadMaterial(
+    @Headers() headers: Record<string, string>,
+    @Param("courseId") courseId: string,
+    @Param("materialId") materialId: string,
+    @Res() res: Response,
+  ) {
+    const ctx = getAuthContext(headers); requireAuth(ctx);
+    const file = await this.service.getMyMaterialFile(ctx.username, courseId, materialId);
+    res.set({
+      "Content-Type": file.mimeType,
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`,
+    });
+    res.send(file.fileData);
   }
 }
