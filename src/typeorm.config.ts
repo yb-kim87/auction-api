@@ -52,6 +52,7 @@ import { NiceCrawlerStateRow } from "./nice-crawler/entities/nice-crawler-state.
 import { NiceCrawlerLogRow } from "./nice-crawler/entities/nice-crawler-log.entity";
 import { NiceSavedSearchRow } from "./nice-crawler/entities/nice-saved-search.entity";
 import { AuctionAssignment, ServiceReport } from "./learning-board/learning-board.entity";
+import { AppSettingsRow } from "./site-settings/site-settings.entity";
 
 const entities = [
   Auction,
@@ -106,6 +107,7 @@ const entities = [
   NiceSavedSearchRow,
   AuctionAssignment,
   ServiceReport,
+  AppSettingsRow,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {
