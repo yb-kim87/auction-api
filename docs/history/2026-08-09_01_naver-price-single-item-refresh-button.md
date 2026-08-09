@@ -29,9 +29,13 @@ API를 새로 만들지 않았다.
      crawling/starting/collecting을 벗어날 때까지(최대 60초) 대기.
   3. `fetchAuctionsByIds([item.id])`로 최신 데이터를 다시 불러와 폼과
      화면에 반영(`onSaved` 콜백으로 부모 목록도 갱신).
-  - 관리자 PC의 크롤러 워커가 꺼져 있으면 기존 `/crawler/start`가 이미
-    던지는 에러 메시지("관리자 PC가 꺼져 있거나...")를 그대로 화면에
-    노출한다.
+  - v3 크롤러는 Railway 서버 컨테이너 안에서 Node(`ensureWorker()`)가
+    Python 워커(`runner.py serve`, `PYTHON_PATH=/opt/venv-v3/bin/python`)를
+    직접 spawn해서 실행한다 — `CRAWLER_WORKER_URL`이 설정돼 있지 않아
+    `isRemoteWorkerMode()`가 false이므로, 관리자 PC를 켜둘 필요 없이
+    서버가 알아서 워커를 띄운다(사용자 확인, 2026-08-09: "우리 크롤러
+    워커 알아서 되게 했었잖아 — 내가 켜고 끄고 개념이 아니었잖아"). PC
+    실행이 필요한 건 브라우저(Selenium) 기반 v1 경로뿐이다.
 
 ## 검증
 프론트엔드 `npx tsc --noEmit` 통과. 백엔드는 변경 없음(기존 API 재사용).
