@@ -53,15 +53,11 @@ export class LectureReplayService {
 
   // ---------- 관리자: 강의자료(주차별 파일) ----------
 
-  /** 목록에는 fileData(파일 바이트)를 절대 포함하지 않는다 — 목록 하나에
-   * 수십 MB가 실릴 수 있다. */
   private readonly materialListSelect = [
     "id",
     "sectionId",
     "title",
-    "fileName",
-    "mimeType",
-    "fileSize",
+    "url",
     "sortOrder",
     "createdAt",
     "updatedAt",
@@ -75,35 +71,22 @@ export class LectureReplayService {
     });
   }
 
-  async createMaterial(
-    sectionId: string,
-    input: { title: string; fileName: string; mimeType: string; fileData: Buffer; fileSize: number },
-  ) {
+  async createMaterial(sectionId: string, input: { title: string; url: string }) {
     const section = await this.sectionRepo.findOne({ where: { id: sectionId } });
     if (!section) throw new NotFoundException("강의 주차(섹션)를 찾을 수 없습니다.");
+    const url = input.url.trim();
+    if (!url) throw new NotFoundException("링크를 입력해주세요.");
     const row = this.materialRepo.create({
       sectionId,
-      title: input.title.trim() || input.fileName,
-      fileName: input.fileName,
-      mimeType: input.mimeType,
-      fileData: input.fileData,
-      fileSize: input.fileSize,
+      title: input.title.trim() || url,
+      url,
     });
-    const saved = await this.materialRepo.save(row);
-    const { fileData: _omit, ...meta } = saved;
-    void _omit;
-    return meta;
+    return this.materialRepo.save(row);
   }
 
   async deleteMaterial(id: string) {
     await this.materialRepo.delete(id);
     return { ok: true };
-  }
-
-  async getMaterialFileAdmin(id: string) {
-    const row = await this.materialRepo.findOne({ where: { id } });
-    if (!row) throw new NotFoundException("강의자료를 찾을 수 없습니다.");
-    return row;
   }
 
   // ---------- 회원: 강의자료 열람 ----------
@@ -122,14 +105,6 @@ export class LectureReplayService {
     await this.getAccessMode(username, courseId);
     await this.assertSectionBelongsToCourse(sectionId, courseId);
     return this.listMaterials(sectionId);
-  }
-
-  async getMyMaterialFile(username: string, courseId: string, materialId: string) {
-    await this.getAccessMode(username, courseId);
-    const row = await this.materialRepo.findOne({ where: { id: materialId } });
-    if (!row) throw new NotFoundException("강의자료를 찾을 수 없습니다.");
-    await this.assertSectionBelongsToCourse(row.sectionId, courseId);
-    return row;
   }
 
   // ---------- 관리자: 강의 ----------

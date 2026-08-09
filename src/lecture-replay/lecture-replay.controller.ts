@@ -9,21 +9,10 @@ import {
   Patch,
   Post,
   Query,
-  Res,
-  UploadedFile,
-  UseInterceptors,
 } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
-import type { Response } from "express";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { LectureReplayService } from "./lecture-replay.service";
 import type { LectureEnrollmentStatus } from "./entities/lecture-enrollment.entity";
-
-/** 강의자료 업로드 허용 용량 — 대부분 PPT/PDF라 30MB면 충분하다. DB
- * bytea 컬럼에 직접 저장하므로(2026-08-08 설계, Railway/Vercel 분리
- * 배포로 로컬 파일시스템 저장이 불가능해 채택) 지나치게 큰 파일은
- * 막는다. */
-const MATERIAL_MAX_SIZE_BYTES = 30 * 1024 * 1024;
 
 /** 관리자 전용 강의 다시보기 관리 API(강의/섹션/영상/접근 링크 CRUD). */
 @Controller("lecture-replay")
@@ -238,21 +227,16 @@ export class LectureReplayController {
   }
 
   @Post("materials")
-  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MATERIAL_MAX_SIZE_BYTES } }))
-  async uploadMaterial(
+  createMaterial(
     @Headers() headers: Record<string, string>,
-    @UploadedFile() file: Express.Multer.File,
-    @Body() body: { sectionId?: string; title?: string },
+    @Body() body: { sectionId?: string; title?: string; url?: string },
   ) {
     requireAdmin(getAuthContext(headers));
-    if (!file) throw new BadRequestException("업로드할 파일을 선택해 주세요.");
     if (!body.sectionId) throw new BadRequestException("sectionId가 필요합니다.");
+    if (!body.url) throw new BadRequestException("링크(url)가 필요합니다.");
     return this.service.createMaterial(body.sectionId, {
-      title: body.title ?? file.originalname,
-      fileName: file.originalname,
-      mimeType: file.mimetype || "application/octet-stream",
-      fileData: file.buffer,
-      fileSize: file.size,
+      title: body.title ?? body.url,
+      url: body.url,
     });
   }
 
@@ -260,21 +244,6 @@ export class LectureReplayController {
   deleteMaterial(@Headers() headers: Record<string, string>, @Param("id") id: string) {
     requireAdmin(getAuthContext(headers));
     return this.service.deleteMaterial(id);
-  }
-
-  @Get("materials/:id/download")
-  async downloadMaterialAdmin(
-    @Headers() headers: Record<string, string>,
-    @Param("id") id: string,
-    @Res() res: Response,
-  ) {
-    requireAdmin(getAuthContext(headers));
-    const file = await this.service.getMaterialFileAdmin(id);
-    res.set({
-      "Content-Type": file.mimeType,
-      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`,
-    });
-    res.send(file.fileData);
   }
 
   @Patch("questions/:id/answer")
