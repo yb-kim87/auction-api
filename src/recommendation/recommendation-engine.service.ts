@@ -335,6 +335,16 @@ export class RecommendationEngineService {
     const priceMeritIds = await this.findPriceMeritItemIds(affordable.map((row) => row.item.id));
 
     affordable.sort((a, b) => {
+      // 검색어가 있으면 사건번호(숫자부분)와 얼마나 정확히 일치하는지를
+      // 최우선 정렬 기준으로 쓴다(사용자 요청, 2026-08-09: "689 검색하면
+      // 2025타경689가 가장 먼저 떠야하는데 2025타경6890, 2025타경2689
+      // 같은게 앞에 나와 찾기 힘들다"). 예산 조건 등은 검색어가 있을 때
+      // 이미 위 filter 단계에서 건너뛰므로, 여기서도 검색 관련성이 우선.
+      if (searchQuery) {
+        const scoreDiff =
+          this.searchRelevanceScore(a.item, searchQuery) - this.searchRelevanceScore(b.item, searchQuery);
+        if (scoreDiff !== 0) return scoreDiff;
+      }
       // 예산 내에서 가장 비싼(가장 좋은) 물건을 우선 추천
       if (b.requiredEquity !== a.requiredEquity) return b.requiredEquity - a.requiredEquity;
       // 동률일 때만 가격메리트 태그를 보조 신호로 사용
@@ -359,6 +369,26 @@ export class RecommendationEngineService {
       hasMore: offset + page.length < affordable.length,
       creditScoreWarning: criteria.creditScoreWarning,
     };
+  }
+
+  /** 검색어와 사건번호가 얼마나 정확히 일치하는지 점수화한다(낮을수록
+   * 정확한 일치). 사건번호(예: "2025타경689")의 숫자부분이 검색어와
+   * 정확히 같은 경우를 최우선으로 두고, 그다음 시작 일치·포함 순으로
+   * 낮춘다 — "689"로 검색했을 때 "2025타경6890", "2025타경2689"보다
+   * "2025타경689"가 먼저 나오게 하기 위함. */
+  private searchRelevanceScore(item: Auction, query: string): number {
+    const q = query.trim().toLowerCase();
+    const auctionNo = (item.auctionNo ?? "").toLowerCase();
+    const address = (item.address ?? "").toLowerCase();
+    const numMatch = auctionNo.match(/(\d+)(?!.*\d)/);
+    const num = numMatch?.[1] ?? "";
+
+    if (num === q || auctionNo === q) return 0;
+    if (num.startsWith(q) || auctionNo.startsWith(q)) return 1;
+    if (num.includes(q)) return 2;
+    if (auctionNo.includes(q)) return 3;
+    if (address.includes(q)) return 4;
+    return 5;
   }
 
   private async findPriceMeritItemIds(itemIds: string[]): Promise<Set<string>> {
