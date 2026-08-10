@@ -300,3 +300,20 @@ com/p/search/{주소}`, `https://map.kakao.com/link/search/{주소}`.
 ### 변경 파일 및 검증
 `auction/src/components/AuctionDetailModal.tsx`. `npx tsc --noEmit`
 통과.
+
+## 追記 (2026-08-10) — 팝업 크기/위치를 탱크옥션 원본과 동일하게 맞춤
+
+사용자 피드백: "창크기가 너무 작은데 탱크옥션 눌러서 확인하고 비슷한
+사이즈로 나오게 해줘" → "위치랑 사이즈 같게" → "탱크는 뭔가 보기편하게
+물건은 좌측으로 나오고 우측엔 외부링크가 나오는구조인거 같아".
+
+`DetailView.js`의 `out-link` 클릭 핸들러(실측)를 확인: `Y.openPopup({
+left:window.screenX+1350, top:0, width:1220, height:screen.availHeight
+-100, ...})`. 즉 현재 창의 X좌표에서 1350px 오른쪽, 화면 세로 거의
+꽉 채운 큰 창을 띄워 "물건 상세(좌측 원래 창) + 외부 링크(우측 새 창)"가
+나란히 보이는 구조 — 이전에 임의로 넣었던 1100×900 고정 크기 대신
+이 공식을 그대로 반영했다.
+
+### 변경 파일 및 검증
+`auction/src/components/AuctionDetailModal.tsx`. `npx tsc --noEmit`
+통과.
