@@ -25,6 +25,7 @@ import { HousingPriceModule } from "./housing-price/housing-price.module";
 import { NiceCrawlerModule } from "./nice-crawler/nice-crawler.module";
 import { LearningBoardModule } from "./learning-board/learning-board.module";
 import { SiteSettingsModule } from "./site-settings/site-settings.module";
+import { RealtorCollectModule } from "./realtor-collect/realtor-collect.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -54,6 +55,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     NiceCrawlerModule,
     LearningBoardModule,
     SiteSettingsModule,
+    RealtorCollectModule,
   ],
 })
 export class AppModule implements NestModule {
