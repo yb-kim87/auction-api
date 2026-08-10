@@ -271,10 +271,19 @@ export class RealtorCollectService {
     for (;;) {
       const batch = Array.from({ length: LIST_CONCURRENCY }, (_, i) => page + i);
       const results = await Promise.all(
-        batch.map(async (p) => ({ page: p, items: await this.fetchListPage(urlTemplate, p) })),
+        batch.map(async (p) => ({ page: p, ...(await this.fetchListPageWithRetry(urlTemplate, p)) })),
       );
       let stop = false;
-      for (const { page: p, items } of results) {
+      for (const { page: p, items, failed } of results) {
+        // 요청 자체가 실패한 페이지(WAF 일시 차단 등)는 "목록이 비었다"는
+        // 신호로 오인해 페이지네이션을 조기 종료하면 안 된다(실측 버그,
+        // 2026-08-11: 재시도까지 다 실패한 두 번째 페이지를 빈 페이지로
+        // 착각해 세종 1084건 중 10건만 수집하고 멈췄었음) — 실패는 로그만
+        // 남기고 건너뛴다(그 페이지만 누락, 전체 수집은 계속 진행).
+        if (failed) {
+          this.log(`페이지 ${p} 조회 실패(건너뜀)`);
+          continue;
+        }
         if (items.length === 0) {
           stop = true;
           break;
@@ -289,10 +298,29 @@ export class RealtorCollectService {
     return all;
   }
 
+  private async fetchListPageWithRetry(
+    urlTemplate: string,
+    page: number,
+    attempts = 3,
+  ): Promise<{ items: ListRow[]; failed: boolean }> {
+    for (let i = 1; i <= attempts; i += 1) {
+      try {
+        const items = await this.fetchListPage(urlTemplate, page);
+        return { items, failed: false };
+      } catch {
+        if (i < attempts) await sleep(BATCH_DELAY_MS * i);
+      }
+    }
+    return { items: [], failed: true };
+  }
+
+  /** 요청 자체가 실패하면(WAF 일시 차단 등) 예외를 던진다 — 빈 배열은
+   * "정말로 이 페이지에 매물이 없다"는 뜻으로만 써야 한다(위 호출부
+   * 주석 참고). */
   private async fetchListPage(urlTemplate: string, page: number): Promise<ListRow[]> {
     const url = urlTemplate.replace("{page}", String(page));
     const res = await this.proxyFetch(url);
-    if (!res.ok) return [];
+    if (!res.ok) throw new Error(`목록 페이지 요청 실패(status ${res.status})`);
     const html = await res.text();
     return this.parseListRows(html);
   }
