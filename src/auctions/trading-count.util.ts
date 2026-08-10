@@ -75,3 +75,34 @@ export function parseTradingCountFromDetail(text: string): string {
   if (years.length === 0) return "";
   return years.map((year) => `${year} ${counts[year]}건`).join(", ");
 }
+
+/** 저장된 "2026 5건, 2025 4건, 2024 2건" 형태 문자열(위 함수의 출력)을
+ * 다시 연도→건수 맵으로 파싱한다. 상세필터의 "N개년 실거래 건수"
+ * 필터(사용자 요청, 2026-08-10)에서 재사용 — 프론트
+ * `AuctionDetailModal.tsx`의 `parseTradingCountSeries`와 동일한
+ * 정규식/포맷을 쓴다(두 화면이 같은 저장 형식을 공유). */
+export function parseTradingCountByYear(value: string | null | undefined): Map<number, number> {
+  const countByYear = new Map<number, number>();
+  for (const match of (value ?? "").matchAll(/(20\d{2})\s*(\d+)\s*건/g)) {
+    const year = Number(match[1]);
+    const count = Number(match[2]);
+    if (Number.isFinite(year) && Number.isFinite(count)) countByYear.set(year, count);
+  }
+  return countByYear;
+}
+
+/** "최근 N개년" 실거래 건수 합계 — 화면의 "최근 3개년" 그래프와 동일하게
+ * 올해를 포함한 직전 연도들(예: N=1이면 올해만, N=3이면 올해+작년+재작년)
+ * 로 고정하고, 데이터 없는 연도는 0건으로 취급한다. */
+export function sumRecentYearsTradingCount(
+  tradingCount: string | null | undefined,
+  years: number,
+  currentYear = new Date().getFullYear(),
+): number {
+  const countByYear = parseTradingCountByYear(tradingCount);
+  let sum = 0;
+  for (let i = 0; i < years; i += 1) {
+    sum += countByYear.get(currentYear - i) ?? 0;
+  }
+  return sum;
+}

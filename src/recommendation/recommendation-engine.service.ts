@@ -22,6 +22,7 @@ import {
 } from "./investment-math.util";
 import { estimateDefaultProfit } from "./profit-calculator.util";
 import { getRoomDeductionWon } from "./room-deduction.util";
+import { sumRecentYearsTradingCount } from "../auctions/trading-count.util";
 
 const PRICE_MERIT_TAG = "가격메리트검토";
 
@@ -49,6 +50,11 @@ export interface RecommendationFilters {
   /** 전용면적(㎡) 범위 필터. */
   minArea?: number;
   maxArea?: number;
+  /** "N개년 실거래 개수" 필터(사용자 요청, 2026-08-10) — 예: 1개년+10
+   * 이면 올해 실거래 건수가 10건 이상인 물건만. tradingYears는 1~3,
+   * 항상 올해를 포함해 직전 연도까지 합산한다. 하나만 있으면 무시. */
+  tradingYears?: number;
+  tradingMinCount?: number;
 }
 
 @Injectable()
@@ -328,6 +334,10 @@ export class RecommendationEngineService {
           if (!Number.isFinite(areaNum)) return false;
           if (filters.minArea != null && areaNum < filters.minArea) return false;
           if (filters.maxArea != null && areaNum > filters.maxArea) return false;
+        }
+        if (filters?.tradingYears != null && filters?.tradingMinCount != null) {
+          const sum = sumRecentYearsTradingCount(row.item.tradingCount, filters.tradingYears);
+          if (sum < filters.tradingMinCount) return false;
         }
         return true;
       });

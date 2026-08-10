@@ -41,6 +41,8 @@ export class RecommendationController {
     @Query("strategyLabel") strategyLabel?: string,
     @Query("minArea") minArea?: string,
     @Query("maxArea") maxArea?: string,
+    @Query("tradingYears") tradingYears?: string,
+    @Query("tradingMinCount") tradingMinCount?: string,
   ) {
     const ctx = getAuthContext(headers);
     requireSearchAccess(ctx);
@@ -62,6 +64,8 @@ export class RecommendationController {
         strategyLabel: parseMultiValue(strategyLabel),
         minArea: minArea ? Number(minArea) || undefined : undefined,
         maxArea: maxArea ? Number(maxArea) || undefined : undefined,
+        tradingYears: tradingYears ? Number(tradingYears) || undefined : undefined,
+        tradingMinCount: tradingMinCount ? Number(tradingMinCount) || undefined : undefined,
       },
     });
 
