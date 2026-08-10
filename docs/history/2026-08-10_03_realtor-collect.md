@@ -81,3 +81,45 @@ Selenium) 워커를 Node가 spawn/HTTP로 orchestrate하는 구조다. 하지만
 - 배포 후 실제 프로덕션(Railway/Vercel)에서 소규모 지역으로 실제
   수집 1회 실행 + DB 저장 + 목록 조회 + 엑셀 다운로드까지 재검증 예정
   (아래 배포 확인 절 참고).
+
+## 追記 (2026-08-10) — 배포 후 실측: Railway가 karhanbang.com에도 연결 못 함, Vercel 프록시로 우회
+
+배포 후 실제 관리자 페이지에서 "실행"을 눌러보니 시/군/구 드롭박스도,
+수집 시작도 전부 실패했다. Railway 로그 확인 결과 `ConnectTimeoutError`
+/`fetch failed` — VWorld API에서 이미 두 번(부가세계산기, 매도분석
+지도) 겪었던 "Railway(sfo, 해외 리전)가 국내 사이트에 연결 못 하는"
+문제가 세 번째로 재현됐다. 이번엔 사전에 이 선례를 알고 있었음에도
+"이 사이트는 브라우저 없이 fetch로 잘 되더라"는 로컬 실측만 믿고
+Railway에서도 똑같이 될 거라 가정한 채 배포한 게 원인 — 로컬 PC와
+Railway 컨테이너의 아웃바운드 네트워크 경로가 다르다는 걸 다시 한 번
+놓쳤다.
+
+### 수정
+VWorld 때와 동일한 패턴으로 우회했다:
+- `auction/src/app/api/realtor-collect/proxy/route.ts`(신규,
+  `preferredRegion="icn1"`): karhanbang.com URL만 허용하는 서버 간
+  프록시. 브라우저 세션이 아니라 백엔드가 직접 호출하므로 쿠키 대신
+  공유 시크릿 헤더(`x-realtor-proxy-secret`, env `REALTOR_PROXY_
+  SECRET`)로 인증한다. `ajax=1` 쿼리가 있으면 WAF가 요구하는
+  Referer/X-Requested-With도 함께 붙인다.
+- `RealtorCollectService`: 목록/상세/지역콤보 3곳의 직접 `fetch()`를
+  전부 `proxyFetch()`(신규 private 메서드)로 교체 — Vercel 프록시
+  URL(`FRONTEND_URL` env, 없으면 프로덕션 도메인 기본값)에 대상
+  URL을 쿼리로 실어 호출한다.
+- `REALTOR_PROXY_SECRET`을 Railway(`railway variables --set`)와
+  Vercel(`vercel env add ... production`) 양쪽에 동일한 값으로
+  등록.
+
+### 교훈
+- 이 세션에서만 벌써 세 번째(VWorld 2건 + 이번 karhanbang.com)
+  같은 "Railway 해외 리전" 문제를 겪었다 — Railway 백엔드에서
+  **새로운 외부(특히 국내) 사이트로 나가는 요청을 추가할 때는,
+  로컬에서 fetch가 잘 된다는 것만으로 안심하지 말고 처음부터
+  Vercel(icn1) 프록시를 거치는 걸 기본값으로 잡아야 한다** — 매번
+  "일단 Railway에서 직접 호출 → 배포 후 실패 확인 → Vercel 우회로
+  재작업"을 반복하는 건 비효율적이다.
+
+### 검증
+`REALTOR_PROXY_SECRET` 배포 후 실제 프로덕션에서 시/군/구 드롭박스
+조회, 소규모 지역 수집 실행 → DB 저장 → 목록 조회 → 엑셀 다운로드까지
+재검증(아래 별도 검증 기록 참고).

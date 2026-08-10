@@ -13,16 +13,24 @@ import { RealtorOffice } from "./entities/realtor-office.entity";
  * 구조도 정규식으로 안정적으로 파싱 가능해(실측 확인) 별도 Python
  * 워커 없이 이 서비스 안에서 순수 Node fetch + 정규식으로 직접
  * 구현했다 — 이 사이트 하나만을 위해 탱크옥션 수준의 워커/콜백
- * 인프라를 새로 만들 필요가 없었다. */
+ * 인프라를 새로 만들 필요가 없었다.
+ *
+ * **배포 후 실측 추가 발견(2026-08-10)**: Railway(sfo, 해외 리전)에서
+ * karhanbang.com으로 직접 fetch하면 매번 `ConnectTimeoutError`/
+ * `fetch failed`로 실패한다 — VWorld API에서 이미 겪은 것과 동일한
+ * "Railway 해외 리전이 국내 사이트 연결을 못 하는" 인프라 이슈
+ * (docs/history/2026-07-21_01 참고). 그래서 모든 karhanbang.com
+ * 요청은 이 서비스가 직접 fetch하지 않고, Vercel(서울 리전 icn1)의
+ * `/api/realtor-collect/proxy` 라우트를 거쳐가도록 바꿨다
+ * (`proxyFetch()`). 로컬 개발 환경(Railway가 아닌 국내 PC)에서는
+ * 이 우회가 필요 없을 수 있지만, 다른 환경 분기를 늘리는 대신 항상
+ * 프록시를 거치도록 통일했다 — 운영 배포와 항상 동일한 경로로
+ * 검증할 수 있고, 로컬에서도 이미 배포된 Vercel 프록시를 그대로
+ * 재사용할 수 있다. */
 const LIST_URL_TEMPLATE =
   "https://www.karhanbang.com/office/office_list.asp?topM=09&flag=G&page={page}&search=&sel_sido={sido}&sel_gugun={gugun}&sel_dong={dong}";
 const DETAIL_URL_TEMPLATE = "https://www.karhanbang.com/office/office_detail.asp?topM=09&mem_no={memNo}&{params}";
 const AJAX_COMBO_URL = "https://www.karhanbang.com/office/ajax_combo_search.asp";
-
-const REQUEST_HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-};
 
 /** 사이트 자체 시/도 옵션값(12번 결번은 원본 그대로). */
 const SIDO_LIST: Array<{ code: string; name: string }> = [
@@ -105,8 +113,30 @@ export class RealtorCollectService {
     return SIDO_LIST;
   }
 
+  /** karhanbang.com 요청은 전부 Vercel(서울 리전) 프록시를 거친다 —
+   * Railway에서 직접 fetch하면 연결 자체가 안 된다(위 클래스 주석
+   * 참고). `ajax=true`면 프록시가 WAF가 요구하는 Referer/
+   * X-Requested-With 헤더를 함께 붙여 호출한다. */
+  private async proxyFetch(targetUrl: string, options: { ajax?: boolean } = {}): Promise<{ ok: boolean; status: number; text: () => Promise<string> }> {
+    const secret = process.env.REALTOR_PROXY_SECRET;
+    if (!secret) throw new ServiceUnavailableException("REALTOR_PROXY_SECRET 환경변수가 설정되지 않았습니다.");
+    const proxyBase = (process.env.FRONTEND_URL?.split(",")[0]?.trim() || "https://auction-seven-tan.vercel.app").replace(/\/$/, "");
+    const proxyUrl = new URL(`${proxyBase}/api/realtor-collect/proxy`);
+    proxyUrl.searchParams.set("url", targetUrl);
+    if (options.ajax) proxyUrl.searchParams.set("ajax", "1");
+
+    try {
+      const res = await fetch(proxyUrl.toString(), { headers: { "x-realtor-proxy-secret": secret } });
+      return res;
+    } catch (err) {
+      const cause = err instanceof Error ? ((err as { cause?: unknown }).cause ?? err.message) : err;
+      this.logger.error(`한방 프록시 호출 실패(${targetUrl}): ${JSON.stringify(cause)}`);
+      throw new ServiceUnavailableException("한방 사이트에 연결하지 못했습니다.");
+    }
+  }
+
   /** flag="S": 시/군/구 목록, flag="G": 읍/면/동 목록(hanbang.py의
-   * fetch_sub_options와 동일). 이 엔드포인트만 WAF(dotDefender)가
+   * fetch_sub_options와 동일). 이 엔드포인트는 WAF(dotDefender)가
    * Referer/X-Requested-With를 요구함(실측 확인, 2026-08-10). */
   async fetchSubOptions(flag: "S" | "G", sidoCode: string, gugunCode = "") {
     const url = new URL(AJAX_COMBO_URL);
@@ -114,23 +144,9 @@ export class RealtorCollectService {
     url.searchParams.set("sel_sido", sidoCode);
     url.searchParams.set("sel_gugun", gugunCode);
 
-    let res: Response;
-    try {
-      res = await fetch(url.toString(), {
-        headers: {
-          ...REQUEST_HEADERS,
-          Accept: "application/json, text/javascript, */*; q=0.01",
-          Referer: "https://www.karhanbang.com/office/office_list.asp?topM=09",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      });
-    } catch (err) {
-      const cause = err instanceof Error ? ((err as { cause?: unknown }).cause ?? err.message) : err;
-      this.logger.error(`한방 지역 목록 조회 실패: ${JSON.stringify(cause)}`);
-      throw new ServiceUnavailableException("한방 사이트에 연결하지 못했습니다.");
-    }
+    const res = await this.proxyFetch(url.toString(), { ajax: true });
     if (!res.ok) throw new ServiceUnavailableException("한방 지역 목록 조회 요청 실패");
-    const data = (await res.json()) as { datMM?: { code?: Array<string | number>; name?: string[] } };
+    const data = JSON.parse(await res.text()) as { datMM?: { code?: Array<string | number>; name?: string[] } };
     const codes = data.datMM?.code ?? [];
     const names = data.datMM?.name ?? [];
     return codes.map((code, i) => ({ code: String(code), name: names[i] ?? "" }));
@@ -262,7 +278,7 @@ export class RealtorCollectService {
 
   private async fetchListPage(urlTemplate: string, page: number): Promise<ListRow[]> {
     const url = urlTemplate.replace("{page}", String(page));
-    const res = await fetch(url, { headers: REQUEST_HEADERS });
+    const res = await this.proxyFetch(url);
     if (!res.ok) return [];
     const html = await res.text();
     return this.parseListRows(html);
@@ -294,7 +310,7 @@ export class RealtorCollectService {
   }
 
   private async fetchMobileNumbers(detailUrl: string): Promise<string[]> {
-    const res = await fetch(detailUrl, { headers: REQUEST_HEADERS });
+    const res = await this.proxyFetch(detailUrl);
     if (!res.ok) return [];
     const html = await res.text();
     const nums = new Set<string>();
