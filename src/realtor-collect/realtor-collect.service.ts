@@ -52,15 +52,16 @@ const SIDO_LIST: Array<{ code: string; name: string }> = [
   { code: "17", name: "제주특별자치도" },
 ];
 
-/** 배포 후 실측(2026-08-10): LIST_CONCURRENCY=5/DETAIL_CONCURRENCY=15로
- * 돌리면 한방 WAF(dotDefender)가 요청이 몰린다고 판단해 일시적으로
- * 모든 응답을 503으로 막는 현상이 재현됐다(재시도 없이 몇 분 뒤에는
- * 자연히 풀림 — IP 영구차단이 아니라 짧은 레이트리밋으로 추정).
- * 동시성을 낮추고 배치 사이에 짧은 대기를 둬 요청 속도를 완화한다
- * (사용자 요청: "주기를 좀만 줄여보자"). */
-const LIST_CONCURRENCY = 3;
-const DETAIL_CONCURRENCY = 5;
-const BATCH_DELAY_MS = 400;
+/** 배포 후 실측(2026-08-10~11): LIST_CONCURRENCY=5/DETAIL_CONCURRENCY=15는
+ * 물론이고 3/5로 낮춰도 배치의 2/3 가까이가 계속 실패했다 — 실패
+ * 로그 간격(배치당 약 30초)이 재시도 횟수(3회)×약 10초와 맞아떨어져,
+ * WAF 차단이라기보다 **동시 요청이 몇 개만 겹쳐도 응답이 느려져
+ * 타임아웃되는 것**으로 추정된다. 목록 페이지는 아예 동시성 없이
+ * 순차 요청(1개씩)으로 낮췄다 — 느리지만 실측상 훨씬 안정적. 상세
+ * 페이지는 목록보다 가벼워 소폭의 동시성(3)까지는 허용. */
+const LIST_CONCURRENCY = 1;
+const DETAIL_CONCURRENCY = 3;
+const BATCH_DELAY_MS = 500;
 const MAX_LOG_LINES = 500;
 
 const ROW_RE =
