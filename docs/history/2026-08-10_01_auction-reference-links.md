@@ -233,3 +233,21 @@ naverId/djNo 기반 단지 상세페이지)와는 다른, 좌표 기반 지역 �
 `auction-api/src/auctions/{reference-links.util.ts,auctions.service.ts}`,
 `auction/src/components/AuctionDetailModal.tsx`. 양쪽 `npx tsc --noEmit`
 통과.
+
+## 追記 (2026-08-10) — 아파트/오피스텔에 N단지정보도 표시
+
+사용자 요청: "아파트 오피스텔인경우엔 n단지정보도 나오게 해줘".
+N단지정보(`new.land.naver.com/complexes/{djNo}`)는 이미 "주변 매물
+호가" 라벨 옆에 `NaverComplexLink`로 떠 있었지만, 새로 만든 우측
+"외부 참고링크" 패널에는 없었다.
+
+`naverId`(djNo)는 지오코딩 없이 물건 데이터에 이미 있는 값이라, 좌표
+캐싱 여부와 무관하게 항상 즉시 계산 가능하다 — 그래서 비동기
+`referenceLinks` state에 넣지 않고, 렌더링 시점에 `preview.usage`가
+아파트/오피스텔이고 `naverId`가 있으면(`naverComplexUrl()`)
+"외부 참고링크" 목록 맨 앞에 동기적으로 얹는 방식으로 구현했다(좌표가
+아직 지오코딩 안 된 물건도 N단지정보만은 즉시 뜬다).
+
+### 변경 파일 및 검증
+`auction/src/components/AuctionDetailModal.tsx`. `npx tsc --noEmit`
+통과.
