@@ -251,3 +251,38 @@ N단지정보(`new.land.naver.com/complexes/{djNo}`)는 이미 "주변 매물
 ### 변경 파일 및 검증
 `auction/src/components/AuctionDetailModal.tsx`. `npx tsc --noEmit`
 통과.
+
+## 追記 (2026-08-10) — KB단지정보/아실 보류, 네이버지도/다음지도 추가(용도 무관 전체)
+
+사용자가 KB단지정보/아실도 추가해달라고 요청 — 두 사이트 모두
+탱크옥션처럼 정확한 단지 페이지로 연결하려면 사이트별 내부 코드
+(kbCode/asilCode)가 필요한데 우리 시스템엔 없어, 브라우저로 직접
+검색해 실제 URL 형식을 확인한 뒤 진행하기로 사용자와 합의(정확한
+링크 확인 우선). 그런데 이 세션에서 Playwright 브라우저 도구가 다른
+프로세스에 점유돼("Browser is already in use for ...mcp-chrome...")
+여러 차례 재시도에도 라이브 검증이 불가능했다 — **KB단지정보/아실은
+다음 세션 또는 도구가 풀린 뒤 재시도 예정, 이번 작업에는 포함 안 함.**
+
+대신 같은 요청에 포함된 "모든 용도에 해당하는 네이버지도 다음지도도
+넣어줘"는 진행했다. 네이버지도/다음(카카오)지도는 **주소 텍스트
+검색**이라 좌표 지오코딩 없이 바로 만들 수 있다: `https://map.naver.
+com/p/search/{주소}`, `https://map.kakao.com/link/search/{주소}`.
+이 두 URL 형식은 공개적으로 잘 알려진 표준 딥링크 패턴이지만, 위와
+같은 이유로 이번에도 실제 열어서 라이브 검증은 못 했다 — **배포 후
+사용자 확인 필요.**
+
+- `reference-links.util.ts`: `buildAuctionReferenceLinks`에 `address`
+  파라미터 추가, 네이버지도/다음지도를 좌표·용도와 무관하게 항상
+  먼저 추가(주소만 있으면 됨).
+- `AuctionsService.getReferenceLinks`가 `item.address`를 함께 전달.
+- 프론트 `AuctionDetailModal.tsx`: 이제 백엔드가 좌표 캐싱 전에도
+  항상 최소 2개(네이버지도/다음지도)를 돌려주므로, "빈 배열이면
+  geocode 폴백"이라는 기존 판단 기준이 깨졌다 — "부동산플래닛"
+  라벨이 응답에 없으면(=좌표 미캐싱) geocode 폴백을 시도하고, 성공하면
+  기존 목록에 이어붙이는 방식(`setReferenceLinks((prev) => [...prev,
+  ...])`)으로 바꿨다.
+
+### 변경 파일 및 검증
+`auction-api/src/auctions/{reference-links.util.ts,auctions.service.ts}`,
+`auction/src/components/AuctionDetailModal.tsx`. 양쪽 `npx tsc --noEmit`
+통과. **URL 형식 라이브 미검증** — 배포 후 실제 클릭 확인 필요.

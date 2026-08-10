@@ -21,14 +21,26 @@ function resolveNaverLandGroup(usage: string): { path: string; filter: string } 
  * "네이버부동산" 등)를 실측 분석해(2026-08-09, tank_detailview.js)
  * 우리 시스템에도 동일한 외부 참고링크를 붙인다(사용자 요청,
  * 2026-08-10). N단지정보(단지 상세페이지, naverId/djNo 기반)는 이미
- * `NaverComplexLink`로 별도 구현돼 있어 여기서는 중복하지 않고,
- * 좌표 기반 지도 검색 링크(네이버부동산/부동산플래닛)만 다룬다. */
+ * `NaverComplexLink`로 별도 구현돼 있어 여기서는 중복하지 않는다.
+ *
+ * 네이버지도/다음(카카오)지도는 주소 텍스트 검색이라 좌표(VWorld
+ * 지오코딩) 없이 항상 즉시 만들 수 있다(사용자 요청, 2026-08-10:
+ * "모든 용도에 해당하는 네이버지도 다음지도도 넣어줘") — 용도 구분
+ * 없이 전 물건에 노출. 부동산플래닛/네이버부동산은 좌표가 캐싱돼
+ * 있어야만 추가된다. */
 export function buildAuctionReferenceLinks(input: {
   lat: number | null;
   lng: number | null;
   usage: string;
+  address: string;
 }): AuctionReferenceLink[] {
   const links: AuctionReferenceLink[] = [];
+  const address = input.address.trim();
+  if (address) {
+    const q = encodeURIComponent(address);
+    links.push({ label: "네이버지도", url: `https://map.naver.com/p/search/${q}` });
+    links.push({ label: "다음지도", url: `https://map.kakao.com/link/search/${q}` });
+  }
   if (input.lat != null && input.lng != null) {
     links.push({
       label: "부동산플래닛",

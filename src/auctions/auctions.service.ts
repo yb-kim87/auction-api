@@ -61,7 +61,12 @@ export class AuctionsService implements OnModuleInit {
   async getReferenceLinks(id: string): Promise<AuctionReferenceLink[]> {
     const item = await this.auctionRepo.findOne({ where: { id } });
     if (!item) throw new NotFoundException("물건을 찾을 수 없습니다.");
-    return buildAuctionReferenceLinks({ lat: item.latitude, lng: item.longitude, usage: item.usage ?? "" });
+    return buildAuctionReferenceLinks({
+      lat: item.latitude,
+      lng: item.longitude,
+      usage: item.usage ?? "",
+      address: item.address ?? "",
+    });
   }
 
   /** 물건의 factTags(내부 코드)/strategyTags(사용자 노출 문구)를 현재 활성 규칙 기준으로 재계산해 저장한다 */
