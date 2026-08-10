@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, ForbiddenException, OnModuleInit } from "@nestjs/common";
+import { Injectable, BadRequestException, ForbiddenException, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, IsNull, Repository } from "typeorm";
 import * as XLSX from "xlsx";
@@ -30,6 +30,8 @@ import type { AuctionFieldChange } from "./auction-change.entity";
 import { parseUnitFloorFromAddress, selectFloorAwareNaverPrice } from "./naver-floor-price.util";
 import { TagsService } from "../tags/tags.service";
 import { nowPartsInKst } from "../common/kst-time.util";
+import { VWorldGeocodingService } from "../common/vworld-geocoding.service";
+import { buildAuctionReferenceLinks, type AuctionReferenceLink } from "./reference-links.util";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -48,7 +50,31 @@ export class AuctionsService implements OnModuleInit {
     @InjectRepository(AuctionChangeLog)
     private readonly changeLogRepo: Repository<AuctionChangeLog>,
     private readonly tagsService: TagsService,
+    private readonly geocodingService: VWorldGeocodingService,
   ) {}
+
+  /** 물건 상세의 외부 참고링크(부동산플래닛 등, 사용자 요청 2026-08-10:
+   * "탱크옥션처럼 우측에 배치해서 물건별로"). 좌표(latitude/longitude)가
+   * 없으면 주소로 VWorld 지오코딩을 한 번 해서 결과를 캐싱해둔다(주소가
+   * 안 바뀌는 한 재조회할 필요 없음, 기존 latitude/longitude/vatPnu
+   * 컬럼 설계와 동일한 패턴). */
+  async getReferenceLinks(id: string): Promise<AuctionReferenceLink[]> {
+    const item = await this.auctionRepo.findOne({ where: { id } });
+    if (!item) throw new NotFoundException("물건을 찾을 수 없습니다.");
+
+    let { latitude: lat, longitude: lng, vatPnu: pnu } = item;
+    if (lat == null || lng == null) {
+      const resolved = await this.geocodingService.addressToCoord(item.address).catch(() => null);
+      if (resolved) {
+        lat = resolved.lat;
+        lng = resolved.lng;
+        pnu = pnu ?? resolved.pnu;
+        await this.auctionRepo.update(id, { latitude: lat, longitude: lng, vatPnu: pnu });
+      }
+    }
+
+    return buildAuctionReferenceLinks({ lat, lng });
+  }
 
   /** 물건의 factTags(내부 코드)/strategyTags(사용자 노출 문구)를 현재 활성 규칙 기준으로 재계산해 저장한다 */
   private async syncFactTags(item: Auction): Promise<Auction> {

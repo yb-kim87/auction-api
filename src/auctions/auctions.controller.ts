@@ -286,6 +286,19 @@ export class AuctionsController {
     return this.auctionsService.updateVatBuildingInfo(id, body);
   }
 
+  /** 물건 상세 우측의 외부 참고링크(부동산플래닛 등). 탱크옥션 사이드
+   * 메뉴를 실측 분석해 동일하게 구성했다(사용자 요청, 2026-08-10).
+   * 수익계산기와 동일하게 로그인+수강생 이상이면 조회 가능. */
+  @Get(":id/reference-links")
+  getReferenceLinks(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+  ) {
+    const ctx = getAuthContext(headers);
+    requireSearchAccess(ctx);
+    return this.auctionsService.getReferenceLinks(id);
+  }
+
   @Delete("all")
   removeAll(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
