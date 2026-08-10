@@ -52,8 +52,15 @@ const SIDO_LIST: Array<{ code: string; name: string }> = [
   { code: "17", name: "제주특별자치도" },
 ];
 
-const LIST_CONCURRENCY = 5;
-const DETAIL_CONCURRENCY = 15;
+/** 배포 후 실측(2026-08-10): LIST_CONCURRENCY=5/DETAIL_CONCURRENCY=15로
+ * 돌리면 한방 WAF(dotDefender)가 요청이 몰린다고 판단해 일시적으로
+ * 모든 응답을 503으로 막는 현상이 재현됐다(재시도 없이 몇 분 뒤에는
+ * 자연히 풀림 — IP 영구차단이 아니라 짧은 레이트리밋으로 추정).
+ * 동시성을 낮추고 배치 사이에 짧은 대기를 둬 요청 속도를 완화한다
+ * (사용자 요청: "주기를 좀만 줄여보자"). */
+const LIST_CONCURRENCY = 3;
+const DETAIL_CONCURRENCY = 5;
+const BATCH_DELAY_MS = 400;
 const MAX_LOG_LINES = 500;
 
 const ROW_RE =
@@ -97,6 +104,10 @@ function emptyState(): JobState {
     finishedAt: null,
     error: null,
   };
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 @Injectable()
@@ -245,6 +256,7 @@ export class RealtorCollectService {
           }
         }),
       );
+      if (i + DETAIL_CONCURRENCY < rows.length) await sleep(BATCH_DELAY_MS);
     }
     this.log(`완료! ${this.state.saved}건 저장됨.`);
   }
@@ -272,6 +284,7 @@ export class RealtorCollectService {
       }
       if (stop) break;
       page += LIST_CONCURRENCY;
+      await sleep(BATCH_DELAY_MS);
     }
     return all;
   }
