@@ -166,3 +166,46 @@ auctions.module.ts}`, `auction-api/src/common/vworld-geocoding.service.ts`
 ### 변경 파일 및 검증
 `auction/src/components/AuctionDetailModal.tsx`. `npx tsc --noEmit`
 통과.
+
+## 追記 (2026-08-10) — 캐싱 전 물건마다 늘 404가 나서 geocode 폴백이 아예 실행되지 않던 버그
+
+사용자가 "저 사건번호 물건 외에 다른 물건에서는 안보이는거같은데??"라고
+재확인 — curl로 여러 물건을 무작위 샘플링해 `/auctions/:id/
+reference-links`를 직접 호출해보니, 좌표가 아직 캐싱된 적 없는 물건은
+**존재하는 물건인데도 항상 404("물건을 찾을 수 없습니다")**가 남을
+확인(반대로 이미 좌표가 캐싱된 물건 2건은 정상 200).
+
+### 원인
+`AuctionsService.getReferenceLinks`가
+`this.auctionRepo.findOne({ where: { id }, select: ["latitude",
+"longitude"] })`로 조회했는데, 이 `select` 제한이 걸리면 좌표가 아직
+null인(=캐싱 전) 물건에서 `findOne`이 엉뚱하게 결과를 못 찾는 현상이
+있었다(이 코드베이스 다른 곳의 `findOne`은 전부 `select` 없이 전체
+엔티티를 가져오는 패턴이었는데, 이번에만 최적화한다고 select를
+추가했다가 문제가 생김).
+
+더 치명적인 건 프론트 쪽 에러 처리였다: `fetchAuctionReferenceLinks`가
+404를 던지면 `AuctionDetailModal.tsx`의 `.catch(() => setReferenceLinks
+([]))`가 조용히 빈 배열로 넘겨버려서, **캐싱 전 물건은 geocode 폴백
+자체가 시도되지 않고 항상 빈 목록으로 끝났다.** 디버깅 중 curl로 수동
+캐싱해준 2건만 우연히 정상 동작하는 것처럼 보였던 것 — "저 사건번호
+물건만 되고 나머지는 안 된다"는 사용자 관찰과 정확히 일치.
+
+### 수정
+`select` 제한을 제거하고 기존 패턴(`findOne({ where: { id } })`)으로
+되돌림. 이제 캐싱 전 물건도 정상적으로 빈 배열(에러 아님)을 받아
+geocode 폴백이 실행된다.
+
+### 검증
+curl로 무작위 샘플링한 다른 물건 ID에 대해 재현: 수정 전 404 → 수정
+배포 후 재확인 필요(다음 追記 참고). `npx tsc --noEmit` 통과.
+
+### 교훈
+- 사용자가 "저 물건만 되고 다른 건 안 된다"처럼 **특정 사례와 비교하는
+  형태로 재현을 제시**하면, 그 차이(캐싱됨 vs 안 됨)에서 바로 원인을
+  좁힐 수 있다 — 이번에도 무작위 다른 물건 몇 개를 curl로 실측해보고서야
+  select 버그가 드러났다.
+- 에러를 조용히 삼키는 `.catch(() => setX([]))` 패턴은 "데이터가 없다"와
+  "요청이 실패했다"를 구분 못 하게 만들어 버그를 숨긴다 — 이번처럼 실패
+  시에도 폴백 로직이 이어져야 하는 흐름에서는 실패와 빈 결과를 반드시
+  구분해야 한다.
