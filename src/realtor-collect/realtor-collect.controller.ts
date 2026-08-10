@@ -34,6 +34,12 @@ export class RealtorCollectController {
     return this.service.getStatus();
   }
 
+  @Post("stop")
+  stop(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.stop();
+  }
+
   @Post("start")
   start(
     @Headers() headers: Record<string, string>,

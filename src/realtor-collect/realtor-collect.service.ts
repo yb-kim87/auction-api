@@ -52,16 +52,17 @@ const SIDO_LIST: Array<{ code: string; name: string }> = [
   { code: "17", name: "제주특별자치도" },
 ];
 
-/** 배포 후 실측(2026-08-10~11): LIST_CONCURRENCY=5/DETAIL_CONCURRENCY=15는
- * 물론이고 3/5로 낮춰도 배치의 2/3 가까이가 계속 실패했다 — 실패
- * 로그 간격(배치당 약 30초)이 재시도 횟수(3회)×약 10초와 맞아떨어져,
- * WAF 차단이라기보다 **동시 요청이 몇 개만 겹쳐도 응답이 느려져
- * 타임아웃되는 것**으로 추정된다. 목록 페이지는 아예 동시성 없이
- * 순차 요청(1개씩)으로 낮췄다 — 느리지만 실측상 훨씬 안정적. 상세
- * 페이지는 목록보다 가벼워 소폭의 동시성(3)까지는 허용. */
+/** 배포 후 실측(2026-08-10~11): 동시 요청이 몇 개만 겹쳐도(목록 3개,
+ * 상세 3개 모두) 응답이 느려져 타임아웃되는 현상이 반복 확인됐다.
+ * 목록 페이지를 순차(1개씩)로 낮췄더니 안정적이었던 것과 달리, 상세
+ * 페이지 동시성을 3으로 남겨뒀더니 그 자체로도 느려질 뿐 아니라
+ * 같은 시점에 호출되는 지역콤보(ajax_combo_search.asp) 요청까지
+ * 실패시켰다(수집 중 시/군/구 드롭박스가 비어 보이던 원인) — 전부
+ * 완전 순차(1개씩)로 통일한다. 느리지만 이게 유일하게 안정적으로
+ * 확인된 설정이다. */
 const LIST_CONCURRENCY = 1;
-const DETAIL_CONCURRENCY = 3;
-const BATCH_DELAY_MS = 500;
+const DETAIL_CONCURRENCY = 1;
+const BATCH_DELAY_MS = 300;
 const MAX_LOG_LINES = 500;
 
 const ROW_RE =
@@ -115,6 +116,9 @@ function sleep(ms: number): Promise<void> {
 export class RealtorCollectService {
   private readonly logger = new Logger(RealtorCollectService.name);
   private state: JobState = emptyState();
+  /** 사용자 요청으로 진행 중인 수집을 중단할 때 쓰는 플래그(재배포
+   * 없이도 멈출 수 있도록, 2026-08-11). 루프 시작 지점마다 확인한다. */
+  private cancelRequested = false;
 
   constructor(
     @InjectRepository(RealtorOffice)
@@ -168,6 +172,14 @@ export class RealtorCollectService {
     return this.state;
   }
 
+  stop(): { ok: boolean } {
+    if (this.state.running) {
+      this.cancelRequested = true;
+      this.log("사용자 요청으로 중단합니다...");
+    }
+    return { ok: true };
+  }
+
   private log(message: string) {
     const time = new Date().toLocaleTimeString("ko-KR", { hour12: false });
     this.state.logs.push(`[${time}] ${message}`);
@@ -187,6 +199,7 @@ export class RealtorCollectService {
     if (this.state.running) {
       throw new BadRequestException("이미 수집이 진행 중입니다. 완료 후 다시 시도해 주세요.");
     }
+    this.cancelRequested = false;
     this.state = {
       ...emptyState(),
       running: true,
@@ -225,6 +238,10 @@ export class RealtorCollectService {
     this.log(`총 ${rows.length}개 매물 상세 수집 시작...`);
 
     for (let i = 0; i < rows.length; i += DETAIL_CONCURRENCY) {
+      if (this.cancelRequested) {
+        this.log(`중단됨(${this.state.saved}건 저장 완료).`);
+        return;
+      }
       const chunk = rows.slice(i, i + DETAIL_CONCURRENCY);
       await Promise.all(
         chunk.map(async (row) => {
@@ -270,6 +287,7 @@ export class RealtorCollectService {
     const all: ListRow[] = [];
     let page = 1;
     for (;;) {
+      if (this.cancelRequested) break;
       const batch = Array.from({ length: LIST_CONCURRENCY }, (_, i) => page + i);
       const results = await Promise.all(
         batch.map(async (p) => ({ page: p, ...(await this.fetchListPageWithRetry(urlTemplate, p)) })),
