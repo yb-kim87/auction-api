@@ -5,12 +5,11 @@ import { AuctionChangeLog } from "./auction-change.entity";
 import { AuctionsController } from "./auctions.controller";
 import { AuctionsService } from "./auctions.service";
 import { TagsModule } from "../tags/tags.module";
-import { VWorldGeocodingService } from "../common/vworld-geocoding.service";
 
 @Module({
   imports: [TypeOrmModule.forFeature([Auction, AuctionChangeLog]), TagsModule],
   controllers: [AuctionsController],
-  providers: [AuctionsService, VWorldGeocodingService],
+  providers: [AuctionsService],
   exports: [AuctionsService],
 })
 export class AuctionsModule {}

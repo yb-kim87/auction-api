@@ -279,6 +279,8 @@ export class AuctionsController {
       vatGroundFloors?: number | null;
       housingLedgerPk?: string | null;
       housingLedgerDongNm?: string | null;
+      latitude?: number | null;
+      longitude?: number | null;
     },
   ) {
     const ctx = getAuthContext(headers);

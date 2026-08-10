@@ -90,3 +90,64 @@ VWorld API를 curl로 직접 부르면 정상 응답이 오는데 Railway 컨테
 ### 변경 파일 및 검증
 `auction-api/src/common/vworld-geocoding.service.ts`. `npx tsc --noEmit`
 통과. Railway 배포 후 `railway logs`로 재시도 동작 확인 예정.
+
+## 追記 (2026-08-10) — 재시도로도 해결 안 됨: 근본 원인은 이미 알려진 "Railway 해외 리전" 이슈였음
+
+재시도 배포 후에도 매번 `SocketError`로 실패(재현: admin 세션으로
+`/auctions/:id/reference-links`를 직접 호출·`railway logs` 확인).
+사용자가 "그때 부가세 계산기 했을 때 rail 해외ip 안먹혀서 국내껄로
+우회해서 하는 걸로 했잖아"라고 지적 — 검색해보니 실제로
+`docs/history/2026-08-01_03_resale-sold-filter-stats.md`의
+"追記(2026-08-04) — 매도분석 지도: Railway가 VWorld를 직접 호출 못
+하는 문제"에 이미 정확히 같은 현상과 해결책이 기록돼 있었다:
+
+- Railway 서비스 리전은 `sfo`(미국 샌프란시스코) — VWorld(국토부
+  공간정보 오픈플랫폼) API가 이 해외 리전에서의 연결을
+  `SocketError(UND_ERR_SOCKET, bytesRead:0)`로 계속 거부한다(같은
+  주소를 로컬 PC에서 curl로 직접 호출하면 정상 응답되는 것과 대조
+  확인).
+- 검증된 해결책은 **재시도가 아니라 우회**: Next.js(Vercel) Route
+  Handler에 `export const preferredRegion = "icn1"`(서울 리전)을
+  지정해 VWorld 호출 자체를 브라우저→Vercel(서울)에서 하고, 결과만
+  백엔드(Railway)에 캐싱한다. 이미 `auction/src/app/api/vat/
+  address-to-coord/route.ts`(PARCEL/ROAD 자동판별 + PNU 역지오코딩,
+  `requireAuthFromRequest`로 로그인만 요구)가 이 패턴으로 구현·검증돼
+  있었다 — 재사용했다.
+- `auction/src/lib/api.ts`의 `API_BASE = "/api"`는 프론트 자체
+  Next.js 앱 내부 상대경로다. `src/app/api/[...path]/route.ts`(catch-all
+  프록시)가 특정 route.ts가 없는 모든 `/api/*` 요청만 Railway로
+  전달하므로, `/api/vat/address-to-coord`처럼 로컬 route.ts가 있는
+  경로는 자동으로 Vercel(서울)에서 실행되고 나머지는 평소대로 Railway로
+  프록시된다 — 이 프로젝트에 이미 있던 설계라 새 라우트를 만들 필요가
+  없었다.
+
+### 최종 수정
+- 백엔드 `VWorldGeocodingService`/직접 지오코딩 시도를 전부 제거.
+  `AuctionsService.getReferenceLinks(id)`는 이제 캐싱된
+  `latitude`/`longitude`만으로 링크를 만들고, 없으면 빈 배열을 반환한다
+  (Railway는 VWorld를 아예 호출하지 않음).
+- 좌표 캐싱은 기존 `PATCH /auctions/:id/vat-building-info`
+  (`requireSearchAccess`, 이미 vatPnu 등 자동조회 값을 캐싱하던
+  엔드포인트)에 `latitude`/`longitude` 필드를 추가해 재사용.
+- 프론트 `AuctionDetailModal.tsx`: 백엔드가 빈 배열을 주면(좌표 미캐싱)
+  `fetchVatAddressCoord(item.address)`(기존 함수, `/api/vat/
+  address-to-coord` 호출 → Vercel 서울 리전 실행)로 직접 지오코딩 →
+  받은 좌표로 부동산플래닛 링크를 즉시 만들어 보여주고,
+  `saveVatBuildingInfo(id, { latitude, longitude })`로 백엔드에 캐싱
+  (실패해도 조용히 무시 — 캐싱은 최적화일 뿐).
+
+### 교훈
+- "Railway에서 외부 공공 API가 막힌다"는 이슈는 이미 같은 저장소에
+  두 번(부가세계산기 2026-07-21, 매도분석 지도 2026-08-04) 발견·해결된
+  적이 있었는데, 새 기능(외부 참고링크)을 만들 때 이 선례를 확인하지
+  않고 처음부터 재시도 로직으로 접근해 시간을 낭비했다. 앞으로 Railway
+  백엔드에서 새로운 외부(특히 국내 공공) API를 호출하는 기능을 추가할
+  때는 먼저 이 문서(또는 vat.controller.ts/vat-server.ts 주석)에 이미
+  기록된 "해외 리전 우회" 패턴을 확인하고 시작할 것.
+
+### 변경 파일 및 검증
+`auction-api/src/auctions/{auctions.service.ts,auctions.controller.ts,
+auctions.module.ts}`, `auction-api/src/common/vworld-geocoding.service.ts`
+(삭제); `auction/src/lib/api.ts`,
+`auction/src/components/AuctionDetailModal.tsx`. 양쪽 `npx tsc --noEmit`
+통과.
