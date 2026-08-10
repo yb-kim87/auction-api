@@ -150,4 +150,19 @@ VWorld API를 curl로 직접 부르면 정상 응답이 오는데 Railway 컨테
 auctions.module.ts}`, `auction-api/src/common/vworld-geocoding.service.ts`
 (삭제); `auction/src/lib/api.ts`,
 `auction/src/components/AuctionDetailModal.tsx`. 양쪽 `npx tsc --noEmit`
+통과. 프로덕션에 curl로 전 과정(지오코딩→캐싱→링크 반환) 재현 성공.
+
+## 追記 (2026-08-10) — 위치를 우측 사이드 패널로 이동
+
+배포 후 사용자가 "우측 하단에 외부 참고링크가 어디떠??"라고 재확인 —
+실제로는 "핵심 가격 요약"(주변 매물 호가/실거래 표본 2단 카드) 바로
+아래, 즉 메인 콘텐츠 영역 하단에 배치돼 있어 스크롤해야 보였다.
+탱크옥션 원본은 별도의 우측 사이드바 컬럼에 이 메뉴를 둔다 — 사용자가
+"우측 하단"이라고 표현한 것도 이 모달의 우측 고정 패널(최소투자금/
+다음 기일/AI 권리분석 요청/소재지 카드가 있는 `<aside>`)을 가리킨
+것이었다. "소재지/입찰기일" 카드 바로 아래에 "외부 참고링크" 카드를
+추가해 그 위치로 옮겼다(메인 콘텐츠 쪽 중복 블록은 제거).
+
+### 변경 파일 및 검증
+`auction/src/components/AuctionDetailModal.tsx`. `npx tsc --noEmit`
 통과.
