@@ -58,13 +58,10 @@ export class AuctionsService implements OnModuleInit {
    * 참고) 여기서는 지오코딩을 시도하지 않고 캐싱된 좌표만으로 링크를
    * 만든다. 좌표가 없으면 프론트가 Vercel(서울 리전) API 라우트로
    * 지오코딩한 뒤 `updateVatBuildingInfo`로 캐싱해준다. */
-  getReferenceLinks(id: string): Promise<AuctionReferenceLink[]> {
-    return this.auctionRepo
-      .findOne({ where: { id }, select: ["latitude", "longitude"] })
-      .then((item) => {
-        if (!item) throw new NotFoundException("물건을 찾을 수 없습니다.");
-        return buildAuctionReferenceLinks({ lat: item.latitude, lng: item.longitude });
-      });
+  async getReferenceLinks(id: string): Promise<AuctionReferenceLink[]> {
+    const item = await this.auctionRepo.findOne({ where: { id } });
+    if (!item) throw new NotFoundException("물건을 찾을 수 없습니다.");
+    return buildAuctionReferenceLinks({ lat: item.latitude, lng: item.longitude });
   }
 
   /** 물건의 factTags(내부 코드)/strategyTags(사용자 노출 문구)를 현재 활성 규칙 기준으로 재계산해 저장한다 */
