@@ -286,3 +286,17 @@ com/p/search/{주소}`, `https://map.kakao.com/link/search/{주소}`.
 `auction-api/src/auctions/{reference-links.util.ts,auctions.service.ts}`,
 `auction/src/components/AuctionDetailModal.tsx`. 양쪽 `npx tsc --noEmit`
 통과. **URL 형식 라이브 미검증** — 배포 후 실제 클릭 확인 필요.
+
+## 追記 (2026-08-10) — 새 탭 대신 새 창으로 열리게 변경
+
+사용자 요청: "외부참고링크는 새탭이 아니라 새창으로 나오게 해줘 전부다".
+`target="_blank"`는 브라우저 설정에 따라 탭으로 열릴 수 있어, N단지정보
+(`NaverComplexLink`)와 동일하게 `onClick`에서 `preventDefault` 후
+`window.open(url, name, "width=1100,height=900,...")`으로 크기를
+지정해 팝업 창을 강제한다. 창 이름을 라벨별로 고정
+(`ref-link-{label}`)해, 같은 링크를 여러 번 눌러도 새 창이 계속
+쌓이지 않고 기존 창을 재사용한다.
+
+### 변경 파일 및 검증
+`auction/src/components/AuctionDetailModal.tsx`. `npx tsc --noEmit`
+통과.
