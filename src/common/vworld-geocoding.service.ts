@@ -16,10 +16,25 @@ async function fetchExternal(logger: Logger, label: string, url: string): Promis
 
 export type VWorldCoordResult = { lat: number; lng: number; pnu: string | null };
 
-/** 주소 → 좌표(위도/경도) + PNU(필지고유번호) 조회. vat.controller.ts의
- * "도로명주소 → 좌표 → PNU" 2단계 로직과 동일한 VWorld API를 쓰지만,
- * 물건 상세의 외부 참고링크(부동산플래닛 등, 2026-08-10)용으로 관리자
- * 권한 없이도 호출 가능한 형태로 별도 서비스로 분리했다. */
+type VWorldCoordApiResponse = {
+  response?: {
+    status?: string;
+    result?: { point?: { x?: string; y?: string } };
+    refined?: { structure?: { level4LC?: string; level5?: string } };
+  };
+};
+
+/** 주소 → 좌표(위도/경도) + PNU(필지고유번호) 조회. 물건 상세의 외부
+ * 참고링크(부동산플래닛 등, 2026-08-10)용으로 관리자 권한 없이도 호출
+ * 가능한 형태로 vat.controller.ts와 별도 서비스로 분리했다.
+ *
+ * `auctions.address`는 법원 경매 데이터라 지번주소(+아파트명/동/호)
+ * 형태다("인천광역시 미추홀구 숭의동 182-4 다우림 201동 12층1201호")
+ * — vat.controller.ts가 쓰는 type=ROAD(도로명주소 전용, 카카오 우편번호
+ * 팝업 입력값 기준)로 조회하면 항상 NOT_FOUND가 난다(실측, 2026-08-10:
+ * 같은 주소를 ROAD로 조회하면 0건, PARCEL로는 정상 매칭 및 PNU까지
+ * 한 번에 반환됨). 그래서 이 서비스는 PARCEL을 우선 시도하고, 실패할
+ * 때만 ROAD+역지오코딩 2단계로 폴백한다. */
 @Injectable()
 export class VWorldGeocodingService {
   private readonly logger = new Logger(VWorldGeocodingService.name);
@@ -30,25 +45,56 @@ export class VWorldGeocodingService {
     return key;
   }
 
+  private buildCoordUrl(address: string, type: "PARCEL" | "ROAD"): string {
+    const url = new URL("https://api.vworld.kr/req/address");
+    url.searchParams.set("service", "address");
+    url.searchParams.set("request", "getCoord");
+    url.searchParams.set("version", "2.0");
+    url.searchParams.set("crs", "EPSG:4326");
+    url.searchParams.set("type", type);
+    url.searchParams.set("address", address);
+    url.searchParams.set("format", "json");
+    url.searchParams.set("key", this.apiKey);
+    return url.toString();
+  }
+
+  private extractPnu(structure: { level4LC?: string; level5?: string } | undefined): string | null {
+    const dongCode = structure?.level4LC?.trim();
+    const [bunRaw, jiRaw] = (structure?.level5 ?? "").split("-");
+    if (!dongCode || !bunRaw) return null;
+    const bun = bunRaw.padStart(4, "0").slice(-4);
+    const ji = (jiRaw ?? "0").padStart(4, "0").slice(-4);
+    return `${dongCode}1${bun}${ji}`;
+  }
+
   async addressToCoord(address: string): Promise<VWorldCoordResult | null> {
     const trimmed = address.trim();
     if (!trimmed) return null;
 
-    const coordUrl = new URL("https://api.vworld.kr/req/address");
-    coordUrl.searchParams.set("service", "address");
-    coordUrl.searchParams.set("request", "getCoord");
-    coordUrl.searchParams.set("version", "2.0");
-    coordUrl.searchParams.set("crs", "EPSG:4326");
-    coordUrl.searchParams.set("type", "ROAD");
-    coordUrl.searchParams.set("address", trimmed);
-    coordUrl.searchParams.set("format", "json");
-    coordUrl.searchParams.set("key", this.apiKey);
+    const parcelRes = await fetchExternal(
+      this.logger,
+      "VWorld 주소 변환(PARCEL)",
+      this.buildCoordUrl(trimmed, "PARCEL"),
+    );
+    if (parcelRes.ok) {
+      const parcelData = (await parcelRes.json()) as VWorldCoordApiResponse;
+      const point = parcelData.response?.result?.point;
+      if (parcelData.response?.status === "OK" && point?.x && point?.y) {
+        const lng = Number(point.x);
+        const lat = Number(point.y);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          return { lat, lng, pnu: this.extractPnu(parcelData.response?.refined?.structure) };
+        }
+      }
+    }
 
-    const coordRes = await fetchExternal(this.logger, "VWorld 주소 변환", coordUrl.toString());
+    return this.addressToCoordViaRoad(trimmed);
+  }
+
+  private async addressToCoordViaRoad(address: string): Promise<VWorldCoordResult | null> {
+    const coordRes = await fetchExternal(this.logger, "VWorld 주소 변환(ROAD)", this.buildCoordUrl(address, "ROAD"));
     if (!coordRes.ok) return null;
-    const coordData = (await coordRes.json()) as {
-      response?: { status?: string; result?: { point?: { x?: string; y?: string } } };
-    };
+    const coordData = (await coordRes.json()) as VWorldCoordApiResponse;
     const point = coordData.response?.result?.point;
     if (coordData.response?.status !== "OK" || !point?.x || !point?.y) return null;
 
@@ -70,16 +116,9 @@ export class VWorldGeocodingService {
     const reverseRes = await fetchExternal(this.logger, "VWorld 역지오코딩", reverseUrl.toString());
     if (reverseRes.ok) {
       const reverseData = (await reverseRes.json()) as {
-        response?: { status?: string; result?: { structure?: { level4LC?: string; level5?: string } }[] };
+        response?: { result?: { structure?: { level4LC?: string; level5?: string } }[] };
       };
-      const structure = reverseData.response?.result?.[0]?.structure;
-      const dongCode = structure?.level4LC?.trim();
-      const [bunRaw, jiRaw] = (structure?.level5 ?? "").split("-");
-      if (dongCode && bunRaw) {
-        const bun = bunRaw.padStart(4, "0").slice(-4);
-        const ji = (jiRaw ?? "0").padStart(4, "0").slice(-4);
-        pnu = `${dongCode}1${bun}${ji}`;
-      }
+      pnu = this.extractPnu(reverseData.response?.result?.[0]?.structure);
     }
 
     return { lat, lng, pnu };

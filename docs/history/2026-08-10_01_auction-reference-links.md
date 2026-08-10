@@ -47,3 +47,25 @@
 
 ## 검증
 백엔드/프론트 각각 `npx tsc --noEmit` 통과.
+
+## 追記 (2026-08-10) — 좌표 조회가 항상 NOT_FOUND 나던 버그 수정
+
+배포 후 실제 물건(2025타경514128, 인천 미추홀구 숭의동 182-4 다우림
+201동)에서 "외부 참고링크"가 안 뜬다는 리포트를 받고 원인을 확인했다.
+`auctions.address`는 법원 경매 데이터라 지번주소(+아파트명/동/호)
+형태인데("인천광역시 미추홀구 숭의동 182-4 다우림 201동
+12층1201호"), `VWorldGeocodingService`가 `vat.controller.ts`의
+`type=ROAD` 방식을 그대로 복사해 와서 항상 VWorld가 `NOT_FOUND`를
+반환했다(실측: 같은 주소를 ROAD로 조회하면 0건, PARCEL로 조회하면
+정상 매칭되고 PNU까지 응답 한 번에 딸려 옴).
+
+- `type=PARCEL`을 우선 시도하도록 변경 — PARCEL 응답의
+  `refined.structure`에 PNU 계산에 필요한 `level4LC`(법정동코드)와
+  `level5`(본번-부번)가 이미 포함돼 있어, 성공하면 역지오코딩 API 호출
+  자체가 필요 없어졌다(API 호출 1회로 축소).
+- PARCEL이 실패하는 경우(주소가 실제로 도로명 형식인 드문 케이스)에만
+  기존 ROAD+역지오코딩 2단계로 폴백한다.
+
+### 변경 파일 및 검증
+`auction-api/src/common/vworld-geocoding.service.ts`. `npx tsc --noEmit`
+통과. VWorld API에 직접 curl로 PARCEL/ROAD 응답 차이를 실측 확인.
