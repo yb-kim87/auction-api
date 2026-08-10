@@ -3,15 +3,26 @@ import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common"
 /** fetch 실패(TypeError, 예: undici 레벨 연결 오류)는 기본적으로 원인이
  * 로그에 안 찍혀 원인 파악이 어렵다(실측: Railway에서 VWorld 호출이
  * "fetch failed"로만 남고 원인 불명, 2026-07-21) — cause까지 로그에
- * 남긴다. vat.controller.ts의 fetchExternal과 동일한 목적. */
+ * 남긴다. vat.controller.ts의 fetchExternal과 동일한 목적.
+ *
+ * Railway → VWorld 구간이 간헐적으로 SocketError(UND_ERR_SOCKET,
+ * bytesRead:0 — 연결은 됐지만 응답을 못 받음)를 내는 걸 실측
+ * 확인했다(2026-08-10, 물건 상세 외부 참고링크가 매번 비어 보인다는
+ * 리포트로 재현). 한 번 실패로 바로 포기하면 사용자가 매번 새로고침을
+ * 반복해야 하므로, 짧은 간격으로 최대 3번까지 재시도한다. */
 async function fetchExternal(logger: Logger, label: string, url: string): Promise<Response> {
-  try {
-    return await fetch(url);
-  } catch (err) {
-    const cause = err instanceof Error ? ((err as { cause?: unknown }).cause ?? err.message) : err;
-    logger.error(`${label} 호출 실패: ${JSON.stringify(cause)}`);
-    throw new ServiceUnavailableException(`${label} 서버에 연결하지 못했습니다.`);
+  const attempts = 3;
+  let lastCause: unknown;
+  for (let i = 1; i <= attempts; i += 1) {
+    try {
+      return await fetch(url);
+    } catch (err) {
+      lastCause = err instanceof Error ? ((err as { cause?: unknown }).cause ?? err.message) : err;
+      if (i < attempts) await new Promise((resolve) => setTimeout(resolve, 300 * i));
+    }
   }
+  logger.error(`${label} 호출 실패(${attempts}회 재시도 후): ${JSON.stringify(lastCause)}`);
+  throw new ServiceUnavailableException(`${label} 서버에 연결하지 못했습니다.`);
 }
 
 export type VWorldCoordResult = { lat: number; lng: number; pnu: string | null };

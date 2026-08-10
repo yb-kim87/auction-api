@@ -69,3 +69,24 @@
 ### 변경 파일 및 검증
 `auction-api/src/common/vworld-geocoding.service.ts`. `npx tsc --noEmit`
 통과. VWorld API에 직접 curl로 PARCEL/ROAD 응답 차이를 실측 확인.
+
+## 追記 (2026-08-10) — Railway→VWorld 간헐적 SocketError로 여전히 비어 보이던 문제
+
+PARCEL 우선 수정 배포 후에도 실제 물건(2025타경52788, 다세대주택)에서
+여전히 "외부 참고링크"가 안 뜬다는 리포트를 받았다. 관리자 로그인 세션으로
+`/auctions/:id/reference-links`를 직접 호출·`railway logs`로 확인한 결과,
+VWorld API를 curl로 직접 부르면 정상 응답이 오는데 Railway 컨테이너에서
+호출하면 `SocketError(UND_ERR_SOCKET, bytesRead:0)`로 간헐적으로 실패하고
+있었다 — 이미 배포돼 있던 `/vat/address-to-coord`(부가세 계산기)도 같은
+순간 503으로 재현돼, 내 코드 버그가 아니라 Railway↔VWorld 구간 자체의
+기존 인프라 이슈임을 확인했다(저장소에 이미 "2026-07-21, fetch failed로만
+남고 원인 불명"이라고 기록돼 있던 것과 동일 현상).
+
+`VWorldGeocodingService`의 `fetchExternal`에 최대 3회 재시도(300ms 간격
+증가)를 추가했다. `/vat/address-to-coord`(vat.controller.ts)는 이번
+작업 범위 밖이라 손대지 않았다 — 필요하면 동일한 재시도 로직을 그쪽에도
+적용할 수 있다.
+
+### 변경 파일 및 검증
+`auction-api/src/common/vworld-geocoding.service.ts`. `npx tsc --noEmit`
+통과. Railway 배포 후 `railway logs`로 재시도 동작 확인 예정.
