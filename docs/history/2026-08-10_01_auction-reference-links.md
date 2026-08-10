@@ -209,3 +209,27 @@ curl로 무작위 샘플링한 다른 물건 ID에 대해 재현: 수정 전 404
   "요청이 실패했다"를 구분 못 하게 만들어 버그를 숨긴다 — 이번처럼 실패
   시에도 폴백 로직이 이어져야 하는 흐름에서는 실패와 빈 결과를 반드시
   구분해야 한다.
+
+## 追記 (2026-08-10) — 네이버부동산 링크 추가
+
+사용자 요청: "플래닛 말고 네이버부동산도 나오게 해줘". 탱크옥션의
+`resolveNaverLandGroup`/`resolveNaverLandFilterGroup`(tank_detailview.js
+실측)과 동일하게, 좌표+용도(cat3 대신 우리는 `usage` 텍스트로 근사)
+기준 지도 검색 링크를 추가했다 — 이건 N단지정보(`NaverComplexLink`,
+naverId/djNo 기반 단지 상세페이지)와는 다른, 좌표 기반 지역 검색
+링크다.
+
+- `reference-links.util.ts`: `resolveNaverLandGroup(usage)` 추가 —
+  빌라류 키워드(address-parser.ts와 동일 정규식)면 `houses`+
+  `VL:JWJT:DDDGG:SGJT:HOJT`, 아파트/오피스텔이면 `complexes`+
+  `APT:OPST`, 그 외는 `offices`+`SG:SMS:GJCG:GM:TJ:APTHGJ`.
+  `https://new.land.naver.com/{path}?ms={lat},{lng},16&a={filter}&e=RETAIL`
+  형태로 링크 생성.
+- 백엔드 캐싱 경로(`getReferenceLinks`)와 프론트 즉시표시 경로
+  (`AuctionDetailModal.tsx`의 geocode 폴백) 둘 다에 동일 로직 반영 —
+  두 경로가 같은 링크 목록을 만들어야 캐싱 전/후 결과가 달라지지 않음.
+
+### 변경 파일 및 검증
+`auction-api/src/auctions/{reference-links.util.ts,auctions.service.ts}`,
+`auction/src/components/AuctionDetailModal.tsx`. 양쪽 `npx tsc --noEmit`
+통과.
