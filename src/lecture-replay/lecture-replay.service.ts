@@ -642,13 +642,23 @@ export class LectureReplayService {
     const user = await this.usersService.findByUsername(username);
     if (user?.role === UserRole.ADMIN) return "full";
 
+    // 개별 수강권(enrollment)이 ACTIVE면 OT 여부와 무관하게 항상 "full"로
+    // 취급한다. 예전엔 OT 콘텐츠 접근 가능 role(학생/OT수강생 등)이면
+    // 무조건 아래 courseHasOtVideo 분기로 먼저 빠져서, OT영상이 하나라도
+    // 있는 강의에서 유료 수강생조차 나머지 강의가 "준비중"으로 잠겨
+    // 보이는 버그가 있었다(2026-08-11, 관리자가 공개 처리한 영상이 학생
+    // 화면엔 계속 잠김으로 표시된다는 신고로 발견).
+    const enrollment = await this.enrollmentRepo.findOne({ where: { username, courseId } });
+    if (enrollment && this.computeEffectiveStatus(enrollment) === "ACTIVE") {
+      return "full";
+    }
+
     if (canAccessOtContent(user?.role)) {
       const course = await this.courseRepo.findOne({ where: { id: courseId } });
       if (course?.isOtCourse && course.isPublished) return "full";
       if (await this.courseHasOtVideo(courseId)) return "ot-videos-only";
     }
 
-    const enrollment = await this.enrollmentRepo.findOne({ where: { username, courseId } });
     if (!enrollment) {
       throw new ForbiddenException("수강 권한이 없는 강의입니다.");
     }
