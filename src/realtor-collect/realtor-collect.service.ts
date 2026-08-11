@@ -154,7 +154,26 @@ export class RealtorCollectService {
   /** karhanbang.com 요청은 전부 Vercel(서울 리전) 프록시를 거친다 —
    * Railway에서 직접 fetch하면 연결 자체가 안 된다(위 클래스 주석
    * 참고). `ajax=true`면 프록시가 WAF가 요구하는 Referer/
-   * X-Requested-With 헤더를 함께 붙여 호출한다. */
+   * X-Requested-With 헤더를 함께 붙여 호출한다.
+   *
+   * 실측(2026-08-11): 동시성을 서비스 내부 루프 안에서만 1로 낮춰도,
+   * 수집 루프가 도는 도중 사용자가 지역 드롭박스를 클릭해 별도로
+   * `fetchSubOptions()`를 호출하면(서로 다른 코드 경로) 두 요청이
+   * 동시에 나가면서 똑같이 실패했다 — "루프 안에서 순차"만으로는
+   * 부족하고, **이 서비스가 만드는 모든 karhanbang.com 요청을
+   * 전역으로 한 번에 하나씩만** 내보내야 한다. 그래서 실제 fetch는
+   * `requestQueue`(전역 프라미스 체인)를 거치도록 감쌌다. */
+  private requestQueue: Promise<unknown> = Promise.resolve();
+
+  private queued<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.requestQueue.then(fn, fn);
+    this.requestQueue = run.then(
+      () => sleep(150),
+      () => sleep(150),
+    );
+    return run;
+  }
+
   private async proxyFetch(targetUrl: string, options: { ajax?: boolean } = {}): Promise<{ ok: boolean; status: number; text: () => Promise<string> }> {
     const secret = process.env.REALTOR_PROXY_SECRET;
     if (!secret) throw new ServiceUnavailableException("REALTOR_PROXY_SECRET 환경변수가 설정되지 않았습니다.");
@@ -164,7 +183,7 @@ export class RealtorCollectService {
     if (options.ajax) proxyUrl.searchParams.set("ajax", "1");
 
     try {
-      const res = await fetch(proxyUrl.toString(), { headers: { "x-realtor-proxy-secret": secret } });
+      const res = await this.queued(() => fetch(proxyUrl.toString(), { headers: { "x-realtor-proxy-secret": secret } }));
       return res;
     } catch (err) {
       const cause = err instanceof Error ? ((err as { cause?: unknown }).cause ?? err.message) : err;
