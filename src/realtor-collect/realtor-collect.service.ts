@@ -78,8 +78,17 @@ interface ListRow {
   landline: string;
 }
 
+/** "idle": 대기, "listing": 목록 페이지만 순회하며 건수 확인 중,
+ * "awaiting_confirmation": 목록 확인 끝, 상세(전화번호) 수집을
+ * 진행할지 사용자 확인 대기 중, "collecting": 상세 수집 진행 중
+ * (사용자 요청, 2026-08-11: "주소들을 다 입력한 후에 리스트가 몇개인지
+ * 확인하고 작업을 진행하게 할 수 있을까?" — 몇백~몇천 건짜리 상세
+ * 수집을 실수로 시작하기 전에 건수를 먼저 보고 결정할 수 있게 함). */
+export type JobPhase = "idle" | "listing" | "awaiting_confirmation" | "collecting";
+
 export interface JobState {
   running: boolean;
+  phase: JobPhase;
   logs: string[];
   total: number;
   done: number;
@@ -95,6 +104,7 @@ export interface JobState {
 function emptyState(): JobState {
   return {
     running: false,
+    phase: "idle",
     logs: [],
     total: 0,
     done: 0,
@@ -119,6 +129,18 @@ export class RealtorCollectService {
   /** 사용자 요청으로 진행 중인 수집을 중단할 때 쓰는 플래그(재배포
    * 없이도 멈출 수 있도록, 2026-08-11). 루프 시작 지점마다 확인한다. */
   private cancelRequested = false;
+  /** 목록 확인(phase="awaiting_confirmation") 단계에서 이미 모아둔
+   * 행 목록 — 사용자가 상세 수집을 확정하면 목록을 다시 안 긁고
+   * 그대로 이어서 쓴다. */
+  private pendingRows: ListRow[] | null = null;
+  private pendingRegion: {
+    sidoCode: string;
+    gugunCode: string;
+    dongCode: string;
+    sidoName: string;
+    gugunName: string;
+    dongName: string;
+  } | null = null;
 
   constructor(
     @InjectRepository(RealtorOffice)
@@ -173,10 +195,49 @@ export class RealtorCollectService {
   }
 
   stop(): { ok: boolean } {
+    if (this.state.phase === "awaiting_confirmation") {
+      // 아직 비동기 루프가 도는 중이 아니라 확인 대기 상태라
+      // cancelRequested 플래그로는 못 멈춘다 — 바로 초기화한다.
+      this.pendingRows = null;
+      this.pendingRegion = null;
+      this.state.running = false;
+      this.state.phase = "idle";
+      this.state.finishedAt = new Date().toISOString();
+      this.log("사용자가 취소했습니다.");
+      return { ok: true };
+    }
     if (this.state.running) {
       this.cancelRequested = true;
       this.log("사용자 요청으로 중단합니다...");
     }
+    return { ok: true };
+  }
+
+  /** 목록 확인(phase="awaiting_confirmation") 후 상세(전화번호) 수집을
+   * 진행하기로 확정했을 때 호출한다(사용자 요청, 2026-08-11). */
+  confirm(): { ok: boolean } {
+    if (this.state.phase !== "awaiting_confirmation" || !this.pendingRows || !this.pendingRegion) {
+      throw new BadRequestException("확인할 수집 목록이 없습니다. 먼저 실행을 눌러 목록을 확인해 주세요.");
+    }
+    const rows = this.pendingRows;
+    const region = this.pendingRegion;
+    this.pendingRows = null;
+    this.pendingRegion = null;
+    this.cancelRequested = false;
+    this.state.phase = "collecting";
+    this.log(`상세정보 수집을 시작합니다 (총 ${rows.length}건)...`);
+    void this.runDetailsPhase(rows, region)
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : String(err);
+        this.state.error = message;
+        this.log(`오류 발생: ${message}`);
+        this.logger.error(`한방 상세 수집 실패: ${message}`);
+      })
+      .finally(() => {
+        this.state.running = false;
+        this.state.phase = "idle";
+        this.state.finishedAt = new Date().toISOString();
+      });
     return { ok: true };
   }
 
@@ -200,29 +261,35 @@ export class RealtorCollectService {
       throw new BadRequestException("이미 수집이 진행 중입니다. 완료 후 다시 시도해 주세요.");
     }
     this.cancelRequested = false;
+    this.pendingRows = null;
+    this.pendingRegion = null;
     this.state = {
       ...emptyState(),
       running: true,
+      phase: "listing",
       sidoName: input.sidoName,
       gugunName: input.gugunName,
       dongName: input.dongName,
       startedAt: new Date().toISOString(),
     };
-    void this.run(input)
+    void this.runListingPhase(input)
       .catch((err) => {
         const message = err instanceof Error ? err.message : String(err);
         this.state.error = message;
         this.log(`오류 발생: ${message}`);
         this.logger.error(`한방 수집 실패: ${message}`);
-      })
-      .finally(() => {
         this.state.running = false;
+        this.state.phase = "idle";
         this.state.finishedAt = new Date().toISOString();
       });
     return { ok: true };
   }
 
-  private async run(input: {
+  /** 1단계: 목록 페이지만 순회해 건수를 확인한다. 상세(전화번호)
+   * 수집은 바로 이어서 하지 않고, 사용자가 `confirm()`을 호출해야
+   * 시작한다(사용자 요청, 2026-08-11: 건수부터 보고 진행 여부를
+   * 결정하고 싶다는 요청). */
+  private async runListingPhase(input: {
     sidoCode: string;
     gugunCode: string;
     dongCode: string;
@@ -231,11 +298,36 @@ export class RealtorCollectService {
     dongName: string;
   }) {
     const { sidoCode, gugunCode, dongCode, sidoName, gugunName, dongName } = input;
-    this.log(`수집 시작: ${sidoName} ${gugunName || ""} ${dongName || ""}`.trim());
+    this.log(`목록 확인 시작: ${sidoName} ${gugunName || ""} ${dongName || ""}`.trim());
 
     const rows = await this.collectListRows(sidoCode, gugunCode, dongCode);
+    if (this.cancelRequested) {
+      this.log("중단됨.");
+      this.state.running = false;
+      this.state.phase = "idle";
+      this.state.finishedAt = new Date().toISOString();
+      return;
+    }
+
     this.state.total = rows.length;
-    this.log(`총 ${rows.length}개 매물 상세 수집 시작...`);
+    this.pendingRows = rows;
+    this.pendingRegion = input;
+    this.state.phase = "awaiting_confirmation";
+    this.log(`목록 확인 완료: 총 ${rows.length}건. "상세정보 수집 시작"을 눌러 진행하세요.`);
+  }
+
+  private async runDetailsPhase(
+    rows: ListRow[],
+    region: {
+      sidoCode: string;
+      gugunCode: string;
+      dongCode: string;
+      sidoName: string;
+      gugunName: string;
+      dongName: string;
+    },
+  ) {
+    const { sidoCode, gugunCode, dongCode, sidoName, gugunName, dongName } = region;
 
     for (let i = 0; i < rows.length; i += DETAIL_CONCURRENCY) {
       if (this.cancelRequested) {

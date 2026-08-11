@@ -40,6 +40,12 @@ export class RealtorCollectController {
     return this.service.stop();
   }
 
+  @Post("confirm")
+  confirm(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.confirm();
+  }
+
   @Post("start")
   start(
     @Headers() headers: Record<string, string>,
