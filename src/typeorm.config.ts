@@ -55,6 +55,8 @@ import { NiceCrawlerLogRow } from "./nice-crawler/entities/nice-crawler-log.enti
 import { NiceSavedSearchRow } from "./nice-crawler/entities/nice-saved-search.entity";
 import { AuctionAssignment, ServiceReport } from "./learning-board/learning-board.entity";
 import { AppSettingsRow } from "./site-settings/site-settings.entity";
+import { WebinarKakaoLead } from "./webinar-auth/webinar-kakao-lead.entity";
+import { WebinarEmailLead } from "./webinar-auth/webinar-email-lead.entity";
 
 const entities = [
   Auction,
@@ -112,6 +114,8 @@ const entities = [
   ServiceReport,
   AppSettingsRow,
   RealtorOffice,
+  WebinarKakaoLead,
+  WebinarEmailLead,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {
