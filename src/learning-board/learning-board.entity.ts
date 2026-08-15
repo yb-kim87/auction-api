@@ -13,9 +13,22 @@ export class AuctionAssignment {
   @Column({ type: "text", default: "" }) phoneSeller!: string;
   @Column({ type: "text", default: "" }) phoneBidder!: string;
   @Column({ type: "text", default: "" }) phoneFinal!: string;
+  // safetyResearchN은 조사 N건의 안전마진(시세-낙찰가) 값을 저장한다.
+  // 사건번호/시세/낙찰가는 각각 별도 컬럼으로 받아 안전마진을 프론트에서
+  // 자동 계산해 넣는다(사용자 요청, 2026-08-15: "조사 하나당 4개칸을
+  // 입력을 할껀데 순서는 경매사건번호 -> 시세 -> 낙찰가 -> 안전마진").
   @Column({ type: "text", default: "" }) safetyResearch1!: string;
+  @Column({ type: "text", default: "" }) safetyResearch1CaseNo!: string;
+  @Column({ type: "bigint", default: 0 }) safetyResearch1MarketPrice!: number;
+  @Column({ type: "bigint", default: 0 }) safetyResearch1BidPrice!: number;
   @Column({ type: "text", default: "" }) safetyResearch2!: string;
+  @Column({ type: "text", default: "" }) safetyResearch2CaseNo!: string;
+  @Column({ type: "bigint", default: 0 }) safetyResearch2MarketPrice!: number;
+  @Column({ type: "bigint", default: 0 }) safetyResearch2BidPrice!: number;
   @Column({ type: "text", default: "" }) safetyResearch3!: string;
+  @Column({ type: "text", default: "" }) safetyResearch3CaseNo!: string;
+  @Column({ type: "bigint", default: 0 }) safetyResearch3MarketPrice!: number;
+  @Column({ type: "bigint", default: 0 }) safetyResearch3BidPrice!: number;
   @Column({ type: "text", default: "" }) finalSafetyMargin!: string;
   @Column({ type: "bigint", default: 0 }) finalMarketPrice!: number;
   @Column({ type: "bigint", default: 0 }) targetBidPrice!: number;
