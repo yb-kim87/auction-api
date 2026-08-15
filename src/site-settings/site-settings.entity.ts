@@ -16,6 +16,24 @@ export class AppSettingsRow {
   @Column({ type: "boolean", default: true })
   hideRegistryTenantForStudents!: boolean;
 
+  // 과제 알림톡(사용자 요청, 2026-08-15) — 기본은 꺼짐. 켜면 (1) 과제가
+  // 새로 제출될 때 코치 폰번호로, (2) 코치 피드백이 등록될 때 그 과제를
+  // 제출한 수강생 폰번호로 알림을 보낸다. 발신은 기존 솔라피(경매코치)
+  // 계정을 그대로 쓰고, 알림톡 템플릿 코드를 비워두면(초기 상태) 승인
+  // 절차가 필요 없는 문자(SMS)로 대체 발송한다 — 나중에 알림톡 템플릿이
+  // 승인되면 코드만 채워 넣어 알림톡으로 전환할 수 있다.
+  @Column({ type: "boolean", default: false })
+  assignmentNotifyEnabled!: boolean;
+
+  @Column({ type: "text", default: "" })
+  assignmentNotifyCoachPhone!: string;
+
+  @Column({ type: "text", default: "" })
+  assignmentCreatedTemplateCode!: string;
+
+  @Column({ type: "text", default: "" })
+  coachFeedbackTemplateCode!: string;
+
   @UpdateDateColumn()
   updatedAt!: Date;
 }

@@ -18,7 +18,14 @@ export class SiteSettingsController {
   @Patch()
   async update(
     @Headers() headers: Record<string, string>,
-    @Body() body: { hideRegistryTenantForStudents?: boolean },
+    @Body()
+    body: {
+      hideRegistryTenantForStudents?: boolean;
+      assignmentNotifyEnabled?: boolean;
+      assignmentNotifyCoachPhone?: string;
+      assignmentCreatedTemplateCode?: string;
+      coachFeedbackTemplateCode?: string;
+    },
   ) {
     requireAdmin(getAuthContext(headers));
     return this.service.update(body);

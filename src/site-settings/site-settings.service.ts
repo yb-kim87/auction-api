@@ -21,7 +21,18 @@ export class SiteSettingsService {
     return row;
   }
 
-  async update(patch: Partial<Pick<AppSettingsRow, "hideRegistryTenantForStudents">>): Promise<AppSettingsRow> {
+  async update(
+    patch: Partial<
+      Pick<
+        AppSettingsRow,
+        | "hideRegistryTenantForStudents"
+        | "assignmentNotifyEnabled"
+        | "assignmentNotifyCoachPhone"
+        | "assignmentCreatedTemplateCode"
+        | "coachFeedbackTemplateCode"
+      >
+    >,
+  ): Promise<AppSettingsRow> {
     const row = await this.get();
     Object.assign(row, patch);
     return this.repo.save(row);
