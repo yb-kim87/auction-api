@@ -71,6 +71,13 @@ type MergeOptions = {
   preserveMemoIfEmpty?: boolean;
   /** 크롤 갱신 — 수집 실패(빈값·0·없음) 시 기존 DB 값 유지 */
   preserveExistingIfEmpty?: boolean;
+  /** 나이스크롤러가 기존 물건(주로 탱크옥션에서 수집)을 갱신할 때 "경매지
+   * 정보" 버튼에 쓰이는 link를 나이스옥션 링크로 덮어써버리던 문제
+   * 수정(사용자 요청, 2026-08-18: "경매지 정보가 나이스옥션으로
+   * 연결되던데 이건 왜그러는거지?? 탱크옥션으로 안되고?"). true면 기존
+   * link가 이미 있을 때 새 값으로 덮어쓰지 않고 그대로 유지한다(빈
+   * 경우에만 채움). */
+  preserveLinkIfExists?: boolean;
 };
 
 const CRAWL_EMPTY_TEXT = new Set(["", "없음", "값없음", "임차정보없음"]);
@@ -165,9 +172,14 @@ export function mergeAuctionFromSource(
     ? mergeMemo(existing.memo, source.memo)
     : pickStr(source.memo, existing.memo);
 
+  const link =
+    options?.preserveLinkIfExists && hasExistingText(existing.link)
+      ? existing.link
+      : pickStr(source.link, existing.link);
+
   const merged: UpdateAuctionDto = {
     memo,
-    link: pickStr(source.link, existing.link),
+    link,
     views: pickNum(source.views, existing.views, false),
     auctionNo: pickStr(source.auctionNo, existing.auctionNo) || existing.auctionNo,
     court: pickStr(

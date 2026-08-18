@@ -39,6 +39,9 @@ interface WriteMeta {
   submittedBy: string;
   changeSource?: ChangeSource;
   skipIfUnchanged?: boolean;
+  /** 나이스크롤러 갱신이 기존 물건의 "경매지 정보" 링크(주로 탱크옥션)를
+   * 나이스옥션 링크로 덮어쓰지 않도록 한다(사용자 요청, 2026-08-18). */
+  preserveLinkIfExists?: boolean;
 }
 
 @Injectable()
@@ -522,6 +525,7 @@ export class AuctionsService implements OnModuleInit {
       const merged = mergeAuctionFromSource(existing, dto, {
         preserveMemoIfEmpty,
         preserveExistingIfEmpty: meta.changeSource === "crawler",
+        preserveLinkIfExists: meta.preserveLinkIfExists,
       });
       const { city, district, propType } = parseAddressMeta(merged.address, merged.usage);
       const diffs = resolvePriceDiffs(merged);
@@ -604,6 +608,7 @@ export class AuctionsService implements OnModuleInit {
       submittedBy,
       changeSource: "crawler",
       skipIfUnchanged: true,
+      preserveLinkIfExists: submittedBy === "nice-crawler",
     });
 
     if (unchanged) {
