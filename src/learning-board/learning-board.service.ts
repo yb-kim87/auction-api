@@ -85,24 +85,24 @@ export class LearningBoardService {
     }
   }
 
-  /** 코치(관리자) 알림 — 카카오 알림톡/문자는 수강생 대상 확산까지
-   * 감안한 채널이라 코치 폰번호를 등록해야만 동작하는데, 그건 아직
-   * 수강생 쪽에 적용하기 어렵다고 판단해(사용자 요청, 2026-08-19: "일단
-   * 수강생들은 아직 적용이 어려우니 관리자만... 텔레그램으로 과제
-   * 등록정보를 받아볼 수 있도록") 코치용 알림은 이미 보안 로그 알림에
+  /** 코치(관리자) 알림 — 텔레그램은 "과제 알림 사용" 토글과 무관하게
+   * 항상 보낸다(사용자 요청, 2026-08-19: "관리자만 텔레그램으로 하고
+   * 싶은데" — 토글을 켜면 아래 카카오 알림톡/문자(수강생 피드백 알림
+   * 포함)까지 함께 켜져 버리는 게 문제였음). 이미 보안 로그 알림에
    * 쓰고 있던 텔레그램 봇(`TelegramAlertService`, 별도 폰번호 등록
-   * 불필요)으로 우선 보낸다. 코치 폰번호를 나중에 등록하면 카카오
-   * 알림톡/문자도 추가로 함께 간다.
+   * 불필요)을 그대로 재사용한다. 코치 폰번호를 등록하고 토글도 켜면
+   * 카카오 알림톡/문자도 추가로 함께 간다(수강생 대상 알림과 같은 토글
+   * — 아직 수강생 쪽엔 적용하지 않기로 해 기본 꺼짐 유지).
    */
   private async notifyCoachOfNewAssignment(assignment: AuctionAssignment) {
-    const settings = await this.siteSettings.get();
-    if (!settings.assignmentNotifyEnabled) return;
     const user = await this.usersService.findByUsername(assignment.username);
     const studentName = user?.name || assignment.username;
     const memoLine = assignment.memo.trim() ? `\n문의사항: ${assignment.memo.trim()}` : "";
     const text = `[코치픽] ${studentName}님이 새 과제를 제출했습니다.\n물건: ${assignment.auctionNo} ${assignment.address}${memoLine}\n관리자 페이지 > 과제 검토에서 확인해 주세요.`;
     await this.telegramAlert.send(text);
-    if (settings.assignmentNotifyCoachPhone.trim()) {
+
+    const settings = await this.siteSettings.get();
+    if (settings.assignmentNotifyEnabled && settings.assignmentNotifyCoachPhone.trim()) {
       await this.sendAssignmentNotify(settings.assignmentNotifyCoachPhone, text, settings.assignmentCreatedTemplateCode, {
         이름: studentName,
         사건번호: assignment.auctionNo,
