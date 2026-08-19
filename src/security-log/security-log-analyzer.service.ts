@@ -47,21 +47,27 @@ const SEED_EXCLUDED_IPS: Array<{ ip: string; note: string }> = [
 const EXCLUDED_USER_AGENT_SUBSTRINGS = ["Google-Apps-Script"];
 
 /**
- * 개발 중 로컬/서버에서 돌리는 node 스크립트(curl 테스트, 마이그레이션 확인 등)는
- * 매번 다른 임대 IP로 나가는 경우가 많아 IP 화이트리스트로는 못 걸러낸다.
- * Node의 기본 User-Agent(예: "node")는 사람이 아니라는 신호이지만, 동시에
- * 해커도 그대로 흉내 낼 수 있는 값이라 User-Agent만으로 전역 예외하면
- * 탐지를 무력화하는 구멍이 생긴다. 그래서 "node UA + 관리자 계정으로 로그인된
- * 요청"일 때만 예외로 두어, 로그인 없이 접근하는 외부 공격은 그대로 잡히게 한다
- * (2026-07-18, 개발자 본인 테스트 요청 오탐 다수 발생).
+ * 프론트(Vercel)가 브라우저 요청을 서버사이드로 프록시해 백엔드로 넘기기
+ * 때문에, 관리자든 일반 회원이든 정상적으로 사이트를 쓰기만 해도 원래
+ * 브라우저 UA 대신 Node의 기본 User-Agent(예: "node")로 찍힌다. 원래는
+ * "node UA + 관리자 계정으로 로그인된 요청"만 예외 처리했었는데
+ * (2026-07-18, 개발자 본인 테스트 요청 오탐 다수 발생 당시엔 이 프록시
+ * 구조의 영향 범위를 admin 계정 테스트로만 좁게 봤음), 실제로는 모든
+ * 회원 트래픽이 동일하게 영향을 받아 일반 회원의 정상 이용까지 계속
+ * 오탐으로 텔레그램에 보고되고 있었다(2026-08-19, 사용자 신고: "회원들의
+ * 간단한 행동들도 전부다 보고가 되고 있는거 같다"). node UA는 사람이
+ * 아니라는 신호이지만 동시에 해커도 흉내 낼 수 있는 값이라 User-Agent만
+ * 으로 전역 예외하면 탐지를 무력화하는 구멍이 생기므로, 여전히 "로그인된
+ * 요청"일 때만 예외로 두어 로그인 없이 접근하는 외부 공격은 그대로
+ * 잡히게 한다 — 다만 그 로그인 계정을 admin으로 한정하지 않고 아무
+ * 계정이나 인정하도록 넓혔다.
  */
 const EXCLUDED_USER_AGENT_EXACT = ["node"];
-const EXCLUDED_UA_REQUIRES_ADMIN_USERNAMES = ["admin"];
 
 function isExcludedUserAgent(userAgent: string, username?: string): boolean {
   if (EXCLUDED_USER_AGENT_SUBSTRINGS.some((needle) => userAgent.includes(needle))) return true;
   if (EXCLUDED_USER_AGENT_EXACT.includes(userAgent.trim())) {
-    return Boolean(username && EXCLUDED_UA_REQUIRES_ADMIN_USERNAMES.includes(username));
+    return Boolean(username?.trim());
   }
   return false;
 }
