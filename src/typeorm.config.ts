@@ -57,6 +57,7 @@ import { AuctionAssignment, ServiceReport } from "./learning-board/learning-boar
 import { AppSettingsRow } from "./site-settings/site-settings.entity";
 import { WebinarKakaoLead } from "./webinar-auth/webinar-kakao-lead.entity";
 import { WebinarEmailLead } from "./webinar-auth/webinar-email-lead.entity";
+import { LandingImageRow } from "./landing-images/landing-image.entity";
 
 const entities = [
   Auction,
@@ -116,6 +117,7 @@ const entities = [
   RealtorOffice,
   WebinarKakaoLead,
   WebinarEmailLead,
+  LandingImageRow,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {

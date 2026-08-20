@@ -27,6 +27,7 @@ import { LearningBoardModule } from "./learning-board/learning-board.module";
 import { SiteSettingsModule } from "./site-settings/site-settings.module";
 import { RealtorCollectModule } from "./realtor-collect/realtor-collect.module";
 import { WebinarAuthModule } from "./webinar-auth/webinar-auth.module";
+import { LandingImagesModule } from "./landing-images/landing-images.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -58,6 +59,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     SiteSettingsModule,
     RealtorCollectModule,
     WebinarAuthModule,
+    LandingImagesModule,
   ],
 })
 export class AppModule implements NestModule {

@@ -266,11 +266,35 @@ admin 탭 목록에 등록하는 코드(`app/admin/page.tsx`의 import + ADMIN_T
   정상 저장 확인, 완료 페이지 정상 전환 확인
 - admin "웨비나 신청자" 탭에서 두 종류 신청자가 함께 표시되는 것 확인
 
+## 追記 (2026-08-20) — 백엔드 모듈 등록 누락 발견 및 수정, admin 탭 재등록 완료
+
+프론트 아키텍처 리팩터([2026-08-20_01](./2026-08-20_01_frontend-architecture-refactor.md) 참고) 검증 중
+Playwright로 `/courses`를 열어보니 `GET /api/landing-images`가 404였다.
+원인은 `landing-images` 모듈 코드 자체는 있었지만(이 문서에서 만든 것)
+**한 번도 `app.module.ts`에 등록되지 않았고, `LandingImageRow` 엔티티도
+`typeorm.config.ts`의 전역 entities 배열에 빠져 있었으며, 운영 Postgres용
+마이그레이션도 없었던 것** — 즉 로컬에서만 동작 확인하고 커밋/배포는 안
+됐던 상태 그대로였다. (아래 체크리스트 1번 "다음에 할 일"로 이미 알려져
+있던 문제.)
+
+수정 내용:
+- `src/app.module.ts`에 `LandingImagesModule` 등록.
+- `src/typeorm.config.ts` 전역 `entities` 배열에 `LandingImageRow` 추가
+  (CLAUDE.md에 기록된 "엔티티 미등록 크래시" 재발 방지 규칙 그대로 적용).
+- `src/migrations/1784295000000-CreateLandingImages.ts` 신규 — 운영
+  Postgres에 `landing_images` 테이블 생성.
+- 프론트 `AdminPageClient.tsx`에 아래 체크리스트 1번 항목대로
+  `LandingImagesPanel`을 "강의실 이미지" 탭으로 재등록(import + `ADMIN_TABS`
+  + 렌더링 분기).
+- 로컬(sql.js) 기동 확인 → `GET /landing-images` 200 확인 → Playwright로
+  `/courses` 재확인해 이미지 정상 로드(콘솔 에러 0) 확인 후 커밋/배포.
+
 ## 다음 세션에서 이어갈 때 체크리스트
 
-1. **`LandingImagesPanel`을 admin 탭에 재등록**할 것(위 3번 섹션의
+1. ~~**`LandingImagesPanel`을 admin 탭에 재등록**할 것(위 3번 섹션의
    "알려진 이슈" 참고). 백엔드/컴포넌트는 살아있으니 `app/admin/page.tsx`에
-   import + `ADMIN_TABS` 배열 + 렌더링 분기 3곳만 추가하면 됨.
+   import + `ADMIN_TABS` 배열 + 렌더링 분기 3곳만 추가하면 됨.~~ →
+   2026-08-20 完了(위 追記 참고).
 2. **아직 배포 전, 전부 로컬(`localhost:3000`/`3001`)에서만 동작 중**.
    운영 배포 시 확인해야 할 것:
    - 카카오 개발자센터에 운영 도메인의 콜백 URL 추가 등록 필요
