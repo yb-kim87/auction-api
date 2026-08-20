@@ -5,6 +5,7 @@
 
 ## 목록
 
+- [2026-08-20_01 프론트엔드(auction) 아키텍처 리팩터 — 컴포넌트화 + zustand 전역 상태 + axios/TanStack Query 전환](./2026-08-20_01_frontend-architecture-refactor.md)
 - [2026-08-18_01 나이스크롤러가 기존 물건의 "경매지 정보" 링크를 덮어쓸 수 있던 문제](./2026-08-18_01_nice-crawler-link-overwrite.md)
 - [2026-08-15_01 과제 등록/코치 피드백 알림톡](./2026-08-15_01_assignment-notify.md)
 - [2026-08-11_02 관리자가 공개한 영상이 학생 화면에서 계속 "준비중"으로 잠기는 버그 수정](./2026-08-11_02_ot-video-lock-bug.md)
