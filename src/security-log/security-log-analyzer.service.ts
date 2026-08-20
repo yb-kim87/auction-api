@@ -36,6 +36,12 @@ const SEED_EXCLUDED_IPS: Array<{ ip: string; note: string }> = [
   { ip: "35.187.143.69", note: "Google Apps Script 추정 - 2026-07-17" },
   { ip: "35.243.23.38", note: "Google Apps Script 추정 - 2026-07-17" },
   { ip: "34.116.21.34", note: "Google Apps Script 추정 - 2026-07-17" },
+  {
+    ip: "::ffff:127.0.0.1",
+    note: "서버 자기 자신(크롤러→운영 DB 동시 적재 배치, /crawler/import-item) - 2026-08-20",
+  },
+  { ip: "127.0.0.1", note: "서버 자기 자신(로컬호스트) - 2026-08-20" },
+  { ip: "::1", note: "서버 자기 자신(로컬호스트, IPv6) - 2026-08-20" },
 ];
 
 /**
