@@ -100,7 +100,10 @@ interface IpStat {
   paths: Set<string>;
   usernames: Set<string>;
   userAgents: Set<string>;
-  minIntervalMs: number;
+  /** 요청이 1건뿐인 IP는 "간격"이라는 개념 자체가 없으므로 null로 둔다
+   *  (과거엔 0으로 채웠는데, 정상 로그인 1건도 "0ms 간격"처럼 보여
+   *  AI가 자동화 스크립트로 오판하는 원인이 됐다 — 2026-08-21 실측). */
+  minIntervalMs: number | null;
   errorCount: number;
 }
 
@@ -126,7 +129,7 @@ function buildIpStats(entries: RequestLogEntry[]): IpStat[] {
       paths: new Set(list.map((e) => e.path)),
       usernames: new Set(list.map((e) => e.username).filter(Boolean)),
       userAgents: new Set(list.map((e) => e.userAgent).filter(Boolean)),
-      minIntervalMs: Number.isFinite(minIntervalMs) ? minIntervalMs : 0,
+      minIntervalMs: Number.isFinite(minIntervalMs) ? minIntervalMs : null,
       errorCount: list.filter((e) => e.status >= 400).length,
     });
   }
@@ -137,7 +140,8 @@ function summarizeForPrompt(stats: IpStat[], windowMinutes: number): string {
   if (stats.length === 0) return "(최근 구간에 요청 없음)";
   const lines = stats.map((s) => {
     const uaSample = [...s.userAgents][0]?.slice(0, 80) ?? "-";
-    return `- IP ${s.ip}: 요청 ${s.count}건 / 최소간격 ${s.minIntervalMs}ms / 경로수 ${s.paths.size} / 로그인유저 ${
+    const intervalText = s.minIntervalMs === null ? "해당없음(요청 1건)" : `${s.minIntervalMs}ms`;
+    return `- IP ${s.ip}: 요청 ${s.count}건 / 최소간격 ${intervalText} / 경로수 ${s.paths.size} / 로그인유저 ${
       s.usernames.size > 0 ? [...s.usernames].join(",") : "없음"
     } / 오류 ${s.errorCount}건 / UA: ${uaSample}`;
   });
@@ -264,6 +268,13 @@ export class SecurityLogAnalyzerService implements OnModuleInit, OnModuleDestroy
 
 로그인된 정상 관리자/회원의 정상적인 사용 패턴(가끔 빠른 클릭, 페이지네이션 등)은
 과도하게 의심하지 마세요. 확실히 의심스러운 경우에만 suspicious=true로 답하세요.
+
+특히 "요청 1건 / 최소간격 해당없음(요청 1건) / 로그인유저 없음"인 IP는 대부분
+실제 회원의 정상 로그인 시도(POST /auth/login) 그 자체입니다 — 로그인은 성공하기
+전까지는 구조적으로 계정을 알 수 없어 항상 "로그인유저 없음"으로 보이고, 요청이
+1건뿐이라 간격도 없습니다. 같은 IP에서 짧은 간격으로 로그인 시도가 여러 번
+반복되는 경우(요청 수 2건 이상 + 실제 최소간격이 매우 짧음)에만 무차별 대입으로
+의심하고, 단발성 1건 로그인 시도만으로는 suspicious=true로 판단하지 마세요.
 
 반드시 JSON으로만 답하세요:
 {
