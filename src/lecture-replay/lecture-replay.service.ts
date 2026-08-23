@@ -782,6 +782,28 @@ export class LectureReplayService {
     }));
   }
 
+  /** 관리자 Q&A 관리 화면용 — 전체 강의를 통틀어 최근 질문부터 반환하고,
+   * 화면에 바로 쓸 수 있도록 강의/영상 제목을 붙여준다. */
+  async listAllQuestionsForAdmin() {
+    const questions = await this.questionRepo.find({ order: { createdAt: "DESC" }, take: 500 });
+    if (questions.length === 0) return [];
+
+    const courseIds = [...new Set(questions.map((q) => q.courseId))];
+    const videoIds = [...new Set(questions.map((q) => q.videoId))];
+    const [courses, videos] = await Promise.all([
+      this.courseRepo.find({ where: { id: In(courseIds) } }),
+      this.videoRepo.find({ where: { id: In(videoIds) } }),
+    ]);
+    const courseTitleById = new Map(courses.map((c) => [c.id, c.title]));
+    const videoTitleById = new Map(videos.map((v) => [v.id, v.title]));
+
+    return questions.map((q) => ({
+      ...q,
+      courseTitle: courseTitleById.get(q.courseId) ?? "(삭제된 강의)",
+      videoTitle: videoTitleById.get(q.videoId) ?? "(삭제된 영상)",
+    }));
+  }
+
   async answerQuestion(id: string, answerValue?: string) {
     const question = await this.questionRepo.findOne({ where: { id } });
     if (!question) throw new NotFoundException("질문을 찾을 수 없습니다.");

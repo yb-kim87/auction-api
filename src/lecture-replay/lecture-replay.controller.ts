@@ -246,6 +246,12 @@ export class LectureReplayController {
     return this.service.deleteMaterial(id);
   }
 
+  @Get("questions")
+  listAllQuestions(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.listAllQuestionsForAdmin();
+  }
+
   @Patch("questions/:id/answer")
   answerQuestion(@Headers() headers: Record<string, string>, @Param("id") id: string, @Body() body: { answer?: string }) {
     requireAdmin(getAuthContext(headers));
