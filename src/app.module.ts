@@ -28,6 +28,7 @@ import { SiteSettingsModule } from "./site-settings/site-settings.module";
 import { RealtorCollectModule } from "./realtor-collect/realtor-collect.module";
 import { WebinarAuthModule } from "./webinar-auth/webinar-auth.module";
 import { LandingImagesModule } from "./landing-images/landing-images.module";
+import { CourseAnnouncementsModule } from "./course-announcements/course-announcements.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -60,6 +61,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     RealtorCollectModule,
     WebinarAuthModule,
     LandingImagesModule,
+    CourseAnnouncementsModule,
   ],
 })
 export class AppModule implements NestModule {
