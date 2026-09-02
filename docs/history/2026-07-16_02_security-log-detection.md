@@ -351,3 +351,8 @@ IP는 `null`(간격 정보 없음)로 명확히 구분하고, `summarizeForPromp
 
 - API `npm run test:security-log` 통과.
 - 프론트엔드 `npm run build` 통과.
+- Railway와 Vercel production에 동일한 `SECURITY_PROXY_SECRET`을 민감 환경변수로 설정했다.
+- API 배포 후 `security_log_alerts` 테이블 생성, `/security-log/alerts` 라우트 등록,
+  30분 스케줄러 기동, 공개 API 200 응답을 확인했다.
+- 프론트 production 배포 후 서명 프록시를 통과한 검증 요청이 DB에 원래 UA와 실제
+  클라이언트 IP로 기록되고 더 이상 Vercel의 `node` UA로 기록되지 않는 것을 확인했다.
