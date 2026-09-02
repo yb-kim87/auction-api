@@ -6,12 +6,13 @@ import { SecurityLogAnalyzerService } from "./security-log-analyzer.service";
 import { SecurityLogController } from "./security-log.controller";
 import { SecurityLogIpExclusion } from "./security-log-ip-exclusion.entity";
 import { RequestLog } from "./request-log.entity";
+import { SecurityLogAlert } from "./security-log-alert.entity";
 import { AiModule } from "../ai/ai.module";
 import { KakaoNotifyModule } from "../kakao-notify/kakao-notify.module";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SecurityLogIpExclusion, RequestLog]),
+    TypeOrmModule.forFeature([SecurityLogIpExclusion, RequestLog, SecurityLogAlert]),
     AiModule,
     KakaoNotifyModule,
   ],

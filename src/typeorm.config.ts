@@ -31,6 +31,7 @@ import { StrategyRule } from "./tags/strategy-rule.entity";
 import { StrategyLabel } from "./tags/strategy-label.entity";
 import { SecurityLogIpExclusion } from "./security-log/security-log-ip-exclusion.entity";
 import { RequestLog } from "./security-log/request-log.entity";
+import { SecurityLogAlert } from "./security-log/security-log-alert.entity";
 import { CrawlerConfigRow } from "./crawler/crawler-config.entity";
 import { CrawlerLogRow } from "./crawler/crawler-log.entity";
 import { LectureSlide } from "./lecture-materials/lecture-slide.entity";
@@ -90,6 +91,7 @@ const entities = [
   StrategyLabel,
   SecurityLogIpExclusion,
   RequestLog,
+  SecurityLogAlert,
   CrawlerConfigRow,
   CrawlerLogRow,
   LectureSlide,

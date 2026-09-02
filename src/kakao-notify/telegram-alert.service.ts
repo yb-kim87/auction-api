@@ -23,22 +23,30 @@ export class TelegramAlertService {
     return Boolean(this.botToken && this.chatId);
   }
 
-  async send(message: string): Promise<void> {
-    if (!this.isConfigured()) return;
-    try {
-      const res = await fetch(`${TELEGRAM_API_BASE}/bot${this.botToken}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: this.chatId, text: message }),
-      });
-      if (!res.ok) {
+  async send(message: string): Promise<boolean> {
+    if (!this.isConfigured()) return false;
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        const res = await fetch(`${TELEGRAM_API_BASE}/bot${this.botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: this.chatId, text: message.slice(0, 4000) }),
+          signal: AbortSignal.timeout(8_000),
+        });
+        if (res.ok) return true;
+
         const body = await res.text().catch(() => "");
-        this.logger.error(`텔레그램 알림 전송 실패 (HTTP ${res.status}): ${body}`);
+        this.logger.error(
+          `텔레그램 알림 전송 실패 ${attempt}/2 (HTTP ${res.status}): ${body.slice(0, 300)}`,
+        );
+        if (res.status !== 429 && res.status < 500) return false;
+      } catch (err) {
+        this.logger.error(
+          `텔레그램 알림 전송 오류 ${attempt}/2: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
-    } catch (err) {
-      this.logger.error(
-        `텔레그램 알림 전송 오류: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500));
     }
+    return false;
   }
 }

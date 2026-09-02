@@ -25,6 +25,13 @@ export class SecurityLogController {
     return { lines: entries.map((e) => JSON.stringify(e)) };
   }
 
+  /** 최근 규칙 판정과 텔레그램 발송 결과 */
+  @Get("alerts")
+  async alerts(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.analyzer.listAlerts();
+  }
+
   /** 분석 대상에서 제외할 IP 목록(화이트리스트) 조회 */
   @Get("ip-exclusions")
   async listIpExclusions(@Headers() headers: Record<string, string>) {
