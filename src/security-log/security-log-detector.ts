@@ -64,7 +64,14 @@ export function buildIpStats(entries: RequestLogEntry[]): IpStat[] {
         unauthorizedCount: list.filter((entry) => entry.status === 401 || entry.status === 403).length,
         notFoundCount: list.filter((entry) => entry.status === 404).length,
         loginAttempts: loginEntries.length,
-        loginFailures: loginEntries.filter((entry) => entry.status >= 400).length,
+        // 409는 "비밀번호가 틀렸다"가 아니라 "이미 다른 기기에서 로그인
+        // 중이라 거부됨"(계정당 동시 로그인 1개 제한, auth.service.ts의
+        // ConflictException)이다. 이미 정상 로그인된 사용자가 다른 곳에서
+        // 재로그인을 시도할 때도 이 상태코드가 나서, status>=400을 전부
+        // "로그인 실패"로 세면 정상 사용자가 brute_force로 오탐된다
+        // (실측, 2026-09-03: hyunyg 계정이 이미 로그인된 채 8분간 409를
+        // 20회 이상 받았는데 다른 API는 전부 200으로 정상 이용 중이었음).
+        loginFailures: loginEntries.filter((entry) => entry.status >= 400 && entry.status !== 409).length,
       };
     })
     .sort((a, b) => b.count - a.count);
@@ -151,7 +158,11 @@ export function detectIpCandidates(stat: IpStat): DetectionCandidate[] {
 export function detectDistributedLoginAttack(
   entries: RequestLogEntry[],
 ): DetectionCandidate | null {
-  const failures = entries.filter((entry) => isLogin(entry) && entry.status >= 400);
+  // 409(동시 로그인 제한 거부)는 자격증명 실패가 아니므로 제외한다(위
+  // buildIpStats의 loginFailures와 동일한 이유).
+  const failures = entries.filter(
+    (entry) => isLogin(entry) && entry.status >= 400 && entry.status !== 409,
+  );
   const ips = new Set(failures.map((entry) => entry.ip));
   if (failures.length < 20 || ips.size < 8) return null;
 
