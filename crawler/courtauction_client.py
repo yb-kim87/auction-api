@@ -33,8 +33,15 @@ DEFAULT_HEADERS = {
     "User-Agent": (
         os.environ.get("CRAWL_USER_AGENT")
         or "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        "(KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36"
     ),
+    # 2026-09-03 재실측: 실제 브라우저(Chrome 151) 요청을 Playwright로
+    # 캡처해 httpx로 그대로 재현했을 때만 통과했다 — 브라우저 핑거프린트
+    # 헤더(sec-ch-ua 계열)도 함께 넣어둔다(어느 쪽이 결정적이었는지는
+    # 확정 못 했지만, 실제로 통과한 조합을 그대로 유지).
+    "sec-ch-ua-platform": '"Windows"',
+    "sec-ch-ua": '"Not=A?Brand";v="99", "Google Chrome";v="151", "Chromium";v="151"',
+    "sec-ch-ua-mobile": "?0",
     # WebSquare(RIA 프레임워크)가 "이 요청이 어느 UI 컴포넌트에서 보내졌는지"
     # 식별하는 커스텀 헤더 — 실측(2026-07-19)으로 확인. 이 헤더가 없으면
     # 서버가 정상 화면 흐름이 아니라고 판단해 400을 반환한다.

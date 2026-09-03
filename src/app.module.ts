@@ -28,6 +28,7 @@ import { SiteSettingsModule } from "./site-settings/site-settings.module";
 import { RealtorCollectModule } from "./realtor-collect/realtor-collect.module";
 import { WebinarAuthModule } from "./webinar-auth/webinar-auth.module";
 import { LandingImagesModule } from "./landing-images/landing-images.module";
+import { CourtAuctionCrawlerModule } from "./courtauction-crawler/courtauction-crawler.module";
 import { buildTypeOrmConfig } from "./typeorm.config";
 
 @Module({
@@ -60,6 +61,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     RealtorCollectModule,
     WebinarAuthModule,
     LandingImagesModule,
+    CourtAuctionCrawlerModule,
   ],
 })
 export class AppModule implements NestModule {

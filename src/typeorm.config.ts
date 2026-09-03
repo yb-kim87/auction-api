@@ -59,6 +59,9 @@ import { AppSettingsRow } from "./site-settings/site-settings.entity";
 import { WebinarKakaoLead } from "./webinar-auth/webinar-kakao-lead.entity";
 import { WebinarEmailLead } from "./webinar-auth/webinar-email-lead.entity";
 import { LandingImageRow } from "./landing-images/landing-image.entity";
+import { CourtAuctionCrawlerStateRow } from "./courtauction-crawler/entities/courtauction-crawler-state.entity";
+import { CourtAuctionCrawlerLogRow } from "./courtauction-crawler/entities/courtauction-crawler-log.entity";
+import { CourtAuctionSavedSearchRow } from "./courtauction-crawler/entities/courtauction-saved-search.entity";
 
 const entities = [
   Auction,
@@ -120,6 +123,9 @@ const entities = [
   WebinarKakaoLead,
   WebinarEmailLead,
   LandingImageRow,
+  CourtAuctionCrawlerStateRow,
+  CourtAuctionCrawlerLogRow,
+  CourtAuctionSavedSearchRow,
 ];
 
 export function buildTypeOrmConfig(): TypeOrmModuleOptions {
