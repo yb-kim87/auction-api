@@ -225,6 +225,9 @@ export class CourtAuctionCrawlerService {
       appraisedValue: item.gamevalAmt,
       minPrice: item.minmaePrice,
       bidDate: this.formatBidDate(str(item.maeGiil)),
+      // 목록 API의 areaList가 이미 "715.8㎡" 형태 전용면적 텍스트를 준다
+      // (2026-09-03 실측 확인 — 처음엔 표본 하나가 우연히 비어있어서 빠뜨렸었음).
+      area: str(item.areaList),
       specialNote,
     };
   }
