@@ -62,7 +62,11 @@ export function normalizeCrawlAuctionNo(raw: string): string | null {
 /** 크롤 소스별 물건 링크 형식 검증. 원래 탱크옥션 전용이었는데, 나이스옥션
  * 작업창(2026-08-07)도 같은 저장 파이프라인(mapCrawledItem/
  * importCrawledItem)을 그대로 재사용하면서 여기서 막혔다 — 탱크 링크
- * 판정 로직은 그대로 두고 나이스 링크 패턴만 추가했다. */
+ * 판정 로직은 그대로 두고 나이스 링크 패턴만 추가했다. 대법원 작업창
+ * (2026-09-03)도 동일한 이유로 courtauction.go.kr 패턴을 추가한다 — 대법원은
+ * 로그인 없이 바로 열리는 물건별 고정 링크가 없어(2026-07-30 조사) 내부
+ * 식별자 겸 앵커(`#courtauction-<docid>`)를 링크로 쓰는데, 이 화이트리스트에
+ * 없어서 24건 전부 invalid_link로 스킵되는 회귀가 있었다(사용자 신고). */
 export function isValidTankAuctionLink(link: string): boolean {
   const trimmed = link.trim();
   if (!trimmed) return true;
@@ -71,6 +75,9 @@ export function isValidTankAuctionLink(link: string): boolean {
   }
   if (trimmed.includes("niceauction.co.kr")) {
     return /\/auction\/detail\/\d+/.test(trimmed);
+  }
+  if (trimmed.includes("courtauction.go.kr")) {
+    return /#courtauction-/.test(trimmed);
   }
   return false;
 }
