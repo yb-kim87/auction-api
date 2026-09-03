@@ -356,3 +356,44 @@ IP는 `null`(간격 정보 없음)로 명확히 구분하고, `summarizeForPromp
   30분 스케줄러 기동, 공개 API 200 응답을 확인했다.
 - 프론트 production 배포 후 서명 프록시를 통과한 검증 요청이 DB에 원래 UA와 실제
   클라이언트 IP로 기록되고 더 이상 Vercel의 `node` UA로 기록되지 않는 것을 확인했다.
+
+## 追記 (2026-09-03) — 동시 로그인 제한(409)이 brute_force로 오탐되던 문제
+
+사용자가 실제로 온 텔레그램 알림 2건(`brute_force`, `rapid_multi_path`,
+같은 IP `211.216.113.16`, 8분 새 30여 건)을 보고 "분석해달라"고 요청 —
+`request_logs`를 직접 대조해 조사했다.
+
+### 실측 결과: 진짜 브루트포스가 아니라 정상 사용자의 재로그인 시도였음
+이 IP의 `/auth/login` 요청 30건이 **전부 401(비밀번호 오류)이 아니라
+409**였다. 동시에 `/settings`·`/favorites`·`/courses`·강의 영상 재생·
+질문/노트 등 다른 API는 전부 200/201 정상 — `hyunyg` 계정이 **이미
+어딘가에 정상 로그인된 상태에서, 다른 곳에서 계속 재로그인을 시도하다가
+"계정당 동시 로그인 1개 제한"(`auth.service.ts`의 `ConflictException`,
+2026-07-31에 도입)에 막혀 8분간 409를 20회 이상 받은 것**이었다.
+
+### 원인: `loginFailures` 집계가 409도 "실패"로 셈
+`security-log-detector.ts`의 `buildIpStats()`가
+`entry.status >= 400`이면 무조건 로그인 실패로 카운트했다. 409는
+비밀번호가 틀린 게 아니라 "이미 로그인 중이라 거부됨"이라 전혀 다른
+성격의 응답인데 구분하지 않았던 것 — `detectDistributedLoginAttack()`의
+분산 공격 판정에도 같은 버그가 있었다.
+
+### 조사 중 겪은 함정: DB 조회 시 타임존 리터럴 문제(2026-08-21 사례 재발)
+`request_logs.ts`가 `timestamp without time zone` 컬럼이라, WHERE절에
+`'...Z'`(UTC 접미사) 리터럴을 그대로 쓰면 postgres가 세션 타임존
+기준으로 재해석해 엉뚱한 범위를 조회한다(2026-08-21 조사 때 이미 한 번
+겪었던 문제인데 이번에 또 걸림). `'YYYY-MM-DD HH:MI:SS'`(타임존 접미사
+없이)로 조회해야 정확하다 — 매번 잊지 않도록 재차 기록.
+
+### 수정
+- `buildIpStats()`의 `loginFailures`: `status >= 400 && status !== 409`로
+  변경(409 제외).
+- `detectDistributedLoginAttack()`의 `failures` 필터도 동일하게 수정.
+- `scripts/test-security-log-detector.mjs`에 회귀 테스트 추가: 동일 IP에서
+  `/auth/login` 409를 20회 반복해도 후보가 0건이어야 한다는 케이스.
+  `npm run test:security-log` 통과 확인.
+- Railway 배포 후 정상 기동(라우트 등록, 스케줄러 시작) 확인.
+
+이걸로 정상 사용자의 재로그인 시도가 더 이상 브루트포스로 오인되지
+않는다 — 진짜 자격증명 실패(401 등)로 인한 브루트포스 탐지는 그대로
+유지된다.
