@@ -130,7 +130,15 @@ export function detectIpCandidates(stat: IpStat): DetectionCandidate[] {
       "critical",
       `30분 동안 ${stat.count}건을 최소 ${interval}ms 간격으로 요청했습니다.`,
     ));
-  } else if (stat.count >= 30 && stat.paths.size >= 8 && interval <= 500) {
+  } else if (stat.count >= 50 && stat.paths.size >= 20 && interval <= 500) {
+    // 예전 임계값(count>=30, paths>=8)은 정상적으로 앱을 활발히 쓰는
+    // 회원(강의 여러 개 넘나들며 영상 재생·질문·노트 확인 등)한테도
+    // 쉽게 걸렸다 — SPA/모바일 앱이 화면 하나 들어갈 때 여러 API를
+    // 거의 동시에(수ms 간격) 병렬 호출하는 게 흔한 정상 패턴이기
+    // 때문(실측, 2026-09-03: hyewon319 계정, 아이폰, 36건/14경로/
+    // 7ms — 3분 동안 강의실을 정상적으로 오간 것뿐이었음). 실제 경로
+    // 스캔/정찰은 우리 앱이 쓰는 경로 수보다 훨씬 많은 종류의 경로를
+    // 건드리는 경향이 있어, paths 임계값을 크게(8→20) 올려서 구분한다.
     found.push(candidate(
       stat,
       "rapid_multi_path",

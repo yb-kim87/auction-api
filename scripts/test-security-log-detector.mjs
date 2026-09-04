@@ -51,4 +51,33 @@ assert(detectCandidates(distributed).some((item) => item.ruleCode === "distribut
 
 assert(buildIpStats(entries({ count: 1 }))[0].minIntervalMs === null,
   "단일 요청 간격은 null이어야 합니다.");
+
+// 실측(2026-09-03): 강의실을 활발히 쓰는 정상 회원(아이폰, 3분 동안
+// 36건/14경로, 병렬 호출로 최소 간격 7ms)이 rapid_multi_path로
+// 오탐됐다 — 임계값을 올린 뒤에는 후보가 아니어야 한다.
+const normalActiveUser = [
+  "/courses", "/courses/x", "/courses/x/questions", "/courses/x/notes",
+  "/courses/x/videos/a/play", "/courses/x/videos/b/play", "/courses/x/videos/c/play",
+  "/courses/x/videos/c/progress", "/users/me", "/settings",
+  "/recommendations/strategy-labels", "/favorites", "/recommendations",
+  "/courses/x/sections/s/materials",
+].flatMap((path, pathIndex) =>
+  Array.from({ length: pathIndex < 8 ? 3 : 1 }, (_, index) => ({
+    ts: new Date(Date.parse("2026-09-02T00:00:00.000Z") + (pathIndex * 3 + index) * 7).toISOString(),
+    ip: "1.2.3.4", method: "GET", path, username: "member1", status: 200,
+    durationMs: 10, userAgent: "Mozilla/5.0 (iPhone)",
+  })),
+);
+assert(!detectCandidates(normalActiveUser).some((item) => item.ruleCode === "rapid_multi_path"),
+  "정상 회원이 여러 화면을 오간 것만으로 rapid_multi_path가 뜨면 안 됩니다.");
+
+// 반대로 실제 경로 스캔(더 많은 종류의 경로를 빠르게 순회)은 여전히 잡혀야 한다.
+const realScan = Array.from({ length: 60 }, (_, index) => ({
+  ts: new Date(Date.parse("2026-09-02T00:00:00.000Z") + index * 7).toISOString(),
+  ip: "9.9.9.9", method: "GET", path: `/scan-path-${index % 25}`, username: "", status: 200,
+  durationMs: 5, userAgent: "python-requests",
+}));
+assert(detectCandidates(realScan).some((item) => item.ruleCode === "rapid_multi_path"),
+  "폭넓은 경로 스캔은 rapid_multi_path로 계속 탐지해야 합니다.");
+
 console.log("security-log-detector: ok");
