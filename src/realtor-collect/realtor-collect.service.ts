@@ -522,9 +522,9 @@ export class RealtorCollectService {
   }
 
   async list(filters: {
-    sidoCode?: string;
-    gugunCode?: string;
-    dongCode?: string;
+    sidoCodes?: string[];
+    gugunCodes?: string[];
+    dongCodes?: string[];
     search?: string;
     page?: number;
     pageSize?: number;
@@ -532,9 +532,9 @@ export class RealtorCollectService {
     const page = Math.max(1, filters.page ?? 1);
     const pageSize = Math.min(200, Math.max(1, filters.pageSize ?? 50));
     const qb = this.repo.createQueryBuilder("o").orderBy("o.updatedAt", "DESC");
-    if (filters.sidoCode) qb.andWhere("o.sidoCode = :sidoCode", { sidoCode: filters.sidoCode });
-    if (filters.gugunCode) qb.andWhere("o.gugunCode = :gugunCode", { gugunCode: filters.gugunCode });
-    if (filters.dongCode) qb.andWhere("o.dongCode = :dongCode", { dongCode: filters.dongCode });
+    if (filters.sidoCodes?.length) qb.andWhere("o.sidoCode IN (:...sidoCodes)", { sidoCodes: filters.sidoCodes });
+    if (filters.gugunCodes?.length) qb.andWhere("o.gugunCode IN (:...gugunCodes)", { gugunCodes: filters.gugunCodes });
+    if (filters.dongCodes?.length) qb.andWhere("o.dongCode IN (:...dongCodes)", { dongCodes: filters.dongCodes });
     if (filters.search?.trim()) {
       qb.andWhere("(o.name ILIKE :q OR o.managerName ILIKE :q OR o.mobileAll ILIKE :q OR o.address ILIKE :q)", {
         q: `%${filters.search.trim()}%`,
@@ -547,11 +547,16 @@ export class RealtorCollectService {
     return { items, total, page, pageSize };
   }
 
-  async exportExcel(filters: { sidoCode?: string; gugunCode?: string; dongCode?: string; search?: string }): Promise<Buffer> {
+  async exportExcel(filters: {
+    sidoCodes?: string[];
+    gugunCodes?: string[];
+    dongCodes?: string[];
+    search?: string;
+  }): Promise<Buffer> {
     const qb = this.repo.createQueryBuilder("o").orderBy("o.updatedAt", "DESC");
-    if (filters.sidoCode) qb.andWhere("o.sidoCode = :sidoCode", { sidoCode: filters.sidoCode });
-    if (filters.gugunCode) qb.andWhere("o.gugunCode = :gugunCode", { gugunCode: filters.gugunCode });
-    if (filters.dongCode) qb.andWhere("o.dongCode = :dongCode", { dongCode: filters.dongCode });
+    if (filters.sidoCodes?.length) qb.andWhere("o.sidoCode IN (:...sidoCodes)", { sidoCodes: filters.sidoCodes });
+    if (filters.gugunCodes?.length) qb.andWhere("o.gugunCode IN (:...gugunCodes)", { gugunCodes: filters.gugunCodes });
+    if (filters.dongCodes?.length) qb.andWhere("o.dongCode IN (:...dongCodes)", { dongCodes: filters.dongCodes });
     if (filters.search?.trim()) {
       qb.andWhere("(o.name ILIKE :q OR o.managerName ILIKE :q OR o.mobileAll ILIKE :q OR o.address ILIKE :q)", {
         q: `%${filters.search.trim()}%`,

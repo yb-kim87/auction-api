@@ -3,6 +3,13 @@ import type { Response } from "express";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { RealtorCollectService } from "./realtor-collect.service";
 
+/** "1,2,3" 형태의 콤마 구분 코드 목록을 배열로 — 여러 지역 동시 필터(사용자 요청, 2026-09-27).
+ * 빈 문자열/미지정이면 undefined(필터 없음, 전체). */
+function splitCodes(v?: string): string[] | undefined {
+  const codes = v?.split(",").map((s) => s.trim()).filter(Boolean);
+  return codes && codes.length ? codes : undefined;
+}
+
 /** 관리자 페이지 "부동산수집" 탭 — 한방(karhanbang.com) 중개업소
  * 수집/조회/엑셀 내보내기(사용자 요청, 2026-08-10). 전부 관리자 전용. */
 @Controller("realtor-collect")
@@ -80,9 +87,9 @@ export class RealtorCollectController {
   ) {
     requireAdmin(getAuthContext(headers));
     return this.service.list({
-      sidoCode,
-      gugunCode,
-      dongCode,
+      sidoCodes: splitCodes(sidoCode),
+      gugunCodes: splitCodes(gugunCode),
+      dongCodes: splitCodes(dongCode),
       search,
       page: page ? Number(page) || 1 : undefined,
       pageSize: pageSize ? Number(pageSize) || 50 : undefined,
@@ -99,7 +106,12 @@ export class RealtorCollectController {
     @Query("search") search?: string,
   ) {
     requireAdmin(getAuthContext(headers));
-    const buffer = await this.service.exportExcel({ sidoCode, gugunCode, dongCode, search });
+    const buffer = await this.service.exportExcel({
+      sidoCodes: splitCodes(sidoCode),
+      gugunCodes: splitCodes(gugunCode),
+      dongCodes: splitCodes(dongCode),
+      search,
+    });
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", 'attachment; filename="realtor-offices.xlsx"');
     res.send(buffer);
