@@ -22,6 +22,13 @@ export class RealtorCollectController {
     return this.service.listSido();
   }
 
+  // "수집된 중개업소 보기" 필터용 — DB에 이미 있는 지역만 반환(karhanbang.com 호출 없음).
+  @Get("regions")
+  getAvailableRegions(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.getAvailableRegions();
+  }
+
   @Get("sub-options")
   async getSubOptions(
     @Headers() headers: Record<string, string>,

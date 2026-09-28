@@ -151,6 +151,43 @@ export class RealtorCollectService {
     return SIDO_LIST;
   }
 
+  /** "수집된 중개업소 보기" 필터용 — DB에 이미 저장된 데이터에서만 지역 목록을 뽑는다.
+   * karhanbang.com을 호출하지 않는다(사용자 지적, 2026-09-28: "우리가 가져왔던 데이터를
+   * 보는건데 왜 한방 API를 접속하지?" — 애초에 "실행"(수집) 섹션과 같은 로직을 재사용하면서
+   * 실수로 브라우즈 필터도 매번 karhanbang에 되묻게 만들었던 버그). 세 계층을 한 번에
+   * 통짜로 내려주고 하위 옵션은 프론트에서 상위 선택값 기준으로 걸러 쓴다 — 지역이 몇백 개
+   * 수준이라 매번 다시 조회할 필요 없이 한 번만 받아도 충분하다. */
+  async getAvailableRegions(): Promise<{
+    sidos: { code: string; name: string }[];
+    guguns: { sidoCode: string; code: string; name: string }[];
+    dongs: { sidoCode: string; gugunCode: string; code: string; name: string }[];
+  }> {
+    const sidos = await this.repo
+      .createQueryBuilder("o")
+      .select('DISTINCT o."sidoCode"', "code")
+      .addSelect('o."sidoName"', "name")
+      .orderBy('o."sidoName"', "ASC")
+      .getRawMany<{ code: string; name: string }>();
+    const guguns = await this.repo
+      .createQueryBuilder("o")
+      .select('DISTINCT o."sidoCode"', "sidoCode")
+      .addSelect('o."gugunCode"', "code")
+      .addSelect('o."gugunName"', "name")
+      .where('o."gugunCode" IS NOT NULL AND o."gugunCode" != \'\'')
+      .orderBy('o."gugunName"', "ASC")
+      .getRawMany<{ sidoCode: string; code: string; name: string }>();
+    const dongs = await this.repo
+      .createQueryBuilder("o")
+      .select('DISTINCT o."sidoCode"', "sidoCode")
+      .addSelect('o."gugunCode"', "gugunCode")
+      .addSelect('o."dongCode"', "code")
+      .addSelect('o."dongName"', "name")
+      .where('o."dongCode" IS NOT NULL AND o."dongCode" != \'\'')
+      .orderBy('o."dongName"', "ASC")
+      .getRawMany<{ sidoCode: string; gugunCode: string; code: string; name: string }>();
+    return { sidos, guguns, dongs };
+  }
+
   /** karhanbang.com 요청은 전부 Vercel(서울 리전) 프록시를 거친다 —
    * Railway에서 직접 fetch하면 연결 자체가 안 된다(위 클래스 주석
    * 참고). `ajax=true`면 프록시가 WAF가 요구하는 Referer/
