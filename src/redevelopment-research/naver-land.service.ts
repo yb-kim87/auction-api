@@ -182,6 +182,19 @@ export type NaverArticleDetail = {
   lng: number | null;
   featureDesc: string | null;
   introText: string | null;
+  /** 정확한 전용/공급면적(목록 area1/area2는 정수로 반올림돼 있다). */
+  exclusiveSpace: number | null;
+  supplySpace: number | null;
+  /** 필지고유번호 19자리 = 법정동코드(10) + 대지구분(1) + 본번(4) + 부번(4) — 지번/공시가 매칭의 가장 정확한 출처. */
+  pnu: string | null;
+  /** 현재 전세 보증금(만원) — articlePrice.allWarrantPrice. 매물 설명의 "갭 1.3억" 같은 값과 일치. */
+  warrantPriceManwon: number | null;
+  bathroomCount: number | null;
+  householdCount: number | null;
+  parkingCount: number | null;
+  subwayWalkMin: number | null;
+  lawUsage: string | null;
+  heatMethod: string | null;
   raw: any;
 };
 
@@ -375,6 +388,16 @@ export class NaverLandService {
       lng: null,
       featureDesc: null,
       introText: null,
+      exclusiveSpace: null,
+      supplySpace: null,
+      pnu: null,
+      warrantPriceManwon: null,
+      bathroomCount: null,
+      householdCount: null,
+      parkingCount: null,
+      subwayWalkMin: null,
+      lawUsage: null,
+      heatMethod: null,
       raw: null,
     };
     try {
@@ -412,10 +435,17 @@ export class NaverLandService {
       // 휴대폰(cellPhoneNo)을 우선하고, 없으면 대표번호(대개 사무실 유선)로 폴백.
       const realtorPhone = r?.cellPhoneNo || r?.representativeTelNo || null;
       const roomCount = d?.roomCount != null ? Number(d.roomCount) || null : null;
-      const yearValue = d?.buildYear ?? d?.buildingBuildYear ?? d?.buildingYear ?? null;
+      // 실측(2026-10-24): 사용승인일은 articleDetail이 아니라 articleFacility.buildingUseAprvYmd("20160705")에 있다.
+      // 준공연도는 따로 없어 사용승인일 앞 4자리로 구한다. 이전 후보 이름들도 함께 본다.
+      const approvalValue =
+        data?.articleFacility?.buildingUseAprvYmd ?? d?.buildingUseAprvYmd ?? d?.useApproveYmd ?? d?.buildingUseApprovalDate ?? null;
+      const useApprovalDate = approvalValue != null && String(approvalValue).trim() ? String(approvalValue).trim() : null;
+      const yearValue = d?.buildYear ?? d?.buildingBuildYear ?? d?.buildingYear ?? useApprovalDate?.slice(0, 4) ?? null;
       const buildingYear = yearValue != null && /^\d{4}$/.test(String(yearValue)) ? Number(yearValue) : null;
-      const approvalValue = d?.buildingUseAprvYmd ?? d?.useApproveYmd ?? d?.buildingUseApprovalDate ?? null;
-      const useApprovalDate = approvalValue != null ? String(approvalValue) : null;
+      const posNum = (v: unknown): number | null => {
+        const n = Number(v);
+        return Number.isFinite(n) && n > 0 ? n : null;
+      };
       return {
         ok: true,
         address,
@@ -431,6 +461,16 @@ export class NaverLandService {
         lng,
         featureDesc,
         introText,
+        exclusiveSpace: posNum(data?.articleSpace?.exclusiveSpace),
+        supplySpace: posNum(data?.articleSpace?.supplySpace),
+        pnu: typeof d?.pnu === "string" && /^\d{19}$/.test(d.pnu) ? d.pnu : null,
+        warrantPriceManwon: posNum(data?.articlePrice?.allWarrantPrice),
+        bathroomCount: posNum(d?.bathroomCount),
+        householdCount: posNum(d?.householdCount),
+        parkingCount: posNum(d?.parkingCount),
+        subwayWalkMin: posNum(d?.walkingTimeToNearSubway),
+        lawUsage: cleanText(d?.lawUsage),
+        heatMethod: cleanText(data?.articleFacility?.heatMethodTypeName),
         raw: data,
       };
     } catch (e) {

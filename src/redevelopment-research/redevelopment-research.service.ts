@@ -481,6 +481,17 @@ export class RedevelopmentResearchService {
       failures = 0;
       row.address = d.address;
       row.realtorPhone = d.realtorPhone;
+      // 상세의 면적은 소수까지 정확하다(목록 area1/area2는 정수 반올림) — 공시가 면적 매칭에 이 값을 쓴다.
+      if (d.exclusiveSpace != null) row.exclusiveArea = d.exclusiveSpace;
+      if (d.supplySpace != null) row.supplyArea = d.supplySpace;
+      row.pnu = d.pnu;
+      row.warrantPriceManwon = d.warrantPriceManwon;
+      row.bathroomCount = d.bathroomCount;
+      row.householdCount = d.householdCount;
+      row.parkingCount = d.parkingCount;
+      row.subwayWalkMin = d.subwayWalkMin;
+      row.lawUsage = d.lawUsage;
+      row.heatMethod = d.heatMethod;
       if (d.roomCount != null) row.roomCount = d.roomCount; // 목록 tagList보다 상세 값이 정확(samsam)
       row.buildingYear = d.buildingYear;
       row.useApprovalDate = d.useApprovalDate;
@@ -492,7 +503,13 @@ export class RedevelopmentResearchService {
       row.photoUrlsJson = JSON.stringify(d.photoUrls);
       row.rawDetailJson = JSON.stringify(d.raw);
       row.detailFetchedAt = new Date();
-      if (row.lat != null && row.lng != null && !row.jibun) {
+      if (d.pnu) {
+        // PNU = 법정동코드(10) + 대지구분(1) + 본번(4) + 부번(4) — 좌표 역변환보다 정확한 지번/법정동코드.
+        const main = Number(d.pnu.slice(11, 15));
+        const sub = Number(d.pnu.slice(15, 19));
+        row.legalDongCode = d.pnu.slice(0, 10);
+        row.jibun = sub ? `${main}-${sub}` : `${main}`;
+      } else if (row.lat != null && row.lng != null && !row.jibun) {
         const j = await this.kakao.jibunAt(row.lat, row.lng);
         row.jibun = j?.jibun ?? null;
         row.legalDongCode = j?.legalDongCode ?? null;
@@ -546,13 +563,14 @@ export class RedevelopmentResearchService {
     area: number | null,
     floor: number | null,
     ho: string | null,
+    areaTol = 0.6,
   ): OfficialPriceEstimate {
     if (!rows || !rows.length) return { manwon: null, candidates: 0, basis: "none" };
     if (ho) {
       const exact = rows.filter((r) => r.hoNm.replace(/\D/g, "") === ho.replace(/\D/g, ""));
       if (exact.length) return { manwon: Math.round(Number(exact[0].postedPrice) / 10000), candidates: exact.length, basis: "ho" };
     }
-    const byArea = area != null ? rows.filter((r) => r.exclusiveArea != null && Math.abs(Number(r.exclusiveArea) - area) <= 0.6) : [];
+    const byArea = area != null ? rows.filter((r) => r.exclusiveArea != null && Math.abs(Number(r.exclusiveArea) - area) <= areaTol) : [];
     if (!byArea.length) return { manwon: null, candidates: 0, basis: "none" };
     const byFloor = floor != null && floor > 0 ? byArea.filter((r) => floorOfHo(r.hoNm) === floor) : [];
     if (byFloor.length) {
@@ -627,7 +645,16 @@ export class RedevelopmentResearchService {
             hasDetail: !!l.detailFetchedAt,
             firstSeenAt: l.firstSeenAt,
             lastSeenAt: l.lastSeenAt,
-            officialPrice: this.estimate(key ? prices.get(key) : undefined, l.exclusiveArea, floor, null),
+            // 상세 전 면적은 정수 반올림(목록 area2)이라 허용오차를 1.0㎡로 넓힌다.
+            officialPrice: this.estimate(key ? prices.get(key) : undefined, l.exclusiveArea, floor, null, l.detailFetchedAt ? 0.6 : 1.0),
+            pnu: l.pnu,
+            warrantPriceManwon: l.warrantPriceManwon,
+            bathroomCount: l.bathroomCount,
+            householdCount: l.householdCount,
+            parkingCount: l.parkingCount,
+            subwayWalkMin: l.subwayWalkMin,
+            lawUsage: l.lawUsage,
+            heatMethod: l.heatMethod,
           };
         })
         .sort((a, b) => (a.priceManwon ?? 0) - (b.priceManwon ?? 0)),

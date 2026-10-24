@@ -95,6 +95,32 @@ export class RedevelopmentNaverListing {
   @Column({ type: "text", nullable: true })
   ageTag!: string | null;
 
+  /** 필지고유번호 19자리(법정동코드 10 + 대지구분 1 + 본번 4 + 부번 4) — 상세 응답에서만. */
+  @Column({ type: "text", nullable: true })
+  pnu!: string | null;
+
+  /** 현재 전세 보증금(만원, articlePrice.allWarrantPrice) — 매매가 − 이 값 = 실제 갭. */
+  @Column({ type: "int", nullable: true })
+  warrantPriceManwon!: number | null;
+
+  @Column({ type: "int", nullable: true })
+  bathroomCount!: number | null;
+
+  @Column({ type: "int", nullable: true })
+  householdCount!: number | null;
+
+  @Column({ type: "int", nullable: true })
+  parkingCount!: number | null;
+
+  @Column({ type: "int", nullable: true })
+  subwayWalkMin!: number | null;
+
+  @Column({ type: "text", nullable: true })
+  lawUsage!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  heatMethod!: string | null;
+
   @Column({ type: "float", nullable: true })
   adminCostManwon!: number | null;
 
