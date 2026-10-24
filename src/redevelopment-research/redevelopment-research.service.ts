@@ -800,6 +800,22 @@ export class RedevelopmentResearchService {
     ]);
     const listings = listingRows.filter((l) => l.missCount < 2 && (l.distanceToZoneM ?? 9999) <= tol);
     const trades = tradeRows.filter((t) => (t.distanceToZoneM ?? 9999) <= tol);
+    // 대지지분 추정: 네이버 매물은 대지지분을 주지 않는다(실측: groundShareSpace/landShare 모두 0). 같은 지번의 국토부 실거래가
+    // 가진 대지권면적(landAr)으로 (대지권면적 ÷ 전용면적) 비율을 구해 호가 전용면적에 곱한다. 같은 건물 실거래가 없으면 null.
+    const landRatios = new Map<string, number[]>();
+    for (const tr of tradeRows) {
+      if (tr.isCancelled || !tr.landArea || !tr.exclusiveArea) continue;
+      const arr = landRatios.get(tr.jibun) ?? [];
+      arr.push(tr.landArea / tr.exclusiveArea);
+      landRatios.set(tr.jibun, arr);
+    }
+    const landShareEstimate = (jibun: string | null, area: number | null): number | null => {
+      const rs = jibun ? landRatios.get(jibun) : undefined;
+      if (!rs?.length || !area) return null;
+      const s = [...rs].sort((a, b) => a - b);
+      const mid = s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
+      return Math.round(mid * area * 100) / 100;
+    };
     const prices = await this.loadBuildingPrices([
       ...listings.map((l) => ({ legalDongCode: l.legalDongCode, jibun: l.jibun })),
       ...trades.map((t) => ({ legalDongCode: t.legalDongCode, jibun: t.jibun })),
@@ -855,6 +871,7 @@ export class RedevelopmentResearchService {
             lastSeenAt: l.lastSeenAt,
             // 상세 전 면적은 정수 반올림(목록 area2)이라 허용오차를 1.0㎡로 넓힌다.
             officialPrice: this.estimate(key ? prices.get(key) : undefined, l.exclusiveArea, floor, null, l.detailFetchedAt ? 0.6 : 1.0, parseFloorBand(l.floorInfo)),
+            landShareEstimate: landShareEstimate(l.jibun, l.exclusiveArea),
             complexName: l.complexName,
             complexNumber: l.complexNumber,
             roadAddress: l.roadAddress,
@@ -932,6 +949,7 @@ export class RedevelopmentResearchService {
         address: auction.address,
         propType: auction.propType,
         exclusiveArea: area,
+        landShare: parseFloat(String(auction.landShare ?? "").replace(/[^\d.]/g, "")) || null,
         builtYear: auction.builtYear || null,
         floor,
         ho,
