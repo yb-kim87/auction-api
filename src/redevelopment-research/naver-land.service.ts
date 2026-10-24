@@ -66,7 +66,9 @@ type CapturedHeaders = { authorization: string; cookie: string; savedAt: number 
 // 네이버의 realEstateType은 콜론으로 구분한 코드 목록이다. 실측(2026-10-25): 이 동에서 "VL"은 빌라/연립(C03)만,
 // 다세대는 별도 코드 "DSD"(A06 빌라단지-다세대)라 "VL"만 요청하면 다세대 매물(예: 대림동 685-5)이 통째로 빠진다.
 // "VL:DSD"로 요청하면 둘 다 내려온다(실측 1쪽: VL 12 + DSD 8).
-export const VILLA_REAL_ESTATE_TYPES = ["VL", "DSD"] as const;
+// 네이버 화면 스크립트(client.js)의 코드표(2026-10-25): VL 빌라, YR 연립, DSD 다세대 — 빌라류는 이 셋이다.
+// 연립(YR, A05 "빌라단지-연립")도 별도 카테고리로 이 동에서 14건이 확인돼 포함한다(JGB 재개발·OR 원룸은 이 동 0건).
+export const VILLA_REAL_ESTATE_TYPES = ["VL", "YR", "DSD"] as const;
 export const VILLA_REAL_ESTATE_TYPE = VILLA_REAL_ESTATE_TYPES.join(":");
 
 // trade type codes used by /api/articles
