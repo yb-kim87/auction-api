@@ -156,6 +156,14 @@ export class RedevelopmentNaverListing {
   @Column({ type: "text", nullable: true })
   complexInfoJson!: string | null;
 
+  /** 건축물대장 표제부 대지면적(㎡) — 호별 대지지분 추정(대지면적 × 전용면적 / 건물 전용합)에 쓴다. 0 또는 null이면 계산 불가. */
+  @Column({ type: "float", nullable: true })
+  platArea!: number | null;
+
+  /** 건축물대장 조회를 마친 시각(값이 없어도 기록해 다시 부르지 않는다). */
+  @Column({ type: Date, nullable: true })
+  platAreaFetchedAt!: Date | null;
+
   /** fin.land 단지 조회를 마친 시각 — 이미 상세 수집이 끝난 매물도 단지정보만 보충하기 위한 표시. */
   @Column({ type: Date, nullable: true })
   finFetchedAt!: Date | null;

@@ -8,6 +8,7 @@ import { AddressGeocodeCache } from "./entities/address-geocode-cache.entity";
 import { RedevelopmentNaverListing } from "./entities/redevelopment-naver-listing.entity";
 import { RedevelopmentResearchRun } from "./entities/redevelopment-research-run.entity";
 import { RedevelopmentTrade } from "./entities/redevelopment-trade.entity";
+import { BuildingRegisterService } from "./building-register.service";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
 import { NaverLandService } from "./naver-land.service";
 import { RedevelopmentResearchController } from "./redevelopment-research.controller";
@@ -26,6 +27,6 @@ import { RedevelopmentResearchService } from "./redevelopment-research.service";
     ]),
   ],
   controllers: [RedevelopmentResearchController],
-  providers: [RedevelopmentResearchService, NaverLandService, KakaoGeocodeService, MolitTradeClientService],
+  providers: [RedevelopmentResearchService, NaverLandService, KakaoGeocodeService, MolitTradeClientService, BuildingRegisterService],
 })
 export class RedevelopmentResearchModule {}

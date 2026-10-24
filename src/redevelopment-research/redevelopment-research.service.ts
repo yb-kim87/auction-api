@@ -9,6 +9,7 @@ import { RedevelopmentNaverListing } from "./entities/redevelopment-naver-listin
 import { RedevelopmentResearchRun, ResearchRunStatus } from "./entities/redevelopment-research-run.entity";
 import { RedevelopmentTrade } from "./entities/redevelopment-trade.entity";
 import { centroid, distanceToZoneM } from "./geo.util";
+import { BuildingRegisterService } from "./building-register.service";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
 import { NaverLandService, NaverVillaComplex, VILLA_REAL_ESTATE_TYPES } from "./naver-land.service";
 
@@ -40,6 +41,8 @@ function isVillaHouseType(houseType: string | undefined): boolean {
 const STALE_RUN_MS = 20 * 60 * 1000;
 const MAX_CONSECUTIVE_DETAIL_FAILURES = 3;
 const MAX_CONSECUTIVE_FIN_FAILURES = 3;
+/** 한 번 실행에 건축물대장(대지면적)을 조회할 최대 건물 수 — 국토부 키 호출 한도를 실거래·재판매 배치와 공유한다. */
+const PLAT_AREA_BATCH_LIMIT = envInt("REDEV_RESEARCH_PLAT_LIMIT", 30);
 
 export type ZoneDong = { code: string; name: string; gu: string; sido: string; sample: { lat: number; lng: number } };
 
@@ -138,6 +141,7 @@ export class RedevelopmentResearchService {
     private readonly naver: NaverLandService,
     private readonly kakao: KakaoGeocodeService,
     private readonly molit: MolitTradeClientService,
+    private readonly buildingRegister: BuildingRegisterService,
   ) {}
 
   // ───────────────────────── 진행 상태 ─────────────────────────
@@ -529,6 +533,48 @@ export class RedevelopmentResearchService {
     await this.collectNaverDetails(zone);
   }
 
+  /** 건축물대장 표제부 대지면적을 건물(법정동+지번)당 한 번만 조회해 같은 건물의 매물 행에 채운다(호가 대지지분 추정용).
+   * 한 번 실행에 최대 PLAT_AREA_BATCH_LIMIT개 건물만(국토부 키 호출 한도 공유), 조회 실패는 다음 실행에서 다시 시도한다. */
+  private async enrichPlatArea(zone: RedevelopmentZone): Promise<void> {
+    const rows = (await this.listingRepo.find({ where: { zoneId: zone.id } })).filter(
+      (r) => r.missCount < 2 && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M && r.jibun && r.legalDongCode && !r.platAreaFetchedAt,
+    );
+    if (!rows.length) return;
+    const byBuilding = new Map<string, RedevelopmentNaverListing[]>();
+    for (const r of rows) {
+      const key = `${r.legalDongCode}|${r.jibun}`;
+      byBuilding.set(key, [...(byBuilding.get(key) ?? []), r]);
+    }
+    // 같은 건물을 이미 조회한 다른 매물이 있으면 그 값을 재사용한다.
+    const known = new Map<string, number | null>();
+    for (const r of await this.listingRepo.find({ where: { zoneId: zone.id } })) {
+      if (r.platAreaFetchedAt && r.jibun && r.legalDongCode) known.set(`${r.legalDongCode}|${r.jibun}`, r.platArea);
+    }
+    let fetched = 0;
+    let consecutiveFailures = 0;
+    for (const [key, group] of byBuilding) {
+      let plat: number | null | undefined = known.get(key);
+      if (plat === undefined) {
+        if (fetched >= PLAT_AREA_BATCH_LIMIT || consecutiveFailures >= 2) continue;
+        await this.patchRun(zone.id, { phase: `건축물대장 대지면적 ${fetched + 1}/${Math.min(byBuilding.size, PLAT_AREA_BATCH_LIMIT)}` });
+        await sleep(400);
+        const [legalDongCode, jibun] = key.split("|");
+        plat = await this.buildingRegister.fetchPlatArea(legalDongCode, jibun);
+        fetched += 1;
+        if (plat == null) {
+          consecutiveFailures += 1;
+          continue; // 호출 실패 — 기록하지 않고 다음 실행에서 다시
+        }
+        consecutiveFailures = 0;
+      }
+      for (const r of group) {
+        r.platArea = plat && plat > 0 ? plat : null;
+        r.platAreaFetchedAt = new Date();
+        await this.listingRepo.save(r);
+      }
+    }
+  }
+
   /** 단지정보를 매물 행에 반영한다(정확한 지번 주소·도로명·건물 정보). */
   private applyComplex(row: RedevelopmentNaverListing, info: NaverVillaComplex): void {
     row.complexNumber = info.complexNumber;
@@ -675,6 +721,7 @@ export class RedevelopmentResearchService {
       await this.listingRepo.save(row);
       done += 1;
     }
+    await this.enrichPlatArea(zone);
     // 상세를 못 가져온 매물이 있어도 좌표만으로 지번/법정동은 채워 공시가 매칭에 쓴다.
     const withoutJibun = (await this.listingRepo.find({ where: { zoneId: zone.id } })).filter(
       (r) => !r.jibun && r.lat != null && r.lng != null && r.missCount < 2,
@@ -883,7 +930,17 @@ export class RedevelopmentResearchService {
             lastSeenAt: l.lastSeenAt,
             // 상세 전 면적은 정수 반올림(목록 area2)이라 허용오차를 1.0㎡로 넓힌다.
             officialPrice: this.estimate(key ? prices.get(key) : undefined, l.exclusiveArea, floor, null, l.detailFetchedAt ? 0.6 : 1.0, parseFloorBand(l.floorInfo)),
-            landShareEstimate: landShareEstimate(l.jibun, l.exclusiveArea),
+            ...(() => {
+              const tradeEst = landShareEstimate(l.jibun, l.exclusiveArea);
+              if (tradeEst != null) return { landShareEstimate: tradeEst, landShareBasis: "trade" as const };
+              // 건축물대장 대지면적 × (전용면적 ÷ 이 건물 공시가격 호들의 전용면적 합)
+              const buildingRows = key ? prices.get(key) : undefined;
+              const sum = (buildingRows ?? []).reduce((a, r) => a + (r.exclusiveArea != null ? Number(r.exclusiveArea) : 0), 0);
+              if (l.platArea && l.exclusiveArea && sum > 0) {
+                return { landShareEstimate: Math.round(((l.platArea * l.exclusiveArea) / sum) * 100) / 100, landShareBasis: "ledger" as const };
+              }
+              return { landShareEstimate: null, landShareBasis: null };
+            })(),
             complexName: l.complexName,
             complexNumber: l.complexNumber,
             roadAddress: l.roadAddress,
