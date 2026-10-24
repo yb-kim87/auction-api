@@ -49,7 +49,7 @@ export type OfficialPriceRow = { ho: string; dong: string; area: number | null; 
 export type OfficialPriceEstimate = {
   manwon: number | null;
   candidates: number;
-  basis: "ho" | "floor+area" | "band+area" | "area" | "none";
+  basis: "ho" | "floor+area" | "band+area" | "near+area" | "area" | "none";
   /** 이 건물의 공시가격 데이터 총 호수(면적 필터 전) — 0이면 건물 자체가 공시가격 DB에 없다. */
   buildingRowCount: number;
   /** 면적이 맞는 후보(최대 12개). used=true가 실제 추정에 쓰인 것. */
@@ -743,20 +743,30 @@ export class RedevelopmentResearchService {
         : rows;
       return empty(rows.length, near.slice(0, 8).map((r) => toRow(r, false)));
     }
-    // 층 매칭 우선순위: ① 정확한 층(지하는 -1) ② 저/중/고 층 구간 ③ 면적만.
+    // 층 매칭 우선순위: ① 정확한 층(지하는 -1) ② 저/중/고 층 구간 ③ 가장 가까운 층 ④ 면적만.
     //  - 호 이름에서 층을 못 읽는 건물이면 면적만으로 추정한다.
-    //  - 층을 모르거나 지상층(저/중/고·양수)인데 후보에 지하가 섞여 있으면 지하는 제외한다(지하는 공시가가 훨씬 낮다).
-    const byFloor = floor != null && floor !== 0 ? byArea.filter((r) => floorOfHo(r.hoNm) === floor) : [];
-    const byBand = !byFloor.length && floorBand
-      ? byArea.filter((r) => {
-          const f = floorOfHo(r.hoNm);
-          return f != null && floorInBand(f, floorBand);
-        })
-      : [];
-    let used = byFloor.length ? byFloor : byBand.length ? byBand : byArea;
-    const basis: OfficialPriceEstimate["basis"] = byFloor.length ? "floor+area" : byBand.length ? "band+area" : "area";
+    //  - 실거래 층과 같은 층의 호가 건물에 없을 수 있다(예: 대림동 685-17 — 공시가는 지층·2층·3층뿐인데 실거래는 1층, 1층이 필로티인 경우).
+    //    이때는 가장 가까운 층의 호를 쓴다(동률이면 모두). 층 차이는 지하(-1)를 1층 아래로 계산한다.
+    //  - 층을 모르는 채로 면적만으로 추정할 땐 지하는 제외한다(지하는 공시가가 훨씬 낮다).
+    const floorOf = (r: HousingOfficialPrice) => floorOfHo(r.hoNm);
+    const byFloor = floor != null && floor !== 0 ? byArea.filter((r) => floorOf(r) === floor) : [];
+    const byBand = !byFloor.length && floorBand ? byArea.filter((r) => {
+      const f = floorOf(r);
+      return f != null && floorInBand(f, floorBand);
+    }) : [];
+    let byNear: HousingOfficialPrice[] = [];
+    if (!byFloor.length && !byBand.length && floor != null && floor !== 0) {
+      const readable = byArea.filter((r) => floorOf(r) != null);
+      if (readable.length) {
+        const dist = (r: HousingOfficialPrice) => Math.abs((floorOf(r) as number) - floor);
+        const best = Math.min(...readable.map(dist));
+        byNear = readable.filter((r) => dist(r) === best);
+      }
+    }
+    let used = byFloor.length ? byFloor : byBand.length ? byBand : byNear.length ? byNear : byArea;
+    const basis: OfficialPriceEstimate["basis"] = byFloor.length ? "floor+area" : byBand.length ? "band+area" : byNear.length ? "near+area" : "area";
     if (basis === "area" && !(floor != null && floor < 0)) {
-      const aboveGround = used.filter((r) => floorOfHo(r.hoNm) !== -1);
+      const aboveGround = used.filter((r) => floorOf(r) !== -1);
       if (aboveGround.length) used = aboveGround;
     }
     const shown = byArea.slice(0, 12).map((r) => toRow(r, used.includes(r)));
