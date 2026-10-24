@@ -49,7 +49,7 @@ export type OfficialPriceRow = { ho: string; dong: string; area: number | null; 
 export type OfficialPriceEstimate = {
   manwon: number | null;
   candidates: number;
-  basis: "ho" | "floor+area" | "area" | "none";
+  basis: "ho" | "floor+area" | "band+area" | "area" | "none";
   /** 이 건물의 공시가격 데이터 총 호수(면적 필터 전) — 0이면 건물 자체가 공시가격 DB에 없다. */
   buildingRowCount: number;
   /** 면적이 맞는 후보(최대 12개). used=true가 실제 추정에 쓰인 것. */
@@ -85,11 +85,30 @@ export function parseFloor(floorInfo: string | null | undefined): number | null 
 /** 호수("503")의 층: 3자리 이상이면 앞부분(503→5, 1203→12), 그 이하는 층 정보 없음. */
 function floorOfHo(hoNm: string): number | null {
   const s = hoNm.trim();
-  // 지하·반지하: "B101", "B01", "지하1", "지층" 등 → -1 (국토부 실거래 floor도 지하는 -1로 온다).
+  // 지하·반지하: "B101", "지층 101", "지하1" 등 → -1 (국토부 실거래 floor도 지하는 -1로 온다).
   if (/^(b|지하|지층|반지하)/i.test(s)) return -1;
+  // 층이 앞에 명시된 형식(실측: 대림동 686-9 "1층201"·"2층301", 680-13 "1층비"·"2층에이") — 뒤의 숫자는 호 번호라 층 계산에 쓰지 않는다.
+  const explicit = s.match(/^(\d+)\s*층/);
+  if (explicit) return Number(explicit[1]);
   const digits = s.replace(/\D/g, "");
   if (digits.length < 3) return null;
   return Number(digits.slice(0, digits.length - 2));
+}
+
+/** 네이버 층 표기 "저/중/고 + 전체층"(층수를 숨긴 매물, 예 "중/7")에서 층 구간을 뽑는다. 숫자 층이면 null. */
+export function parseFloorBand(floorInfo: string | null | undefined): { band: "저" | "중" | "고"; total: number } | null {
+  const m = String(floorInfo ?? "").trim().match(/^(저|중|고)\s*\/\s*(\d+)/);
+  return m ? { band: m[1] as "저" | "중" | "고", total: Number(m[2]) } : null;
+}
+
+/** 층 구간(저/중/고)에 해당하는 층인지 — 전체층을 3등분(저: 아래 1/3, 중: 가운데, 고: 위 1/3). */
+function floorInBand(floor: number, band: { band: "저" | "중" | "고"; total: number }): boolean {
+  if (floor <= 0) return false;
+  const lowMax = Math.max(1, Math.ceil(band.total / 3));
+  const highMin = Math.min(band.total, Math.floor((band.total * 2) / 3) + 1);
+  if (band.band === "저") return floor <= lowMax;
+  if (band.band === "고") return floor >= highMin;
+  return floor > lowMax && floor < highMin;
 }
 
 @Injectable()
@@ -692,6 +711,7 @@ export class RedevelopmentResearchService {
     floor: number | null,
     ho: string | null,
     areaTol = 0.6,
+    floorBand: { band: "저" | "중" | "고"; total: number } | null = null,
   ): OfficialPriceEstimate {
     const empty = (buildingRowCount: number, shown: OfficialPriceRow[] = []): OfficialPriceEstimate => ({
       manwon: null,
@@ -723,14 +743,27 @@ export class RedevelopmentResearchService {
         : rows;
       return empty(rows.length, near.slice(0, 8).map((r) => toRow(r, false)));
     }
-    // 층 매칭: 지상층은 호 번호의 층(예: 301→3), 지하(-1)는 "B…" 호. 호 이름에서 층을 못 읽는 건물이면 면적만으로 추정한다.
+    // 층 매칭 우선순위: ① 정확한 층(지하는 -1) ② 저/중/고 층 구간 ③ 면적만.
+    //  - 호 이름에서 층을 못 읽는 건물이면 면적만으로 추정한다.
+    //  - 층을 모르거나 지상층(저/중/고·양수)인데 후보에 지하가 섞여 있으면 지하는 제외한다(지하는 공시가가 훨씬 낮다).
     const byFloor = floor != null && floor !== 0 ? byArea.filter((r) => floorOfHo(r.hoNm) === floor) : [];
-    const used = byFloor.length ? byFloor : byArea;
+    const byBand = !byFloor.length && floorBand
+      ? byArea.filter((r) => {
+          const f = floorOfHo(r.hoNm);
+          return f != null && floorInBand(f, floorBand);
+        })
+      : [];
+    let used = byFloor.length ? byFloor : byBand.length ? byBand : byArea;
+    const basis: OfficialPriceEstimate["basis"] = byFloor.length ? "floor+area" : byBand.length ? "band+area" : "area";
+    if (basis === "area" && !(floor != null && floor < 0)) {
+      const aboveGround = used.filter((r) => floorOfHo(r.hoNm) !== -1);
+      if (aboveGround.length) used = aboveGround;
+    }
     const shown = byArea.slice(0, 12).map((r) => toRow(r, used.includes(r)));
     return {
       manwon: median(used.map((r) => Math.round(Number(r.postedPrice) / 10000))),
       candidates: used.length,
-      basis: byFloor.length ? "floor+area" : "area",
+      basis,
       buildingRowCount: rows.length,
       rows: shown,
     };
@@ -803,7 +836,7 @@ export class RedevelopmentResearchService {
             firstSeenAt: l.firstSeenAt,
             lastSeenAt: l.lastSeenAt,
             // 상세 전 면적은 정수 반올림(목록 area2)이라 허용오차를 1.0㎡로 넓힌다.
-            officialPrice: this.estimate(key ? prices.get(key) : undefined, l.exclusiveArea, floor, null, l.detailFetchedAt ? 0.6 : 1.0),
+            officialPrice: this.estimate(key ? prices.get(key) : undefined, l.exclusiveArea, floor, null, l.detailFetchedAt ? 0.6 : 1.0, parseFloorBand(l.floorInfo)),
             complexName: l.complexName,
             complexNumber: l.complexNumber,
             roadAddress: l.roadAddress,
