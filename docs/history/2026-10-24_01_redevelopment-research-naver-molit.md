@@ -17,7 +17,7 @@
 
 | 파일 | 역할 |
 |---|---|
-| `naver-land.service.ts` | samsam `naver-land.service.ts` 이식. curl_cffi 브릿지(`scripts/naver_curl_bridge.py`, samsam 파일을 그대로 복사), 토큰 워밍업, 직렬 큐 + **3.5~5.5초 랜덤 간격**, 429 처리(15초 대기 1회), 동 코드(`/api/cortars`), 동 단위 빌라 목록(`/api/articles`, `realEstateType=VL:DDDGG`, 매매 `A1`), 매물 상세(`/api/articles/{no}`: 주소·방 수·관리비·입주일·소개글·사진 등). 응답 원본(raw)은 저장 |
+| `naver-land.service.ts` | samsam `naver-land.service.ts` 이식. curl_cffi 브릿지(`scripts/naver_curl_bridge.py`, samsam 파일을 그대로 복사), 토큰 워밍업, 직렬 큐 + **3.5~5.5초 랜덤 간격**, 429 처리(15초 대기 1회), 동 코드(`/api/cortars`), 동 단위 빌라 목록(`/api/articles`, `realEstateType=VL`(빌라만), 매매 `A1`), 매물 상세(`/api/articles/{no}`: 주소·방 수·관리비·입주일·소개글·사진 등). 응답 원본(raw)은 저장 |
 | `kakao-geocode.service.ts` | 서버에서 카카오 로컬 API(`KAKAO_REST_API_KEY`, 로그인에 이미 쓰는 키)로 지번 → 좌표, 좌표 → 법정동/지번. Railway는 VWorld에 못 붙어서(기존 문서 참고) 카카오를 쓴다. 확정된 결과는 `address_geocode_cache`에 캐시 |
 | `redevelopment-research.service.ts` | 조사 오케스트레이션 + 결과 조회 + 공시가 추정 |
 | `redevelopment-research.controller.ts` | `POST /redevelopment-research/auctions/:id/start`, `GET /redevelopment-research/auctions/:id?toleranceM=`, `GET /redevelopment-research/zones/:id/status` (관리자 전용) |
@@ -49,6 +49,11 @@
   - 상세: `articleDetail.pnu`(19자리 = 법정동코드10+대지구분1+본번4+부번4)로 지번/법정동코드를 정확히 얻음(카카오 역변환보다 우선), `exposureAddress`는 빌라는 지번까지·단독/다가구는 동까지, `roomCount/bathroomCount/householdCount/parkingCount`, **사용승인일은 `articleFacility.buildingUseAprvYmd`**(기존 코드는 `articleDetail`만 봐서 항상 null이었음 → 수정, 준공연도는 앞 4자리), **정확한 면적은 `articleSpace.exclusiveSpace/supplySpace`**(공시가 면적 매칭에 사용), **현 전세 보증금은 `articlePrice.allWarrantPrice`**(매물 설명의 "갭 1.3억"과 일치 → 실제 갭 계산에 사용). 마이그레이션 `1784302000000`으로 컬럼 8개 추가.
   - 저장해 둔 실제 응답으로 파서 재검증(네이버 재호출 없음): 사용승인일→준공연도, 면적, PNU, 전세보증금, 사진 URL, 입주일 모두 정상.
 - **국토부**: 시험 시점에 12개월 모두 429(키 호출 한도 소진 추정, 부가세 계산기·매도분석과 키 공유)라 실응답 대신 모의 응답으로 로직만 검증했다. 서버에서 한도 오류가 나면 "일부 개월 실패"로 표시하고 다시 실행하면 보충된다(2개월 연속 429면 나머지는 시도하지 않고 중단).
+
+## 수집 범위 변경(2026-10-24, 사용자 요청: "기본 수집 범위를 빌라만으로")
+
+- 네이버: samsam은 `VL:DDDGG`(빌라+단독/다가구)를 받지만 이 기능은 `VL`만 요청한다. 실제 호출 1건으로 20/20건 모두 `VL:빌라`로 확인. 응답에 다른 유형이 섞여도 저장하지 않도록 `realEstateTypeCode`로 한 번 더 거른다. (이 동 `VL:DDDGG` 목록은 20건 중 단독/다가구가 11건이라 호출·저장량도 줄어든다.)
+- 국토부: 연립다세대(RH)만 수집 중이라 변경 없음(빌라 = 연립·다세대·도시형생활주택).
 
 ## 알려진 한계
 

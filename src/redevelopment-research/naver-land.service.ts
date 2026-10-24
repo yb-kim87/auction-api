@@ -61,6 +61,11 @@ const WARMUP_COMPLEX_NO = "12647";
 
 type CapturedHeaders = { authorization: string; cookie: string; savedAt: number };
 
+// 수집 대상 매물 유형. samsam은 빌라+단독/다가구("VL:DDDGG")를 한 번에 받지만, 이 기능은 빌라(연립·다세대)만 쓴다
+// (사용자 요청, 2026-10-24: "기본 수집 범위를 빌라만으로" — 단독/다가구는 건물 전체 가격이라 호수 단위 호가와 섞이면 오해).
+// 네이버의 realEstateType은 콜론으로 구분한 코드 목록이라 "VL" 하나만 주면 빌라만 내려온다.
+export const VILLA_REAL_ESTATE_TYPE = "VL";
+
 // trade type codes used by /api/articles
 export const TRADE_TYPES = { 매매: "A1", 전세: "B1", 월세: "B2" } as const;
 
@@ -326,7 +331,7 @@ export class NaverLandService {
   ): Promise<{ raw: any[]; isMoreData: boolean; failed: boolean }> {
     const q = new URLSearchParams({
       cortarNo,
-      realEstateType: "VL:DDDGG",
+      realEstateType: VILLA_REAL_ESTATE_TYPE,
       tradeType: TRADE_TYPES[tradeType],
       priceType: "RETAIL",
       page: String(page),

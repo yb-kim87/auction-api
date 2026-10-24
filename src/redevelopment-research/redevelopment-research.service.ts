@@ -399,7 +399,11 @@ export class RedevelopmentResearchService {
       fetched += rawAll.length;
 
       const now = new Date();
-      const mapped = rawAll.map((a) => this.naver.mapArticle(a)).filter((m) => m.articleNo);
+      // 요청을 빌라(VL)로 좁혔지만, 응답에 다른 유형이 섞여 와도 저장하지 않게 한 번 더 거른다.
+      const mapped = rawAll
+        .filter((a) => !a.realEstateTypeCode || a.realEstateTypeCode === "VL")
+        .map((a) => this.naver.mapArticle(a))
+        .filter((m) => m.articleNo);
       const inRange = mapped
         .map((m) => ({ m, d: m.lat != null && m.lng != null ? distanceToZoneM(m.lat, m.lng, zone.polygon) : null }))
         .filter((x): x is { m: (typeof mapped)[number]; d: number } => x.d != null && x.d <= MAX_TOLERANCE_M);
