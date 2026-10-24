@@ -5,6 +5,7 @@
 
 ## 목록
 
+- [2026-10-24_01 재개발 구역 매물 조사 — 네이버 매매 매물(samsam 방식) + 국토부 빌라 실거래(최근 1년)](./2026-10-24_01_redevelopment-research-naver-molit.md)
 - [2026-08-20_02 강의실 프론트엔드를 별도 Vercel 프로젝트로 분리 (Next.js Multi-Zones)](./2026-08-20_02_courses-app-vercel-split.md)
 - [2026-08-20_01 프론트엔드(auction) 아키텍처 리팩터 — 컴포넌트화 + zustand 전역 상태 + axios/TanStack Query 전환](./2026-08-20_01_frontend-architecture-refactor.md)
 - [2026-08-18_01 나이스크롤러가 기존 물건의 "경매지 정보" 링크를 덮어쓸 수 있던 문제](./2026-08-18_01_nice-crawler-link-overwrite.md)

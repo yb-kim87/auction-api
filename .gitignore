@@ -16,3 +16,6 @@ crawler/courtauction_probe/detail_response.json
 _*.txt
 crawler/nice_worker_pilot_result.json
 crawler/_sitemap_page*.json
+
+# 네이버 토큰 세션 캐시(런타임 생성)
+.session-cache/

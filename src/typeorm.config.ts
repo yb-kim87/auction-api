@@ -51,6 +51,10 @@ import { RealtorOffice } from "./realtor-collect/entities/realtor-office.entity"
 import { RedevelopmentZone } from "./redevelopment/entities/redevelopment-zone.entity";
 import { RedevelopmentTraceFailure } from "./redevelopment/entities/redevelopment-trace-failure.entity";
 import { HousingOfficialPrice } from "./housing-price/entities/housing-official-price.entity";
+import { RedevelopmentNaverListing } from "./redevelopment-research/entities/redevelopment-naver-listing.entity";
+import { RedevelopmentTrade } from "./redevelopment-research/entities/redevelopment-trade.entity";
+import { RedevelopmentResearchRun } from "./redevelopment-research/entities/redevelopment-research-run.entity";
+import { AddressGeocodeCache } from "./redevelopment-research/entities/address-geocode-cache.entity";
 import { NiceCrawlerStateRow } from "./nice-crawler/entities/nice-crawler-state.entity";
 import { NiceCrawlerLogRow } from "./nice-crawler/entities/nice-crawler-log.entity";
 import { NiceSavedSearchRow } from "./nice-crawler/entities/nice-saved-search.entity";
@@ -113,6 +117,10 @@ const entities = [
   RedevelopmentZone,
   RedevelopmentTraceFailure,
   HousingOfficialPrice,
+  RedevelopmentNaverListing,
+  RedevelopmentTrade,
+  RedevelopmentResearchRun,
+  AddressGeocodeCache,
   NiceCrawlerStateRow,
   NiceCrawlerLogRow,
   NiceSavedSearchRow,

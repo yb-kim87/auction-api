@@ -21,6 +21,7 @@ import { BidPlanModule } from "./bid-plan/bid-plan.module";
 import { LectureReplayModule } from "./lecture-replay/lecture-replay.module";
 import { DbMaintenanceModule } from "./db-maintenance/db-maintenance.module";
 import { RedevelopmentModule } from "./redevelopment/redevelopment.module";
+import { RedevelopmentResearchModule } from "./redevelopment-research/redevelopment-research.module";
 import { HousingPriceModule } from "./housing-price/housing-price.module";
 import { NiceCrawlerModule } from "./nice-crawler/nice-crawler.module";
 import { LearningBoardModule } from "./learning-board/learning-board.module";
@@ -55,6 +56,7 @@ import { buildTypeOrmConfig } from "./typeorm.config";
     LectureReplayModule,
     DbMaintenanceModule,
     RedevelopmentModule,
+    RedevelopmentResearchModule,
     HousingPriceModule,
     NiceCrawlerModule,
     LearningBoardModule,

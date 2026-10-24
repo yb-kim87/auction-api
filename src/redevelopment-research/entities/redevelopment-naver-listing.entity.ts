@@ -1,0 +1,136 @@
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
+
+/** 재개발 구역 안(경계 근처 포함) 네이버 부동산 빌라 매매 매물. samsam 프로젝트의 NaverVillaListing 구조를
+ * 따라 목록 원본(rawListJson)과 상세 원본(rawDetailJson)을 통째로 저장한다 — 네이버를 다시 부르지 않고
+ * 저장된 원본으로 재필터/재분석하기 위함(samsam CLAUDE.md 규칙 3). 사용자 요청, 2026-10-24. */
+@Entity("redevelopment_naver_listings")
+@Index("UQ_redev_naver_listing_zone_article", ["zoneId", "articleNo"], { unique: true })
+export class RedevelopmentNaverListing {
+  @PrimaryGeneratedColumn("uuid")
+  id!: string;
+
+  @Column({ type: "varchar" })
+  @Index("IDX_redev_naver_listing_zone")
+  zoneId!: string;
+
+  @Column({ type: "text" })
+  articleNo!: string;
+
+  /** 네이버 동 코드(법정동 10자리). */
+  @Column({ type: "text", default: "" })
+  cortarNo!: string;
+
+  @Column({ type: "text", nullable: true })
+  tradeType!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  typeName!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  articleName!: string | null;
+
+  /** 네이버 원본 가격 표기("1억 5,000"). */
+  @Column({ type: "text", nullable: true })
+  priceText!: string | null;
+
+  /** 만원 단위. */
+  @Column({ type: "int", nullable: true })
+  priceManwon!: number | null;
+
+  @Column({ type: "float", nullable: true })
+  supplyArea!: number | null;
+
+  @Column({ type: "float", nullable: true })
+  exclusiveArea!: number | null;
+
+  @Column({ type: "int", nullable: true })
+  roomCount!: number | null;
+
+  @Column({ type: "text", nullable: true })
+  floorInfo!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  direction!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  confirmedAt!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  feature!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  realtor!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  realtorPhone!: string | null;
+
+  @Column({ type: "float", nullable: true })
+  lat!: number | null;
+
+  @Column({ type: "float", nullable: true })
+  lng!: number | null;
+
+  /** 구역 경계까지의 거리(m). 0이면 구역 안. 저장 대상은 이 값이 MAX 오차범위 이내인 매물뿐. */
+  @Column({ type: "int", nullable: true })
+  distanceToZoneM!: number | null;
+
+  /** 상세 API의 주소(exposureAddress 등). */
+  @Column({ type: "text", nullable: true })
+  address!: string | null;
+
+  /** 좌표 → 지번 주소 변환 결과(공시가 매칭용) — 메인/서브 번지. */
+  @Column({ type: "text", nullable: true })
+  jibun!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  legalDongCode!: string | null;
+
+  @Column({ type: "int", nullable: true })
+  buildingYear!: number | null;
+
+  @Column({ type: "text", nullable: true })
+  useApprovalDate!: string | null;
+
+  /** "15년이내" 같은 목록 연식 대략치. */
+  @Column({ type: "text", nullable: true })
+  ageTag!: string | null;
+
+  @Column({ type: "float", nullable: true })
+  adminCostManwon!: number | null;
+
+  @Column({ type: "text", nullable: true })
+  adminCostMemo!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  moveInText!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  featureDesc!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  introText!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  photoUrlsJson!: string | null;
+
+  /** 목록 API 원본(매물 1건 JSON). */
+  @Column({ type: "text" })
+  rawListJson!: string;
+
+  /** 상세 API 원본(전체 JSON). 상세 조회 전에는 null. */
+  @Column({ type: "text", nullable: true })
+  rawDetailJson!: string | null;
+
+  @Column({ type: Date, nullable: true })
+  detailFetchedAt!: Date | null;
+
+  @Column({ type: Date })
+  firstSeenAt!: Date;
+
+  @Column({ type: Date })
+  lastSeenAt!: Date;
+
+  /** 수집 완료된 실행에서 목록에 안 나온 횟수 — 2 이상이면 내려간 매물로 보고 숨긴다. */
+  @Column({ type: "int", default: 0 })
+  missCount!: number;
+}
