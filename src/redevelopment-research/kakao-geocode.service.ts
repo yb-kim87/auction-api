@@ -16,6 +16,8 @@ export type Geocoded = { lat: number; lng: number; legalDongCode: string | null 
 export class KakaoGeocodeService {
   private readonly logger = new Logger(KakaoGeocodeService.name);
   private lastCallAt = 0;
+  /** 가장 최근 호출 실패 원인(키 없음/권한/상태코드) — 조사 화면의 오류 문구에 같이 보여준다. */
+  lastError: string | null = null;
   private readonly jibunMemo = new Map<string, { legalDongCode: string | null; jibun: string | null } | null>();
 
   constructor(
@@ -40,12 +42,16 @@ export class KakaoGeocodeService {
     try {
       const res = await fetch(url, { headers: { Authorization: `KakaoAK ${this.key}` }, signal: controller.signal });
       if (!res.ok) {
-        this.logger.warn(`카카오 로컬 API ${path} → ${res.status}`);
+        const body = (await res.text().catch(() => "")).slice(0, 160);
+        this.lastError = `카카오 로컬 API ${res.status}${body ? ` ${body}` : ""}`;
+        this.logger.warn(`카카오 로컬 API ${path} → ${this.lastError}`);
         return null;
       }
+      this.lastError = null;
       return await res.json();
     } catch (e) {
-      this.logger.warn(`카카오 로컬 API ${path} 실패: ${e instanceof Error ? e.message : String(e)}`);
+      this.lastError = e instanceof Error ? e.message : String(e);
+      this.logger.warn(`카카오 로컬 API ${path} 실패: ${this.lastError}`);
       return null;
     } finally {
       clearTimeout(timer);

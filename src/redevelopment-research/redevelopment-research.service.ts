@@ -194,7 +194,7 @@ export class RedevelopmentResearchService {
   private async runZone(zone: RedevelopmentZone): Promise<void> {
     this.logger.log(`구역 조사 시작: ${zone.name} (${zone.id})`);
     const dongs = await this.resolveDongs(zone);
-    if (!dongs.length) throw new Error("구역이 걸친 법정동을 찾지 못했습니다(카카오 지역 조회 실패).");
+    if (!dongs.length) throw new Error(`구역이 걸친 법정동을 찾지 못했습니다(카카오 지역 조회 실패: ${this.kakao.lastError ?? "응답 없음"}).`);
     this.logger.log(`구역이 걸친 동: ${dongs.map((d) => `${d.name}(${d.code})`).join(", ")}`);
 
     const errors: string[] = [];
