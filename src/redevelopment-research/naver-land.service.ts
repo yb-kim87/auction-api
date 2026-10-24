@@ -61,10 +61,13 @@ const WARMUP_COMPLEX_NO = "12647";
 
 type CapturedHeaders = { authorization: string; cookie: string; savedAt: number };
 
-// 수집 대상 매물 유형. samsam은 빌라+단독/다가구("VL:DDDGG")를 한 번에 받지만, 이 기능은 빌라(연립·다세대)만 쓴다
-// (사용자 요청, 2026-10-24: "기본 수집 범위를 빌라만으로" — 단독/다가구는 건물 전체 가격이라 호수 단위 호가와 섞이면 오해).
-// 네이버의 realEstateType은 콜론으로 구분한 코드 목록이라 "VL" 하나만 주면 빌라만 내려온다.
-export const VILLA_REAL_ESTATE_TYPE = "VL";
+// 수집 대상 매물 유형. samsam은 빌라+단독/다가구("VL:DDDGG")를 한 번에 받지만, 이 기능은 빌라 용도만 쓴다
+// (사용자 요청: 용도는 빌라 = 다세대·연립주택·도시형생활주택. 단독/다가구는 건물 전체 가격이라 호수 단위 호가와 섞이면 오해).
+// 네이버의 realEstateType은 콜론으로 구분한 코드 목록이다. 실측(2026-10-25): 이 동에서 "VL"은 빌라/연립(C03)만,
+// 다세대는 별도 코드 "DSD"(A06 빌라단지-다세대)라 "VL"만 요청하면 다세대 매물(예: 대림동 685-5)이 통째로 빠진다.
+// "VL:DSD"로 요청하면 둘 다 내려온다(실측 1쪽: VL 12 + DSD 8).
+export const VILLA_REAL_ESTATE_TYPES = ["VL", "DSD"] as const;
+export const VILLA_REAL_ESTATE_TYPE = VILLA_REAL_ESTATE_TYPES.join(":");
 
 // trade type codes used by /api/articles
 export const TRADE_TYPES = { 매매: "A1", 전세: "B1", 월세: "B2" } as const;

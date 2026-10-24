@@ -10,7 +10,7 @@ import { RedevelopmentResearchRun, ResearchRunStatus } from "./entities/redevelo
 import { RedevelopmentTrade } from "./entities/redevelopment-trade.entity";
 import { centroid, distanceToZoneM } from "./geo.util";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
-import { NaverLandService } from "./naver-land.service";
+import { NaverLandService, VILLA_REAL_ESTATE_TYPES } from "./naver-land.service";
 
 /** 시험/디버깅용으로만 쓰는 상한 조절 — 로컬에서 네이버 호출을 1~3건 수준으로 줄여 확인할 때(samsam 규칙 1). 운영은 기본값. */
 function envInt(name: string, fallback: number): number {
@@ -423,9 +423,9 @@ export class RedevelopmentResearchService {
       fetched += rawAll.length;
 
       const now = new Date();
-      // 요청을 빌라(VL)로 좁혔지만, 응답에 다른 유형이 섞여 와도 저장하지 않게 한 번 더 거른다.
+      // 요청을 빌라(VL)+다세대(DSD)로 좁혔지만, 응답에 다른 유형이 섞여 와도 저장하지 않게 한 번 더 거른다.
       const mapped = rawAll
-        .filter((a) => !a.realEstateTypeCode || a.realEstateTypeCode === "VL")
+        .filter((a) => !a.realEstateTypeCode || (VILLA_REAL_ESTATE_TYPES as readonly string[]).includes(a.realEstateTypeCode))
         .map((a) => this.naver.mapArticle(a))
         .filter((m) => m.articleNo);
       const inRange = mapped
