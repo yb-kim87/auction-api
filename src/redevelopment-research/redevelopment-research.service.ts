@@ -721,12 +721,21 @@ export class RedevelopmentResearchService {
       rows: shown,
     });
     if (!rows || !rows.length) return empty(0);
+    // 지하 호가 1xx번대인 건물(예: 대림동 685-17 — 네이버 호별: B101·B102 / 1층 201·202 / 2층 301·302)은 지하가 "1xx"를 차지해서
+    // 지상 호 번호의 백의 자리가 실제 층보다 1 크다 → 층 = 백의 자리 − 1. 지하 호가 없거나 층이 명시된("1층201") 호는 그대로 읽는다.
+    const basementIs1xx = rows.some((r) => floorOfHo(r.hoNm) === -1 && /^1\d\d$/.test(r.hoNm.replace(/\D/g, "")));
+    const floorOf = (r: HousingOfficialPrice): number | null => {
+      const f = floorOfHo(r.hoNm);
+      if (f == null || f === -1) return f;
+      const explicit = /^\s*\d+\s*층/.test(r.hoNm);
+      return basementIs1xx && !explicit ? f - 1 : f;
+    };
     const toRow = (r: HousingOfficialPrice, used: boolean): OfficialPriceRow => ({
       ho: r.hoNm,
       dong: r.dongNm,
       area: r.exclusiveArea != null ? Number(r.exclusiveArea) : null,
       manwon: Math.round(Number(r.postedPrice) / 10000),
-      floor: floorOfHo(r.hoNm),
+      floor: floorOf(r),
       used,
     });
     if (ho) {
@@ -748,7 +757,6 @@ export class RedevelopmentResearchService {
     //  - 실거래 층과 같은 층의 호가 건물에 없을 수 있다(예: 대림동 685-17 — 공시가는 지층·2층·3층뿐인데 실거래는 1층, 1층이 필로티인 경우).
     //    이때는 가장 가까운 층의 호를 쓴다(동률이면 모두). 층 차이는 지하(-1)를 1층 아래로 계산한다.
     //  - 층을 모르는 채로 면적만으로 추정할 땐 지하는 제외한다(지하는 공시가가 훨씬 낮다).
-    const floorOf = (r: HousingOfficialPrice) => floorOfHo(r.hoNm);
     const byFloor = floor != null && floor !== 0 ? byArea.filter((r) => floorOf(r) === floor) : [];
     const byBand = !byFloor.length && floorBand ? byArea.filter((r) => {
       const f = floorOf(r);
