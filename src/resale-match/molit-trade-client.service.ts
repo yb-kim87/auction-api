@@ -46,6 +46,10 @@ export type MolitTradeItem = {
    * 정보가 없어 대신 이 값으로 동 일치 확증 신호를 보조한다(2026-08-03,
    * 사용자 요청 — 단, 비중은 작게). */
   landAr?: string;
+  /** 빌라(연립다세대) API 전용 — 주택유형("다세대"/"연립" 등)과 중개사무소 소재지. 정규화하면서 버리던 것을 보존한다
+   * (재개발 조사: 용도를 다세대·연립·도시형생활주택으로 특정, 사용자 요청 2026-10-25). */
+  houseType?: string;
+  estateAgentSggNm?: string;
 };
 
 /** 연립다세대매매(RTMSDataSvcRHTrade) 응답 1건 원본 필드(실측,
@@ -154,6 +158,8 @@ export class MolitTradeClientService {
       slerGbn: item.slerGbn,
       umdNm: item.umdNm,
       landAr: item.landAr,
+      houseType: item.houseType,
+      estateAgentSggNm: item.estateAgentSggNm,
     }));
   }
 

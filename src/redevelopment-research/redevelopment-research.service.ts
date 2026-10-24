@@ -27,6 +27,16 @@ const DETAIL_BATCH_LIMIT = envInt("REDEV_RESEARCH_DETAIL_LIMIT", 40);
 /** 동 하나당 목록 최대 페이지(20건/페이지 → 600건, samsam villaNearby는 30페이지 상한). */
 const MAX_LIST_PAGES = envInt("REDEV_RESEARCH_MAX_LIST_PAGES", 30);
 const TRADE_MONTHS = 12;
+/** 실거래는 "최근 1년 이내, 가장 최근 거래부터" 이 개수만큼만 샘플로 가져온다(사용자 요청 2026-10-24: 10건으로 시작해 점차 늘림).
+ * 구역 안 거래(해제 건 제외)가 이 개수에 닿으면 이전 달은 더 조회하지 않는다 — 국토부 호출도 그만큼 줄어든다. */
+const TRADE_SAMPLE_LIMIT = envInt("REDEV_RESEARCH_TRADE_LIMIT", 10);
+/** 조사 대상 용도: 빌라 = 다세대 · 연립주택 · 도시형생활주택(경매코치도 이 셋을 "빌라"로 묶는다 — property-type-alias).
+ * 국토부 응답의 houseType이 이 목록이거나 비어 있으면(구분 불명) 통과시킨다. 사용자 요청 2026-10-25. */
+const VILLA_HOUSE_TYPES = ["다세대", "연립", "연립주택", "도시형생활주택", "도시형"];
+function isVillaHouseType(houseType: string | undefined): boolean {
+  const v = String(houseType ?? "").trim();
+  return !v || VILLA_HOUSE_TYPES.some((t) => v.includes(t));
+}
 const STALE_RUN_MS = 20 * 60 * 1000;
 const MAX_CONSECUTIVE_DETAIL_FAILURES = 3;
 
@@ -200,9 +210,12 @@ export class RedevelopmentResearchService {
     const errors: string[] = [];
     const warnings: string[] = [];
     try {
-      const { failedMonths, totalMonths } = await this.collectTrades(zone, dongs);
-      if (failedMonths >= totalMonths) errors.push(`국토부 실거래 ${totalMonths}개월 전부 조회 실패(호출 한도/일시 오류) — 잠시 후 다시 실행하세요`);
-      else if (failedMonths > 0) warnings.push(`국토부 실거래 ${failedMonths}/${totalMonths}개월 조회 실패 — 다시 실행하면 보충됩니다`);
+      const { failedMonths, attemptedMonths, saved } = await this.collectTrades(zone, dongs);
+      if (attemptedMonths > 0 && failedMonths >= attemptedMonths && saved === 0) {
+        errors.push(`국토부 실거래 ${attemptedMonths}개월 조회가 전부 실패(호출 한도/일시 오류) — 잠시 후 다시 실행하세요`);
+      } else if (failedMonths > 0) {
+        warnings.push(`국토부 실거래 ${failedMonths}/${attemptedMonths}개월 조회 실패 — 다시 실행하면 보충됩니다`);
+      }
     } catch (e) {
       errors.push(`실거래 수집 실패: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -236,12 +249,17 @@ export class RedevelopmentResearchService {
     return Array.from(byCode.values());
   }
 
-  // ── 국토부 실거래(최근 12개월, 빌라) ──
+  // ── 국토부 실거래(최근 1년 이내, 가장 최근 거래부터 TRADE_SAMPLE_LIMIT건 샘플, 빌라) ──
 
-  private async collectTrades(zone: RedevelopmentZone, dongs: ZoneDong[]): Promise<{ failedMonths: number; totalMonths: number }> {
+  private async collectTrades(
+    zone: RedevelopmentZone,
+    dongs: ZoneDong[],
+  ): Promise<{ failedMonths: number; attemptedMonths: number; saved: number }> {
     await this.patchRun(zone.id, { phase: "국토부 실거래 수집" });
+    const limit = TRADE_SAMPLE_LIMIT;
     const now = new Date();
     const cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    // 최신 달부터 과거 순서(이번 달 → 12개월 전).
     const months: string[] = [];
     for (let i = 0; i < TRADE_MONTHS; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -250,20 +268,20 @@ export class RedevelopmentResearchService {
     const lawdCds = Array.from(new Set(dongs.map((d) => d.code.slice(0, 5))));
     const dongByUmd = new Map(dongs.map((d) => [d.name, d]));
 
-    type Cand = { item: MolitTradeItem; contractDate: string; dong: ZoneDong };
-    const cands: Cand[] = [];
+    const geoByKey = new Map<string, { lat: number; lng: number; d: number } | null>();
+    const rows: Array<Partial<RedevelopmentTrade>> = [];
     let fetched = 0;
+    let valid = 0; // 구역 안(경계 오차 포함)에서 찾은 유효(해제 아님) 거래 수 — 샘플 한도 기준
     let failedMonths = 0;
+    let attemptedMonths = 0;
     let consecutiveRateLimited = 0;
     let aborted = false;
-    const totalMonths = lawdCds.length * months.length;
-    for (const lawdCd of lawdCds) {
+
+    outer: for (const lawdCd of lawdCds) {
       for (const ym of months) {
-        // 호출 한도(429)가 연속으로 걸리면 더 두드리지 않고 나머지 달은 건너뛴다.
-        if (aborted) {
-          failedMonths += 1;
-          continue;
-        }
+        // 호출 한도(429)가 연속으로 걸리면 더 두드리지 않고 멈춘다.
+        if (aborted || valid >= limit) break outer;
+        attemptedMonths += 1;
         let items: MolitTradeItem[] | null = null;
         let lastWasRateLimit = false;
         // data.go.kr는 짧은 시간에 몰리면 429를 준다 — 호출 사이 간격 + 429/5xx면 대기를 늘려 최대 3회 재시도.
@@ -284,66 +302,68 @@ export class RedevelopmentResearchService {
           continue;
         }
         consecutiveRateLimited = 0;
-        for (const item of items) {
-          const dong = dongByUmd.get(String(item.umdNm ?? "").trim());
-          if (!dong) continue;
-          const contractDate = `${item.dealYear}-${String(item.dealMonth).padStart(2, "0")}-${String(item.dealDay).padStart(2, "0")}`;
-          if (new Date(contractDate) < cutoff) continue;
-          fetched += 1;
-          cands.push({ item, contractDate, dong });
+
+        // 이 달의 후보: 구역이 걸친 동 + 최근 1년 이내, 계약일 최신순.
+        const cands = items
+          .map((item) => ({
+            item,
+            dong: dongByUmd.get(String(item.umdNm ?? "").trim()),
+            contractDate: `${item.dealYear}-${String(item.dealMonth).padStart(2, "0")}-${String(item.dealDay).padStart(2, "0")}`,
+          }))
+          .filter((c): c is { item: MolitTradeItem; dong: ZoneDong; contractDate: string } => !!c.dong && new Date(c.contractDate) >= cutoff)
+          .filter((c) => isVillaHouseType(c.item.houseType))
+          .sort((x, y) => y.contractDate.localeCompare(x.contractDate));
+        fetched += cands.length;
+        await this.patchRun(zone.id, { phase: `국토부 실거래 ${ym} (구역 안 ${valid}/${limit}건)`, tradesFetched: fetched });
+
+        for (const c of cands) {
+          if (valid >= limit) break;
+          const jibun = String(c.item.jibun ?? "").trim();
+          if (!jibun) continue;
+          // 지번(동+번지)마다 한 번만 좌표 변환 → 구역 경계 거리 판정
+          const key = `${c.dong.code}|${jibun}`;
+          if (!geoByKey.has(key)) {
+            const g = await this.kakao.geocode(`${c.dong.sido} ${c.dong.gu} ${c.item.umdNm} ${jibun}`);
+            geoByKey.set(key, g ? { lat: g.lat, lng: g.lng, d: distanceToZoneM(g.lat, g.lng, zone.polygon) } : null);
+          }
+          const g = geoByKey.get(key);
+          if (!g || g.d > MAX_TOLERANCE_M) continue;
+          const amount = Number(String(c.item.dealAmount ?? "").replace(/[^\d]/g, ""));
+          const area = Number(c.item.excluUseAr);
+          if (!Number.isFinite(amount) || !Number.isFinite(area)) continue;
+          const cancelled = !!String(c.item.cdealType ?? "").trim();
+          rows.push({
+            zoneId: zone.id,
+            lawdCd: String(c.item.sggCd ?? c.dong.code.slice(0, 5)),
+            umdNm: String(c.item.umdNm).trim(),
+            jibun,
+            legalDongCode: c.dong.code,
+            buildingName: String(c.item.aptNm ?? "").trim(),
+            floor: Number(c.item.floor) || 0,
+            exclusiveArea: area,
+            landArea: c.item.landAr != null && c.item.landAr !== "" ? Number(c.item.landAr) || null : null,
+            buildYear: Number(c.item.buildYear) || null,
+            dealAmountManwon: amount,
+            contractDate: c.contractDate,
+            registeredAt: String(c.item.rgstDate ?? "").trim() || null,
+            dealingType: String(c.item.dealingGbn ?? "").trim() || null,
+            buyerType: String(c.item.buyerGbn ?? "").trim() || null,
+            sellerType: String(c.item.slerGbn ?? "").trim() || null,
+            houseType: String(c.item.houseType ?? "").trim() || "RH",
+            isCancelled: cancelled,
+            cancelledAt: String(c.item.cdealDay ?? "").trim() || null,
+            lat: g.lat,
+            lng: g.lng,
+            distanceToZoneM: g.d,
+            rawJson: JSON.stringify(c.item),
+            collectedAt: new Date(),
+          });
+          if (!cancelled) valid += 1; // 해제된 거래는 저장은 하되 샘플 개수에는 세지 않는다.
         }
-        await this.patchRun(zone.id, { phase: `국토부 실거래 ${lawdCd} ${ym}`, tradesFetched: fetched });
       }
     }
 
-    // 지번(동+번지)마다 한 번만 좌표 변환 → 구역 경계 거리 판정
-    const geoByKey = new Map<string, { lat: number; lng: number; d: number } | null>();
     let saved = 0;
-    const rows: Array<Partial<RedevelopmentTrade>> = [];
-    let done = 0;
-    for (const c of cands) {
-      const jibun = String(c.item.jibun ?? "").trim();
-      if (!jibun) continue;
-      const key = `${c.dong.code}|${jibun}`;
-      if (!geoByKey.has(key)) {
-        const g = await this.kakao.geocode(`${c.dong.sido} ${c.dong.gu} ${c.item.umdNm} ${jibun}`);
-        geoByKey.set(key, g ? { lat: g.lat, lng: g.lng, d: distanceToZoneM(g.lat, g.lng, zone.polygon) } : null);
-        done += 1;
-        if (done % 10 === 0) await this.patchRun(zone.id, { phase: `실거래 지번 좌표 변환 ${done}건` });
-      }
-      const g = geoByKey.get(key);
-      if (!g || g.d > MAX_TOLERANCE_M) continue;
-      const amount = Number(String(c.item.dealAmount ?? "").replace(/[^\d]/g, ""));
-      const area = Number(c.item.excluUseAr);
-      if (!Number.isFinite(amount) || !Number.isFinite(area)) continue;
-      const cancelled = !!String(c.item.cdealType ?? "").trim();
-      rows.push({
-        zoneId: zone.id,
-        lawdCd: String(c.item.sggCd ?? c.dong.code.slice(0, 5)),
-        umdNm: String(c.item.umdNm).trim(),
-        jibun,
-        legalDongCode: c.dong.code,
-        buildingName: String(c.item.aptNm ?? "").trim(),
-        floor: Number(c.item.floor) || 0,
-        exclusiveArea: area,
-        landArea: c.item.landAr != null && c.item.landAr !== "" ? Number(c.item.landAr) || null : null,
-        buildYear: Number(c.item.buildYear) || null,
-        dealAmountManwon: amount,
-        contractDate: c.contractDate,
-        registeredAt: String(c.item.rgstDate ?? "").trim() || null,
-        dealingType: String(c.item.dealingGbn ?? "").trim() || null,
-        buyerType: String(c.item.buyerGbn ?? "").trim() || null,
-        sellerType: String(c.item.slerGbn ?? "").trim() || null,
-        houseType: "RH",
-        isCancelled: cancelled,
-        cancelledAt: String(c.item.cdealDay ?? "").trim() || null,
-        lat: g.lat,
-        lng: g.lng,
-        distanceToZoneM: g.d,
-        rawJson: JSON.stringify(c.item),
-        collectedAt: new Date(),
-      });
-    }
     for (let i = 0; i < rows.length; i += 100) {
       const batch = rows.slice(i, i + 100);
       await this.tradeRepo.upsert(batch as RedevelopmentTrade[], [
@@ -358,8 +378,12 @@ export class RedevelopmentResearchService {
       ]);
       saved += batch.length;
     }
-    await this.patchRun(zone.id, { tradesFetched: fetched, tradesSaved: saved, phase: "실거래 수집 완료" });
-    return { failedMonths, totalMonths };
+    await this.patchRun(zone.id, {
+      tradesFetched: fetched,
+      tradesSaved: saved,
+      phase: `실거래 수집 완료(최근 거래부터 ${valid}/${limit}건 샘플)`,
+    });
+    return { failedMonths, attemptedMonths, saved };
   }
 
   // ── 네이버 매매 매물(samsam 방식) ──
