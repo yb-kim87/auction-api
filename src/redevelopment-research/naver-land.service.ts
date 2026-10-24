@@ -56,6 +56,9 @@ function runCurlBridge(payload: Record<string, unknown>): Promise<any> {
 const SESSION_DIR = join(process.cwd(), ".session-cache");
 const SESSION_PATH = join(SESSION_DIR, "naver-land.json");
 const NEW_LAND = "https://new.land.naver.com";
+// 신규 화면(fin.land)의 front-api — 경매코치 crawler/naver_httpx.py가 이미 같은 브릿지 방식(curl_cffi)으로 쓰는 호스트.
+// 매물의 정확한 지번·단지번호(article/key)와 빌라 단지정보(complex/villa)를 준다. 별도 토큰 없이 브릿지 `get`으로 호출된다(실측 2026-10-25).
+const FIN_LAND = "https://fin.land.naver.com";
 // 토큰 워밍업에 쓸 아무 단지 (삼성보보스쉐르빌, samsam과 동일).
 const WARMUP_COMPLEX_NO = "12647";
 
@@ -174,6 +177,43 @@ export type NaverVillaArticle = {
   realtor: string | null;
   lat: number | null;
   lng: number | null;
+  raw: any;
+};
+
+/** fin.land `GET /front-api/v1/article/key?articleNumber=` — 매물의 정확한 지번과 단지 식별자. */
+export type NaverArticleKey = {
+  complexNumber: number | null;
+  pyeongTypeNumber: number | null;
+  buildingNumber: number | null;
+  realEstateType: string | null; // 신규 화면 유형 코드(A05 연립 / A06 다세대 / C02 빌라 …)
+  legalDivisionNumber: string | null; // 법정동코드 10자리
+  jibun: string | null; // 예: "685-5"
+  raw: any;
+};
+
+/** fin.land `GET /front-api/v1/complex/villa?complexNumber=` — 빌라 단지정보(네이버 "단지정보" 탭). */
+export type NaverVillaComplex = {
+  complexNumber: number;
+  name: string | null;
+  type: string | null;
+  city: string | null;
+  division: string | null;
+  sector: string | null;
+  jibun: string | null;
+  roadName: string | null;
+  zipCode: string | null;
+  lat: number | null;
+  lng: number | null;
+  totalHouseholdNumber: number | null;
+  constructionCompany: string | null;
+  buildingUse: string | null;
+  floorAreaRatio: number | null;
+  buildingCoverageRatio: number | null;
+  totalElevatorCount: number | null;
+  useApprovalDate: string | null; // "20130625"
+  approvalElapsedYear: number | null;
+  totalParkingCount: number | null;
+  parkingCountPerHousehold: number | null;
   raw: any;
 };
 
@@ -319,6 +359,96 @@ export class NaverLandService {
     }
     if (res.status < 200 || res.status >= 300) throw new Error(`네이버 부동산 API ${path} → ${res.status}`);
     return JSON.parse(res.body) as T;
+  }
+
+  private async finGet<T>(path: string, referer: string): Promise<T> {
+    // 같은 직렬 큐 + 같은 랜덤 간격을 거친다(호스트가 달라도 한 IP에서 나가는 트래픽이므로 보수적으로).
+    const task = this.queue.then(() => this.finGetInternal<T>(path, referer));
+    this.queue = task.catch(() => undefined);
+    return task;
+  }
+
+  private async finGetInternal<T>(path: string, referer: string): Promise<T> {
+    await this.throttle();
+    const doFetch = async () => {
+      const result = await runCurlBridge({
+        action: "get",
+        url: `${FIN_LAND}${path}`,
+        headers: { accept: "application/json", referer, "accept-language": "ko-KR,ko;q=0.9,en;q=0.8" },
+      });
+      if (!result?.ok) throw new Error(result?.reason ?? "curl_cffi 브릿지 호출 실패");
+      return { status: result.status as number, body: result.body as string };
+    };
+    let res = await doFetch();
+    if (res.status === 429) {
+      await sleep(15000);
+      res = await doFetch();
+    }
+    if (res.status === 429) throw new Error("네이버 부동산(fin)이 요청을 제한하고 있습니다 (429). 잠시 후 다시 시도하세요.");
+    if (res.status < 200 || res.status >= 300) throw new Error(`네이버 부동산(fin) API ${path} → ${res.status}`);
+    return JSON.parse(res.body) as T;
+  }
+
+  /** 매물번호 → 정확한 지번·법정동코드·단지번호. 실패하면 null(호출한 쪽이 PNU/좌표 변환으로 대체). */
+  async fetchArticleKey(articleNo: string): Promise<NaverArticleKey | null> {
+    try {
+      const j = await this.finGet<any>(
+        `/front-api/v1/article/key?articleNumber=${encodeURIComponent(articleNo)}`,
+        `${FIN_LAND}/articles/${articleNo}`,
+      );
+      const r = j?.result;
+      if (!j?.isSuccess || !r) return null;
+      const num = (v: unknown): number | null => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : null);
+      return {
+        complexNumber: num(r.key?.complexNumber),
+        pyeongTypeNumber: num(r.key?.pyeongTypeNumber),
+        buildingNumber: num(r.key?.buildingNumber),
+        realEstateType: r.type?.realEstateType ?? null,
+        legalDivisionNumber: r.address?.legalDivisionNumber ?? null,
+        jibun: r.address?.jibun ?? null,
+        raw: j,
+      };
+    } catch (e) {
+      console.warn(`[NaverLandService] fetchArticleKey(${articleNo}) 실패: ${e instanceof Error ? e.message : String(e)}`);
+      return null;
+    }
+  }
+
+  /** 단지번호 → 빌라 단지정보(단지명, 도로명, 사용승인일, 세대수, 건설사, 용적률·건폐율, 엘리베이터, 주차). */
+  async fetchVillaComplex(complexNumber: number): Promise<NaverVillaComplex | null> {
+    try {
+      const j = await this.finGet<any>(`/front-api/v1/complex/villa?complexNumber=${complexNumber}`, `${FIN_LAND}/complexes/${complexNumber}`);
+      const r = j?.result;
+      if (!j?.isSuccess || !r) return null;
+      const num = (v: unknown): number | null => (v != null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : null);
+      return {
+        complexNumber,
+        name: r.name ?? null,
+        type: r.type ?? null,
+        city: r.address?.city ?? null,
+        division: r.address?.division ?? null,
+        sector: r.address?.sector ?? null,
+        jibun: r.address?.jibun ?? null,
+        roadName: r.address?.roadName ?? null,
+        zipCode: r.address?.zipCode ?? null,
+        lat: num(r.coordinates?.yCoordinate),
+        lng: num(r.coordinates?.xCoordinate),
+        totalHouseholdNumber: num(r.totalHouseholdNumber),
+        constructionCompany: r.constructionCompany ?? null,
+        buildingUse: r.buildingUse ?? null,
+        floorAreaRatio: num(r.buildingRatioInfo?.floorAreaRatio),
+        buildingCoverageRatio: num(r.buildingRatioInfo?.buildingCoverageRatio),
+        totalElevatorCount: num(r.totalElevatorCount),
+        useApprovalDate: r.useApprovalDate ? String(r.useApprovalDate) : null,
+        approvalElapsedYear: num(r.approvalElapsedYear),
+        totalParkingCount: num(r.parkingInfo?.totalParkingCount),
+        parkingCountPerHousehold: num(r.parkingInfo?.parkingCountPerHousehold),
+        raw: j,
+      };
+    } catch (e) {
+      console.warn(`[NaverLandService] fetchVillaComplex(${complexNumber}) 실패: ${e instanceof Error ? e.message : String(e)}`);
+      return null;
+    }
   }
 
   /** 좌표 → 동 코드(cortarNo). samsam complexesNearCoordinate()의 첫 호출과 동일(/api/cortars). */

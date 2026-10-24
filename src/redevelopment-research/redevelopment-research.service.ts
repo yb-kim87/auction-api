@@ -10,7 +10,7 @@ import { RedevelopmentResearchRun, ResearchRunStatus } from "./entities/redevelo
 import { RedevelopmentTrade } from "./entities/redevelopment-trade.entity";
 import { centroid, distanceToZoneM } from "./geo.util";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
-import { NaverLandService, VILLA_REAL_ESTATE_TYPES } from "./naver-land.service";
+import { NaverLandService, NaverVillaComplex, VILLA_REAL_ESTATE_TYPES } from "./naver-land.service";
 
 /** 시험/디버깅용으로만 쓰는 상한 조절 — 로컬에서 네이버 호출을 1~3건 수준으로 줄여 확인할 때(samsam 규칙 1). 운영은 기본값. */
 function envInt(name: string, fallback: number): number {
@@ -39,6 +39,7 @@ function isVillaHouseType(houseType: string | undefined): boolean {
 }
 const STALE_RUN_MS = 20 * 60 * 1000;
 const MAX_CONSECUTIVE_DETAIL_FAILURES = 3;
+const MAX_CONSECUTIVE_FIN_FAILURES = 3;
 
 export type ZoneDong = { code: string; name: string; gu: string; sido: string; sample: { lat: number; lng: number } };
 
@@ -498,59 +499,148 @@ export class RedevelopmentResearchService {
     await this.collectNaverDetails(zone);
   }
 
+  /** 단지정보를 매물 행에 반영한다(정확한 지번 주소·도로명·건물 정보). */
+  private applyComplex(row: RedevelopmentNaverListing, info: NaverVillaComplex): void {
+    row.complexNumber = info.complexNumber;
+    row.complexName = info.name;
+    if (info.sector && info.jibun) {
+      // 위치 비공개 매물은 새 매물 상세의 주소가 동까지만 나온다 — 단지정보의 지번 주소로 덮어쓴다.
+      row.address = [info.city, info.division, info.sector, info.jibun].filter(Boolean).join(" ");
+    }
+    row.roadAddress = info.roadName ? [info.city, info.division, info.roadName].filter(Boolean).join(" ") : null;
+    row.totalHouseholdNumber = info.totalHouseholdNumber;
+    row.constructionCompany = info.constructionCompany;
+    row.floorAreaRatio = info.floorAreaRatio;
+    row.buildingCoverageRatio = info.buildingCoverageRatio;
+    row.elevatorCount = info.totalElevatorCount;
+    row.totalParkingCount = info.totalParkingCount;
+    row.approvalElapsedYear = info.approvalElapsedYear;
+    if (!row.useApprovalDate && info.useApprovalDate) row.useApprovalDate = info.useApprovalDate;
+    if (!row.buildingYear && info.useApprovalDate && /^\d{4}/.test(info.useApprovalDate)) row.buildingYear = Number(info.useApprovalDate.slice(0, 4));
+    row.complexInfoJson = JSON.stringify(info.raw);
+  }
+
+  /** 같은 단지를 이미 조회한 매물에서 단지정보를 복사한다(단지당 네이버 호출 1회로 줄이기). */
+  private copyComplex(from: RedevelopmentNaverListing, to: RedevelopmentNaverListing): void {
+    to.complexNumber = from.complexNumber;
+    to.complexName = from.complexName;
+    if (from.address && /\d/.test(from.address)) to.address = from.address;
+    to.roadAddress = from.roadAddress;
+    to.totalHouseholdNumber = from.totalHouseholdNumber;
+    to.constructionCompany = from.constructionCompany;
+    to.floorAreaRatio = from.floorAreaRatio;
+    to.buildingCoverageRatio = from.buildingCoverageRatio;
+    to.elevatorCount = from.elevatorCount;
+    to.totalParkingCount = from.totalParkingCount;
+    to.approvalElapsedYear = from.approvalElapsedYear;
+    if (!to.useApprovalDate) to.useApprovalDate = from.useApprovalDate;
+    if (!to.buildingYear) to.buildingYear = from.buildingYear;
+    to.complexInfoJson = from.complexInfoJson;
+  }
+
   private async collectNaverDetails(zone: RedevelopmentZone): Promise<void> {
-    const pending = (await this.listingRepo.find({ where: { zoneId: zone.id } }))
-      .filter((r) => !r.detailFetchedAt && r.missCount < 2 && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M)
+    const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
+    const eligible = all.filter((r) => r.missCount < 2 && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M);
+    // 새 상세가 필요하거나(detailFetchedAt 없음) 단지정보 보충이 필요한(finFetchedAt 없음) 매물 — 가까운 구역 안쪽부터.
+    const pending = eligible
+      .filter((r) => !r.detailFetchedAt || !r.finFetchedAt)
       .sort((a, b) => (a.distanceToZoneM ?? 0) - (b.distanceToZoneM ?? 0));
     const batch = pending.slice(0, DETAIL_BATCH_LIMIT);
+    // 단지정보를 이미 가진 매물 → 같은 단지는 다시 조회하지 않는다.
+    const donors = new Map<number, RedevelopmentNaverListing>();
+    for (const r of all) if (r.complexNumber && r.complexInfoJson) donors.set(r.complexNumber, r);
+
     let done = 0;
     let failures = 0;
+    let finFailures = 0;
     for (const row of batch) {
-      await this.patchRun(zone.id, { phase: `네이버 상세 ${done + 1}/${batch.length}`, naverDetailDone: done, naverDetailRemaining: pending.length - done });
-      const d = await this.naver.fetchArticleDetail(row.articleNo);
-      if (!d.ok) {
-        failures += 1;
-        if (failures >= MAX_CONSECUTIVE_DETAIL_FAILURES) {
-          // 연속 실패 = 차단/인증 문제 가능성 — 더 두드리지 않고 멈춘다(samsam 규칙 2).
-          throw new Error(`네이버 상세 조회가 ${failures}회 연속 실패해 중단했습니다. 잠시 후 이어서 수집하세요.`);
+      await this.patchRun(zone.id, {
+        phase: `네이버 상세·단지정보 ${done + 1}/${batch.length}`,
+        naverDetailDone: done,
+        naverDetailRemaining: pending.length - done,
+      });
+
+      // ① 매물 상세(new.land) — 아직 안 가져온 매물만
+      if (!row.detailFetchedAt) {
+        const d = await this.naver.fetchArticleDetail(row.articleNo);
+        if (!d.ok) {
+          failures += 1;
+          if (failures >= MAX_CONSECUTIVE_DETAIL_FAILURES) {
+            // 연속 실패 = 차단/인증 문제 가능성 — 더 두드리지 않고 멈춘다(samsam 규칙 2).
+            throw new Error(`네이버 상세 조회가 ${failures}회 연속 실패해 중단했습니다. 잠시 후 이어서 수집하세요.`);
+          }
+          continue;
         }
-        continue;
+        failures = 0;
+        row.address = d.address;
+        row.realtorPhone = d.realtorPhone;
+        // 상세의 면적은 소수까지 정확하다(목록 area1/area2는 정수 반올림) — 공시가 면적 매칭에 이 값을 쓴다.
+        if (d.exclusiveSpace != null) row.exclusiveArea = d.exclusiveSpace;
+        if (d.supplySpace != null) row.supplyArea = d.supplySpace;
+        row.pnu = d.pnu;
+        row.warrantPriceManwon = d.warrantPriceManwon;
+        row.bathroomCount = d.bathroomCount;
+        row.householdCount = d.householdCount;
+        row.parkingCount = d.parkingCount;
+        row.subwayWalkMin = d.subwayWalkMin;
+        row.lawUsage = d.lawUsage;
+        row.heatMethod = d.heatMethod;
+        if (d.roomCount != null) row.roomCount = d.roomCount; // 목록 tagList보다 상세 값이 정확(samsam)
+        row.buildingYear = d.buildingYear;
+        row.useApprovalDate = d.useApprovalDate;
+        row.adminCostManwon = d.administrationCostManwon;
+        row.adminCostMemo = d.administrationCostMemo;
+        row.moveInText = d.moveInText;
+        row.featureDesc = d.featureDesc;
+        row.introText = d.introText;
+        row.photoUrlsJson = JSON.stringify(d.photoUrls);
+        row.rawDetailJson = JSON.stringify(d.raw);
+        row.detailFetchedAt = new Date();
+        if (d.pnu) {
+          // PNU = 법정동코드(10) + 대지구분(1) + 본번(4) + 부번(4) — 좌표 역변환보다 정확한 지번/법정동코드.
+          const main = Number(d.pnu.slice(11, 15));
+          const sub = Number(d.pnu.slice(15, 19));
+          row.legalDongCode = d.pnu.slice(0, 10);
+          row.jibun = sub ? `${main}-${sub}` : `${main}`;
+        } else if (row.lat != null && row.lng != null && !row.jibun) {
+          const j = await this.kakao.jibunAt(row.lat, row.lng);
+          row.jibun = j?.jibun ?? null;
+          row.legalDongCode = j?.legalDongCode ?? null;
+        }
       }
-      failures = 0;
-      row.address = d.address;
-      row.realtorPhone = d.realtorPhone;
-      // 상세의 면적은 소수까지 정확하다(목록 area1/area2는 정수 반올림) — 공시가 면적 매칭에 이 값을 쓴다.
-      if (d.exclusiveSpace != null) row.exclusiveArea = d.exclusiveSpace;
-      if (d.supplySpace != null) row.supplyArea = d.supplySpace;
-      row.pnu = d.pnu;
-      row.warrantPriceManwon = d.warrantPriceManwon;
-      row.bathroomCount = d.bathroomCount;
-      row.householdCount = d.householdCount;
-      row.parkingCount = d.parkingCount;
-      row.subwayWalkMin = d.subwayWalkMin;
-      row.lawUsage = d.lawUsage;
-      row.heatMethod = d.heatMethod;
-      if (d.roomCount != null) row.roomCount = d.roomCount; // 목록 tagList보다 상세 값이 정확(samsam)
-      row.buildingYear = d.buildingYear;
-      row.useApprovalDate = d.useApprovalDate;
-      row.adminCostManwon = d.administrationCostManwon;
-      row.adminCostMemo = d.administrationCostMemo;
-      row.moveInText = d.moveInText;
-      row.featureDesc = d.featureDesc;
-      row.introText = d.introText;
-      row.photoUrlsJson = JSON.stringify(d.photoUrls);
-      row.rawDetailJson = JSON.stringify(d.raw);
-      row.detailFetchedAt = new Date();
-      if (d.pnu) {
-        // PNU = 법정동코드(10) + 대지구분(1) + 본번(4) + 부번(4) — 좌표 역변환보다 정확한 지번/법정동코드.
-        const main = Number(d.pnu.slice(11, 15));
-        const sub = Number(d.pnu.slice(15, 19));
-        row.legalDongCode = d.pnu.slice(0, 10);
-        row.jibun = sub ? `${main}-${sub}` : `${main}`;
-      } else if (row.lat != null && row.lng != null && !row.jibun) {
-        const j = await this.kakao.jibunAt(row.lat, row.lng);
-        row.jibun = j?.jibun ?? null;
-        row.legalDongCode = j?.legalDongCode ?? null;
+
+      // ② 신규 화면(fin.land): 정확한 지번·단지번호 + 단지정보. 위치 비공개 매물은 좌표/PNU로 지번을 못 얻으므로 특히 필요하다.
+      //    (실측 2026-10-25: 대림동 685-5 매물 — 좌표 변환 지번은 부정확할 수 있으나 article/key는 "685-5"를 정확히 준다.)
+      if (!row.finFetchedAt) {
+        const key = await this.naver.fetchArticleKey(row.articleNo);
+        if (!key) {
+          finFailures += 1;
+          if (finFailures >= MAX_CONSECUTIVE_FIN_FAILURES) {
+            await this.listingRepo.save(row);
+            throw new Error(`네이버 단지정보(fin) 조회가 ${finFailures}회 연속 실패해 중단했습니다. 잠시 후 이어서 수집하세요.`);
+          }
+        } else {
+          finFailures = 0;
+          if (key.legalDivisionNumber) row.legalDongCode = key.legalDivisionNumber;
+          if (key.jibun) row.jibun = key.jibun; // 네이버가 직접 준 지번이 PNU·좌표 변환보다 우선
+          row.complexNumber = key.complexNumber;
+          let complexOk = !key.complexNumber; // 단지가 없는 매물은 단지 조회가 필요 없다
+          if (key.complexNumber) {
+            const donor = donors.get(key.complexNumber);
+            if (donor && donor.id !== row.id) {
+              this.copyComplex(donor, row);
+              complexOk = true;
+            } else {
+              const info = await this.naver.fetchVillaComplex(key.complexNumber);
+              if (info) {
+                this.applyComplex(row, info);
+                donors.set(key.complexNumber, row);
+                complexOk = true;
+              }
+            }
+          }
+          if (complexOk) row.finFetchedAt = new Date();
+        }
       }
       await this.listingRepo.save(row);
       done += 1;
@@ -714,6 +804,16 @@ export class RedevelopmentResearchService {
             lastSeenAt: l.lastSeenAt,
             // 상세 전 면적은 정수 반올림(목록 area2)이라 허용오차를 1.0㎡로 넓힌다.
             officialPrice: this.estimate(key ? prices.get(key) : undefined, l.exclusiveArea, floor, null, l.detailFetchedAt ? 0.6 : 1.0),
+            complexName: l.complexName,
+            complexNumber: l.complexNumber,
+            roadAddress: l.roadAddress,
+            totalHouseholdNumber: l.totalHouseholdNumber,
+            constructionCompany: l.constructionCompany,
+            floorAreaRatio: l.floorAreaRatio,
+            buildingCoverageRatio: l.buildingCoverageRatio,
+            elevatorCount: l.elevatorCount,
+            totalParkingCount: l.totalParkingCount,
+            approvalElapsedYear: l.approvalElapsedYear,
             pnu: l.pnu,
             warrantPriceManwon: l.warrantPriceManwon,
             bathroomCount: l.bathroomCount,

@@ -121,6 +121,45 @@ export class RedevelopmentNaverListing {
   @Column({ type: "text", nullable: true })
   heatMethod!: string | null;
 
+  /** fin.land 단지 식별자와 단지정보(네이버 "단지정보" 탭) — 정확한 지번·도로명·사용승인일 등. 같은 단지는 한 번만 조회해 재사용한다. */
+  @Column({ type: "int", nullable: true })
+  complexNumber!: number | null;
+
+  @Column({ type: "text", nullable: true })
+  complexName!: string | null;
+
+  @Column({ type: "text", nullable: true })
+  roadAddress!: string | null;
+
+  @Column({ type: "int", nullable: true })
+  totalHouseholdNumber!: number | null;
+
+  @Column({ type: "text", nullable: true })
+  constructionCompany!: string | null;
+
+  @Column({ type: "float", nullable: true })
+  floorAreaRatio!: number | null;
+
+  @Column({ type: "float", nullable: true })
+  buildingCoverageRatio!: number | null;
+
+  @Column({ type: "int", nullable: true })
+  elevatorCount!: number | null;
+
+  @Column({ type: "int", nullable: true })
+  totalParkingCount!: number | null;
+
+  @Column({ type: "int", nullable: true })
+  approvalElapsedYear!: number | null;
+
+  /** 단지정보 응답 원본(JSON). */
+  @Column({ type: "text", nullable: true })
+  complexInfoJson!: string | null;
+
+  /** fin.land 단지 조회를 마친 시각 — 이미 상세 수집이 끝난 매물도 단지정보만 보충하기 위한 표시. */
+  @Column({ type: Date, nullable: true })
+  finFetchedAt!: Date | null;
+
   @Column({ type: "float", nullable: true })
   adminCostManwon!: number | null;
 

@@ -85,6 +85,15 @@
 - 네이버 신규 화면 스크립트(`client.*.js`)의 매물유형 코드표: `APT` 아파트, `JGC` 재건축, `ABYG` 아파트분양권, `OPST` 오피스텔, `OBYG` 오피스텔분양권, **`VL` 빌라, `YR` 연립, `DSD` 다세대**, `DDDGG` 단독/다가구, `JWJT` 전원주택, `SGJT` 상가주택, `TJ` 토지, `OR` 원룸, `SG` 상가, `SMS` 사무실, `GJCG` 공장/창고, `APTHGJ` 지식산업센터, `JGB` 재개발, `GM` 건물, `PRE` 분양권. 빌라류는 VL·YR·DSD 셋 → **연립(YR)이 빠져 있어 추가**(요청 `VL:YR:DSD`). 대림동 매매 실측: YR 14건(A05 "빌라단지-연립"), JGB·OR 0건.
 - 사용자가 준 fin.land 링크의 필터 `A05-A06-A07-C02`는 신규 화면의 유형 코드(A05 빌라단지-연립 = YR, A06 빌라단지-다세대 = DSD, C02 빌라 = VL, A07은 도시형생활주택으로 추정되나 new.land 코드표엔 대응 코드가 없음). `A05`/`A07`을 new.land `realEstateType`에 그대로 넣으면 알 수 없는 코드로 무시되고 **아파트가 내려온다**(실측) — 응답 유형 안전 필터(`VILLA_REAL_ESTATE_TYPES`)가 이를 막는다.
 
+## 정확한 지번·단지정보 수집 — 신규 화면(fin.land) API (2026-10-25)
+
+- 증상: 좌표 → 카카오 지번 변환으로 얻은 주소가 실제와 달랐다(위치 비공개 매물은 네이버 좌표가 대략 위치, 새 매물 상세의 `exposureAddress`도 "대림동"까지만). 네이버 앱의 "단지정보"에는 정확한 지번(대림동 685-5)·도로명·사용승인일·세대수가 있다(사용자 제보).
+- 확인: fin.land 매물 페이지 SSR 데이터(React Query dehydrated state)에 `GET /article/key`(단지번호·법정동코드·**지번**)와 `GET /complex/villa`(단지정보)가 들어 있다. 같은 JSON API를 `curl_cffi` 브릿지 `get`으로 호출하면 별도 토큰·워밍업 없이 200(경매코치 `crawler/naver_httpx.py`가 이미 쓰는 호스트).
+  - `https://fin.land.naver.com/front-api/v1/article/key?articleNumber={매물번호}` → `result.key.complexNumber`, `result.address.legalDivisionNumber`(법정동 10자리), `result.address.jibun`(예 "685-5"), `result.type.realEstateType`(A05 연립/A06 다세대/C02 빌라).
+  - `https://fin.land.naver.com/front-api/v1/complex/villa?complexNumber={단지번호}` → 단지명, 지번·도로명·우편번호, 좌표, 총 세대수, 건설사, 건축물 용도, 용적률·건폐율, 엘리베이터, 사용승인일·경과연수, 주차 대수.
+- 반영: 상세 수집 루프에서 매물마다 `article/key`로 지번·법정동코드를 확정(우선순위: article/key > PNU > 좌표 변환)하고, `complex/villa`는 **단지당 1회만**(이미 조회한 단지는 저장된 값을 복사) 호출해 지번 주소·도로명·단지 정보를 채운다. 이미 상세가 끝난 매물도 `finFetchedAt`이 없으면 단지정보만 보충한다. 연속 3회 실패 시 중단. 호출은 기존 직렬 큐·랜덤 간격을 같이 쓴다(매물당 최대 3호출, 단지 재사용으로 감소). 마이그레이션 `1784303000000`.
+- 확인된 사례: 매물 2652040016 = 대림동 685-5 "현대디자인하우스2"(다세대, 8세대, 2013-06-25 사용승인, 유영건설, 용적률 199.78/건폐율 58.12, 엘리베이터 1·주차 7대, 도로명 대림로34마길 3-1). 2657435341(다세대 6.4억) = 대림동 684-7(트윈클빌).
+
 ## 알려진 한계
 
 - 실거래는 연립다세대(RH)만. 단독/다가구·오피스텔은 포함하지 않음.
