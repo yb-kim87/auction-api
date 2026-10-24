@@ -42,10 +42,17 @@ const MAX_CONSECUTIVE_DETAIL_FAILURES = 3;
 
 export type ZoneDong = { code: string; name: string; gu: string; sido: string; sample: { lat: number; lng: number } };
 
+/** 공시가 추정에 근거로 쓴 건물 내 호(후보) 정보 — 화면에서 "왜 이렇게 추정했는지" 확인용. */
+export type OfficialPriceRow = { ho: string; dong: string; area: number | null; manwon: number; floor: number | null; used: boolean };
+
 export type OfficialPriceEstimate = {
   manwon: number | null;
   candidates: number;
   basis: "ho" | "floor+area" | "area" | "none";
+  /** 이 건물의 공시가격 데이터 총 호수(면적 필터 전) — 0이면 건물 자체가 공시가격 DB에 없다. */
+  buildingRowCount: number;
+  /** 면적이 맞는 후보(최대 12개). used=true가 실제 추정에 쓰인 것. */
+  rows: OfficialPriceRow[];
 };
 
 function pad4(v: string): string {
@@ -76,8 +83,11 @@ export function parseFloor(floorInfo: string | null | undefined): number | null 
 
 /** 호수("503")의 층: 3자리 이상이면 앞부분(503→5, 1203→12), 그 이하는 층 정보 없음. */
 function floorOfHo(hoNm: string): number | null {
-  const digits = hoNm.replace(/\D/g, "");
-  if (digits.length < 3 || /^b/i.test(hoNm.trim())) return null;
+  const s = hoNm.trim();
+  // 지하·반지하: "B101", "B01", "지하1", "지층" 등 → -1 (국토부 실거래 floor도 지하는 -1로 온다).
+  if (/^(b|지하|지층|반지하)/i.test(s)) return -1;
+  const digits = s.replace(/\D/g, "");
+  if (digits.length < 3) return null;
   return Number(digits.slice(0, digits.length - 2));
 }
 
@@ -593,18 +603,47 @@ export class RedevelopmentResearchService {
     ho: string | null,
     areaTol = 0.6,
   ): OfficialPriceEstimate {
-    if (!rows || !rows.length) return { manwon: null, candidates: 0, basis: "none" };
+    const empty = (buildingRowCount: number, shown: OfficialPriceRow[] = []): OfficialPriceEstimate => ({
+      manwon: null,
+      candidates: 0,
+      basis: "none",
+      buildingRowCount,
+      rows: shown,
+    });
+    if (!rows || !rows.length) return empty(0);
+    const toRow = (r: HousingOfficialPrice, used: boolean): OfficialPriceRow => ({
+      ho: r.hoNm,
+      dong: r.dongNm,
+      area: r.exclusiveArea != null ? Number(r.exclusiveArea) : null,
+      manwon: Math.round(Number(r.postedPrice) / 10000),
+      floor: floorOfHo(r.hoNm),
+      used,
+    });
     if (ho) {
       const exact = rows.filter((r) => r.hoNm.replace(/\D/g, "") === ho.replace(/\D/g, ""));
-      if (exact.length) return { manwon: Math.round(Number(exact[0].postedPrice) / 10000), candidates: exact.length, basis: "ho" };
+      if (exact.length) {
+        return { manwon: Math.round(Number(exact[0].postedPrice) / 10000), candidates: exact.length, basis: "ho", buildingRowCount: rows.length, rows: exact.slice(0, 12).map((r) => toRow(r, true)) };
+      }
     }
     const byArea = area != null ? rows.filter((r) => r.exclusiveArea != null && Math.abs(Number(r.exclusiveArea) - area) <= areaTol) : [];
-    if (!byArea.length) return { manwon: null, candidates: 0, basis: "none" };
-    const byFloor = floor != null && floor > 0 ? byArea.filter((r) => floorOfHo(r.hoNm) === floor) : [];
-    if (byFloor.length) {
-      return { manwon: median(byFloor.map((r) => Math.round(Number(r.postedPrice) / 10000))), candidates: byFloor.length, basis: "floor+area" };
+    if (!byArea.length) {
+      // 면적이 맞는 호가 없으면 건물의 호 목록 일부를 보여줘 원인을 확인할 수 있게 한다(면적 가까운 순).
+      const near = area != null
+        ? [...rows].filter((r) => r.exclusiveArea != null).sort((x, y) => Math.abs(Number(x.exclusiveArea) - area) - Math.abs(Number(y.exclusiveArea) - area))
+        : rows;
+      return empty(rows.length, near.slice(0, 8).map((r) => toRow(r, false)));
     }
-    return { manwon: median(byArea.map((r) => Math.round(Number(r.postedPrice) / 10000))), candidates: byArea.length, basis: "area" };
+    // 층 매칭: 지상층은 호 번호의 층(예: 301→3), 지하(-1)는 "B…" 호. 호 이름에서 층을 못 읽는 건물이면 면적만으로 추정한다.
+    const byFloor = floor != null && floor !== 0 ? byArea.filter((r) => floorOfHo(r.hoNm) === floor) : [];
+    const used = byFloor.length ? byFloor : byArea;
+    const shown = byArea.slice(0, 12).map((r) => toRow(r, used.includes(r)));
+    return {
+      manwon: median(used.map((r) => Math.round(Number(r.postedPrice) / 10000))),
+      candidates: used.length,
+      basis: byFloor.length ? "floor+area" : "area",
+      buildingRowCount: rows.length,
+      rows: shown,
+    };
   }
 
   // ───────────────────────── 결과 조회 ─────────────────────────
