@@ -38,15 +38,27 @@ export class HousingPriceService {
     const withoutPk = rows.filter((r) => !r.housingLedgerPk);
 
     if (withPk.length > 0) {
+      // 유니크 인덱스(UQ_housing_price_ledger_ho_year)가 부분 인덱스
+      // (WHERE "housingLedgerPk" IS NOT NULL)라 TypeORM의 orUpdate()가
+      // 생성하는 일반 ON CONFLICT로는 매칭이 안 된다(실측 에러: "there is
+      // no unique or exclusion constraint matching the ON CONFLICT
+      // specification", 2026-10-24) — WHERE절까지 포함한 raw onConflict로
+      // 직접 써야 한다.
       await this.repo
         .createQueryBuilder()
         .insert()
         .into(HousingOfficialPrice)
         .values(withPk.map((r) => ({ ...r, importedAt })))
-        .orUpdate(
-          ["sigunguCd", "bjdongCd", "mainBun", "subBun", "complexNm", "exclusiveArea", "postedPrice", "importedAt"],
-          ["housingLedgerPk", "hoNm", "stdYear"],
-          { skipUpdateIfNoValuesChanged: true },
+        .onConflict(
+          `("housingLedgerPk", "hoNm", "stdYear") WHERE "housingLedgerPk" IS NOT NULL DO UPDATE SET
+            "sigunguCd" = EXCLUDED."sigunguCd",
+            "bjdongCd" = EXCLUDED."bjdongCd",
+            "mainBun" = EXCLUDED."mainBun",
+            "subBun" = EXCLUDED."subBun",
+            "complexNm" = EXCLUDED."complexNm",
+            "exclusiveArea" = EXCLUDED."exclusiveArea",
+            "postedPrice" = EXCLUDED."postedPrice",
+            "importedAt" = EXCLUDED."importedAt"`,
         )
         .execute();
     }
