@@ -66,6 +66,17 @@ function isRateLimit(e: unknown): boolean {
   return e instanceof Error && /429|Too Many|503|502|504/.test(e.message);
 }
 
+/** 저장해 둔 매물 상세 원본(rawDetailJson)에서 중개사 소재지(articleRealtor.address)를 꺼낸다 — 이미 수집된 매물도 재호출 없이 채워진다. */
+function realtorAddressOf(rawDetailJson: string | null): string | null {
+  if (!rawDetailJson) return null;
+  try {
+    const a = JSON.parse(rawDetailJson)?.articleRealtor?.address;
+    return typeof a === "string" && a.trim() ? a.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 function median(xs: number[]): number | null {
   if (!xs.length) return null;
   const s = [...xs].sort((a, b) => a - b);
@@ -852,6 +863,7 @@ export class RedevelopmentResearchService {
             feature: l.feature,
             realtor: l.realtor,
             realtorPhone: l.realtorPhone,
+            realtorAddress: realtorAddressOf(l.rawDetailJson),
             lat: l.lat,
             lng: l.lng,
             distanceToZoneM: l.distanceToZoneM,
