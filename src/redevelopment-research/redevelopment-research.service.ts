@@ -850,16 +850,22 @@ export class RedevelopmentResearchService {
       const id = `${k.legalDongCode}|${main}|${sub}`;
       if (!uniq.has(id)) uniq.set(id, { sigunguCd: k.legalDongCode.slice(0, 5), bjdongCd: k.legalDongCode.slice(5, 10), main, sub });
     }
-    for (const [id, b] of uniq) {
-      const mains = Array.from(new Set([pad4(b.main), String(Number(b.main))]));
-      const subs = Array.from(new Set([pad4(b.sub), String(Number(b.sub))]));
-      const rows = await this.priceRepo.find({ where: { sigunguCd: b.sigunguCd, bjdongCd: b.bjdongCd, mainBun: In(mains), subBun: In(subs) } });
-      if (!rows.length) {
-        buildings.set(id, []);
-        continue;
-      }
-      const latest = rows.reduce((m, r) => (r.stdYear > m ? r.stdYear : m), rows[0].stdYear);
-      buildings.set(id, rows.filter((r) => r.stdYear === latest));
+    // 건물별 조회를 한 줄로 이어 부르면 왕복이 쌓여 느리다 — 8개씩 병렬로 조회한다(인덱스 IDX_housing_price_addr 사용).
+    const entries = Array.from(uniq.entries());
+    for (let i = 0; i < entries.length; i += 8) {
+      await Promise.all(
+        entries.slice(i, i + 8).map(async ([id, b]) => {
+          const mains = Array.from(new Set([pad4(b.main), String(Number(b.main))]));
+          const subs = Array.from(new Set([pad4(b.sub), String(Number(b.sub))]));
+          const rows = await this.priceRepo.find({ where: { sigunguCd: b.sigunguCd, bjdongCd: b.bjdongCd, mainBun: In(mains), subBun: In(subs) } });
+          if (!rows.length) {
+            buildings.set(id, []);
+            return;
+          }
+          const latest = rows.reduce((m, r) => (r.stdYear > m ? r.stdYear : m), rows[0].stdYear);
+          buildings.set(id, rows.filter((r) => r.stdYear === latest));
+        }),
+      );
     }
     return buildings;
   }

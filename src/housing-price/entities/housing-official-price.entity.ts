@@ -11,6 +11,7 @@ import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
  * 같은 (housingLedgerPk, hoNm, stdYear) 조합이 재적재되면 upsert한다. */
 @Entity("housing_official_price")
 @Index("IDX_housing_price_ledger_ho", ["housingLedgerPk", "hoNm"])
+@Index("IDX_housing_price_addr", ["sigunguCd", "bjdongCd", "mainBun", "subBun"])
 @Index(
   "UQ_housing_price_ledger_ho_year",
   ["housingLedgerPk", "hoNm", "stdYear"],

@@ -155,3 +155,10 @@
 - 한계: 블로그는 공식 자료가 아니라 블로거의 추정이며 글 형식이 바뀌면 파서가 놓칠 수 있다. 다른 블로그를 더하려면 `ZoneBlogService`의 `BLOGS`에 추가. 네이버 블로그 구조(검색 HTML 클래스명)가 바뀌면 `searchPosts` 정규식을 고친다.
 - 배포 메모: 첫 배포(11:05)는 Railway 빌드 데몬 오류(`buildkit ... use of closed network connection`)로 FAILED — 코드 문제가 아니라 재푸시로 해결.
 
+
+## 구역 팝업 결과 표가 늦게 뜨던 문제 (2026-10-25)
+
+- 증상: 구역(또는 경매물건)을 눌러 조사 결과 표가 나오기까지 몇 초 지연(데이터는 호가 5건·실거래 10건 정도로 적은데도).
+- 원인(코드 근거, 운영 DB에서 실측은 못 함): `getZoneResults`/`getMapPoints`가 건물마다 `housing_official_price`를 `(sigunguCd, bjdongCd, mainBun, subBun)`으로 조회하는데 이 컬럼들에 **인덱스가 없었다**(있는 인덱스는 `(housingLedgerPk, hoNm)`뿐). 건물 수만큼 테이블 전체를 훑고, 그것도 **한 건물씩 순차**로 불렀다.
+- 조치: 마이그레이션 `1784306000000`으로 복합 인덱스 `IDX_housing_price_addr` 추가(엔티티에도 선언) + `loadBuildingPrices`를 8건씩 병렬 조회로 변경.
+- 참고: 구역 팝업을 처음 열 때 자동 블로그 조사(최대 수십 초)는 표와 별개로 백그라운드에서 돈다.
