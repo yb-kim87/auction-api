@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Headers, Param, Patch, Post } from "@nestjs/common";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { RedevelopmentService } from "./redevelopment.service";
 
@@ -93,6 +93,17 @@ export class RedevelopmentController {
   ) {
     requireAdmin(getAuthContext(headers));
     return this.service.updateZone(id, body);
+  }
+
+  @Patch("zones/:id/interest")
+  async setZoneInterest(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+    @Body() body: { isInterest?: boolean },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    if (typeof body?.isInterest !== "boolean") throw new BadRequestException("isInterest(true/false)가 필요합니다.");
+    return this.service.setZoneInterest(id, body.isInterest);
   }
 
   @Delete("zones/:id")

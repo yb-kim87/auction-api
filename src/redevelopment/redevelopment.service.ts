@@ -177,6 +177,19 @@ export class RedevelopmentService {
     return this.zoneRepo.save(zone);
   }
 
+  /** 관심 구역 표시만 바꾼다. updatedAt은 그대로 둔다 — 올라가면 "마지막 반영 시각"이 흐려지고,
+   * 직접 고친 구역(MANUAL)으로 오인돼 자동 갱신이 막힐 수 있다. */
+  async setZoneInterest(id: string, isInterest: boolean) {
+    const res = await this.zoneRepo
+      .createQueryBuilder()
+      .update()
+      .set({ isInterest, updatedAt: () => '"updatedAt"' })
+      .where("id = :id", { id })
+      .execute();
+    if (!res.affected) throw new NotFoundException("구역을 찾을 수 없습니다.");
+    return { id, isInterest };
+  }
+
   async deleteZone(id: string) {
     await this.zoneRepo.delete(id);
     return { ok: true };

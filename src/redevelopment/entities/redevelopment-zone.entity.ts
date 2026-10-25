@@ -68,6 +68,10 @@ export class RedevelopmentZone {
   @Column({ type: Date, nullable: true })
   lastAutoSyncedAt!: Date | null;
 
+  /** 관리자가 "관심 구역"으로 표시했는지 — 목록의 관심 구역 필터와 지도 표시에 쓴다(사용자 요청, 2026-10-25). */
+  @Column({ type: Boolean, default: false })
+  isInterest!: boolean;
+
   /** 원본(지자체 홈페이지 등) 위치도/조감도 이미지 URL — 있으면 "이미지로
    * 구역 그리기" 도구에서 업로드 없이 이 이미지를 바로 불러와 정밀 경계로
    * 보정할 수 있다(사용자 요청, 2026-08-04: "은평구청 데이터를 기반으로
