@@ -4,7 +4,7 @@ import { In, Not, Repository } from "typeorm";
 import { Auction } from "../auctions/auction.entity";
 import { ActualTradeRow } from "./entities/actual-trade.entity";
 import { AuctionTradeMatchRow } from "./entities/auction-trade-match.entity";
-import { TradeIngestionService } from "./trade-ingestion.service";
+import { TradeIngestionService, tradeKindsForPropType, type TradeKind } from "./trade-ingestion.service";
 import {
   classifyTier,
   computeScore,
@@ -78,8 +78,8 @@ export class ResaleMatchService implements OnModuleInit {
     }
     this.logger.log(`재판매 매칭: 실거래 수집 시작(${scope.length}개 시군구×월 조합)`);
     let totalSaved = 0;
-    for (const { lawdCd, dealYm } of scope) {
-      totalSaved += await this.ingestion.ingestOne(lawdCd, dealYm);
+    for (const { lawdCd, dealYm, kinds } of scope) {
+      totalSaved += await this.ingestion.ingestOne(lawdCd, dealYm, kinds);
       // data.go.kr 트래픽/레이트 리밋 보호를 위한 최소 지연.
       await new Promise((resolve) => setTimeout(resolve, 150));
     }
@@ -131,7 +131,7 @@ export class ResaleMatchService implements OnModuleInit {
       return { attempted: false, candidateFound: false, displayed: false, score: null, tier: null };
     }
     try {
-      await this.ensureIngestedForLawdCd(auction.lawdCd);
+      await this.ensureIngestedForLawdCd(auction.lawdCd, tradeKindsForPropType(auction.propType));
       await this.matchOne(auction);
       const candidateCount = await this.matchRepo.count({ where: { auctionId: auction.id } });
       const updated = await this.auctionRepo.findOne({
@@ -160,14 +160,16 @@ export class ResaleMatchService implements OnModuleInit {
     }
   }
 
-  private async ensureIngestedForLawdCd(lawdCd: string): Promise<void> {
-    if (this.ingestedLawdCds.has(lawdCd)) return;
+  private async ensureIngestedForLawdCd(lawdCd: string, kinds: TradeKind[]): Promise<void> {
+    // 캐시는 (지역, 종류) 단위 — 이미 긁은 종류는 다시 부르지 않고, 아직 안 긁은 종류만 조회한다.
+    const pending = kinds.filter((k) => !this.ingestedLawdCds.has(`${lawdCd}|${k}`));
+    if (pending.length === 0) return;
     const months = this.ingestion.recentMonths(CANDIDATE_WINDOW_MONTHS);
     for (const dealYm of months) {
-      await this.ingestion.ingestOne(lawdCd, dealYm);
+      await this.ingestion.ingestOne(lawdCd, dealYm, pending);
       await new Promise((resolve) => setTimeout(resolve, 150));
     }
-    this.ingestedLawdCds.add(lawdCd);
+    for (const k of pending) this.ingestedLawdCds.add(`${lawdCd}|${k}`);
   }
 
   private async matchOne(auction: Auction): Promise<void> {

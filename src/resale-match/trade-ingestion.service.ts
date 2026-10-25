@@ -5,6 +5,20 @@ import { Auction } from "../auctions/auction.entity";
 import { ActualTradeRow } from "./entities/actual-trade.entity";
 import { MolitTradeClientService, MolitTradeItem } from "./molit-trade-client.service";
 
+export type TradeKind = "APT" | "RH" | "OFFI";
+export const ALL_TRADE_KINDS: TradeKind[] = ["APT", "RH", "OFFI"];
+
+/** 경매 물건 용도 → 조회할 국토부 실거래 API 종류. 아파트는 아파트매매, 빌라(연립·다세대·
+ * 도시형생활주택)는 연립다세대매매, 오피스텔은 오피스텔매매만 필요하다. 처음 보는 용도는
+ * 매칭을 놓치지 않도록 세 종류를 모두 조회한다(사용자 요청, 2026-10-25 — 일일 쿼터 절약). */
+export function tradeKindsForPropType(propType: string | null | undefined): TradeKind[] {
+  const t = (propType ?? "").trim();
+  if (t === "아파트") return ["APT"];
+  if (t === "빌라") return ["RH"];
+  if (t === "오피스텔") return ["OFFI"];
+  return ALL_TRADE_KINDS;
+}
+
 /** Stage A(설계 문서 7.2절) — 국토부 실거래가 API로 실거래를 수집해
  * actual_trade에 upsert한다. 전국 전체를 매일 훑지 않고, 완납일이
  * 설정된(=매칭 대상) auctions의 (lawdCd, 최근 N개월) 조합만 조회해
@@ -27,23 +41,30 @@ export class TradeIngestionService {
   /** 수집 대상 (lawdCd, dealYm) 조합을 구한다 — 완납일이 있고 아직
    * CONFIRMED 매칭이 없는 auctions에서 lawdCd를 모으고, 각각 낙찰일부터
    * 현재까지(최대 lookbackMonths)의 월 목록과 곱한다. */
-  async resolveIngestionScope(): Promise<Array<{ lawdCd: string; dealYm: string }>> {
+  async resolveIngestionScope(): Promise<Array<{ lawdCd: string; dealYm: string; kinds: TradeKind[] }>> {
     const targets = await this.auctionRepo
       .createQueryBuilder("a")
-      .select(["a.lawdCd", "a.bidDate"])
+      .select(["a.lawdCd", "a.bidDate", "a.propType"])
       .where("a.paymentCompletedAt IS NOT NULL")
       .andWhere("a.resaleMatchedTradeId IS NULL")
       .andWhere("a.lawdCd IS NOT NULL")
       .getMany();
 
-    const lawdCds = new Set(targets.map((t) => t.lawdCd).filter((v): v is string => !!v));
-    if (lawdCds.size === 0) return [];
+    // 지역별로 필요한 실거래 API 종류만 모은다(아파트 물건만 있는 지역은 아파트매매만 조회).
+    const kindsByLawd = new Map<string, Set<TradeKind>>();
+    for (const t of targets) {
+      if (!t.lawdCd) continue;
+      const set = kindsByLawd.get(t.lawdCd) ?? new Set<TradeKind>();
+      for (const k of tradeKindsForPropType(t.propType)) set.add(k);
+      kindsByLawd.set(t.lawdCd, set);
+    }
+    if (kindsByLawd.size === 0) return [];
 
     const months = this.recentMonths(this.lookbackMonths);
-    const scope: Array<{ lawdCd: string; dealYm: string }> = [];
-    for (const lawdCd of lawdCds) {
+    const scope: Array<{ lawdCd: string; dealYm: string; kinds: TradeKind[] }> = [];
+    for (const [lawdCd, kinds] of kindsByLawd) {
       for (const dealYm of months) {
-        scope.push({ lawdCd, dealYm });
+        scope.push({ lawdCd, dealYm, kinds: ALL_TRADE_KINDS.filter((k) => kinds.has(k)) });
       }
     }
     return scope;
@@ -65,26 +86,21 @@ export class TradeIngestionService {
    * 최종 판단한다 — 여기선 전량 저장해 향후 다른 물건에도 재사용
    * 가능하게 한다(같은 단지에 여러 물건이 걸릴 수 있음).
    *
-   * 아파트/빌라(연립다세대)/오피스텔 세 API를 항상 함께 수집한다 — 이
-   * (lawdCd, dealYm) 조합에 어떤 propType의 물건이 걸려있는지 여기서
-   * 미리 알 수 없고, 같은 지역에 여러 propType 물건이 섞여 있을 수도
-   * 있어 매번 다 조회하는 편이 propType별로 갈라 호출하는 것보다
-   * 단순하고 누락이 없다(2026-08-03, 빌라·오피스텔 매도분석 확장). */
-  async ingestOne(lawdCd: string, dealYm: string): Promise<number> {
+   * 호출하는 실거래 API는 kinds로 받은 종류만이다. 예전엔 아파트/빌라/오피스텔 세 API를
+   * 항상 함께 불렀는데(2026-08-03), 물건 용도와 무관한 API까지 불러 일일 쿼터를 낭비해
+   * 용도별로 필요한 것만 부르도록 바꿨다(사용자 요청, 2026-10-25). */
+  async ingestOne(lawdCd: string, dealYm: string, kinds: TradeKind[] = ALL_TRADE_KINDS): Promise<number> {
+    const want = new Set(kinds);
     const [aptItems, villaItems, officetelItems] = await Promise.all([
-      this.fetchSafely(() => this.molitClient.fetchTrades(lawdCd, dealYm), "아파트", lawdCd, dealYm),
-      this.fetchSafely(
-        () => this.molitClient.fetchVillaTrades(lawdCd, dealYm),
-        "빌라",
-        lawdCd,
-        dealYm,
-      ),
-      this.fetchSafely(
-        () => this.molitClient.fetchOfficetelTrades(lawdCd, dealYm),
-        "오피스텔",
-        lawdCd,
-        dealYm,
-      ),
+      want.has("APT")
+        ? this.fetchSafely(() => this.molitClient.fetchTrades(lawdCd, dealYm), "아파트", lawdCd, dealYm)
+        : Promise.resolve([] as MolitTradeItem[]),
+      want.has("RH")
+        ? this.fetchSafely(() => this.molitClient.fetchVillaTrades(lawdCd, dealYm), "빌라", lawdCd, dealYm)
+        : Promise.resolve([] as MolitTradeItem[]),
+      want.has("OFFI")
+        ? this.fetchSafely(() => this.molitClient.fetchOfficetelTrades(lawdCd, dealYm), "오피스텔", lawdCd, dealYm)
+        : Promise.resolve([] as MolitTradeItem[]),
     ]);
 
     let saved = 0;
