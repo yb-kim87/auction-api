@@ -55,6 +55,9 @@ export interface RecommendationFilters {
    * 항상 올해를 포함해 직전 연도까지 합산한다. 하나만 있으면 무시. */
   tradingYears?: number;
   tradingMinCount?: number;
+  /** 권리분석(임차인·점유 현황 + 등기 권리내역) 글에 이 단어 중 하나라도 들어 있는 물건만(사용자 요청, 2026-10-26).
+   * 예: "미상". 대소문자는 구분하지 않는다. */
+  rightsKeywords?: string[];
 }
 
 @Injectable()
@@ -334,6 +337,10 @@ export class RecommendationEngineService {
           if (!Number.isFinite(areaNum)) return false;
           if (filters.minArea != null && areaNum < filters.minArea) return false;
           if (filters.maxArea != null && areaNum > filters.maxArea) return false;
+        }
+        if (filters?.rightsKeywords && filters.rightsKeywords.length > 0) {
+          const rightsText = `${row.item.tenantDetail ?? ""}\n${row.item.buildingRegistry ?? ""}`.toLowerCase();
+          if (!filters.rightsKeywords.some((k) => rightsText.includes(k.toLowerCase()))) return false;
         }
         if (filters?.tradingYears != null && filters?.tradingMinCount != null) {
           const sum = sumRecentYearsTradingCount(row.item.tradingCount, filters.tradingYears);

@@ -43,9 +43,14 @@ export class RecommendationController {
     @Query("maxArea") maxArea?: string,
     @Query("tradingYears") tradingYears?: string,
     @Query("tradingMinCount") tradingMinCount?: string,
+    @Query("rightsKeyword") rightsKeyword?: string,
   ) {
     const ctx = getAuthContext(headers);
     requireSearchAccess(ctx);
+
+    // 임차인·등기 정보는 컨설팅수강생 이상만 볼 수 있다 — 낮은 등급이 키워드 필터로 그 내용을 유추하지 못하게 무시한다.
+    const canFilterRights =
+      ctx.role === UserRole.CONSULTING_STUDENT || ctx.role === UserRole.CONSULTANT || ctx.role === UserRole.ADMIN;
 
     const overrideInvestableWon = budget ? parseMoneyToWon(budget) ?? undefined : undefined;
     const result = await this.recommendationEngine.getRecommendations(ctx.username, {
@@ -66,6 +71,7 @@ export class RecommendationController {
         maxArea: maxArea ? Number(maxArea) || undefined : undefined,
         tradingYears: tradingYears ? Number(tradingYears) || undefined : undefined,
         tradingMinCount: tradingMinCount ? Number(tradingMinCount) || undefined : undefined,
+        rightsKeywords: canFilterRights ? parseMultiValue(rightsKeyword) : undefined,
       },
     });
 
