@@ -6,12 +6,13 @@ import { AuctionTradeMatchRow } from "./entities/auction-trade-match.entity";
 import { MolitTradeClientService } from "./molit-trade-client.service";
 import { TradeIngestionService } from "./trade-ingestion.service";
 import { ResaleMatchService } from "./resale-match.service";
+import { KakaoNotifyModule } from "../kakao-notify/kakao-notify.module";
 import { ResaleMatchController } from "./resale-match.controller";
 
 /** 낙찰물건 매도 추정(재판매 매칭) 기능. 설계:
  * docs/auction-resale-matching-design.md. */
 @Module({
-  imports: [TypeOrmModule.forFeature([Auction, ActualTradeRow, AuctionTradeMatchRow])],
+  imports: [TypeOrmModule.forFeature([Auction, ActualTradeRow, AuctionTradeMatchRow]), KakaoNotifyModule],
   controllers: [ResaleMatchController],
   providers: [MolitTradeClientService, TradeIngestionService, ResaleMatchService],
   exports: [ResaleMatchService],

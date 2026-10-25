@@ -1,4 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { TelegramAlertService } from "../kakao-notify/telegram-alert.service";
 
 const APT_ENDPOINT =
   "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade";
@@ -110,6 +111,26 @@ type MolitOfficetelTradeItemRaw = {
 @Injectable()
 export class MolitTradeClientService {
   private readonly logger = new Logger(MolitTradeClientService.name);
+  private quotaAlertedOn = "";
+
+  constructor(private readonly telegramAlert: TelegramAlertService) {}
+
+  /** data.go.kr 일일 요청 한도 초과(HTTP 429 + reasonCode 22)를 텔레그램으로 알린다. 같은 날(KST)
+   * 에는 한 번만 보낸다. 예전엔 로그에만 남아 며칠간 조용히 실패했다(2026-10-25 사용자 요청). */
+  private notifyQuotaExceeded(label: string): void {
+    const today = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
+    if (this.quotaAlertedOn === today) return;
+    this.quotaAlertedOn = today;
+    void this.telegramAlert
+      .send(
+        [
+          `[국토부 실거래가 API] 일일 요청 한도 초과 (${label} 조회 중)`,
+          "오늘은 실거래 조회가 실패합니다. 한국시간 자정 이후 풀립니다.",
+          "낙찰물건 매도 조회·재개발 구역 조사의 실거래 수집이 영향을 받습니다.",
+        ].join("\n"),
+      )
+      .catch(() => {});
+  }
 
   private get apiKey(): string {
     const key = process.env.BUILDING_REGISTER_API_KEY?.trim();
@@ -223,6 +244,12 @@ export class MolitTradeClientService {
       clearTimeout(timeout);
     }
     if (!res.ok) {
+      if (res.status === 429) {
+        const body = await res.text().catch(() => "");
+        if (body.includes("LIMITED_NUMBER_OF_SERVICE_REQUESTS_EXCEEDS_ERROR") || body.includes("<returnReasonCode>22<")) {
+          this.notifyQuotaExceeded(label);
+        }
+      }
       throw new Error(
         `국토부 ${label} 실거래가 API 호출 실패: ${res.status} ${res.statusText} (LAWD_CD=${lawdCd}, DEAL_YMD=${dealYm})`,
       );

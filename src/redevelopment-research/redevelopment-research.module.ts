@@ -12,6 +12,7 @@ import { RedevelopmentZoneBlogNote } from "./entities/redevelopment-zone-blog-no
 import { ZoneBlogService } from "./zone-blog.service";
 import { BuildingRegisterService } from "./building-register.service";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
+import { KakaoNotifyModule } from "../kakao-notify/kakao-notify.module";
 import { NaverLandService } from "./naver-land.service";
 import { RedevelopmentResearchController } from "./redevelopment-research.controller";
 import { RedevelopmentResearchService } from "./redevelopment-research.service";
@@ -28,6 +29,7 @@ import { RedevelopmentResearchService } from "./redevelopment-research.service";
       RedevelopmentZoneBlogNote,
       AddressGeocodeCache,
     ]),
+    KakaoNotifyModule,
   ],
   controllers: [RedevelopmentResearchController],
   providers: [RedevelopmentResearchService, NaverLandService, KakaoGeocodeService, MolitTradeClientService, BuildingRegisterService, ZoneBlogService],
