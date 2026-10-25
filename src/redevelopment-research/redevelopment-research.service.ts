@@ -170,8 +170,15 @@ export class RedevelopmentResearchService {
 
   /** 지도에 찍을 조사 결과(네이버 호가·국토부 실거래) — 좌표가 있는 것만, 가볍게. 경계 거리는 화면 오차범위 필터용. */
   async getMapPoints(): Promise<{
-    listings: Array<{ id: string; zoneId: string; lat: number; lng: number; priceManwon: number; area: number | null; distanceM: number | null; articleNo: string }>;
-    trades: Array<{ id: string; zoneId: string; lat: number; lng: number; priceManwon: number; area: number; date: string; distanceM: number | null }>;
+    listings: Array<{
+      id: string; zoneId: string; lat: number; lng: number; priceManwon: number; area: number | null; distanceM: number | null; articleNo: string;
+      articleName: string | null; floorInfo: string | null; supplyArea: number | null; roomCount: number | null; direction: string | null;
+      realtor: string | null; realtorPhone: string | null; confirmedAt: string | null; address: string | null; jibun: string | null; buildingYear: number | null;
+    }>;
+    trades: Array<{
+      id: string; zoneId: string; lat: number; lng: number; priceManwon: number; area: number; date: string; distanceM: number | null;
+      floor: number; buildingName: string; umdNm: string; jibun: string; buildYear: number | null; dealingType: string | null; houseType: string | null; landArea: number | null;
+    }>;
   }> {
     const listings = (await this.listingRepo.find())
       .filter((l) => l.missCount < 2 && l.lat != null && l.lng != null && l.priceManwon != null)
@@ -184,6 +191,17 @@ export class RedevelopmentResearchService {
         area: l.exclusiveArea,
         distanceM: l.distanceToZoneM,
         articleNo: l.articleNo,
+        articleName: l.articleName,
+        floorInfo: l.floorInfo,
+        supplyArea: l.supplyArea,
+        roomCount: l.roomCount,
+        direction: l.direction,
+        realtor: l.realtor,
+        realtorPhone: l.realtorPhone,
+        confirmedAt: l.confirmedAt,
+        address: l.address,
+        jibun: l.jibun,
+        buildingYear: l.buildingYear,
       }));
     const trades = (await this.tradeRepo.find())
       .filter((t) => !t.isCancelled && t.lat != null && t.lng != null)
@@ -196,6 +214,14 @@ export class RedevelopmentResearchService {
         area: t.exclusiveArea,
         date: t.contractDate,
         distanceM: t.distanceToZoneM,
+        floor: t.floor,
+        buildingName: t.buildingName,
+        umdNm: t.umdNm,
+        jibun: t.jibun,
+        buildYear: t.buildYear,
+        dealingType: t.dealingType,
+        houseType: t.houseType,
+        landArea: t.landArea,
       }));
     return { listings, trades };
   }
