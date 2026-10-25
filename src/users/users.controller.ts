@@ -67,6 +67,26 @@ export class UsersController {
     return this.usersService.sanitize(user);
   }
 
+  /** 수강생 이용 기한 설정. expiresAt은 "YYYY-MM-DD"(그날 한국시간 23:59:59까지 이용)이거나 null(기한 없음). */
+  @Patch(":id/role-expiry")
+  async updateRoleExpiry(
+    @Headers() headers: Record<string, string>,
+    @Param("id") id: string,
+    @Body() body: { expiresAt?: string | null },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    let expiresAt: Date | null = null;
+    if (body.expiresAt) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(body.expiresAt)) {
+        throw new ForbiddenException("만료일 형식이 올바르지 않습니다(YYYY-MM-DD).");
+      }
+      expiresAt = new Date(`${body.expiresAt}T23:59:59+09:00`);
+      if (Number.isNaN(expiresAt.getTime())) throw new ForbiddenException("만료일이 올바르지 않습니다.");
+    }
+    const user = await this.usersService.setRoleExpiry(id, expiresAt);
+    return this.usersService.sanitize(user);
+  }
+
   @Delete(":id")
   async deleteUser(
     @Headers() headers: Record<string, string>,

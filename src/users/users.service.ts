@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { LessThanOrEqual, Repository } from "typeorm";
 import { User } from "./user.entity";
 import { UserRole } from "../common/constants";
 import type { UpdateProfileDto } from "./update-profile.dto";
@@ -30,6 +30,9 @@ export class UsersService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    // 기한이 지난 수강생을 승인대기로 돌린다 — 시작 직후 한 번, 이후 10분마다(DB만 쓰는 가벼운 작업).
+    setTimeout(() => void this.expireDueRoles().catch(() => undefined), 30_000);
+    setInterval(() => void this.expireDueRoles().catch(() => undefined), 10 * 60_000);
     const admin = await this.userRepo.findOne({ where: { username: "admin" } });
     if (!admin) {
       await this.userRepo.save(
@@ -296,7 +299,32 @@ export class UsersService implements OnModuleInit {
     }
 
     user.role = role;
+    // 등급을 바꾸면 이전 등급의 기한은 의미가 없다 — 수강생 기한은 별도로 다시 정한다.
+    user.roleExpiresAt = null;
     return this.userRepo.save(user);
+  }
+
+  /** 수강생의 이용 기한을 정한다(null이면 기한 없음). 수강생 등급에서만 쓸 수 있다. */
+  async setRoleExpiry(id: string, expiresAt: Date | null) {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException("회원을 찾을 수 없습니다.");
+    if (user.role !== UserRole.STUDENT) {
+      throw new BadRequestException("이용 기한은 수강생 등급에서만 정할 수 있습니다.");
+    }
+    if (expiresAt && expiresAt.getTime() <= Date.now()) {
+      throw new BadRequestException("만료일은 오늘 이후로 정해 주세요.");
+    }
+    user.roleExpiresAt = expiresAt;
+    return this.userRepo.save(user);
+  }
+
+  /** 기한이 지난 수강생을 승인대기(member)로 돌리고 기한을 비운다. 돌린 회원 수를 반환한다. */
+  async expireDueRoles(): Promise<number> {
+    const res = await this.userRepo.update(
+      { role: UserRole.STUDENT, roleExpiresAt: LessThanOrEqual(new Date()) },
+      { role: UserRole.MEMBER, roleExpiresAt: null },
+    );
+    return res.affected ?? 0;
   }
 
   async deleteUser(id: string) {
