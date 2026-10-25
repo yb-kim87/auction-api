@@ -58,6 +58,8 @@ export interface RecommendationFilters {
   /** 권리분석(임차인·점유 현황 + 등기 권리내역) 글에 이 단어 중 하나라도 들어 있는 물건만(사용자 요청, 2026-10-26).
    * 예: "미상". 대소문자는 구분하지 않는다. */
   rightsKeywords?: string[];
+  /** 키워드를 찾는 범위: table = 임차현황표([기타사항] 메모 앞까지, 기본값), memo = [기타사항] 메모만, all = 글 전체(메모 + 등기 권리내역 포함). */
+  rightsScope?: "table" | "memo" | "all";
 }
 
 @Injectable()
@@ -339,7 +341,15 @@ export class RecommendationEngineService {
           if (filters.maxArea != null && areaNum > filters.maxArea) return false;
         }
         if (filters?.rightsKeywords && filters.rightsKeywords.length > 0) {
-          const rightsText = `${row.item.tenantDetail ?? ""}\n${row.item.buildingRegistry ?? ""}`.toLowerCase();
+          // 임차인 정보는 "임차현황표 + [기타사항] 메모"로 이어져 있다 — 기본(table)은 메모 앞까지만 본다.
+          const tenantText = row.item.tenantDetail ?? "";
+          const memoAt = tenantText.indexOf("[기타사항]");
+          const scope = filters.rightsScope ?? "table";
+          const tableText = memoAt < 0 ? tenantText : tenantText.slice(0, memoAt);
+          const memoText = memoAt < 0 ? "" : tenantText.slice(memoAt);
+          const rightsText = (
+            scope === "table" ? tableText : scope === "memo" ? memoText : `${tenantText}\n${row.item.buildingRegistry ?? ""}`
+          ).toLowerCase();
           if (!filters.rightsKeywords.some((k) => rightsText.includes(k.toLowerCase()))) return false;
         }
         if (filters?.tradingYears != null && filters?.tradingMinCount != null) {

@@ -44,6 +44,7 @@ export class RecommendationController {
     @Query("tradingYears") tradingYears?: string,
     @Query("tradingMinCount") tradingMinCount?: string,
     @Query("rightsKeyword") rightsKeyword?: string,
+    @Query("rightsScope") rightsScope?: string,
   ) {
     const ctx = getAuthContext(headers);
     requireSearchAccess(ctx);
@@ -72,6 +73,7 @@ export class RecommendationController {
         tradingYears: tradingYears ? Number(tradingYears) || undefined : undefined,
         tradingMinCount: tradingMinCount ? Number(tradingMinCount) || undefined : undefined,
         rightsKeywords: canFilterRights ? parseMultiValue(rightsKeyword) : undefined,
+        rightsScope: rightsScope === "all" || rightsScope === "memo" ? rightsScope : "table",
       },
     });
 
