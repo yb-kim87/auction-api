@@ -136,3 +136,4 @@
 - `GET /redevelopment-research/map-points`(관리자): 조사로 저장된 네이버 호가·국토부 실거래 중 좌표가 있는 것만 반환(호가는 missCount<2, 실거래는 취소 제외). 프론트가 경계 오차범위로 걸러 지도에 가격 라벨(호가 초록·실거래 노랑·경매 감정가 파랑)로 찍는다.
 - `map-points` 응답에 팝업용 상세 필드 추가: 호가(매물명·층·공급면적·방·향·중개사·연락처·확인일·주소·지번·연식), 실거래(층·건물명·동·지번·연식·거래유형·주택유형·대지권면적). 지도에서 호가·실거래 라벨을 누르면 겹친 건까지 목록 팝업으로 보여 준다.
 - `map-points`에 공시가 추정(`officialManwon`, `officialBasis`)도 포함 — 조사 결과 화면과 같은 `estimate()`. 지도 팝업이 공시가 · 전세가(공시가×126%) · 호가/실거래 · 갭을 크게 보여 준다.
+- 구역 라벨 클릭용: `GET /redevelopment-research/zones/:zoneId/results`(경매물건 기준 결과와 같은 모양, target=null), `POST /redevelopment-research/zones/:zoneId/start`(구역 조사 시작). 프론트 조사 패널이 `zoneId` 모드로 같은 레이아웃을 쓴다.

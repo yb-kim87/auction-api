@@ -45,6 +45,21 @@ export class RedevelopmentResearchController {
     return this.service.getMapPoints();
   }
 
+  /** 구역 기준 조사 결과(구역 라벨을 눌렀을 때) — 경매물건 기준 결과와 같은 모양이고 target만 null. */
+  @Get("zones/:zoneId/results")
+  async zoneResults(@Headers() headers: Record<string, string>, @Param("zoneId") zoneId: string, @Query("toleranceM") toleranceM?: string) {
+    requireAdmin(getAuthContext(headers));
+    return { target: null, ...(await this.service.getZoneResults(zoneId, parseTolerance(toleranceM))) };
+  }
+
+  /** 구역 조사 시작(경매물건 기준 시작과 같은 백그라운드 조사). */
+  @Post("zones/:zoneId/start")
+  async startZone(@Headers() headers: Record<string, string>, @Param("zoneId") zoneId: string) {
+    requireAdmin(getAuthContext(headers));
+    const run = await this.service.startZone(zoneId);
+    return { zoneId, run };
+  }
+
   /** 구역 기준 조사 상태만 가볍게 조회. */
   @Get("zones/:zoneId/status")
   async zoneStatus(@Headers() headers: Record<string, string>, @Param("zoneId") zoneId: string) {
