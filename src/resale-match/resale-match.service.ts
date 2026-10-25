@@ -42,22 +42,16 @@ export class ResaleMatchService implements OnModuleInit {
   private readonly ingestedLawdCds = new Set<string>();
 
   onModuleInit() {
-    // 배포 직후 바로 돌지 않도록 약간의 지연을 둔다(다른 스케줄러들과
-    // 동일한 안전장치 패턴 — CrawlerService.onModuleInit 참고).
-    const READY_DELAY_MS = 60_000;
     // 2026-08-01에 "막 완납된 물건이 다음날까지 못 기다린다"는 이유로
     // 1일 → 2시간 간격으로 좁혔는데, 이 배치(와 물건별 ensureIngestedForLawdCd
     // 경로)가 하루 여러 번 같은 지역 36개월치를 반복 재조회하면서 data.go.kr
     // 실거래가 API 일일 쿼터를 소진시켜 재개발 구역 조사 등 같은 키를 쓰는
-    // 다른 기능까지 막는 문제가 생겼다(실측, 2026-10-25). 재판매 매칭은
-    // "완납 후 수개월~수년에 걸쳐 되팔렸는지"를 추적하는 기능이라 몇 시간
-    // 지연이 실질적으로 중요하지 않다고 판단해 1일 간격으로 되돌린다
-    // (사용자 결정, 2026-10-25).
-    const RUN_INTERVAL_MS = 24 * 60 * 60_000; // 1일
-    setTimeout(() => {
-      void this.runOnce();
-      setInterval(() => void this.runOnce(), RUN_INTERVAL_MS);
-    }, READY_DELAY_MS);
+    // 다른 기능까지 막는 문제가 생겼다(실측, 2026-10-25). 현재 조건에 맞는
+    // 물건만으로도 76개 지역 × 36개월 × 3종류 ≈ 8,200번 호출이라 1일
+    // 간격으로 줄여도 한 번 실행에 하루치 쿼터를 거의 다 쓸 수 있어,
+    // 자동 스케줄 자체를 끄고 필요할 때 관리자가 "지금 실행"(POST
+    // /resale-match/run-now, ResaleMatchTab)으로 직접 돌리는 방식으로
+    // 바꾼다(사용자 결정, 2026-10-25).
   }
 
   async runOnce(): Promise<void> {
