@@ -1,6 +1,8 @@
 # 재개발 구역 매물 조사 — 네이버 매매 매물(samsam 방식) + 국토부 빌라 실거래(최근 1년)
 
-날짜: 2026-10-24
+날짜: 2026-10-24 (이후 2026-10-25까지 追記)
+
+> 화면(지도·팝업·필터)과 재개발닷컴 데이터·스타일, 운영 방법은 [2026-10-25_01 재개발물건(수정용) 탭 인수인계](./2026-10-25_01_redevelopment-edit-tab-map-ui.md) 문서를 본다. 이 문서는 **조사 백엔드** 중심이다. 아래 "동작"·"수집 범위 변경"은 최초 설계이며, 현재 값은 각 날짜별 追記 섹션(실거래 최신순 10건 샘플, 네이버 `VL:YR:DSD`, fin.land 지번 확정, 건축물대장 대지면적 등)이 최신이다.
 
 ## 배경 / 요청
 
@@ -17,17 +19,17 @@
 
 | 파일 | 역할 |
 |---|---|
-| `naver-land.service.ts` | samsam `naver-land.service.ts` 이식. curl_cffi 브릿지(`scripts/naver_curl_bridge.py`, samsam 파일을 그대로 복사), 토큰 워밍업, 직렬 큐 + **3.5~5.5초 랜덤 간격**, 429 처리(15초 대기 1회), 동 코드(`/api/cortars`), 동 단위 빌라 목록(`/api/articles`, `realEstateType=VL`(빌라만), 매매 `A1`), 매물 상세(`/api/articles/{no}`: 주소·방 수·관리비·입주일·소개글·사진 등). 응답 원본(raw)은 저장 |
+| `naver-land.service.ts` | samsam `naver-land.service.ts` 이식. curl_cffi 브릿지(`scripts/naver_curl_bridge.py`, samsam 파일을 그대로 복사), 토큰 워밍업, 직렬 큐 + **3.5~5.5초 랜덤 간격**, 429 처리(15초 대기 1회), 동 코드(`/api/cortars`), 동 단위 빌라 목록(`/api/articles`, ~~`realEstateType=VL`~~ → **현재 `VL:YR:DSD`**(아래 "다세대 누락 수정"·"빌라류 카테고리 전수 확인"), 매매 `A1`), 매물 상세(`/api/articles/{no}`: 주소·방 수·관리비·입주일·소개글·사진 등). 응답 원본(raw)은 저장 |
 | `kakao-geocode.service.ts` | 서버에서 카카오 로컬 API(`KAKAO_REST_API_KEY`, 로그인에 이미 쓰는 키)로 지번 → 좌표, 좌표 → 법정동/지번. Railway는 VWorld에 못 붙어서(기존 문서 참고) 카카오를 쓴다. 확정된 결과는 `address_geocode_cache`에 캐시 |
 | `redevelopment-research.service.ts` | 조사 오케스트레이션 + 결과 조회 + 공시가 추정 |
-| `redevelopment-research.controller.ts` | `POST /redevelopment-research/auctions/:id/start`, `GET /redevelopment-research/auctions/:id?toleranceM=`, `GET /redevelopment-research/zones/:id/status` (관리자 전용) |
+| `redevelopment-research.controller.ts` | 관리자 전용: `POST auctions/:id/start`, `GET auctions/:id?toleranceM=`, `POST zones/:zoneId/start`, `GET zones/:zoneId/results?toleranceM=`, `GET zones/:zoneId/status`, `GET map-points` (모두 `/redevelopment-research/` 아래) |
 | `entities/*` + 마이그레이션 `1784301000000` | `redevelopment_naver_listings`, `redevelopment_trades`, `redevelopment_research_runs`, `address_geocode_cache` |
 
 ## 동작
 
 1. 경매물건 좌표 → 가장 가까운 재개발 구역(경계 오차 포함, 같은 구) 결정.
 2. 구역 경계 샘플 점이 걸치는 법정동을 카카오로 확인(구역이 두 동에 걸칠 수 있음 — 예: 대림동 680 = 대림동+신길동).
-3. **실거래**: 국토부 연립다세대 API(`MolitTradeClientService.fetchVillaTrades`)로 최근 12개월 × 시군구 → 해당 동만 → 지번별 카카오 좌표 → 구역 경계 거리 ≤ 100m만 저장(해제 거래는 `isCancelled`로 표시, 원본은 `rawJson`).
+3. **실거래**: 국토부 연립다세대 API(`MolitTradeClientService.fetchVillaTrades`)로 ~~최근 12개월 전체~~ → **현재는 최신 달부터 거슬러 올라가며 유효 거래 10건이 찰 때까지**(아래 "실거래 수집 방식 변경") × 시군구 → 해당 동만 → 지번별 카카오 좌표 → 구역 경계 거리 ≤ 100m만 저장(해제 거래는 `isCancelled`로 표시, 원본은 `rawJson`).
 4. **네이버**: 동 코드별 목록 페이지(최대 30쪽) → 매물 좌표로 구역 경계 거리 ≤ 100m만 저장(목록 원본 `rawListJson`). 이어서 가까운 순으로 **상세 최대 40건/회**(`naverDetailRemaining`이 남으면 같은 버튼 "이어서 수집"). 상세 3회 연속 실패 시 중단(차단 의심).
 5. 화면의 경계 오차범위(0~100m)는 **저장된 원본을 다시 거르기만** 한다(네이버 재호출 없음).
 6. **공시가**: `housing_official_price`에서 법정동코드+본번/부번(4자리·비패딩 모두) → 호수 일치 > 층+면적(±0.6㎡) > 면적 순으로 추정. 근거를 화면에 표시.
@@ -52,7 +54,7 @@
 
 ## 수집 범위 변경(2026-10-24, 사용자 요청: "기본 수집 범위를 빌라만으로")
 
-- 네이버: samsam은 `VL:DDDGG`(빌라+단독/다가구)를 받지만 이 기능은 `VL`만 요청한다. 실제 호출 1건으로 20/20건 모두 `VL:빌라`로 확인. 응답에 다른 유형이 섞여도 저장하지 않도록 `realEstateTypeCode`로 한 번 더 거른다. (이 동 `VL:DDDGG` 목록은 20건 중 단독/다가구가 11건이라 호출·저장량도 줄어든다.)
+- 네이버(당시 결정, 이후 `VL:YR:DSD`로 확장됨): samsam은 `VL:DDDGG`(빌라+단독/다가구)를 받지만 이 기능은 `VL`만 요청한다. 실제 호출 1건으로 20/20건 모두 `VL:빌라`로 확인. 응답에 다른 유형이 섞여도 저장하지 않도록 `realEstateTypeCode`로 한 번 더 거른다. (이 동 `VL:DDDGG` 목록은 20건 중 단독/다가구가 11건이라 호출·저장량도 줄어든다.)
 - 국토부: 연립다세대(RH)만 수집 중이라 변경 없음(빌라 = 연립·다세대·도시형생활주택).
 
 ## 배포 후 발견한 문제와 조치 (2026-10-24)
