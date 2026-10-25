@@ -1099,6 +1099,42 @@ export class RedevelopmentResearchService {
     };
   }
 
+  /** 구역 팝업의 "구역 안 경매물건" 여러 건의 공시가만 한 번에 추정한다(사용자 요청,
+   * 2026-10-25: "조사 표 안에 경매물건도 넣어달라"). getAuctionResearch와 달리
+   * 네이버/국토부 호출(해당 구역의 getZoneResults)은 하지 않는다 — 주소→지번(카카오
+   * 역지오코딩)과 공시가격 DB 조회만 쓰는 가벼운 경로라, 여러 건을 한 번에 돌려도
+   * 외부 API 한도에 영향이 없다. */
+  async getAuctionsOfficialPriceBatch(auctionIds: string[]) {
+    const auctions = await this.auctionRepo.find({ where: { id: In(auctionIds) } });
+    const parsed = await Promise.all(
+      auctions.map(async (auction) => {
+        if (auction.latitude == null || auction.longitude == null) {
+          return { id: auction.id, floor: null, ho: null, area: null, landShare: null, j: null };
+        }
+        const floorMatch = auction.address.match(/제?(\d+)층/);
+        const hoMatch = auction.address.match(/제?(\d+)호/);
+        const floor = floorMatch ? Number(floorMatch[1]) : null;
+        const ho = hoMatch ? hoMatch[1] : null;
+        const area = Number(String(auction.area ?? "").replace(/[^\d.]/g, "")) || null;
+        const landShare = parseFloat(String(auction.landShare ?? "").replace(/[^\d.]/g, "")) || null;
+        const j = await this.kakao.jibunAt(auction.latitude, auction.longitude);
+        return { id: auction.id, floor, ho, area, landShare, j };
+      }),
+    );
+    const prices = await this.loadBuildingPrices(parsed.map((p) => ({ legalDongCode: p.j?.legalDongCode ?? null, jibun: p.j?.jibun ?? null })));
+    return parsed.map((p) => {
+      const key = p.j?.legalDongCode && p.j.jibun ? `${p.j.legalDongCode}|${p.j.jibun.split("-")[0]}|${p.j.jibun.split("-")[1] ?? "0"}` : null;
+      return {
+        id: p.id,
+        exclusiveArea: p.area,
+        landShare: p.landShare,
+        floor: p.floor,
+        ho: p.ho,
+        officialPrice: this.estimate(key ? prices.get(key) : undefined, p.area, p.floor, p.ho),
+      };
+    });
+  }
+
   /** 관심 경매물건 기준 조사 결과: 대상 물건 정보(+공시가 추정) + 물건이 속한 구역의 호가·실거래. */
   async getAuctionResearch(auctionId: string, toleranceM = 30) {
     const auction = await this.auctionRepo.findOne({ where: { id: auctionId } });

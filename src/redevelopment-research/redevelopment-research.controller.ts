@@ -38,6 +38,18 @@ export class RedevelopmentResearchController {
     return this.service.getAuctionResearch(auctionId, parseTolerance(toleranceM));
   }
 
+  /** 구역 팝업 조사 표에 함께 들어가는 경매물건 여러 건의 공시가만 한 번에 추정
+   * (사용자 요청, 2026-10-25). 네이버/국토부는 부르지 않는 가벼운 경로라 구역 조사와
+   * 별개로 호출해도 안전하다. */
+  @Post("auctions/official-price-batch")
+  async auctionsOfficialPriceBatch(@Headers() headers: Record<string, string>, @Body() body: { ids?: string[] }) {
+    requireAdmin(getAuthContext(headers));
+    const ids = (body?.ids ?? []).filter((id) => typeof id === "string" && id.trim());
+    if (!ids.length) return [];
+    if (ids.length > 200) throw new BadRequestException("한 번에 최대 200건까지 조회할 수 있습니다.");
+    return this.service.getAuctionsOfficialPriceBatch(ids);
+  }
+
   /** 지도용: 조사로 저장된 호가·실거래 점(가격 라벨). */
   @Get("map-points")
   async mapPoints(@Headers() headers: Record<string, string>) {
