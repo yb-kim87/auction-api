@@ -52,6 +52,13 @@ export class RedevelopmentResearchController {
     return { target: null, ...(await this.service.getZoneResults(zoneId, parseTolerance(toleranceM))) };
   }
 
+  /** 재개발 블로그(후니동산)만 다시 조사해 동의율·공문 타임라인을 갱신한다(네이버 부동산·국토부는 부르지 않음). */
+  @Post("zones/:zoneId/blog-refresh")
+  async blogRefresh(@Headers() headers: Record<string, string>, @Param("zoneId") zoneId: string) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.refreshBlog(zoneId);
+  }
+
   /** 구역 조사 시작(경매물건 기준 시작과 같은 백그라운드 조사). */
   @Post("zones/:zoneId/start")
   async startZone(@Headers() headers: Record<string, string>, @Param("zoneId") zoneId: string) {

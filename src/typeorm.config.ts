@@ -54,6 +54,7 @@ import { HousingOfficialPrice } from "./housing-price/entities/housing-official-
 import { RedevelopmentNaverListing } from "./redevelopment-research/entities/redevelopment-naver-listing.entity";
 import { RedevelopmentTrade } from "./redevelopment-research/entities/redevelopment-trade.entity";
 import { RedevelopmentResearchRun } from "./redevelopment-research/entities/redevelopment-research-run.entity";
+import { RedevelopmentZoneBlogNote } from "./redevelopment-research/entities/redevelopment-zone-blog-note.entity";
 import { AddressGeocodeCache } from "./redevelopment-research/entities/address-geocode-cache.entity";
 import { NiceCrawlerStateRow } from "./nice-crawler/entities/nice-crawler-state.entity";
 import { NiceCrawlerLogRow } from "./nice-crawler/entities/nice-crawler-log.entity";
@@ -120,6 +121,7 @@ const entities = [
   RedevelopmentNaverListing,
   RedevelopmentTrade,
   RedevelopmentResearchRun,
+  RedevelopmentZoneBlogNote,
   AddressGeocodeCache,
   NiceCrawlerStateRow,
   NiceCrawlerLogRow,

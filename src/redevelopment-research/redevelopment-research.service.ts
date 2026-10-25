@@ -10,6 +10,7 @@ import { RedevelopmentResearchRun, ResearchRunStatus } from "./entities/redevelo
 import { RedevelopmentTrade } from "./entities/redevelopment-trade.entity";
 import { centroid, distanceToZoneM } from "./geo.util";
 import { BuildingRegisterService } from "./building-register.service";
+import { ZoneBlogService } from "./zone-blog.service";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
 import { NaverLandService, NaverVillaComplex, VILLA_REAL_ESTATE_TYPES } from "./naver-land.service";
 
@@ -142,6 +143,7 @@ export class RedevelopmentResearchService {
     private readonly kakao: KakaoGeocodeService,
     private readonly molit: MolitTradeClientService,
     private readonly buildingRegister: BuildingRegisterService,
+    private readonly zoneBlog: ZoneBlogService,
   ) {}
 
   // ───────────────────────── 진행 상태 ─────────────────────────
@@ -293,6 +295,14 @@ export class RedevelopmentResearchService {
     return { zoneId: zone.id, zoneName: zone.name, run };
   }
 
+  /** 블로그만 다시 조사(가볍다 — 네이버 부동산·국토부를 부르지 않는다). 구역 팝업을 처음 열 때 자동으로, 또는 버튼으로 호출. */
+  async refreshBlog(zoneId: string) {
+    const zone = await this.zoneRepo.findOne({ where: { id: zoneId } });
+    if (!zone) throw new NotFoundException("구역을 찾을 수 없습니다.");
+    await this.zoneBlog.refreshZone(zone);
+    return this.zoneBlog.getZoneBlogInfo(zoneId);
+  }
+
   async startZone(zoneId: string): Promise<RedevelopmentResearchRun> {
     const zone = await this.zoneRepo.findOne({ where: { id: zoneId } });
     if (!zone) throw new NotFoundException("구역을 찾을 수 없습니다.");
@@ -330,12 +340,21 @@ export class RedevelopmentResearchService {
 
   private async runZone(zone: RedevelopmentZone): Promise<void> {
     this.logger.log(`구역 조사 시작: ${zone.name} (${zone.id})`);
+    const blogWarnings: string[] = [];
+    // 재개발 블로그(후니동산)의 동의율·공문 타임라인 — 가볍고 다른 수집과 무관해서 가장 먼저 한다. 실패해도 나머지 조사는 계속한다.
+    try {
+      await this.patchRun(zone.id, { phase: "재개발 블로그 조사" });
+      await this.zoneBlog.refreshZone(zone);
+    } catch (e) {
+      blogWarnings.push(`블로그 조사 실패: ${e instanceof Error ? e.message : String(e)}`);
+      this.logger.warn(`블로그 조사 실패(${zone.name}): ${e instanceof Error ? e.message : String(e)}`);
+    }
     const dongs = await this.resolveDongs(zone);
     if (!dongs.length) throw new Error(`구역이 걸친 법정동을 찾지 못했습니다(카카오 지역 조회 실패: ${this.kakao.lastError ?? "응답 없음"}).`);
     this.logger.log(`구역이 걸친 동: ${dongs.map((d) => `${d.name}(${d.code})`).join(", ")}`);
 
     const errors: string[] = [];
-    const warnings: string[] = [];
+    const warnings: string[] = [...blogWarnings];
     try {
       const { failedMonths, attemptedMonths, saved } = await this.collectTrades(zone, dongs);
       if (attemptedMonths > 0 && failedMonths >= attemptedMonths && saved === 0) {
@@ -969,6 +988,7 @@ export class RedevelopmentResearchService {
     return {
       zone: { id: zone.id, name: zone.name, region: zone.region, stage: zone.stage, projectType: zone.projectType },
       run,
+      blog: await this.zoneBlog.getZoneBlogInfo(zoneId),
       toleranceM: tol,
       listings: listings
         .map((l) => {

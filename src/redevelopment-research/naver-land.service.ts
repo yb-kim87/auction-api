@@ -389,6 +389,23 @@ export class NaverLandService {
     return JSON.parse(res.body) as T;
   }
 
+  /** 임의의 네이버 페이지(블로그 등) HTML을 같은 직렬 큐·랜덤 간격으로 가져온다(재개발 블로그 조사용). */
+  async getText(url: string, referer: string): Promise<string> {
+    const task = this.queue.then(async () => {
+      await this.throttle();
+      const result = await runCurlBridge({
+        action: "get",
+        url,
+        headers: { accept: "text/html,application/xhtml+xml", referer, "accept-language": "ko-KR,ko;q=0.9,en;q=0.8" },
+      });
+      if (!result?.ok) throw new Error(result?.reason ?? "curl_cffi 브릿지 호출 실패");
+      if (result.status < 200 || result.status >= 300) throw new Error(`${url} → ${result.status}`);
+      return result.body as string;
+    });
+    this.queue = task.catch(() => undefined);
+    return task;
+  }
+
   /** 매물번호 → 정확한 지번·법정동코드·단지번호. 실패하면 null(호출한 쪽이 PNU/좌표 변환으로 대체). */
   async fetchArticleKey(articleNo: string): Promise<NaverArticleKey | null> {
     try {

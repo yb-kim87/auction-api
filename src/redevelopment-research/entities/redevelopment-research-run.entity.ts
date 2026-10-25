@@ -44,6 +44,10 @@ export class RedevelopmentResearchRun {
   @Column({ type: Date, nullable: true })
   finishedAt!: Date | null;
 
+  /** 재개발 블로그(후니동산) 조사를 마친 시각 — 구역 조사 때 함께 갱신한다. */
+  @Column({ type: Date, nullable: true })
+  blogFetchedAt!: Date | null;
+
   @Column({ type: Date })
   updatedAt!: Date;
 }
