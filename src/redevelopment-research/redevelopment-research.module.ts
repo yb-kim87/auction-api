@@ -11,6 +11,7 @@ import { RedevelopmentTrade } from "./entities/redevelopment-trade.entity";
 import { RedevelopmentZoneBlogNote } from "./entities/redevelopment-zone-blog-note.entity";
 import { ZoneBlogService } from "./zone-blog.service";
 import { BuildingRegisterService } from "./building-register.service";
+import { AuctionZoneCoordService } from "./auction-zone-coord.service";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
 import { KakaoNotifyModule } from "../kakao-notify/kakao-notify.module";
 import { NaverLandService } from "./naver-land.service";
@@ -32,6 +33,7 @@ import { RedevelopmentResearchService } from "./redevelopment-research.service";
     KakaoNotifyModule,
   ],
   controllers: [RedevelopmentResearchController],
-  providers: [RedevelopmentResearchService, NaverLandService, KakaoGeocodeService, MolitTradeClientService, BuildingRegisterService, ZoneBlogService],
+  providers: [AuctionZoneCoordService, RedevelopmentResearchService, NaverLandService, KakaoGeocodeService, MolitTradeClientService, BuildingRegisterService, ZoneBlogService],
+  exports: [AuctionZoneCoordService],
 })
 export class RedevelopmentResearchModule {}

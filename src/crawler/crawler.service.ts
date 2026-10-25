@@ -12,6 +12,7 @@ import * as http from "http";
 import * as https from "https";
 import { AuctionsService } from "../auctions/auctions.service";
 import { ResaleMatchService } from "../resale-match/resale-match.service";
+import { AuctionZoneCoordService } from "../redevelopment-research/auction-zone-coord.service";
 import { nowPartsInKst } from "../common/kst-time.util";
 import { CafeKnowledgeService } from "../ai/cafe-knowledge.service";
 import type { KnowledgeDraftStatus } from "../ai/knowledge-draft.entity";
@@ -179,6 +180,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly auctionsService: AuctionsService,
     private readonly resaleMatchService: ResaleMatchService,
+    private readonly auctionZoneCoord: AuctionZoneCoordService,
     private readonly telegramService: CrawlerTelegramService,
     private readonly cafeKnowledgeService: CafeKnowledgeService,
     private readonly knowledgeService: KnowledgeService,
@@ -1838,6 +1840,12 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // 국토부 실거래 api돌려서 매칭시키고 다음꺼 돌리고"). 완납일이
     // 아직 없거나 조건 미충족이면 내부에서 조용히 스킵된다. 크롤링
     // 흐름을 막지 않도록 절대 await하지 않는다.
+    // 서울 빌라는 이어서 좌표도 채운다(재개발 구역 근처일 때만 저장, 사용자 요청 2026-10-25) —
+    // "재개발물건" 탭을 열기 전에도 구역 안 경매물건이 지도에 나오게 한다.
+    if (result.item && !options.mirror) {
+      void this.auctionZoneCoord.fillIfNeeded(result.item).catch(() => {});
+    }
+
     if (result.item && !options.mirror) {
       const item = result.item;
       void this.resaleMatchService
