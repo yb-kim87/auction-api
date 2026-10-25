@@ -2,6 +2,7 @@ import { Body, Controller, Headers, Logger, Post, UnauthorizedException } from "
 import { KakaoLandingVisitService } from "./kakao-landing-visit.service";
 import { ImwebSyncService } from "./imweb-sync.service";
 import { InstagramSyncService } from "./instagram-sync.service";
+import { KakaoNotifyScheduler } from "./kakao-notify.scheduler";
 
 /** 가입완료 신호 수신 후 아임웹 회원 API에 신규 회원이 반영되기까지의
  *  전파 지연을 감안해 이 시간만큼 기다렸다가 동기화를 실행한다. */
@@ -20,6 +21,7 @@ export class KakaoLandingVisitController {
     private readonly landingVisitService: KakaoLandingVisitService,
     private readonly imwebSync: ImwebSyncService,
     private readonly instagramSync: InstagramSyncService,
+    private readonly scheduler: KakaoNotifyScheduler,
   ) {}
 
   @Post("landing-visit")
@@ -48,6 +50,8 @@ export class KakaoLandingVisitController {
   @Post("landing-visit/confirm-signup")
   async confirmSignup(@Body() body: { visitId?: string }) {
     const result = await this.landingVisitService.confirmSignup(body.visitId ?? "");
+    // 자동발송이 꺼져 있으면 방문 기록만 남기고 동기화는 하지 않는다(사용자 요청, 2026-10-25).
+    if (!(await this.scheduler.isEnabled())) return result;
     setTimeout(() => {
       this.imwebSync.syncNewMembers().catch((err) => {
         // 스케줄러 폴링과 겹쳐 "이미 진행 중" 예외가 나는 것은 정상 상황이라 무시한다.
@@ -76,6 +80,8 @@ export class KakaoLandingVisitController {
     if (!expected || secret !== expected) {
       throw new UnauthorizedException("유효하지 않은 웹훅 요청입니다.");
     }
+    // 자동발송이 꺼져 있으면 시트를 읽지 않고 바로 돌려보낸다(사용자 요청, 2026-10-25).
+    if (!(await this.scheduler.isEnabled())) return { ok: true, skipped: "auto-send disabled" };
     this.instagramSync.syncNewRows().catch((err) => {
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes("이미 동기화가 진행 중")) return;
