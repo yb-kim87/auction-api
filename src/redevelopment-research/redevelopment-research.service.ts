@@ -174,15 +174,31 @@ export class RedevelopmentResearchService {
       id: string; zoneId: string; lat: number; lng: number; priceManwon: number; area: number | null; distanceM: number | null; articleNo: string;
       articleName: string | null; floorInfo: string | null; supplyArea: number | null; roomCount: number | null; direction: string | null;
       realtor: string | null; realtorPhone: string | null; confirmedAt: string | null; address: string | null; jibun: string | null; buildingYear: number | null;
+      officialManwon: number | null; officialBasis: string;
     }>;
     trades: Array<{
       id: string; zoneId: string; lat: number; lng: number; priceManwon: number; area: number; date: string; distanceM: number | null;
       floor: number; buildingName: string; umdNm: string; jibun: string; buildYear: number | null; dealingType: string | null; houseType: string | null; landArea: number | null;
+      officialManwon: number | null; officialBasis: string;
     }>;
   }> {
-    const listings = (await this.listingRepo.find())
-      .filter((l) => l.missCount < 2 && l.lat != null && l.lng != null && l.priceManwon != null)
-      .map((l) => ({
+    const listingRows = (await this.listingRepo.find()).filter((l) => l.missCount < 2 && l.lat != null && l.lng != null && l.priceManwon != null);
+    const tradeRows = (await this.tradeRepo.find()).filter((t) => !t.isCancelled && t.lat != null && t.lng != null);
+    // 공시가(만원): 조사 결과 화면과 같은 추정 로직(호수→층+면적→층구간→인접층→면적 순).
+    const prices = await this.loadBuildingPrices([
+      ...listingRows.map((l) => ({ legalDongCode: l.legalDongCode, jibun: l.jibun })),
+      ...tradeRows.map((t) => ({ legalDongCode: t.legalDongCode, jibun: t.jibun })),
+    ]);
+    const keyOf = (code: string | null, jibun: string | null) => {
+      if (!code || !jibun) return null;
+      const [main, sub = "0"] = jibun.split("-");
+      return `${code}|${main}|${sub}`;
+    };
+    const listings = listingRows
+      .map((l) => {
+        const key = keyOf(l.legalDongCode, l.jibun);
+        const est = this.estimate(key ? prices.get(key) : undefined, l.exclusiveArea, parseFloor(l.floorInfo), null, l.detailFetchedAt ? 0.6 : 1.0, parseFloorBand(l.floorInfo));
+        return {
         id: l.id,
         zoneId: l.zoneId,
         lat: l.lat as number,
@@ -202,10 +218,15 @@ export class RedevelopmentResearchService {
         address: l.address,
         jibun: l.jibun,
         buildingYear: l.buildingYear,
-      }));
-    const trades = (await this.tradeRepo.find())
-      .filter((t) => !t.isCancelled && t.lat != null && t.lng != null)
-      .map((t) => ({
+        officialManwon: est.manwon,
+        officialBasis: est.basis,
+        };
+      });
+    const trades = tradeRows
+      .map((t) => {
+        const key = keyOf(t.legalDongCode, t.jibun);
+        const est = this.estimate(key ? prices.get(key) : undefined, t.exclusiveArea, t.floor, null);
+        return {
         id: t.id,
         zoneId: t.zoneId,
         lat: t.lat as number,
@@ -222,7 +243,10 @@ export class RedevelopmentResearchService {
         dealingType: t.dealingType,
         houseType: t.houseType,
         landArea: t.landArea,
-      }));
+        officialManwon: est.manwon,
+        officialBasis: est.basis,
+        };
+      });
     return { listings, trades };
   }
 
