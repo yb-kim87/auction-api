@@ -190,7 +190,7 @@ export class RedevelopmentService {
       this.listZones(),
       this.auctionRepo.find({
         where: { latitude: Not(IsNull()), longitude: Not(IsNull()) },
-        select: ["id", "auctionNo", "address", "city", "district", "propType", "salePrice", "status", "latitude", "longitude"],
+        select: ["id", "auctionNo", "address", "city", "district", "propType", "salePrice", "appraisedValue", "minPrice", "status", "latitude", "longitude"],
       }),
     ]);
 
