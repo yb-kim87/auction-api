@@ -168,6 +168,38 @@ export class RedevelopmentResearchService {
     return this.runRepo.save(run);
   }
 
+  /** 지도에 찍을 조사 결과(네이버 호가·국토부 실거래) — 좌표가 있는 것만, 가볍게. 경계 거리는 화면 오차범위 필터용. */
+  async getMapPoints(): Promise<{
+    listings: Array<{ id: string; zoneId: string; lat: number; lng: number; priceManwon: number; area: number | null; distanceM: number | null; articleNo: string }>;
+    trades: Array<{ id: string; zoneId: string; lat: number; lng: number; priceManwon: number; area: number; date: string; distanceM: number | null }>;
+  }> {
+    const listings = (await this.listingRepo.find())
+      .filter((l) => l.missCount < 2 && l.lat != null && l.lng != null && l.priceManwon != null)
+      .map((l) => ({
+        id: l.id,
+        zoneId: l.zoneId,
+        lat: l.lat as number,
+        lng: l.lng as number,
+        priceManwon: l.priceManwon as number,
+        area: l.exclusiveArea,
+        distanceM: l.distanceToZoneM,
+        articleNo: l.articleNo,
+      }));
+    const trades = (await this.tradeRepo.find())
+      .filter((t) => !t.isCancelled && t.lat != null && t.lng != null)
+      .map((t) => ({
+        id: t.id,
+        zoneId: t.zoneId,
+        lat: t.lat as number,
+        lng: t.lng as number,
+        priceManwon: t.dealAmountManwon,
+        area: t.exclusiveArea,
+        date: t.contractDate,
+        distanceM: t.distanceToZoneM,
+      }));
+    return { listings, trades };
+  }
+
   async getRun(zoneId: string): Promise<RedevelopmentResearchRun> {
     const run = await this.runRepo.findOne({ where: { zoneId } });
     if (!run) {

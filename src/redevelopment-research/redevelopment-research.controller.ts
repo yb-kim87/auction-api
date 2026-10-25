@@ -38,6 +38,13 @@ export class RedevelopmentResearchController {
     return this.service.getAuctionResearch(auctionId, parseTolerance(toleranceM));
   }
 
+  /** 지도용: 조사로 저장된 호가·실거래 점(가격 라벨). */
+  @Get("map-points")
+  async mapPoints(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.getMapPoints();
+  }
+
   /** 구역 기준 조사 상태만 가볍게 조회. */
   @Get("zones/:zoneId/status")
   async zoneStatus(@Headers() headers: Record<string, string>, @Param("zoneId") zoneId: string) {
