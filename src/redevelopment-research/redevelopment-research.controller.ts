@@ -90,6 +90,17 @@ export class RedevelopmentResearchController {
     return this.service.listRuns();
   }
 
+  /** 빠른 조사로 모은 매물 하나의 상세·단지 정보를 지금 가져온다(네이버 최대 3회). */
+  @Post("zones/:zoneId/listings/:articleNo/detail")
+  async listingDetail(
+    @Headers() headers: Record<string, string>,
+    @Param("zoneId") zoneId: string,
+    @Param("articleNo") articleNo: string,
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.fetchListingDetail(zoneId, articleNo);
+  }
+
   /** 구역 기준 조사 상태만 가볍게 조회. */
   @Get("zones/:zoneId/status")
   async zoneStatus(@Headers() headers: Record<string, string>, @Param("zoneId") zoneId: string) {

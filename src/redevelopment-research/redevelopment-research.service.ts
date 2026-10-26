@@ -769,14 +769,16 @@ export class RedevelopmentResearchService {
     to.complexInfoJson = from.complexInfoJson;
   }
 
-  private async collectNaverDetails(zone: RedevelopmentZone): Promise<void> {
+  /** onlyArticleNos를 주면 그 매물만(배치 상한·진행 상태 기록 없이) 상세·단지 정보까지 채운다 — 빠른 조사 뒤 매물 하나만 자세히 볼 때. */
+  private async collectNaverDetails(zone: RedevelopmentZone, onlyArticleNos?: string[]): Promise<void> {
     const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
-    const eligible = all.filter((r) => r.missCount < 2 && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M);
+    const only = onlyArticleNos ? new Set(onlyArticleNos) : null;
+    const eligible = all.filter((r) => (only ? only.has(r.articleNo) : r.missCount < 2 && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M));
     // 새 상세가 필요하거나(detailFetchedAt 없음) 단지정보 보충이 필요한(finFetchedAt 없음) 매물 — 가까운 구역 안쪽부터.
     const pending = eligible
       .filter((r) => !r.detailFetchedAt || !r.finFetchedAt)
       .sort((a, b) => (a.distanceToZoneM ?? 0) - (b.distanceToZoneM ?? 0));
-    const batch = pending.slice(0, DETAIL_BATCH_LIMIT);
+    const batch = only ? pending : pending.slice(0, DETAIL_BATCH_LIMIT);
     // 단지정보를 이미 가진 매물 → 같은 단지는 다시 조회하지 않는다.
     const donors = new Map<number, RedevelopmentNaverListing>();
     for (const r of all) if (r.complexNumber && r.complexInfoJson) donors.set(r.complexNumber, r);
@@ -785,11 +787,13 @@ export class RedevelopmentResearchService {
     let failures = 0;
     let finFailures = 0;
     for (const row of batch) {
-      await this.patchRun(zone.id, {
-        phase: `네이버 상세·단지정보 ${done + 1}/${batch.length}`,
-        naverDetailDone: done,
-        naverDetailRemaining: pending.length - done,
-      });
+      if (!only) {
+        await this.patchRun(zone.id, {
+          phase: `네이버 상세·단지정보 ${done + 1}/${batch.length}`,
+          naverDetailDone: done,
+          naverDetailRemaining: pending.length - done,
+        });
+      }
 
       // ① 매물 상세(new.land) — 아직 안 가져온 매물만
       if (!row.detailFetchedAt) {
@@ -878,7 +882,25 @@ export class RedevelopmentResearchService {
     }
     await this.enrichPlatArea(zone);
     await this.fillJibunByCoord(zone);
-    await this.patchRun(zone.id, { naverDetailDone: done, naverDetailRemaining: Math.max(0, pending.length - done), phase: "네이버 수집 완료" });
+    if (!only) await this.patchRun(zone.id, { naverDetailDone: done, naverDetailRemaining: Math.max(0, pending.length - done), phase: "네이버 수집 완료" });
+  }
+
+  /** 매물 하나의 상세·단지 정보를 지금 가져와 채운다(빠른 조사로 모은 구역에서 자세한 값이 필요한 매물용). 네이버 호출은 최대 3회. */
+  async fetchListingDetail(zoneId: string, articleNo: string): Promise<{ ok: true; detailFetched: boolean }> {
+    const zone = await this.zoneRepo.findOne({ where: { id: zoneId } });
+    if (!zone) throw new NotFoundException("구역을 찾을 수 없습니다.");
+    if (this.runningZoneId) throw new BadRequestException("구역 조사가 진행 중입니다. 끝난 뒤 다시 눌러 주세요.");
+    const row = await this.listingRepo.findOne({ where: { zoneId, articleNo } });
+    if (!row) throw new NotFoundException("매물을 찾을 수 없습니다.");
+    this.runningZoneId = zoneId; // 구역 조사·다른 상세 조사와 동시에 네이버를 두드리지 않도록 같은 잠금을 쓴다.
+    try {
+      await this.collectNaverDetails(zone, [articleNo]);
+    } finally {
+      this.runningZoneId = null;
+    }
+    const after = await this.listingRepo.findOne({ where: { zoneId, articleNo } });
+    if (!after?.detailFetchedAt) throw new BadRequestException("네이버 상세 조회에 실패했습니다. 잠시 후 다시 시도하세요.");
+    return { ok: true, detailFetched: true };
   }
 
   /** 상세를 못 가져온 매물이 있어도 좌표만으로 지번/법정동은 채워 공시가 매칭에 쓴다(카카오 — 네이버 호출 없음). */
