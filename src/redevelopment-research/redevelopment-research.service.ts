@@ -26,6 +26,8 @@ export const MAX_TOLERANCE_M = 100;
 /** 한 번 실행에 상세를 가져올 최대 매물 수(samsam BACKFILL_BATCH_LIMIT과 같은 이유 — 장시간 규칙적 트래픽 방지).
  * 남으면 "이어서 수집"으로 다시 실행한다. */
 const DETAIL_BATCH_LIMIT = envInt("REDEV_RESEARCH_DETAIL_LIMIT", 40);
+/** 빠른 조사(목록 + 매물 키)에서 한 번 실행에 지번을 조회할 매물 수 — 매물당 네이버 1회(fin 매물 키). */
+const KEY_BATCH_LIMIT = envInt("REDEV_RESEARCH_KEY_LIMIT", 150);
 /** 동 하나당 목록 최대 페이지(20건/페이지 → 600건, samsam villaNearby는 30페이지 상한). */
 const MAX_LIST_PAGES = envInt("REDEV_RESEARCH_MAX_LIST_PAGES", 30);
 const TRADE_MONTHS = 12;
@@ -305,7 +307,7 @@ export class RedevelopmentResearchService {
     return found.sort((a, b) => a.distanceM - b.distanceM);
   }
 
-  async startForAuction(auctionId: string, toleranceM = 30, tradeLimit?: number): Promise<{ zoneId: string; zoneName: string; run: RedevelopmentResearchRun }> {
+  async startForAuction(auctionId: string, toleranceM = 30, tradeLimit?: number, fast = false): Promise<{ zoneId: string; zoneName: string; run: RedevelopmentResearchRun }> {
     const auction = await this.auctionRepo.findOne({ where: { id: auctionId } });
     if (!auction) throw new NotFoundException("경매물건을 찾을 수 없습니다.");
     if (auction.latitude == null || auction.longitude == null) {
@@ -314,7 +316,7 @@ export class RedevelopmentResearchService {
     const near = await this.zonesNear(auction.latitude, auction.longitude, auction.district || null, Math.min(toleranceM, MAX_TOLERANCE_M));
     if (!near.length) throw new BadRequestException("이 물건이 속한 재개발 구역을 찾지 못했습니다(오차범위를 늘려 보세요).");
     const { zone } = near[0];
-    const run = await this.startZone(zone.id, tradeLimit);
+    const run = await this.startZone(zone.id, tradeLimit, fast);
     return { zoneId: zone.id, zoneName: zone.name, run };
   }
 
@@ -326,7 +328,7 @@ export class RedevelopmentResearchService {
     return this.zoneBlog.getZoneBlogInfo(zoneId);
   }
 
-  async startZone(zoneId: string, tradeLimit?: number): Promise<RedevelopmentResearchRun> {
+  async startZone(zoneId: string, tradeLimit?: number, fast = false): Promise<RedevelopmentResearchRun> {
     const zone = await this.zoneRepo.findOne({ where: { id: zoneId } });
     if (!zone) throw new NotFoundException("구역을 찾을 수 없습니다.");
     if (this.runningZoneId) {
@@ -347,7 +349,7 @@ export class RedevelopmentResearchService {
       startedAt: new Date(),
       finishedAt: null,
     });
-    void this.runZone(zone, clampTradeLimit(tradeLimit))
+    void this.runZone(zone, clampTradeLimit(tradeLimit), fast)
       .catch(async (e) => {
         const message = e instanceof Error ? e.message : String(e);
         this.logger.error(`구역 조사 실패(${zone.name}): ${message}`);
@@ -361,8 +363,8 @@ export class RedevelopmentResearchService {
 
   // ───────────────────────── 실행 ─────────────────────────
 
-  private async runZone(zone: RedevelopmentZone, tradeLimit: number): Promise<void> {
-    this.logger.log(`구역 조사 시작: ${zone.name} (${zone.id})`);
+  private async runZone(zone: RedevelopmentZone, tradeLimit: number, fast = false): Promise<void> {
+    this.logger.log(`구역 조사 시작: ${zone.name} (${zone.id})${fast ? " [빠른 조사: 목록 + 매물 키]" : ""}`);
     const blogWarnings: string[] = [];
     // 재개발 블로그(후니동산)의 동의율·공문 타임라인 — 가볍고 다른 수집과 무관해서 가장 먼저 한다. 실패해도 나머지 조사는 계속한다.
     try {
@@ -389,7 +391,7 @@ export class RedevelopmentResearchService {
       errors.push(`실거래 수집 실패: ${e instanceof Error ? e.message : String(e)}`);
     }
     try {
-      await this.collectNaver(zone, dongs);
+      await this.collectNaver(zone, dongs, fast);
     } catch (e) {
       errors.push(`네이버 매물 수집 실패: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -578,7 +580,7 @@ export class RedevelopmentResearchService {
 
   // ── 네이버 매매 매물(samsam 방식) ──
 
-  private async collectNaver(zone: RedevelopmentZone, dongs: ZoneDong[]): Promise<void> {
+  private async collectNaver(zone: RedevelopmentZone, dongs: ZoneDong[], fast = false): Promise<void> {
     await this.patchRun(zone.id, { phase: "네이버 동 코드 확인" });
     // 동 코드: samsam처럼 네이버 /api/cortars(좌표→동)로 확정한다. 실패하면 카카오 법정동코드를 쓴다(같은 10자리 체계).
     const cortars: Array<{ cortarNo: string; dong: ZoneDong }> = [];
@@ -675,7 +677,8 @@ export class RedevelopmentResearchService {
       }
     }
 
-    await this.collectNaverDetails(zone);
+    if (fast) await this.collectNaverKeys(zone);
+    else await this.collectNaverDetails(zone);
   }
 
   /** 건축물대장 표제부 대지면적을 건물(법정동+지번)당 한 번만 조회해 같은 건물의 매물 행에 채운다(호가 대지지분 추정용).
@@ -691,28 +694,35 @@ export class RedevelopmentResearchService {
       byBuilding.set(key, [...(byBuilding.get(key) ?? []), r]);
     }
     // 같은 건물을 이미 조회한 다른 매물이 있으면 그 값을 재사용한다.
-    const known = new Map<string, number | null>();
+    type TitleInfo = { plat: number | null; year: number | null; useApprovalDate: string | null };
+    const known = new Map<string, TitleInfo>();
     for (const r of await this.listingRepo.find({ where: { zoneId: zone.id } })) {
-      if (r.platAreaFetchedAt && r.jibun && r.legalDongCode) known.set(`${r.legalDongCode}|${r.jibun}`, r.platArea);
+      if (r.platAreaFetchedAt && r.jibun && r.legalDongCode) known.set(`${r.legalDongCode}|${r.jibun}`, { plat: r.platArea, year: r.buildingYear, useApprovalDate: r.useApprovalDate });
     }
     let fetched = 0;
     let consecutiveFailures = 0;
     for (const [key, group] of byBuilding) {
-      let plat: number | null | undefined = known.get(key);
-      if (plat === undefined) {
+      let info: TitleInfo | undefined = known.get(key);
+      if (info === undefined) {
         if (fetched >= PLAT_AREA_BATCH_LIMIT || consecutiveFailures >= 2) continue;
         await this.patchRun(zone.id, { phase: `건축물대장 대지면적 ${fetched + 1}/${Math.min(byBuilding.size, PLAT_AREA_BATCH_LIMIT)}` });
         await sleep(400);
         const [legalDongCode, jibun] = key.split("|");
-        plat = await this.buildingRegister.fetchPlatArea(legalDongCode, jibun);
+        const t = await this.buildingRegister.fetchTitleInfo(legalDongCode, jibun);
         fetched += 1;
-        if (plat == null) {
+        if (t == null) {
           consecutiveFailures += 1;
           continue; // 호출 실패 — 기록하지 않고 다음 실행에서 다시
         }
         consecutiveFailures = 0;
+        info = { plat: t.plat, year: t.year, useApprovalDate: t.useApprovalDate };
+        known.set(key, info);
       }
+      const plat = info.plat;
       for (const r of group) {
+        // 연식은 상세/단지 정보 값이 이미 있으면 그대로 두고, 빈 경우에만 건축물대장 사용승인일로 채운다(빠른 조사).
+        if (!r.buildingYear && info.year) r.buildingYear = info.year;
+        if (!r.useApprovalDate && info.useApprovalDate) r.useApprovalDate = info.useApprovalDate;
         r.platArea = plat && plat > 0 ? plat : null;
         r.platAreaFetchedAt = new Date();
         await this.listingRepo.save(r);
@@ -867,7 +877,12 @@ export class RedevelopmentResearchService {
       done += 1;
     }
     await this.enrichPlatArea(zone);
-    // 상세를 못 가져온 매물이 있어도 좌표만으로 지번/법정동은 채워 공시가 매칭에 쓴다.
+    await this.fillJibunByCoord(zone);
+    await this.patchRun(zone.id, { naverDetailDone: done, naverDetailRemaining: Math.max(0, pending.length - done), phase: "네이버 수집 완료" });
+  }
+
+  /** 상세를 못 가져온 매물이 있어도 좌표만으로 지번/법정동은 채워 공시가 매칭에 쓴다(카카오 — 네이버 호출 없음). */
+  private async fillJibunByCoord(zone: RedevelopmentZone): Promise<void> {
     const withoutJibun = (await this.listingRepo.find({ where: { zoneId: zone.id } })).filter(
       (r) => !r.jibun && r.lat != null && r.lng != null && r.missCount < 2,
     );
@@ -879,7 +894,43 @@ export class RedevelopmentResearchService {
         await this.listingRepo.save(row);
       }
     }
-    await this.patchRun(zone.id, { naverDetailDone: done, naverDetailRemaining: Math.max(0, pending.length - done), phase: "네이버 수집 완료" });
+  }
+
+  /** 빠른 조사(목록 + 매물 키): 매물 상세·단지 정보는 부르지 않고, 지번이 없는 매물만 fin 매물 키(네이버 1회/건)로 정확한 지번·법정동을 받는다.
+   * 연식·대지지분은 이어서 건축물대장(enrichPlatArea)으로 채운다. 한 번 받은 지번은 저장되므로 재조사 때는 새 매물만 호출한다.
+   * (사용자 요청 2026-10-26: 매물당 3회 → 1회. 매물 키는 상세에 PNU가 비는 매물 5건에서도 지번을 줬다.) */
+  private async collectNaverKeys(zone: RedevelopmentZone): Promise<void> {
+    const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
+    const pending = all
+      .filter((r) => r.missCount < 2 && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M && !r.jibun)
+      .sort((a, b) => (a.distanceToZoneM ?? 0) - (b.distanceToZoneM ?? 0));
+    const batch = pending.slice(0, KEY_BATCH_LIMIT);
+    let done = 0;
+    let failures = 0;
+    for (const row of batch) {
+      await this.patchRun(zone.id, {
+        phase: `네이버 지번 조회 ${done + 1}/${batch.length}`,
+        naverDetailDone: done,
+        naverDetailRemaining: pending.length - done,
+      });
+      const key = await this.naver.fetchArticleKey(row.articleNo);
+      if (!key) {
+        failures += 1;
+        if (failures >= MAX_CONSECUTIVE_FIN_FAILURES) {
+          throw new Error(`네이버 지번(매물 키) 조회가 ${failures}회 연속 실패해 중단했습니다. 잠시 후 다시 실행하세요.`);
+        }
+        continue;
+      }
+      failures = 0;
+      if (key.legalDivisionNumber) row.legalDongCode = key.legalDivisionNumber;
+      if (key.jibun) row.jibun = key.jibun;
+      row.complexNumber = key.complexNumber;
+      await this.listingRepo.save(row);
+      done += 1;
+    }
+    await this.enrichPlatArea(zone);
+    await this.fillJibunByCoord(zone);
+    await this.patchRun(zone.id, { naverDetailDone: done, naverDetailRemaining: Math.max(0, pending.length - done), phase: "네이버 수집 완료(빠른 조사)" });
   }
 
   // ───────────────────────── 공시가 추정 ─────────────────────────

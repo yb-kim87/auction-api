@@ -13,13 +13,20 @@ export class BuildingRegisterService {
 
   /** 법정동코드(10) + 지번("684-7") → 대지면적(㎡). 조회는 성공했지만 데이터가 없으면 0, 호출 실패는 null. */
   async fetchPlatArea(legalDongCode: string, jibun: string): Promise<number | null> {
+    const info = await this.fetchTitleInfo(legalDongCode, jibun);
+    return info ? info.plat : null;
+  }
+
+  /** 표제부 한 번 호출로 대지면적과 사용승인일(연도)을 함께 얻는다(같은 호출이라 한도를 더 쓰지 않는다).
+   * 데이터가 없으면 plat 0·year null, 호출 실패는 null. */
+  async fetchTitleInfo(legalDongCode: string, jibun: string): Promise<{ plat: number; year: number | null; useApprovalDate: string | null } | null> {
     const key = process.env.BUILDING_REGISTER_API_KEY?.trim();
     if (!key) {
       this.logger.warn("BUILDING_REGISTER_API_KEY가 없어 건축물대장 조회를 건너뜁니다.");
       return null;
     }
     const [bun, ji = "0"] = jibun.split("-");
-    if (legalDongCode.length < 10 || !/^\d+$/.test(bun) || !/^\d+$/.test(ji)) return 0;
+    if (legalDongCode.length < 10 || !/^\d+$/.test(bun) || !/^\d+$/.test(ji)) return { plat: 0, year: null, useApprovalDate: null };
     const url = new URL(BR_TITLE);
     url.searchParams.set("sigunguCd", legalDongCode.slice(0, 5));
     url.searchParams.set("bjdongCd", legalDongCode.slice(5, 10));
@@ -44,7 +51,10 @@ export class BuildingRegisterService {
       const list = (Array.isArray(raw) ? raw : raw ? [raw] : []) as Array<Record<string, unknown>>;
       // 표제부가 여러 건이면(동별) 대지면적이 가장 큰 값 — 연립 여러 동은 0으로 오는 경우가 많다.
       const plat = Math.max(0, ...list.map((i) => Number(i.platArea) || 0));
-      return Math.round(plat * 100) / 100;
+      // 사용승인일(YYYYMMDD) — 대지면적이 가장 큰 동의 값을 우선하고, 없으면 값이 있는 아무 동.
+      const byPlat = [...list].sort((a, b) => (Number(b.platArea) || 0) - (Number(a.platArea) || 0));
+      const useApr = byPlat.map((i) => String(i.useAprDay ?? "").trim()).find((v) => /^\d{8}$/.test(v)) ?? null;
+      return { plat: Math.round(plat * 100) / 100, year: useApr ? Number(useApr.slice(0, 4)) : null, useApprovalDate: useApr };
     } catch (e) {
       this.logger.warn(`건축물대장 표제부 조회 실패(${legalDongCode} ${jibun}): ${e instanceof Error ? e.message : String(e)}`);
       return null;

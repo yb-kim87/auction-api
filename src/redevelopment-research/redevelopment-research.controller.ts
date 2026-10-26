@@ -21,10 +21,10 @@ export class RedevelopmentResearchController {
   async start(
     @Headers() headers: Record<string, string>,
     @Param("auctionId") auctionId: string,
-    @Body() body: { toleranceM?: number; tradeLimit?: number },
+    @Body() body: { toleranceM?: number; tradeLimit?: number; fast?: boolean },
   ) {
     requireAdmin(getAuthContext(headers));
-    return this.service.startForAuction(auctionId, parseTolerance(body?.toleranceM), body?.tradeLimit);
+    return this.service.startForAuction(auctionId, parseTolerance(body?.toleranceM), body?.tradeLimit, body?.fast === true);
   }
 
   /** 경매물건 기준 조사 결과 + 진행 상태(폴링용). */
@@ -76,10 +76,10 @@ export class RedevelopmentResearchController {
   async startZone(
     @Headers() headers: Record<string, string>,
     @Param("zoneId") zoneId: string,
-    @Body() body: { tradeLimit?: number },
+    @Body() body: { tradeLimit?: number; fast?: boolean },
   ) {
     requireAdmin(getAuthContext(headers));
-    const run = await this.service.startZone(zoneId, body?.tradeLimit);
+    const run = await this.service.startZone(zoneId, body?.tradeLimit, body?.fast === true);
     return { zoneId, run };
   }
 
