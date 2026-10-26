@@ -31,7 +31,13 @@ const MAX_LIST_PAGES = envInt("REDEV_RESEARCH_MAX_LIST_PAGES", 30);
 const TRADE_MONTHS = 12;
 /** 실거래는 "최근 1년 이내, 가장 최근 거래부터" 이 개수만큼만 샘플로 가져온다(사용자 요청 2026-10-24: 10건으로 시작해 점차 늘림).
  * 구역 안 거래(해제 건 제외)가 이 개수에 닿으면 이전 달은 더 조회하지 않는다 — 국토부 호출도 그만큼 줄어든다. */
-const TRADE_SAMPLE_LIMIT = envInt("REDEV_RESEARCH_TRADE_LIMIT", 10);
+const TRADE_SAMPLE_LIMIT = envInt("REDEV_RESEARCH_TRADE_LIMIT", 20);
+/** 화면에서 정한 실거래 조회 건수를 5~100으로 맞춘다. 값이 없거나 숫자가 아니면 기본값(TRADE_SAMPLE_LIMIT). */
+function clampTradeLimit(n: unknown): number {
+  const v = Number(n);
+  if (!Number.isFinite(v) || v <= 0) return TRADE_SAMPLE_LIMIT;
+  return Math.min(100, Math.max(5, Math.round(v)));
+}
 /** 조사 대상 용도: 빌라 = 다세대 · 연립주택 · 도시형생활주택(경매코치도 이 셋을 "빌라"로 묶는다 — property-type-alias).
  * 국토부 응답의 houseType이 이 목록이거나 비어 있으면(구분 불명) 통과시킨다. 사용자 요청 2026-10-25. */
 const VILLA_HOUSE_TYPES = ["다세대", "연립", "연립주택", "도시형생활주택", "도시형"];
@@ -282,7 +288,7 @@ export class RedevelopmentResearchService {
     return found.sort((a, b) => a.distanceM - b.distanceM);
   }
 
-  async startForAuction(auctionId: string, toleranceM = 30): Promise<{ zoneId: string; zoneName: string; run: RedevelopmentResearchRun }> {
+  async startForAuction(auctionId: string, toleranceM = 30, tradeLimit?: number): Promise<{ zoneId: string; zoneName: string; run: RedevelopmentResearchRun }> {
     const auction = await this.auctionRepo.findOne({ where: { id: auctionId } });
     if (!auction) throw new NotFoundException("경매물건을 찾을 수 없습니다.");
     if (auction.latitude == null || auction.longitude == null) {
@@ -291,7 +297,7 @@ export class RedevelopmentResearchService {
     const near = await this.zonesNear(auction.latitude, auction.longitude, auction.district || null, Math.min(toleranceM, MAX_TOLERANCE_M));
     if (!near.length) throw new BadRequestException("이 물건이 속한 재개발 구역을 찾지 못했습니다(오차범위를 늘려 보세요).");
     const { zone } = near[0];
-    const run = await this.startZone(zone.id);
+    const run = await this.startZone(zone.id, tradeLimit);
     return { zoneId: zone.id, zoneName: zone.name, run };
   }
 
@@ -303,7 +309,7 @@ export class RedevelopmentResearchService {
     return this.zoneBlog.getZoneBlogInfo(zoneId);
   }
 
-  async startZone(zoneId: string): Promise<RedevelopmentResearchRun> {
+  async startZone(zoneId: string, tradeLimit?: number): Promise<RedevelopmentResearchRun> {
     const zone = await this.zoneRepo.findOne({ where: { id: zoneId } });
     if (!zone) throw new NotFoundException("구역을 찾을 수 없습니다.");
     if (this.runningZoneId) {
@@ -324,7 +330,7 @@ export class RedevelopmentResearchService {
       startedAt: new Date(),
       finishedAt: null,
     });
-    void this.runZone(zone)
+    void this.runZone(zone, clampTradeLimit(tradeLimit))
       .catch(async (e) => {
         const message = e instanceof Error ? e.message : String(e);
         this.logger.error(`구역 조사 실패(${zone.name}): ${message}`);
@@ -338,7 +344,7 @@ export class RedevelopmentResearchService {
 
   // ───────────────────────── 실행 ─────────────────────────
 
-  private async runZone(zone: RedevelopmentZone): Promise<void> {
+  private async runZone(zone: RedevelopmentZone, tradeLimit: number): Promise<void> {
     this.logger.log(`구역 조사 시작: ${zone.name} (${zone.id})`);
     const blogWarnings: string[] = [];
     // 재개발 블로그(후니동산)의 동의율·공문 타임라인 — 가볍고 다른 수집과 무관해서 가장 먼저 한다. 실패해도 나머지 조사는 계속한다.
@@ -356,7 +362,7 @@ export class RedevelopmentResearchService {
     const errors: string[] = [];
     const warnings: string[] = [...blogWarnings];
     try {
-      const { failedMonths, attemptedMonths, saved } = await this.collectTrades(zone, dongs);
+      const { failedMonths, attemptedMonths, saved } = await this.collectTrades(zone, dongs, tradeLimit);
       if (attemptedMonths > 0 && failedMonths >= attemptedMonths && saved === 0) {
         errors.push(`국토부 실거래 ${attemptedMonths}개월 조회가 전부 실패(호출 한도/일시 오류) — 잠시 후 다시 실행하세요`);
       } else if (failedMonths > 0) {
@@ -400,9 +406,9 @@ export class RedevelopmentResearchService {
   private async collectTrades(
     zone: RedevelopmentZone,
     dongs: ZoneDong[],
+    limit: number,
   ): Promise<{ failedMonths: number; attemptedMonths: number; saved: number }> {
     await this.patchRun(zone.id, { phase: "국토부 실거래 수집" });
-    const limit = TRADE_SAMPLE_LIMIT;
     const now = new Date();
     const cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
     // 최신 달부터 과거 순서(이번 달 → 12개월 전).
@@ -410,6 +416,27 @@ export class RedevelopmentResearchService {
     for (let i = 0; i < TRADE_MONTHS; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push(`${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`);
+    }
+    // 이미 수집한 구역은 저장된 가장 최근 거래월의 2개월 전부터만 다시 조회한다 — 국토부 API는 "지역+월" 단위라
+    // 오래된 달은 다시 부를 필요가 없다(사용자 요청, 2026-10-26). 2개월을 되짚는 이유: 계약 후 최대 30일 늦게
+    // 신고되는 거래와 나중에 "해제"로 바뀌는 거래가 최근 두세 달 안에 몰려 있어서다. 저장된 거래가 없으면 전체 기간.
+    // 단, 저장된 유효(해제 아님) 거래가 요청한 건수보다 적으면 아직 그만큼 못 채운 것이므로 전체 기간을 다시 본다.
+    const latestRow = await this.tradeRepo
+      .createQueryBuilder("t")
+      .select("MAX(t.contractDate)", "max")
+      .addSelect("COUNT(*) FILTER (WHERE t.isCancelled = false)", "valid")
+      .where("t.zoneId = :zoneId", { zoneId: zone.id })
+      .getRawOne<{ max: string | null; valid: string | null }>();
+    if (latestRow?.max && Number(latestRow.valid ?? 0) >= limit) {
+      const [ly, lm] = latestRow.max.split("-").map(Number);
+      const back = new Date(ly, lm - 1 - 2, 1);
+      const sinceYm = `${back.getFullYear()}${String(back.getMonth() + 1).padStart(2, "0")}`;
+      const recent = months.filter((ym) => ym >= sinceYm);
+      if (recent.length > 0 && recent.length < months.length) {
+        this.logger.log(`실거래 증분 조회(${zone.name}): 최근 거래월 ${latestRow.max.slice(0, 7)} → ${sinceYm}부터 ${recent.length}개월만 조회`);
+        months.length = 0;
+        months.push(...recent);
+      }
     }
     const lawdCds = Array.from(new Set(dongs.map((d) => d.code.slice(0, 5))));
     const dongByUmd = new Map(dongs.map((d) => [d.name, d]));
