@@ -420,14 +420,14 @@ export class RedevelopmentResearchService {
     // 이미 수집한 구역은 저장된 가장 최근 거래월의 2개월 전부터만 다시 조회한다 — 국토부 API는 "지역+월" 단위라
     // 오래된 달은 다시 부를 필요가 없다(사용자 요청, 2026-10-26). 2개월을 되짚는 이유: 계약 후 최대 30일 늦게
     // 신고되는 거래와 나중에 "해제"로 바뀌는 거래가 최근 두세 달 안에 몰려 있어서다. 저장된 거래가 없으면 전체 기간.
-    // 단, 저장된 유효(해제 아님) 거래가 요청한 건수보다 적으면 아직 그만큼 못 채운 것이므로 전체 기간을 다시 본다.
+    // 조회 건수(limit)는 목표가 아니라 "최대"다 — 그 기간에 거래가 적어 못 채워도 괜찮으므로, 한 번이라도 수집한 구역은
+    // 건수와 상관없이 증분 조회한다(사용자 지적, 2026-10-26). 건수를 늘려도 이미 조사한 구역의 과거 달은 다시 안 내려간다.
     const latestRow = await this.tradeRepo
       .createQueryBuilder("t")
       .select("MAX(t.contractDate)", "max")
-      .addSelect("COUNT(*) FILTER (WHERE t.isCancelled = false)", "valid")
       .where("t.zoneId = :zoneId", { zoneId: zone.id })
-      .getRawOne<{ max: string | null; valid: string | null }>();
-    if (latestRow?.max && Number(latestRow.valid ?? 0) >= limit) {
+      .getRawOne<{ max: string | null }>();
+    if (latestRow?.max) {
       const [ly, lm] = latestRow.max.split("-").map(Number);
       const back = new Date(ly, lm - 1 - 2, 1);
       const sinceYm = `${back.getFullYear()}${String(back.getMonth() + 1).padStart(2, "0")}`;
