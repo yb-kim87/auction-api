@@ -1117,7 +1117,8 @@ export class RedevelopmentResearchService {
       this.tradeRepo.find({ where: { zoneId } }),
       this.getRun(zoneId),
     ]);
-    const listings = listingRows.filter((l) => l.missCount < 2 && (l.distanceToZoneM ?? 9999) <= tol);
+    // 사라진 매물(missCount>=2)도 지우지 않고 gone 표시로 함께 내려 화면이 "사라짐"으로 보여 준다(사용자 요청 2026-10-26).
+    const listings = listingRows.filter((l) => (l.distanceToZoneM ?? 9999) <= tol);
     const trades = tradeRows.filter((t) => (t.distanceToZoneM ?? 9999) <= tol);
     // 대지지분 추정: 네이버 매물은 대지지분을 주지 않는다(실측: groundShareSpace/landShare 모두 0). 같은 지번의 국토부 실거래가
     // 가진 대지권면적(landAr)으로 (대지권면적 ÷ 전용면적) 비율을 구해 호가 전용면적에 곱한다. 같은 건물 실거래가 없으면 null.
@@ -1190,6 +1191,7 @@ export class RedevelopmentResearchService {
             hasDetail: !!l.detailFetchedAt,
             firstSeenAt: l.firstSeenAt,
             lastSeenAt: l.lastSeenAt,
+            gone: l.missCount >= 2,
             // 상세 전 면적은 정수 반올림(목록 area2)이라 허용오차를 1.0㎡로 넓힌다.
             officialPrice: this.estimate(key ? prices.get(key) : undefined, l.exclusiveArea, floor, null, l.detailFetchedAt ? 0.6 : 1.0, parseFloorBand(l.floorInfo)),
             ...(() => {
