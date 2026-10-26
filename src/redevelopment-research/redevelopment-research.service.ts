@@ -258,6 +258,23 @@ export class RedevelopmentResearchService {
     return { listings, trades };
   }
 
+  /** 조사 이력이 있는 구역들의 상태 요약(구역 목록 배지용). 시작만 하고 끝나지 않은 기록은 getRun과 같은 규칙으로 중단 처리한다. */
+  async listRuns() {
+    const runs = await this.runRepo.find();
+    return runs.map((r) => ({
+      zoneId: r.zoneId,
+      status:
+        r.status === "running" && this.runningZoneId !== r.zoneId && Date.now() - r.updatedAt.getTime() > STALE_RUN_MS
+          ? ("interrupted" as ResearchRunStatus)
+          : r.status,
+      phase: r.phase,
+      naverSaved: r.naverSaved,
+      tradesSaved: r.tradesSaved,
+      finishedAt: r.finishedAt,
+      startedAt: r.startedAt,
+    }));
+  }
+
   async getRun(zoneId: string): Promise<RedevelopmentResearchRun> {
     const run = await this.runRepo.findOne({ where: { zoneId } });
     if (!run) {

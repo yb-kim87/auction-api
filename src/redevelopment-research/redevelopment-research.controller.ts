@@ -83,6 +83,13 @@ export class RedevelopmentResearchController {
     return { zoneId, run };
   }
 
+  /** 구역 목록용: 조사 이력이 있는 모든 구역의 최근 조사 상태(미조사 구역은 행이 없음). */
+  @Get("zones-runs")
+  async zonesRuns(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.service.listRuns();
+  }
+
   /** 구역 기준 조사 상태만 가볍게 조회. */
   @Get("zones/:zoneId/status")
   async zoneStatus(@Headers() headers: Record<string, string>, @Param("zoneId") zoneId: string) {
