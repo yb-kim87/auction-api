@@ -160,6 +160,14 @@ export class RedevelopmentNaverListing {
   @Column({ type: "float", nullable: true })
   platArea!: number | null;
 
+  /** 건축물대장 전유부 "전유" 호 전용면적 합계(㎡) — 대지지분 추정의 분모. null이면 공시가격 DB 호 합계로 대신한다. */
+  @Column({ type: "float", nullable: true })
+  exposedAreaSum!: number | null;
+
+  /** 전유부 조회를 마친 시각(값이 없어도 기록해 다시 부르지 않는다). */
+  @Column({ type: Date, nullable: true })
+  exposedAreaFetchedAt!: Date | null;
+
   /** 건축물대장 조회를 마친 시각(값이 없어도 기록해 다시 부르지 않는다). */
   @Column({ type: Date, nullable: true })
   platAreaFetchedAt!: Date | null;

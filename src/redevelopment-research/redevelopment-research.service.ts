@@ -52,6 +52,8 @@ const MAX_CONSECUTIVE_DETAIL_FAILURES = 3;
 const MAX_CONSECUTIVE_FIN_FAILURES = 3;
 /** 한 번 실행에 건축물대장(대지면적)을 조회할 최대 건물 수 — 국토부 키 호출 한도를 실거래·재판매 배치와 공유한다. */
 const PLAT_AREA_BATCH_LIMIT = envInt("REDEV_RESEARCH_PLAT_LIMIT", 30);
+/** 대지지분 추정에 건축물대장 전유부 합계를 쓸지(기본 켬). 국토부 건축물대장 일일 한도가 빨리 차면 REDEV_RESEARCH_EXPOS_SUM=0으로 끈다. */
+const EXPOS_SUM_ENABLED = process.env.REDEV_RESEARCH_EXPOS_SUM !== "0";
 
 export type ZoneDong = { code: string; name: string; gu: string; sido: string; sample: { lat: number; lng: number } };
 
@@ -684,8 +686,14 @@ export class RedevelopmentResearchService {
   /** 건축물대장 표제부 대지면적을 건물(법정동+지번)당 한 번만 조회해 같은 건물의 매물 행에 채운다(호가 대지지분 추정용).
    * 한 번 실행에 최대 PLAT_AREA_BATCH_LIMIT개 건물만(국토부 키 호출 한도 공유), 조회 실패는 다음 실행에서 다시 시도한다. */
   private async enrichPlatArea(zone: RedevelopmentZone): Promise<void> {
-    const rows = (await this.listingRepo.find({ where: { zoneId: zone.id } })).filter(
-      (r) => r.missCount < 2 && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M && r.jibun && r.legalDongCode && !r.platAreaFetchedAt,
+    const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
+    const rows = all.filter(
+      (r) =>
+        r.missCount < 2 &&
+        (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M &&
+        r.jibun &&
+        r.legalDongCode &&
+        (!r.platAreaFetchedAt || (EXPOS_SUM_ENABLED && (r.platArea ?? 0) > 0 && !r.exposedAreaFetchedAt)),
     );
     if (!rows.length) return;
     const byBuilding = new Map<string, RedevelopmentNaverListing[]>();
@@ -693,21 +701,31 @@ export class RedevelopmentResearchService {
       const key = `${r.legalDongCode}|${r.jibun}`;
       byBuilding.set(key, [...(byBuilding.get(key) ?? []), r]);
     }
+    type BuildingInfo = { plat: number | null; year: number | null; useApprovalDate: string | null; exposedSum: number | null; titleDone: boolean; exposDone: boolean };
     // 같은 건물을 이미 조회한 다른 매물이 있으면 그 값을 재사용한다.
-    type TitleInfo = { plat: number | null; year: number | null; useApprovalDate: string | null };
-    const known = new Map<string, TitleInfo>();
-    for (const r of await this.listingRepo.find({ where: { zoneId: zone.id } })) {
-      if (r.platAreaFetchedAt && r.jibun && r.legalDongCode) known.set(`${r.legalDongCode}|${r.jibun}`, { plat: r.platArea, year: r.buildingYear, useApprovalDate: r.useApprovalDate });
+    const known = new Map<string, BuildingInfo>();
+    for (const r of all) {
+      if (r.platAreaFetchedAt && r.jibun && r.legalDongCode) {
+        known.set(`${r.legalDongCode}|${r.jibun}`, {
+          plat: r.platArea,
+          year: r.buildingYear,
+          useApprovalDate: r.useApprovalDate,
+          exposedSum: r.exposedAreaSum,
+          titleDone: true,
+          exposDone: !!r.exposedAreaFetchedAt,
+        });
+      }
     }
     let fetched = 0;
     let consecutiveFailures = 0;
     for (const [key, group] of byBuilding) {
-      let info: TitleInfo | undefined = known.get(key);
-      if (info === undefined) {
-        if (fetched >= PLAT_AREA_BATCH_LIMIT || consecutiveFailures >= 2) continue;
+      const info: BuildingInfo = known.get(key) ?? { plat: null, year: null, useApprovalDate: null, exposedSum: null, titleDone: false, exposDone: false };
+      const [legalDongCode, jibun] = key.split("|");
+      const canCall = () => fetched < PLAT_AREA_BATCH_LIMIT && consecutiveFailures < 2;
+      if (!info.titleDone) {
+        if (!canCall()) continue;
         await this.patchRun(zone.id, { phase: `건축물대장 대지면적 ${fetched + 1}/${Math.min(byBuilding.size, PLAT_AREA_BATCH_LIMIT)}` });
         await sleep(400);
-        const [legalDongCode, jibun] = key.split("|");
         const t = await this.buildingRegister.fetchTitleInfo(legalDongCode, jibun);
         fetched += 1;
         if (t == null) {
@@ -715,16 +733,35 @@ export class RedevelopmentResearchService {
           continue; // 호출 실패 — 기록하지 않고 다음 실행에서 다시
         }
         consecutiveFailures = 0;
-        info = { plat: t.plat, year: t.year, useApprovalDate: t.useApprovalDate };
-        known.set(key, info);
+        info.plat = t.plat;
+        info.year = t.year;
+        info.useApprovalDate = t.useApprovalDate;
+        info.titleDone = true;
       }
-      const plat = info.plat;
+      // 전유부 전용면적 합계 — 대지면적이 있는 건물만(대지면적이 0이면 추정 자체가 불가).
+      if (EXPOS_SUM_ENABLED && (info.plat ?? 0) > 0 && !info.exposDone && canCall()) {
+        await this.patchRun(zone.id, { phase: `건축물대장 전유부 ${fetched + 1}/${Math.min(byBuilding.size * 2, PLAT_AREA_BATCH_LIMIT)}` });
+        await sleep(400);
+        const e = await this.buildingRegister.fetchExposedAreaSum(legalDongCode, jibun);
+        fetched += 1;
+        if (e == null) {
+          consecutiveFailures += 1; // 한도 초과 등 — 표제부 값은 저장하고 전유부는 다음 실행에서 다시
+        } else {
+          consecutiveFailures = 0;
+          info.exposedSum = e.sum > 0 ? e.sum : null;
+          info.exposDone = true;
+        }
+      }
+      known.set(key, info);
+      const now = new Date();
       for (const r of group) {
         // 연식은 상세/단지 정보 값이 이미 있으면 그대로 두고, 빈 경우에만 건축물대장 사용승인일로 채운다(빠른 조사).
         if (!r.buildingYear && info.year) r.buildingYear = info.year;
         if (!r.useApprovalDate && info.useApprovalDate) r.useApprovalDate = info.useApprovalDate;
-        r.platArea = plat && plat > 0 ? plat : null;
-        r.platAreaFetchedAt = new Date();
+        r.platArea = info.plat && info.plat > 0 ? info.plat : null;
+        if (!r.platAreaFetchedAt) r.platAreaFetchedAt = now;
+        r.exposedAreaSum = info.exposedSum;
+        if (info.exposDone && !r.exposedAreaFetchedAt) r.exposedAreaFetchedAt = now;
         await this.listingRepo.save(r);
       }
     }
@@ -1160,7 +1197,11 @@ export class RedevelopmentResearchService {
               if (tradeEst != null) return { landShareEstimate: tradeEst, landShareBasis: "trade" as const };
               // 건축물대장 대지면적 × (전용면적 ÷ 이 건물 공시가격 호들의 전용면적 합)
               const buildingRows = key ? prices.get(key) : undefined;
-              const sum = (buildingRows ?? []).reduce((a, r) => a + (r.exclusiveArea != null ? Number(r.exclusiveArea) : 0), 0);
+              // 분모: 건축물대장 전유부 합계가 있으면 그것(정확), 없으면 공시가격 DB 호들의 전용면적 합.
+              const sum =
+                l.exposedAreaSum && l.exposedAreaSum > 0
+                  ? l.exposedAreaSum
+                  : (buildingRows ?? []).reduce((a, r) => a + (r.exclusiveArea != null ? Number(r.exclusiveArea) : 0), 0);
               if (l.platArea && l.exclusiveArea && sum > 0) {
                 return { landShareEstimate: Math.round(((l.platArea * l.exclusiveArea) / sum) * 100) / 100, landShareBasis: "ledger" as const };
               }
