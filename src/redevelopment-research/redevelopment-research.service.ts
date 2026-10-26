@@ -28,6 +28,8 @@ export const MAX_TOLERANCE_M = 100;
 const DETAIL_BATCH_LIMIT = envInt("REDEV_RESEARCH_DETAIL_LIMIT", 40);
 /** 빠른 조사(목록 + 매물 키)에서 한 번 실행에 지번을 조회할 매물 수 — 매물당 네이버 1회(fin 매물 키). */
 const KEY_BATCH_LIMIT = envInt("REDEV_RESEARCH_KEY_LIMIT", 150);
+/** 목록 조회가 끝까지 성공했는데 이만큼 연속으로 안 보인 매물은 "사라짐"으로 본다(사용자 요청 2026-10-26: 2회 → 1회). 목록에 다시 보이면 0으로 돌아간다. */
+const GONE_MISS_COUNT = 1;
 /** 동 하나당 목록 최대 페이지(20건/페이지 → 600건, samsam villaNearby는 30페이지 상한). */
 const MAX_LIST_PAGES = envInt("REDEV_RESEARCH_MAX_LIST_PAGES", 30);
 const TRADE_MONTHS = 12;
@@ -194,7 +196,7 @@ export class RedevelopmentResearchService {
       officialManwon: number | null; officialBasis: string;
     }>;
   }> {
-    const listingRows = (await this.listingRepo.find()).filter((l) => l.missCount < 2 && l.lat != null && l.lng != null && l.priceManwon != null);
+    const listingRows = (await this.listingRepo.find()).filter((l) => l.missCount < GONE_MISS_COUNT && l.lat != null && l.lng != null && l.priceManwon != null);
     const tradeRows = (await this.tradeRepo.find()).filter((t) => !t.isCancelled && t.lat != null && t.lng != null);
     // 공시가(만원): 조사 결과 화면과 같은 추정 로직(호수→층+면적→층구간→인접층→면적 순).
     const prices = await this.loadBuildingPrices([
@@ -689,7 +691,7 @@ export class RedevelopmentResearchService {
     const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
     const rows = all.filter(
       (r) =>
-        r.missCount < 2 &&
+        r.missCount < GONE_MISS_COUNT &&
         (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M &&
         r.jibun &&
         r.legalDongCode &&
@@ -810,7 +812,7 @@ export class RedevelopmentResearchService {
   private async collectNaverDetails(zone: RedevelopmentZone, onlyArticleNos?: string[]): Promise<void> {
     const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
     const only = onlyArticleNos ? new Set(onlyArticleNos) : null;
-    const eligible = all.filter((r) => (only ? only.has(r.articleNo) : r.missCount < 2 && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M));
+    const eligible = all.filter((r) => (only ? only.has(r.articleNo) : r.missCount < GONE_MISS_COUNT && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M));
     // 새 상세가 필요하거나(detailFetchedAt 없음) 단지정보 보충이 필요한(finFetchedAt 없음) 매물 — 가까운 구역 안쪽부터.
     const pending = eligible
       .filter((r) => !r.detailFetchedAt || !r.finFetchedAt)
@@ -943,7 +945,7 @@ export class RedevelopmentResearchService {
   /** 상세를 못 가져온 매물이 있어도 좌표만으로 지번/법정동은 채워 공시가 매칭에 쓴다(카카오 — 네이버 호출 없음). */
   private async fillJibunByCoord(zone: RedevelopmentZone): Promise<void> {
     const withoutJibun = (await this.listingRepo.find({ where: { zoneId: zone.id } })).filter(
-      (r) => !r.jibun && r.lat != null && r.lng != null && r.missCount < 2,
+      (r) => !r.jibun && r.lat != null && r.lng != null && r.missCount < GONE_MISS_COUNT,
     );
     for (const row of withoutJibun) {
       const j = await this.kakao.jibunAt(row.lat as number, row.lng as number);
@@ -961,7 +963,7 @@ export class RedevelopmentResearchService {
   private async collectNaverKeys(zone: RedevelopmentZone): Promise<void> {
     const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
     const pending = all
-      .filter((r) => r.missCount < 2 && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M && !r.jibun)
+      .filter((r) => r.missCount < GONE_MISS_COUNT && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M && !r.jibun)
       .sort((a, b) => (a.distanceToZoneM ?? 0) - (b.distanceToZoneM ?? 0));
     const batch = pending.slice(0, KEY_BATCH_LIMIT);
     let done = 0;
@@ -1191,7 +1193,7 @@ export class RedevelopmentResearchService {
             hasDetail: !!l.detailFetchedAt,
             firstSeenAt: l.firstSeenAt,
             lastSeenAt: l.lastSeenAt,
-            gone: l.missCount >= 2,
+            gone: l.missCount >= GONE_MISS_COUNT,
             // 상세 전 면적은 정수 반올림(목록 area2)이라 허용오차를 1.0㎡로 넓힌다.
             officialPrice: this.estimate(key ? prices.get(key) : undefined, l.exclusiveArea, floor, null, l.detailFetchedAt ? 0.6 : 1.0, parseFloorBand(l.floorInfo)),
             ...(() => {
