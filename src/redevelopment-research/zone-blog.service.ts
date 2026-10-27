@@ -9,7 +9,7 @@ import { NaverLandService } from "./naver-land.service";
 /** 구역 조사 때 함께 조사하는 재개발 블로그(사용자 지정, 2026-10-25). 블로그 안 검색 → 상위 글 몇 개만 열어 동의율·공문 타임라인을 뽑는다.
  * 호출은 네이버 부동산 조사와 같은 직렬 큐·랜덤 간격을 거치고, 한 번에 검색 1회 + 글 최대 MAX_POSTS개만 연다. */
 const BLOGS = [{ blogId: "hoonihooon_", label: "재개발 전문가 후니동산" }];
-const MAX_POSTS = 5;
+const MAX_POSTS = 8;
 const MAX_TIMELINE_PER_POST = 20;
 
 export type ZoneBlogNote = {
@@ -67,12 +67,45 @@ export function zoneBlogKeys(name: string): { dong: string | null; bun: string |
 function lineMentionsZone(line: string, keys: ReturnType<typeof zoneBlogKeys>): boolean {
   const compact = line.replace(/\s+/g, "");
   if (keys.dong && keys.bun) {
-    if (compact.includes(`${keys.dong}${keys.bun}`)) return true;
+    const exact = `${keys.dong}${keys.bun}`.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`${exact}(?![\\d-])`).test(compact)) return true;
     // "대림동 868일대, 680일대"처럼 번지만 따로 적힌 경우 — 같은 줄에 동 이름이 있어야 인정.
     const re = new RegExp(`(?<![\\d-])${keys.bun.replace(/-/g, "\\-")}(?:번지|일대|[,)\\s]|$)`);
     return compact.includes(keys.dong) && re.test(line.replace(/\s+/g, ""));
   }
-  return keys.plain.length >= 3 && compact.includes(keys.plain.replace(/\s+/g, ""));
+  const plain = keys.plain.replace(/\s+/g, "");
+  if (plain.length < 3) return false;
+  const escaped = plain.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`${escaped}${/\d$/.test(plain) ? "(?![\\d-])" : ""}`).test(compact);
+}
+
+function mentionsOtherNumberedZone(line: string, name: string): boolean {
+  const numbered = /([가-힣]+?)(\d+)$/.exec(zoneBlogKeys(name).plain.replace(/\s+/g, ""));
+  if (!numbered) return false;
+  const other = new RegExp(`${numbered[1]}\\s*(?!${numbered[2]}(?!\\d))\\d+(?:구역)?`);
+  const list = new RegExp(`${numbered[1]}\\s*${numbered[2]}\\s*[·,ㆍ/]\\s*\\d`);
+  const genericHeading = /^\s*(?:제\s*)?(\d+)\s*구역(?:\s|$|[:：])/ .exec(line);
+  return other.test(line) || list.test(line) || (!!genericHeading && genericHeading[1] !== numbered[2]);
+}
+
+/** 근거 원문을 그대로 보관한다. 타 구역이 함께 언급된 줄은 수치를 단정하지 않는다. */
+export function extractZoneInsights(lines: string[], name: string): string[] {
+  const keys = zoneBlogKeys(name);
+  const keyword = /사업시행|정비구역|조합설립|관리처분|시공사|일반분양|조합원|분담금|비례율|권리산정|세대|용적률|착공|준공|입주|추진|공람|설명회|총회/;
+  const out: string[] = [];
+  let context = 0;
+  for (const line of lines) {
+    const ours = lineMentionsZone(line, keys);
+    const other = mentionsOtherNumberedZone(line, name);
+    if (other) context = 0;
+    if (ours && !other) context = 4;
+    if ((ours && !other || context > 0 && !other) && keyword.test(line) && !parseConsent(line)) {
+      const text = line.slice(0, 300);
+      if (!out.includes(text)) out.push(text);
+    }
+    if (!ours && context > 0) context -= 1;
+  }
+  return out.slice(0, 12);
 }
 
 function parseConsent(line: string): { yes: number | null; no: number | null; qualifier: string | null } | null {
@@ -117,6 +150,7 @@ export class ZoneBlogService {
       seen.add(m[1]);
       out.push({ logNo: m[1], title: decodeEntities(m[2].replace(/<[^>]+>/g, "")).trim() });
     }
+    if (!out.length && /(?:logNo=|logNo%3D)\d+/i.test(html)) throw new Error("블로그 검색 결과 형식이 바뀌어 글 목록을 읽지 못했습니다.");
     return out;
   }
 
@@ -137,18 +171,31 @@ export class ZoneBlogService {
     let posts = 0;
     let consent = 0;
     let timeline = 0;
+    let searched = 0;
+    let failed = 0;
     for (const blog of BLOGS) {
-      const found = (await this.searchPosts(blog.blogId, query)).slice(0, MAX_POSTS);
+      const queries = Array.from(new Set([query, ...(!keys.bun && /\d$/.test(query) ? [`${query}구역`] : [])]));
+      const foundById = new Map<string, { logNo: string; title: string }>();
+      for (const q of queries) {
+        for (const post of await this.searchPosts(blog.blogId, q)) if (!foundById.has(post.logNo)) foundById.set(post.logNo, post);
+      }
+      searched += foundById.size;
+      const found = [...foundById.values()].slice(0, MAX_POSTS);
       for (const p of found) {
-        const post = await this.openPost(blog.blogId, p.logNo);
-        if (!post) continue;
+        let post: Awaited<ReturnType<ZoneBlogService["openPost"]>>;
+        try { post = await this.openPost(blog.blogId, p.logNo); } catch { failed += 1; continue; }
+        if (!post) { failed += 1; continue; }
         const rows: Array<Partial<RedevelopmentZoneBlogNote>> = [];
         const { lines } = post;
         const url = `https://blog.naver.com/${blog.blogId}/${p.logNo}`;
+        if (lineMentionsZone(post.title || p.title, keys) || lines.some((line) => lineMentionsZone(line, keys))) {
+          rows.push({ kind: "article", text: post.title || p.title });
+          for (const text of extractZoneInsights(lines, zone.name)) rows.push({ kind: "insight", text });
+        }
         for (let i = 0; i < lines.length; i++) {
-          if (!lineMentionsZone(lines[i], keys)) continue;
+          if (!lineMentionsZone(lines[i], keys) || mentionsOtherNumberedZone(lines[i], zone.name)) continue;
           // 동의율: 같은 줄, 없으면 바로 다음 줄까지 본다(표가 줄로 쪼개진 경우).
-          const c = parseConsent(lines[i]) ?? (i + 1 < lines.length && !lineMentionsZone(lines[i + 1], keys) ? parseConsent(lines[i + 1]) : null);
+          const c = parseConsent(lines[i]) ?? (i + 1 < lines.length && !mentionsOtherNumberedZone(lines[i + 1], zone.name) && !lineMentionsZone(lines[i + 1], keys) ? parseConsent(lines[i + 1]) : null);
           if (c) {
             rows.push({ kind: "consent", text: lines[i].slice(0, 300), yesPct: c.yes, noPct: c.no, qualifier: c.qualifier });
             continue;
@@ -162,7 +209,7 @@ export class ZoneBlogService {
         }
         // 글 하나에서 공문 타임라인이 너무 길면 최신 일자부터 일부만 남긴다.
         const tl = rows.filter((r) => r.kind === "timeline").sort((a, b) => (b.docDate ?? "").localeCompare(a.docDate ?? ""));
-        const keep = [...rows.filter((r) => r.kind === "consent"), ...tl.slice(0, MAX_TIMELINE_PER_POST)];
+        const keep = [...rows.filter((r) => r.kind !== "timeline"), ...tl.slice(0, MAX_TIMELINE_PER_POST)];
         await this.noteRepo.delete({ zoneId: zone.id, blogId: blog.blogId, logNo: p.logNo });
         posts += 1;
         if (!keep.length) continue;
@@ -190,6 +237,9 @@ export class ZoneBlogService {
         timeline += keep.filter((r) => r.kind === "timeline").length;
       }
     }
+    const diagnostics = { searched, attempted: Math.min(searched, MAX_POSTS), opened: posts, failed, consent, timeline };
+    await this.noteRepo.delete({ zoneId: zone.id, blogId: BLOGS[0].blogId, logNo: "__diagnostic__" });
+    await this.noteRepo.save(this.noteRepo.create({ zoneId: zone.id, blogId: BLOGS[0].blogId, logNo: "__diagnostic__", postTitle: "조사 결과", postedAt: new Date().toISOString().slice(0, 10), url: "", kind: "diagnostic", text: JSON.stringify(diagnostics), yesPct: null, noPct: null, qualifier: null, docDate: null, fetchedAt: new Date() }));
     const run = await this.runRepo.findOne({ where: { zoneId: zone.id } });
     if (run) {
       run.blogFetchedAt = new Date();
@@ -220,6 +270,9 @@ export class ZoneBlogService {
     consent: ZoneBlogNote | null;
     consentHistory: ZoneBlogNote[];
     timeline: ZoneBlogNote[];
+    articles: ZoneBlogNote[];
+    insights: ZoneBlogNote[];
+    diagnostics: { searched: number; attempted: number; opened: number; failed: number; consent: number; timeline: number } | null;
   }> {
     const rows = await this.noteRepo.find({ where: { zoneId } });
     const run = await this.runRepo.findOne({ where: { zoneId } });
@@ -245,6 +298,9 @@ export class ZoneBlogService {
       consent: consents[0] ?? null,
       consentHistory: consents.slice(1),
       timeline,
+      articles: rows.filter((r) => r.kind === "article").sort((a, b) => b.postedAt.localeCompare(a.postedAt)).map(toNote),
+      insights: rows.filter((r) => r.kind === "insight").sort((a, b) => b.postedAt.localeCompare(a.postedAt)).map(toNote),
+      diagnostics: (() => { try { const row = rows.find((r) => r.kind === "diagnostic"); return row ? JSON.parse(row.text) : null; } catch { return null; } })(),
     };
   }
 }

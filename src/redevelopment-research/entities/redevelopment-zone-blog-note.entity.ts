@@ -1,6 +1,6 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
 
-export type BlogNoteKind = "consent" | "timeline";
+export type BlogNoteKind = "consent" | "timeline" | "article" | "insight" | "diagnostic";
 
 /** 구역 조사 때 재개발 블로그(후니동산)에서 찾아 저장한 구역 관련 정보 — 동의율(찬성/반대 추정)과 자치구 공문 타임라인.
  * 같은 구역·같은 글은 다시 조사할 때 통째로 갈아끼운다. 화면에는 글 작성일이 최신인 것을 우선 보여 주고 원문 링크를 단다. */
