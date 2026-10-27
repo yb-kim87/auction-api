@@ -1,6 +1,7 @@
 import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Query } from "@nestjs/common";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { RedevelopmentResearchService } from "./redevelopment-research.service";
+import { ZoneBlogService } from "./zone-blog.service";
 
 function parseTolerance(raw: unknown, fallback = 30): number {
   if (raw == null || raw === "") return fallback;
@@ -13,7 +14,7 @@ function parseTolerance(raw: unknown, fallback = 30): number {
  * 사용자 요청, 2026-10-24: "관심매물을 등록하면 같은 재개발 구역 안 매물(호가)·실거래(최근 1년)를 조사". */
 @Controller("redevelopment-research")
 export class RedevelopmentResearchController {
-  constructor(private readonly service: RedevelopmentResearchService) {}
+  constructor(private readonly service: RedevelopmentResearchService, private readonly zoneBlog: ZoneBlogService) {}
 
   /** 경매물건이 속한 구역의 조사를 시작한다(백그라운드). 이미 진행 중이면 현재 상태를 돌려준다.
    * 상세를 다 못 가져왔으면(naverDetailRemaining > 0) 같은 호출로 "이어서 수집"한다. */
@@ -88,6 +89,13 @@ export class RedevelopmentResearchController {
   async zonesRuns(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
     return this.service.listRuns();
+  }
+
+  /** 구역 목록에서 저장된 최신 블로그 동의율을 한 번에 표시한다. */
+  @Get("zones-blog-consents")
+  async zonesBlogConsents(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.zoneBlog.listConsentSummaries();
   }
 
   /** 빠른 조사로 모은 매물 하나의 상세·단지 정보를 지금 가져온다(네이버 최대 3회). */

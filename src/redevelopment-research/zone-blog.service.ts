@@ -203,6 +203,17 @@ export class ZoneBlogService {
     return { posts, consent, timeline };
   }
 
+  /** 목록용 동의율을 한 번에 읽는다. 구역 팝업과 같이 글 작성일 최신순이다. */
+  async listConsentSummaries() {
+    const rows = await this.noteRepo.find({ where: { kind: "consent" } });
+    rows.sort((a, b) => b.postedAt.localeCompare(a.postedAt));
+    const latest = new Map<string, { zoneId: string; yesPct: number | null; noPct: number | null; qualifier: string | null; postedAt: string }>();
+    for (const row of rows) {
+      if (!latest.has(row.zoneId)) latest.set(row.zoneId, { zoneId: row.zoneId, yesPct: row.yesPct, noPct: row.noPct, qualifier: row.qualifier, postedAt: row.postedAt });
+    }
+    return [...latest.values()];
+  }
+
   /** 구역의 블로그 정보 — 동의율은 글 작성일이 최신인 것을 대표로, 나머지는 이력으로. 공문은 최신 일자순. */
   async getZoneBlogInfo(zoneId: string): Promise<{
     fetchedAt: string | null;
