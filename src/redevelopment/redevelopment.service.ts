@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { InjectRepository } from "@nestjs/typeorm";
 import { IsNull, Not, Repository } from "typeorm";
 import { Auction } from "../auctions/auction.entity";
+import { isClosedCaseState } from "../auctions/crawl-item-validation.util";
 import { RedevelopmentPoint, RedevelopmentZone } from "./entities/redevelopment-zone.entity";
 import {
   RedevelopmentTraceFailure,
@@ -203,14 +204,14 @@ export class RedevelopmentService {
       this.listZones(),
       this.auctionRepo.find({
         where: { latitude: Not(IsNull()), longitude: Not(IsNull()) },
-        select: ["id", "auctionNo", "address", "city", "district", "propType", "salePrice", "appraisedValue", "minPrice", "status", "latitude", "longitude"],
+        select: ["id", "auctionNo", "address", "city", "district", "propType", "salePrice", "appraisedValue", "minPrice", "status", "caseState", "latitude", "longitude"],
       }),
     ]);
 
     const auctionsWithZones = auctions.map((a) => {
       const point = { lat: a.latitude as number, lng: a.longitude as number };
       const zoneIds = zones.filter((z) => isPointInPolygon(point, z.polygon)).map((z) => z.id);
-      return { ...a, zoneIds };
+      return { ...a, zoneIds, isClosedCase: isClosedCaseState(a.caseState) || /^낙찰/.test((a.caseState ?? "").trim()) };
     });
 
     return { zones, auctions: auctionsWithZones };
