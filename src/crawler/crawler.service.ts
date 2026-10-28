@@ -13,6 +13,7 @@ import * as https from "https";
 import { AuctionsService } from "../auctions/auctions.service";
 import { ResaleMatchService } from "../resale-match/resale-match.service";
 import { AuctionZoneCoordService } from "../redevelopment-research/auction-zone-coord.service";
+import { InterestAuctionAlertService } from "../redevelopment-research/interest-auction-alert.service";
 import { nowPartsInKst } from "../common/kst-time.util";
 import { CafeKnowledgeService } from "../ai/cafe-knowledge.service";
 import type { KnowledgeDraftStatus } from "../ai/knowledge-draft.entity";
@@ -181,6 +182,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     private readonly auctionsService: AuctionsService,
     private readonly resaleMatchService: ResaleMatchService,
     private readonly auctionZoneCoord: AuctionZoneCoordService,
+    private readonly interestAuctionAlert: InterestAuctionAlertService,
     private readonly telegramService: CrawlerTelegramService,
     private readonly cafeKnowledgeService: CafeKnowledgeService,
     private readonly knowledgeService: KnowledgeService,
@@ -1842,6 +1844,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // 흐름을 막지 않도록 절대 await하지 않는다.
     // 서울 빌라는 이어서 좌표도 채운다(재개발 구역 근처일 때만 저장, 사용자 요청 2026-10-25) —
     // "재개발물건" 탭을 열기 전에도 구역 안 경매물건이 지도에 나오게 한다.
+    if (result.item && result.created && !options.mirror) {
+      await this.interestAuctionAlert.enqueue(result.item).catch((e) => this.logger.error(`관심 구역 알림 대기열 저장 실패: ${e}`));
+    }
+
     if (result.item && !options.mirror) {
       void this.auctionZoneCoord.fillIfNeeded(result.item).catch(() => {});
     }

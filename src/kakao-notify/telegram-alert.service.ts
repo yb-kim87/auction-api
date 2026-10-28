@@ -23,14 +23,15 @@ export class TelegramAlertService {
     return Boolean(this.botToken && this.chatId);
   }
 
-  async send(message: string): Promise<boolean> {
-    if (!this.isConfigured()) return false;
+  async send(message: string, destination?: string): Promise<boolean> {
+    const chatId = destination?.trim() || this.chatId;
+    if (!this.botToken || !chatId) return false;
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       try {
         const res = await fetch(`${TELEGRAM_API_BASE}/bot${this.botToken}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: this.chatId, text: message.slice(0, 4000) }),
+          body: JSON.stringify({ chat_id: chatId, text: message.slice(0, 4000) }),
           signal: AbortSignal.timeout(8_000),
         });
         if (res.ok) return true;

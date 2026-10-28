@@ -1,0 +1,38 @@
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const { InterestAuctionAlertService, pointInInterestZone } = require("../dist/redevelopment-research/interest-auction-alert.service.js");
+
+const polygon = [{ lat: 0, lng: 0 }, { lat: 0, lng: 2 }, { lat: 2, lng: 2 }, { lat: 2, lng: 0 }];
+assert.equal(pointInInterestZone({ lat: 1, lng: 1 }, polygon), true);
+assert.equal(pointInInterestZone({ lat: 3, lng: 1 }, polygon), false);
+assert.equal(pointInInterestZone({ lat: 1, lng: 1 }, []), false);
+
+const updates = [];
+const queue = { update: async (id, patch) => updates.push({ id, ...patch }) };
+let item = { id: "a", auctionNo: "case-1", court: "court", address: "address", latitude: null, longitude: null, salePrice: null, appraisedValue: 100, minPrice: 80, bidDate: "2026-11-01", caseState: "진행", link: "" };
+const auctions = { findOne: async () => item };
+const zones = { find: async () => [{ name: "zone", polygon }] };
+let point = { lat: 1, lng: 1 }, sent = [];
+const geocoder = { geocode: async () => point };
+const telegram = { send: async (text, destination) => { sent.push({ text, destination }); return true; } };
+process.env.REDEVELOPMENT_TELEGRAM_CHAT_ID = "test-channel";
+const service = new InterestAuctionAlertService(queue, auctions, zones, geocoder, telegram);
+const entry = { auctionId: "a", attempts: 0 };
+await service.processOne(entry);
+assert.equal(sent.length, 1);
+assert.equal(sent[0].destination, "test-channel");
+assert.match(sent[0].text, /case-1/);
+assert.equal(updates.at(-1).status, "sent");
+point = { lat: 3, lng: 1 };
+await service.processOne(entry);
+assert.equal(sent.length, 1);
+assert.equal(updates.at(-1).status, "skipped");
+point = null;
+await service.processOne(entry);
+assert.equal(updates.at(-1).attempts, 1);
+assert.ok(updates.at(-1).nextAttemptAt instanceof Date);
+item = { ...item, salePrice: 100 };
+await service.processOne(entry);
+assert.equal(updates.at(-1).status, "skipped");
+console.log("interest auction alert checks passed");
