@@ -100,6 +100,17 @@ function median(xs: number[]): number | null {
   return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
 }
 
+/** 경매 원본에 별도 방 수 칼럼이 없으므로, 크롤링된 상세 문구에 적힌 방 수를
+ * 안전하게 읽는다. 값을 찾지 못한 경우에는 null을 반환해 비교군 산정에서 방 수
+ * 조건만 적용하지 않는다. */
+function auctionRoomCount(auction: Auction): number | null {
+  const source = [auction.bidInfo, auction.specialNote, auction.tenantInfo, auction.memo].join(" ");
+  const matched = source.match(/(?:방\s*(?:수|갯수|개수)?|룸)\s*[:：]?\s*(\d+)|(\d+)\s*(?:개\s*)?(?:방|룸)/i);
+  const value = matched?.[1] ?? matched?.[2];
+  const rooms = value == null ? NaN : Number(value);
+  return Number.isInteger(rooms) && rooms > 0 && rooms <= 20 ? rooms : null;
+}
+
 /** "5/5" → 5, "B1/3" → -1, "3층" → 3 */
 export function parseFloor(floorInfo: string | null | undefined): number | null {
   if (!floorInfo) return null;
@@ -1119,7 +1130,7 @@ export class RedevelopmentResearchService {
       this.tradeRepo.find({ where: { zoneId } }),
       this.getRun(zoneId),
     ]);
-    // 사라진 매물(missCount>=2)도 지우지 않고 gone 표시로 함께 내려 화면이 "사라짐"으로 보여 준다(사용자 요청 2026-10-26).
+    // 사라진 매물도 지우지 않고 gone 표시로 함께 내려 화면에 보여 준다.
     const listings = listingRows.filter((l) => (l.distanceToZoneM ?? 9999) <= tol);
     const trades = tradeRows.filter((t) => (t.distanceToZoneM ?? 9999) <= tol);
     // 대지지분 추정: 네이버 매물은 대지지분을 주지 않는다(실측: groundShareSpace/landShare 모두 0). 같은 지번의 국토부 실거래가
@@ -1326,6 +1337,7 @@ export class RedevelopmentResearchService {
         exclusiveArea: area,
         landShare: parseFloat(String(auction.landShare ?? "").replace(/[^\d.]/g, "")) || null,
         builtYear: auction.builtYear || null,
+        roomCount: auctionRoomCount(auction),
         floor,
         ho,
         appraisedValue: auction.appraisedValue,
