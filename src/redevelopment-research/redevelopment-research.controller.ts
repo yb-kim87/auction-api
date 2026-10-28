@@ -1,5 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Query } from "@nestjs/common";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
+import { AuctionZoneCoordService } from "./auction-zone-coord.service";
 import { RedevelopmentResearchService } from "./redevelopment-research.service";
 import { ZoneBlogService } from "./zone-blog.service";
 
@@ -14,7 +15,24 @@ function parseTolerance(raw: unknown, fallback = 30): number {
  * 사용자 요청, 2026-10-24: "관심매물을 등록하면 같은 재개발 구역 안 매물(호가)·실거래(최근 1년)를 조사". */
 @Controller("redevelopment-research")
 export class RedevelopmentResearchController {
-  constructor(private readonly service: RedevelopmentResearchService, private readonly zoneBlog: ZoneBlogService) {}
+  constructor(
+    private readonly service: RedevelopmentResearchService,
+    private readonly zoneBlog: ZoneBlogService,
+    private readonly auctionCoord: AuctionZoneCoordService,
+  ) {}
+
+  /** 좌표 없는 기존 서울 빌라 경매물건을 서버에서 한 번에 채운다(구역 근처만 저장, 백그라운드). */
+  @Post("auction-coords/backfill")
+  async startCoordBackfill(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.auctionCoord.startBackfill();
+  }
+
+  @Get("auction-coords/status")
+  async coordBackfillStatus(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.auctionCoord.getBackfillStatus();
+  }
 
   /** 경매물건이 속한 구역의 조사를 시작한다(백그라운드). 이미 진행 중이면 현재 상태를 돌려준다.
    * 상세를 다 못 가져왔으면(naverDetailRemaining > 0) 같은 호출로 "이어서 수집"한다. */

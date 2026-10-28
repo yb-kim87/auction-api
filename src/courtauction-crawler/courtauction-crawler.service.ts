@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { AuctionZoneCoordService } from "../redevelopment-research/auction-zone-coord.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { execFile } from "child_process";
@@ -51,6 +52,7 @@ export class CourtAuctionCrawlerService {
     @InjectRepository(CourtAuctionSavedSearchRow)
     private readonly savedSearchRepo: Repository<CourtAuctionSavedSearchRow>,
     private readonly auctionsService: AuctionsService,
+    private readonly auctionZoneCoord: AuctionZoneCoordService,
   ) {}
 
   private async getOrCreateState(): Promise<CourtAuctionCrawlerStateRow> {
@@ -277,6 +279,8 @@ export class CourtAuctionCrawlerService {
         const dto = mapCrawledItem(this.mapListItemToRaw(entry.raw));
         const result = await this.auctionsService.importCrawledItem(dto, "courtauction-crawler");
         cur.completed += 1;
+        // 서울 빌라면 구역 근처일 때 좌표를 바로 채운다(재개발물건 탭에 구역 안 물건이 보이도록). 실패해도 수집에는 영향 없다.
+        if (result.item) void this.auctionZoneCoord.fillIfNeeded(result.item).catch(() => {});
         if (result.skipped) {
           cur.skipped += 1;
           const reason = (result as { reason?: string }).reason ?? "알 수 없음";

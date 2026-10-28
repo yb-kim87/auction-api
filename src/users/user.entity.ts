@@ -27,7 +27,7 @@ export class User {
   role!: UserRole;
 
   /** 수강생 등급의 이용 만료 시각. 이 시각이 지나면 자동으로 승인대기(member)로 돌아간다. null = 기한 없음(사용자 요청, 2026-10-26). */
-  @Column({ type: "timestamptz", nullable: true })
+  @Column({ type: process.env.DATABASE_URL?.trim() ? "timestamptz" : "datetime", nullable: true })
   roleExpiresAt!: Date | null;
 
   @Column({ type: "text", default: "" })

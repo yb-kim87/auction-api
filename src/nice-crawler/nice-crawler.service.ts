@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
+import { AuctionZoneCoordService } from "../redevelopment-research/auction-zone-coord.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { type ChildProcess, execFile, spawn } from "child_process";
@@ -70,6 +71,7 @@ export class NiceCrawlerService {
     private readonly savedSearchRepo: Repository<NiceSavedSearchRow>,
     private readonly auctionsService: AuctionsService,
     private readonly resaleMatchService: ResaleMatchService,
+    private readonly auctionZoneCoord: AuctionZoneCoordService,
   ) {}
 
   private async getOrCreateState(): Promise<NiceCrawlerStateRow> {
@@ -390,6 +392,9 @@ export class NiceCrawlerService {
       this.markResaleProcessed();
       return result;
     }
+
+    // 서울 빌라면 구역 근처일 때 좌표를 바로 채운다(재개발물건 탭에 구역 안 물건이 보이도록). 실패해도 수집에는 영향 없다.
+    if (result.item) void this.auctionZoneCoord.fillIfNeeded(result.item).catch(() => {});
 
     state.completed += 1;
     if (result.created) state.created += 1;

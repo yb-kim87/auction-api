@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AuctionsModule } from "../auctions/auctions.module";
+import { RedevelopmentResearchModule } from "../redevelopment-research/redevelopment-research.module";
 import { CourtAuctionCrawlerLogRow } from "./entities/courtauction-crawler-log.entity";
 import { CourtAuctionCrawlerStateRow } from "./entities/courtauction-crawler-state.entity";
 import { CourtAuctionSavedSearchRow } from "./entities/courtauction-saved-search.entity";
@@ -11,6 +12,7 @@ import { CourtAuctionCrawlerService } from "./courtauction-crawler.service";
   imports: [
     TypeOrmModule.forFeature([CourtAuctionCrawlerStateRow, CourtAuctionCrawlerLogRow, CourtAuctionSavedSearchRow]),
     AuctionsModule,
+    RedevelopmentResearchModule,
   ],
   controllers: [CourtAuctionCrawlerController],
   providers: [CourtAuctionCrawlerService],

@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AuctionsModule } from "../auctions/auctions.module";
+import { RedevelopmentResearchModule } from "../redevelopment-research/redevelopment-research.module";
 import { ResaleMatchModule } from "../resale-match/resale-match.module";
 import { NiceCrawlerLogRow } from "./entities/nice-crawler-log.entity";
 import { NiceCrawlerStateRow } from "./entities/nice-crawler-state.entity";
@@ -13,6 +14,7 @@ import { NiceCrawlerService } from "./nice-crawler.service";
     TypeOrmModule.forFeature([NiceCrawlerStateRow, NiceCrawlerLogRow, NiceSavedSearchRow]),
     AuctionsModule,
     ResaleMatchModule,
+    RedevelopmentResearchModule,
   ],
   controllers: [NiceCrawlerController],
   providers: [NiceCrawlerService],

@@ -36,11 +36,24 @@ function distToSegmentM(p: Pt, a: Pt, b: Pt): number {
 /** 크롤링으로 새로 저장된 서울 빌라 경매물건의 좌표를 서버가 바로 채운다(사용자 요청, 2026-10-25).
  * 예전엔 관리자가 "재개발물건" 탭을 열 때 브라우저가 대신 채웠다. 화면과 같은 기준으로, 재개발 구역 안이거나
  * 경계에서 100m 이내인 물건만 좌표를 저장한다 — 전부 저장하면 지도 데이터가 불필요하게 커진다. */
+export type CoordBackfillStatus = {
+  running: boolean;
+  total: number;
+  done: number;
+  saved: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+};
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 @Injectable()
 export class AuctionZoneCoordService {
   private readonly logger = new Logger(AuctionZoneCoordService.name);
   private zones: ZoneBox[] = [];
   private zonesLoadedAt = 0;
+  private backfill: CoordBackfillStatus = { running: false, total: 0, done: 0, saved: 0, startedAt: null, finishedAt: null, error: null };
 
   constructor(
     @InjectRepository(Auction) private readonly auctionRepo: Repository<Auction>,
@@ -73,6 +86,51 @@ export class AuctionZoneCoordService {
       }
     }
     return false;
+  }
+
+  getBackfillStatus(): CoordBackfillStatus {
+    return this.backfill;
+  }
+
+  /** 좌표가 없는 기존 서울 빌라 물건 전부를 서버에서 한 번 훑어 구역 근처인 것만 좌표를 채운다(백그라운드).
+   * 크롤링 시점 처리(fillIfNeeded)가 생기기 전에 저장된 물건과, 연결되지 않았던 경로의 물건을 메우는 용도다.
+   * 이미 진행 중이면 현재 상태만 돌려준다. */
+  async startBackfill(): Promise<CoordBackfillStatus> {
+    if (this.backfill.running) return this.backfill;
+    const rows = await this.auctionRepo
+      .createQueryBuilder("a")
+      .where("a.latitude IS NULL")
+      .andWhere("a.propType = :t", { t: "빌라" })
+      .andWhere("a.city LIKE :c", { c: "서울%" })
+      .getMany();
+    this.backfill = { running: true, total: rows.length, done: 0, saved: 0, startedAt: new Date().toISOString(), finishedAt: null, error: null };
+    void this.runBackfill(rows);
+    return this.backfill;
+  }
+
+  private async runBackfill(rows: Auction[]): Promise<void> {
+    try {
+      let idx = 0;
+      const worker = async () => {
+        while (idx < rows.length) {
+          const a = rows[idx++];
+          try {
+            if (await this.fillIfNeeded(a)) this.backfill.saved += 1;
+          } catch {
+            // 한 건 실패는 건너뛴다(fillIfNeeded가 이미 로그를 남긴다).
+          }
+          this.backfill.done += 1;
+          await sleep(120);
+        }
+      };
+      await Promise.all([worker(), worker(), worker()]);
+    } catch (e) {
+      this.backfill.error = e instanceof Error ? e.message : String(e);
+    } finally {
+      this.backfill.running = false;
+      this.backfill.finishedAt = new Date().toISOString();
+      this.logger.log(`경매물건 좌표 일괄 채우기 종료: ${this.backfill.saved}건 저장 / ${this.backfill.done}건 처리 (대상 ${this.backfill.total}건)`);
+    }
   }
 
   /** 좌표가 없는 서울 빌라 물건이면 주소를 좌표로 바꿔, 구역 근처일 때만 저장한다. 실패해도 크롤링에는 영향이 없다. */
