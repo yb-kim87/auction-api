@@ -14,6 +14,8 @@ import { BuildingRegisterService } from "./building-register.service";
 import { AuctionZoneCoordService } from "./auction-zone-coord.service";
 import { InterestAuctionAlert } from "./entities/interest-auction-alert.entity";
 import { InterestAuctionAlertService } from "./interest-auction-alert.service";
+import { ZoneUpdateReminder } from "./entities/zone-update-reminder.entity";
+import { ZoneUpdateReminderService } from "./zone-update-reminder.service";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
 import { KakaoNotifyModule } from "../kakao-notify/kakao-notify.module";
 import { NaverLandService } from "./naver-land.service";
@@ -32,11 +34,12 @@ import { RedevelopmentResearchService } from "./redevelopment-research.service";
       RedevelopmentZoneBlogNote,
       AddressGeocodeCache,
       InterestAuctionAlert,
+      ZoneUpdateReminder,
     ]),
     KakaoNotifyModule,
   ],
   controllers: [RedevelopmentResearchController],
-  providers: [AuctionZoneCoordService, InterestAuctionAlertService, RedevelopmentResearchService, NaverLandService, KakaoGeocodeService, MolitTradeClientService, BuildingRegisterService, ZoneBlogService],
+  providers: [AuctionZoneCoordService, InterestAuctionAlertService, ZoneUpdateReminderService, RedevelopmentResearchService, NaverLandService, KakaoGeocodeService, MolitTradeClientService, BuildingRegisterService, ZoneBlogService],
   exports: [AuctionZoneCoordService, InterestAuctionAlertService],
 })
 export class RedevelopmentResearchModule {}
