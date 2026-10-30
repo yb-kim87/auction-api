@@ -1,6 +1,14 @@
 import { isClosedCaseState } from "../auctions/crawl-item-validation.util";
 import type { CrawlerUrlEntry } from "./crawler.types";
 
+/** 서버(Railway)는 UTC로 동작해 new Date()의 날짜·시각이 한국시간과 9시간 어긋난다(예: KST 17:49 = UTC 08:49).
+ * "오늘"과 "오후 5시" 판정은 반드시 한국시간 기준으로 해야 한다 — 이전엔 getHours()를 그대로 써서 17시 이후에도
+ * "5시 이전"으로 보고 오늘 입찰 물건을 제외했다(2026-10-30 실측). 날짜는 parseBidDateToDay와 같은 방식(로컬 자정)으로 만든다. */
+function kstToday(now: Date): { day: Date; hour: number } {
+  const k = new Date(now.getTime() + 9 * 60 * 60_000);
+  return { day: new Date(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()), hour: k.getUTCHours() };
+}
+
 /** 입찰기일 문자열을 날짜(자정)로 파싱 */
 export function parseBidDateToDay(bidDate: string): Date | null {
   const trimmed = bidDate.trim();
@@ -38,8 +46,7 @@ export function isBidDateTodayOrPast(bidDate: string): boolean {
   const bidDay = parseBidDateToDay(bidDate);
   if (!bidDay) return true;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = kstToday(new Date()).day;
   return bidDay.getTime() <= today.getTime();
 }
 
@@ -52,9 +59,9 @@ export function isTodayBidDateBeforeResultTime(
 ): boolean {
   const bidDay = parseBidDateToDay(bidDate);
   if (!bidDay) return false;
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const { day: today, hour } = kstToday(now);
   if (bidDay.getTime() !== today.getTime()) return false;
-  return now.getHours() < 17;
+  return hour < 17;
 }
 
 /** @deprecated isBidDateTodayOrPast 사용 */
@@ -62,8 +69,7 @@ export function isBidDateTodayOrLater(bidDate: string): boolean {
   const bidDay = parseBidDateToDay(bidDate);
   if (!bidDay) return false;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = kstToday(new Date()).day;
   return bidDay.getTime() >= today.getTime();
 }
 
