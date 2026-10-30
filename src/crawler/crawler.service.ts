@@ -32,6 +32,7 @@ import {
   checkAlgorithmMatch,
   CrawlerTelegramService,
 } from "./crawler-algorithm.service";
+import { buildDailyJobReport, buildDailyJobSkipMessage, type DailyJobPresetResult } from "./crawler-daily-report";
 import { mapCrawledItem } from "./crawler-item.mapper";
 import { filterCollectedUrls } from "./crawler-url.util";
 import { randomUUID } from "crypto";
@@ -2059,22 +2060,49 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
    * (실측: 진행률 36%인 상태에서 다음 관심조건이 곧바로 시작되어 "not
    * found"로 실패, 2026-07-20). syncWorkerStatus()로 워커 phase가
    * idle/stopped/error가 될 때까지 폴링해서 기다린다. */
-  private async waitForCrawlIdle(timeoutMs = 30 * 60_000): Promise<void> {
+  private async waitForCrawlIdle(timeoutMs = 30 * 60_000): Promise<boolean> {
     const start = Date.now();
     while (this.jobRunning || this.localStatus.phase === "crawling") {
       if (Date.now() - start > timeoutMs) {
         this.appendLog("warn", "조회 완료 대기 시간 초과 — 다음 관심조건으로 진행합니다.");
-        return;
+        return true; // 시간 초과(텔레그램 결과 알림에 표시)
       }
       await this.syncWorkerStatus();
       if (!this.jobRunning && this.localStatus.phase !== "crawling") break;
       await new Promise((resolve) => setTimeout(resolve, 3000));
     }
+    return false;
+  }
+
+  /** 매일 작업 알림(텔레그램, 기존 코치픽 알림 채널 TELEGRAM_CHAT_ID) — 전송 실패가 작업을 막지 않는다. */
+  private notifyDailyJob(text: string) {
+    void this.telegramService.send(text).catch(() => undefined);
+  }
+
+  private lastSkipNotifyKey = "";
+
+  /** 설정한 시각(정각 분)에 실행하지 못한 경우 알린다. 요일 제외(의도된 건너뜀)와 같은 분의 중복 tick은 알리지 않는다. */
+  private notifyMissedRun(schedule: CrawlerConfig["schedule"], reason: "restarting" | "busy" | "no-presets") {
+    const now = nowPartsInKst();
+    const [hour, minute] = schedule.time.split(":");
+    if (now.hour !== parseInt(hour ?? "0", 10) || now.minute !== parseInt(minute ?? "0", 10)) return;
+    if ((schedule.excludeWeekdays ?? []).includes(now.weekday)) return;
+    if (!schedule.repeatDaily && schedule.oneTimeCompleted) return;
+    const key = `${now.year}-${now.month}-${now.date}T${now.hour}:${now.minute}`;
+    if (this.lastSkipNotifyKey === key) return;
+    this.lastSkipNotifyKey = key;
+    this.notifyDailyJob(buildDailyJobSkipMessage(reason, schedule.time));
   }
 
   private async tickScheduler() {
     this.config = loadCrawlerConfig();
     const schedule = this.config.schedule;
+    // 이미 이 분(tick)에 실행을 시작한 경우(lastTickKey)는 제외하고, 다른 작업 때문에 예약 시각을 놓친 경우만 알린다.
+    if (schedule.enabled && (this.jobRunning || this.schedulerRunning)) {
+      const n = nowPartsInKst();
+      const k = `${n.year}-${String(n.month).padStart(2, "0")}-${String(n.date).padStart(2, "0")}T${String(n.hour).padStart(2, "0")}:${String(n.minute).padStart(2, "0")}`;
+      if (this.lastTickKey !== k) this.notifyMissedRun(schedule, "busy");
+    }
     if (!schedule.enabled || this.jobRunning || this.schedulerRunning) return;
 
     if (!schedule.repeatDaily && schedule.oneTimeCompleted) return;
@@ -2092,6 +2120,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       // 스킵됐다는 사실을 반드시 로그에 남긴다(사용자 요청, 2026-07-20).
       if (isScheduledMinute) {
         const remainSec = Math.ceil((this.schedulerReadyAt - Date.now()) / 1000);
+        this.notifyMissedRun(schedule, "restarting");
         this.appendLog(
           "warn",
           `[매일작업] 서버가 방금 재시작되어 준비 중입니다 — 약 ${remainSec}초 뒤 다음 정각(분)에 자동으로 실행됩니다. 지금 실행이 건너뛰어진 게 아니라 잠시 지연된 것입니다.`,
@@ -2142,6 +2171,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
     if (presetList.length === 0) {
       this.appendLog("warn", "[매일작업] 관심조건이 없어 실행을 건너뜁니다.");
+      this.notifyMissedRun(schedule, "no-presets");
       this.schedulerRunning = false;
       return;
     }
@@ -2159,6 +2189,12 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     // 폴백 시 v3 전용 워커엔 없는 /session 호출로 즉시 실패했었다
     // (실측, 2026-07-19).
     const scheduleCrawlerVersion = schedule.crawlerVersion ?? "v3";
+
+    // 텔레그램 결과 알림용 — 관심조건별 신규/갱신 건수는 조회가 끝날 때마다 localStatus에서 읽어 모은다
+    // (localStatus 카운터는 다음 관심조건 시작 때 리셋되므로 그 전에 기록해야 한다).
+    const jobStartedAt = Date.now();
+    const presetResults: DailyJobPresetResult[] = [];
+    let fatalError: string | null = null;
 
     try {
       if (scheduleCrawlerVersion !== "v3") {
@@ -2178,6 +2214,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
             const links = await this.auctionsService.listTodayBidDateLinks();
             if (links.length === 0) {
               this.appendLog("info", "[매일작업] 대상 물건 없음");
+              presetResults.push({ label: presetLabel, collected: 0, created: 0, updated: 0, note: "대상 물건 없음" });
             } else {
               await this.startCrawl(
                 {
@@ -2186,17 +2223,24 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
                 },
                 "scheduler",
               );
-              await this.waitForCrawlIdle();
+              const timedOut = await this.waitForCrawlIdle();
+              presetResults.push({
+                label: presetLabel,
+                collected: links.length,
+                completed: this.localStatus.completed,
+                created: this.localStatus.created,
+                updated: this.localStatus.updated,
+                timedOut,
+              });
               this.appendLog(
                 "info",
                 `[매일작업] ${runDateLabel} 완료 (${links.length}건 재조회)`,
               );
             }
           } catch (error) {
-            this.appendLog(
-              "error",
-              `[매일작업] 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
-            );
+            const message = error instanceof Error ? error.message : "알 수 없는 오류";
+            this.appendLog("error", `[매일작업] 실패: ${message}`);
+            presetResults.push({ label: presetLabel, created: 0, updated: 0, error: message });
           }
           continue;
         }
@@ -2230,6 +2274,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
           // 작업은 수집만 하고 끝나면 의미가 없으므로 항상 수집 직후 조회까지
           // 이어간다(schedule.repeatAfterCollect 값과 무관하게 강제).
           if (this.localStatus.urls.length > 0) {
+            const collected = this.localStatus.urls.length;
             await this.startCrawl(
               {
                 repeatAfterCollect: true,
@@ -2237,16 +2282,24 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
               },
               "scheduler",
             );
-            await this.waitForCrawlIdle();
+            const timedOut = await this.waitForCrawlIdle();
+            presetResults.push({
+              label: presetLabel,
+              collected,
+              completed: this.localStatus.completed,
+              created: this.localStatus.created,
+              updated: this.localStatus.updated,
+              timedOut,
+            });
           } else {
             this.appendLog("info", "[매일작업] 수집된 URL 없음(조회 생략)");
+            presetResults.push({ label: presetLabel, collected: 0, created: 0, updated: 0, note: "수집된 URL 없음" });
           }
           this.appendLog("info", `[매일작업] ${runDateLabel} 완료`);
         } catch (error) {
-          this.appendLog(
-            "error",
-            `[매일작업] 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
-          );
+          const message = error instanceof Error ? error.message : "알 수 없는 오류";
+          this.appendLog("error", `[매일작업] 실패: ${message}`);
+          presetResults.push({ label: presetLabel, created: 0, updated: 0, error: message });
           this.logger.error(
             `[tickScheduler] ${preset} 실패 상세`,
             error instanceof Error ? error.stack : String(error),
@@ -2267,13 +2320,19 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
         this.appendLog("info", "1회 예약 조회가 완료되어 예약이 해제되었습니다.");
       }
     } catch (error) {
-      this.appendLog(
-        "error",
-        `예약 작업 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
-      );
+      fatalError = error instanceof Error ? error.message : "알 수 없는 오류";
+      this.appendLog("error", `예약 작업 실패: ${fatalError}`);
       this.jobRunning = false;
     } finally {
       this.schedulerRunning = false;
+      // 설정한 시각의 예약 작업이 끝났음을 텔레그램으로 알린다(성공 여부 + 신규/갱신 건수).
+      try {
+        this.notifyDailyJob(
+          buildDailyJobReport({ scheduleTime: schedule.time, startedAt: jobStartedAt, finishedAt: Date.now(), results: presetResults, fatalError }),
+        );
+      } catch (e) {
+        this.logger.warn(`매일 작업 텔레그램 알림 생성 실패: ${e}`);
+      }
     }
   }
 
