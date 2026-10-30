@@ -1,9 +1,11 @@
-import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleInit } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import * as crypto from "crypto";
 import * as zlib from "zlib";
 import { MoreThan, Repository } from "typeorm";
 import { RedevelopmentPoint, RedevelopmentZone } from "../redevelopment/entities/redevelopment-zone.entity";
+import { TelegramAlertService } from "../kakao-notify/telegram-alert.service";
+import { RedevelopmentZoneAutoSync } from "./entities/redevelopment-zone-auto-sync.entity";
 import { RedevelopmentZoneChange } from "./entities/redevelopment-zone-change.entity";
 import { RedevelopmentZoneSyncRun, ZoneChangeType } from "./entities/redevelopment-zone-sync-run.entity";
 
@@ -17,12 +19,12 @@ const DEVICE_ID = process.env.JDC_DEVICE_ID || "web;e92feeb0-f0bd-4ca7-961c-8553
 const BEHAVIOR = "1.0.0.0.0.0.0.0.0.0.0.1";
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36";
 
-/** 최소 수집 원칙(사용자 결정, 2026-10-30): 필요한 구만, 가끔, 간격을 크게. 자동 대량 수집 금지. */
+/** 최소 수집 원칙(사용자 결정, 2026-10-30): 간격을 크게 두고 천천히. 구가 MAX_DISTRICTS_PER_RUN개를 넘으면 자동으로 느린 간격을 쓴다. */
 export const MAX_DISTRICTS_PER_RUN = 3;
 const REQUEST_GAP_MS = 30_000;
 const MIN_RESYNC_HOURS = 6;
-/** 전체 순차 모드(사용자 결정 2026-10-30: 전체 구를 보수적으로 시험) — 구 하나 안에서 요청 사이 60초, 구와 구 사이 120초.
- * 구당 약 3분, 25개 구 약 75분(분당 0.7건). 수동 실행만 가능하고 자동 스케줄은 없다. 첫 보안 확인에서 전체 중단, 구 오류가 연속 2번이면 중단. */
+/** 느린 순차 모드(구 4개 이상, 사용자 결정 2026-10-30) — 구 하나 안에서 요청 사이 60초, 구와 구 사이 120초.
+ * 구당 약 3분, 25개 구 약 75분(분당 0.7건). 첫 보안 확인에서 전체 중단, 구 오류가 연속 2번이면 중단. */
 const ALL_REQUEST_GAP_MS = 60_000;
 const ALL_DISTRICT_GAP_MS = 120_000;
 const ALL_MAX_CONSECUTIVE_ERRORS = 2;
@@ -31,6 +33,17 @@ const BOX_MARGIN = 0.002;
 const MISSING_SANITY_RATIO = 0.5;
 const MISSING_SANITY_MIN_ZONES = 10;
 const MAX_CHANGE_LOG = 200;
+
+/** 자동 업데이트(사용자 요청 2026-10-30): 켜면 지정한 구를 주기마다 서버가 실행한다. 기본 꺼짐·14일. */
+const AUTO_ID = "jaegebal";
+export const AUTO_DEFAULT_INTERVAL_DAYS = 14;
+const AUTO_TICK_MS = 10 * 60_000;
+/** 사이트가 한가한 한국시간 새벽에만 시작한다(1시 이상 6시 미만). */
+const AUTO_WINDOW_START_HOUR_KST = 1;
+const AUTO_WINDOW_END_HOUR_KST = 6;
+/** 보안 확인·오류로 실패하면 하루 뒤에 한 번 다시 시도한다(바로 재시도하지 않음). */
+const AUTO_RETRY_AFTER_FAILURE_MS = 24 * 3600_000;
+const DAY_MS = 24 * 3600_000;
 
 /** 서울 25개 구 코드 → 구 이름(재개발닷컴 지역 코드). 설명 문구에 구 이름이 없는 구역(예: "홍제1")도 지역을 채우기 위해 쓴다. */
 const SEOUL_DISTRICT_NAMES: Record<string, string> = {
@@ -73,8 +86,10 @@ export type JaegebalSyncStatus = {
   results: DistrictSyncResult[];
   /** 보안 확인(403/405)에 걸려 중단됨 — 재시도하지 않는다. */
   blocked: string | null;
-  /** 전체 25개 구 순차 모드로 실행 중인지. */
+  /** 느린 순차 모드(구 4개 이상/전체)로 실행 중인지. */
   all: boolean;
+  /** 실행 주체: 관리자가 지금 실행(manual) / 자동 업데이트 설정(auto). */
+  trigger: "manual" | "auto";
   /** 기존 구역의 단계·사업유형 변화(최대 MAX_CHANGE_LOG건). */
   changes: Array<{ key: string; name: string; field: "stage" | "projectType" | "new" | "missing" | "restored"; from?: string | null; to?: string | null }>;
 };
@@ -159,9 +174,11 @@ const norm = (s: string | null | undefined) => (s ?? "").trim();
 /** 재개발닷컴(jaegebal.com) 구역을 **지정한 구만** 가져와 DB에 반영한다(관리자 요청 시에만, 자동 스케줄 없음).
  * 새 구역은 추가, 기존 구역은 단계·사업유형·경계를 갱신, 이번 수집에 없는 구역은 삭제하지 않고 `missingSince`만 표시한다. */
 @Injectable()
-export class JaegebalZoneSyncService implements OnModuleInit {
+export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(JaegebalZoneSyncService.name);
-  private status: JaegebalSyncStatus = { running: false, startedAt: null, finishedAt: null, codes: [], results: [], blocked: null, all: false, changes: [] };
+  private status: JaegebalSyncStatus = { running: false, startedAt: null, finishedAt: null, codes: [], results: [], blocked: null, all: false, trigger: "manual", changes: [] };
+  private autoTimer?: ReturnType<typeof setInterval>;
+  private autoBusy = false;
 
   /** 서버가 시작될 때 `running`으로 남은 실행은 이전 프로세스가 재시작으로 끊긴 것이므로 "중단됨"으로 정리한다(진행 중 결과는 구마다 저장돼 있다). */
   async onModuleInit() {
@@ -172,6 +189,11 @@ export class JaegebalZoneSyncService implements OnModuleInit {
     } catch (e) {
       this.logger.error(`중단된 구역 업데이트 정리 실패: ${e}`);
     }
+    this.autoTimer = setInterval(() => void this.tickAuto().catch((e) => this.logger.error(`구역 자동 업데이트 확인 실패: ${e}`)), AUTO_TICK_MS);
+  }
+
+  onModuleDestroy() {
+    if (this.autoTimer) clearInterval(this.autoTimer);
   }
 
   /** 이번 실행의 이력 기록(실행 행 id·아직 저장 안 된 변경·종류별 건수). 이력 저장 실패가 수집 자체를 막지 않게 모두 try/catch로 감싼다. */
@@ -183,30 +205,32 @@ export class JaegebalZoneSyncService implements OnModuleInit {
     @InjectRepository(RedevelopmentZone) private readonly zones: Repository<RedevelopmentZone>,
     @InjectRepository(RedevelopmentZoneSyncRun) private readonly runs: Repository<RedevelopmentZoneSyncRun>,
     @InjectRepository(RedevelopmentZoneChange) private readonly changes: Repository<RedevelopmentZoneChange>,
+    @InjectRepository(RedevelopmentZoneAutoSync) private readonly autoRepo: Repository<RedevelopmentZoneAutoSync>,
+    private readonly telegram: TelegramAlertService,
   ) {}
 
   getStatus(): JaegebalSyncStatus {
     return this.status;
   }
 
-  /** `all=true`면 서울 25개 구를 천천히 순차 수집(약 75분). 아니면 지정한 구만(최대 3개). */
-  async start(codes: string[], force = false, all = false): Promise<JaegebalSyncStatus> {
+  /** 지정한 구(또는 `all=true`면 서울 25개 구 전체)를 업데이트한다. 구가 3개를 넘으면 자동으로 느린 간격(요청 60초·구 사이 120초)을 쓴다. */
+  async start(codes: string[], force = false, all = false, triggeredBy: "manual" | "auto" = "manual"): Promise<JaegebalSyncStatus> {
     if (this.status.running) return this.status;
     const list = all ? Object.keys(SEOUL_DISTRICT_NAMES) : Array.from(new Set((codes ?? []).map((c) => String(c).trim())));
     if (!list.length) throw new BadRequestException("수집할 구 코드를 지정하세요. (예: 11560)");
-    if (list.some((c) => !/^\d{5}$/.test(c))) throw new BadRequestException("구 코드는 5자리 숫자여야 합니다.");
-    if (!all && list.length > MAX_DISTRICTS_PER_RUN) throw new BadRequestException(`한 번에 최대 ${MAX_DISTRICTS_PER_RUN}개 구까지만 수집합니다. (전체는 "전체 순차 업데이트"를 사용하세요)`);
+    if (list.some((c) => !SEOUL_DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
+    const slow = all || list.length > MAX_DISTRICTS_PER_RUN;
     const startedAt = new Date();
-    this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, all, changes: [] };
+    this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, all: slow, trigger: triggeredBy, changes: [] };
     this.pending = [];
     this.counts = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0 };
     this.runId = null;
     try {
-      this.runId = (await this.runs.save(this.runs.create({ startedAt, state: "running", codes: list, results: [] }))).id;
+      this.runId = (await this.runs.save(this.runs.create({ startedAt, state: "running", triggeredBy, codes: list, results: [] }))).id;
     } catch (e) {
       this.logger.error(`구역 업데이트 실행 기록 생성 실패(수집은 계속): ${e}`);
     }
-    void this.run(list, force, all).catch((e) => this.logger.error(`재개발닷컴 구역 수집 실패: ${e}`));
+    void this.run(list, force, slow).catch((e) => this.logger.error(`재개발닷컴 구역 수집 실패: ${e}`));
     return this.status;
   }
 
@@ -350,7 +374,83 @@ export class JaegebalZoneSyncService implements OnModuleInit {
       await this.finalizeRun(); // 이력 저장을 끝낸 뒤 running=false로 바꿔, 화면이 곧바로 이력을 조회해도 최신이다.
       this.status.running = false;
       this.status.finishedAt = new Date().toISOString();
+      if (this.status.trigger === "auto") await this.finishAutoRun(this.status).catch((e) => this.logger.error(`자동 업데이트 마무리 실패: ${e}`));
     }
+  }
+
+  // ── 자동 업데이트(설정·스케줄러) ──────────────────────────────────────────────
+
+  private async loadAuto(): Promise<RedevelopmentZoneAutoSync> {
+    const row = await this.autoRepo.findOne({ where: { id: AUTO_ID } });
+    return row ?? this.autoRepo.create({ id: AUTO_ID, enabled: false, intervalDays: AUTO_DEFAULT_INTERVAL_DAYS, codes: [], lastRunAt: null, nextRunAt: null });
+  }
+
+  async getAutoSettings() {
+    const r = await this.loadAuto();
+    return { enabled: r.enabled, intervalDays: r.intervalDays, codes: r.codes ?? [], lastRunAt: r.lastRunAt, nextRunAt: r.nextRunAt };
+  }
+
+  /** 자동 업데이트 설정 저장(켜기/끄기·주기(일)·대상 구). 켜면 다음 실행 시각 = (마지막 자동 실행 또는 지금) + 주기. */
+  async saveAutoSettings(input: { enabled?: boolean; intervalDays?: number; codes?: string[] }) {
+    const cur = await this.loadAuto();
+    const enabled = input.enabled ?? cur.enabled;
+    const intervalDays = input.intervalDays ?? cur.intervalDays;
+    const codes = input.codes ? Array.from(new Set(input.codes.map((c) => String(c).trim()))) : (cur.codes ?? []);
+    if (!Number.isInteger(intervalDays) || intervalDays < 1 || intervalDays > 365) throw new BadRequestException("업데이트 주기는 1~365일의 정수여야 합니다.");
+    if (codes.some((c) => !SEOUL_DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
+    if (enabled && !codes.length) throw new BadRequestException("자동 업데이트할 구를 먼저 선택하세요.");
+    const now = new Date();
+    let nextRunAt = cur.nextRunAt;
+    if (!enabled) nextRunAt = null;
+    else if (!cur.enabled || cur.intervalDays !== intervalDays || !cur.nextRunAt) {
+      nextRunAt = new Date((cur.lastRunAt ?? now).getTime() + intervalDays * DAY_MS);
+    }
+    const saved = await this.autoRepo.save(Object.assign(cur, { enabled, intervalDays, codes, nextRunAt }));
+    return { enabled: saved.enabled, intervalDays: saved.intervalDays, codes: saved.codes, lastRunAt: saved.lastRunAt, nextRunAt: saved.nextRunAt };
+  }
+
+  /** 10분마다: 자동 업데이트가 켜져 있고 예정 시각이 지났으며 한국시간 새벽(1~6시)이면 실행을 시작한다. */
+  async tickAuto(now = new Date()): Promise<void> {
+    if (this.status.running || this.autoBusy) return;
+    const hour = new Date(now.getTime() + 9 * 3600_000).getUTCHours();
+    if (hour < AUTO_WINDOW_START_HOUR_KST || hour >= AUTO_WINDOW_END_HOUR_KST) return;
+    const row = await this.autoRepo.findOne({ where: { id: AUTO_ID } });
+    if (!row || !row.enabled || !row.codes?.length || !row.nextRunAt || row.nextRunAt.getTime() > now.getTime()) return;
+    this.autoBusy = true;
+    try {
+      await this.start(row.codes, false, false, "auto");
+    } catch (e) {
+      // 시작 자체가 실패하면 10분마다 되풀이하지 않도록 하루 뒤로 미룬다.
+      this.logger.error(`구역 자동 업데이트 시작 실패: ${e}`);
+      row.nextRunAt = new Date(now.getTime() + AUTO_RETRY_AFTER_FAILURE_MS);
+      await this.autoRepo.save(row);
+    } finally {
+      this.autoBusy = false;
+    }
+  }
+
+  /** 자동 실행이 끝나면 마지막 실행·다음 예정 시각을 갱신하고 텔레그램으로 결과를 알린다. 실패하면 하루 뒤 한 번 다시 시도. */
+  private async finishAutoRun(st: JaegebalSyncStatus) {
+    const row = await this.loadAuto();
+    const failed = !!st.blocked || st.results.some((r) => r.error);
+    const now = new Date();
+    const started = st.startedAt ? new Date(st.startedAt) : now;
+    row.lastRunAt = started;
+    row.nextRunAt = row.enabled ? new Date(failed ? now.getTime() + AUTO_RETRY_AFTER_FAILURE_MS : started.getTime() + row.intervalDays * DAY_MS) : null;
+    await this.autoRepo.save(row);
+    const names = st.codes.map((c) => SEOUL_DISTRICT_NAMES[c] ?? c).join(", ");
+    const nextText = row.nextRunAt ? new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(row.nextRunAt) : "-";
+    const text = [
+      `🗺️ 재개발닷컴 구역 자동 업데이트 ${st.blocked ? "중단" : failed ? "일부 오류" : "완료"}`,
+      `대상 ${st.codes.length}개 구: ${names}`,
+      `신규 ${this.counts.new} · 단계 변경 ${this.counts.stage} · 사업유형 변경 ${this.counts.projectType} · 사라짐 ${this.counts.missing} · 복구 ${this.counts.restored}`,
+      st.blocked
+        ? "사이트 보안 확인에 걸려 멈췄습니다. 하루 뒤 새벽에 한 번 다시 시도합니다."
+        : failed
+          ? "오류가 난 구가 있습니다. 하루 뒤 새벽에 다시 시도합니다."
+          : `다음 자동 업데이트: ${nextText} 이후 새벽`,
+    ].join("\n");
+    await this.telegram.send(text, process.env.REDEVELOPMENT_TELEGRAM_CHAT_ID?.trim() || undefined);
   }
 
   /** 같은 구를 연달아 다시 요청하지 않도록 구 코드별 마지막 수집 시각을 메모리에 둔다(서버 재시작 시 초기화). */

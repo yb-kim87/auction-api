@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { TelegramAlertService } from "../kakao-notify/telegram-alert.service";
 import { RedevelopmentZone } from "../redevelopment/entities/redevelopment-zone.entity";
+import { RedevelopmentZoneSyncRun } from "./entities/redevelopment-zone-sync-run.entity";
 import { ZoneUpdateReminder } from "./entities/zone-update-reminder.entity";
 
 const ROW_ID = "jaegebal";
@@ -11,9 +12,9 @@ const SEND_HOUR_KST = 10;
 const TICK_MS = 60 * 60_000;
 const DAY_MS = 24 * 60 * 60_000;
 
-/** 재개발닷컴 구역도는 자동으로 대량 수집하지 않는다(사이트 보안 확인 때문에 최소 수집 원칙, 2026-10-30).
- * 구역 API(서명 헤더 요청)는 Railway에서 호출되지만, 관리자가 갱신할 구를 지정해 요청할 때만 가져온다(`POST redevelopment-research/jaegebal-sync`).
- * 그래서 마지막 반영(또는 마지막 알림)에서 2주가 지나면 텔레그램으로 "업데이트가 필요하다"고 알린다(사용자 요청, 2026-10-28).
+/** 재개발닷컴 구역도는 관리자가 구를 지정해 업데이트하거나(`POST redevelopment-research/jaegebal-sync`), 자동 업데이트를 켜 둔 경우에만 가져온다
+ * (사이트 보안 확인 때문에 간격을 크게 둔 최소 수집 원칙, 2026-10-30).
+ * 마지막 반영(구역 변경·성공한 업데이트 실행) 또는 마지막 알림에서 2주가 지나면 텔레그램으로 "업데이트가 필요하다"고 알린다(사용자 요청, 2026-10-28).
  * 매일 오전 10시(한국시간)에만 확인하고, 재개발 전용 채널(REDEVELOPMENT_TELEGRAM_CHAT_ID)이 있으면 그쪽으로, 없으면 기본 채널로 보낸다. */
 @Injectable()
 export class ZoneUpdateReminderService implements OnModuleInit, OnModuleDestroy {
@@ -24,6 +25,7 @@ export class ZoneUpdateReminderService implements OnModuleInit, OnModuleDestroy 
   constructor(
     @InjectRepository(ZoneUpdateReminder) private readonly reminders: Repository<ZoneUpdateReminder>,
     @InjectRepository(RedevelopmentZone) private readonly zones: Repository<RedevelopmentZone>,
+    @InjectRepository(RedevelopmentZoneSyncRun) private readonly syncRuns: Repository<RedevelopmentZoneSyncRun>,
     private readonly telegram: TelegramAlertService,
   ) {}
 
@@ -50,8 +52,11 @@ export class ZoneUpdateReminderService implements OnModuleInit, OnModuleDestroy 
         .where("z.sourceDatasetId = :d", { d: "jaegebal" })
         .getRawOne<{ max: Date | string | null }>();
       const lastUpdate = lastZone?.max ? new Date(lastZone.max) : null;
-      // 기준 시각 = 마지막 구역 반영과 마지막 알림 중 더 최근 것. 둘 다 없으면 지금을 기준으로 삼아 2주 뒤에 첫 알림을 보낸다.
-      const base = [lastUpdate, row?.lastSentAt ?? null].filter((d): d is Date => !!d).sort((a, b) => b.getTime() - a.getTime())[0];
+      // 구역이 하나도 안 바뀐 성공 실행(수동·자동)도 "마지막 반영"으로 본다 — 구역 updatedAt은 바뀐 구역에서만 갱신되기 때문.
+      const lastRun = await this.syncRuns.findOne({ where: { state: "done" }, order: { startedAt: "DESC" } });
+      const lastRunAt = lastRun?.finishedAt ?? lastRun?.startedAt ?? null;
+      // 기준 시각 = 마지막 구역 반영·마지막 성공 업데이트·마지막 알림 중 가장 최근 것. 모두 없으면 지금을 기준으로 삼아 2주 뒤에 첫 알림을 보낸다.
+      const base = [lastUpdate, lastRunAt, row?.lastSentAt ?? null].filter((d): d is Date => !!d).sort((a, b) => b.getTime() - a.getTime())[0];
       if (!base) {
         await this.reminders.save({ id: ROW_ID, lastSentAt: now });
         return;

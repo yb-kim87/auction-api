@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Query } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Put, Query } from "@nestjs/common";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { AuctionZoneCoordService } from "./auction-zone-coord.service";
 import { JaegebalZoneSyncService } from "./jaegebal-zone-sync.service";
@@ -28,7 +28,7 @@ export class RedevelopmentResearchController {
   @Post("jaegebal-sync")
   async startJaegebalSync(@Headers() headers: Record<string, string>, @Body() body: { codes?: string[]; force?: boolean; all?: boolean }) {
     requireAdmin(getAuthContext(headers));
-    // all=true: 서울 25개 구를 요청 60초·구 사이 120초 간격으로 순차 수집(약 75분, 첫 보안 확인에서 전체 중단).
+    // 구가 3개를 넘거나 all=true(서울 25개 구 전체)면 느린 간격(요청 60초·구 사이 120초, 약 75분)으로 순차 수집하고 첫 보안 확인에서 중단한다.
     return this.jaegebalSync.start(Array.isArray(body?.codes) ? body.codes : [], body?.force === true, body?.all === true);
   }
 
@@ -36,6 +36,27 @@ export class RedevelopmentResearchController {
   async jaegebalSyncStatus(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));
     return this.jaegebalSync.getStatus();
+  }
+
+  /** 자동 업데이트 설정 조회(켜짐 여부·주기(일)·대상 구·마지막/다음 실행). */
+  @Get("jaegebal-sync/auto")
+  async jaegebalAutoSettings(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.getAutoSettings();
+  }
+
+  /** 자동 업데이트 설정 저장. 일부만 보내도 된다: { enabled?, intervalDays?(1~365, 기본 14), codes? }. */
+  @Put("jaegebal-sync/auto")
+  async saveJaegebalAutoSettings(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { enabled?: boolean; intervalDays?: number; codes?: string[] },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.saveAutoSettings({
+      enabled: typeof body?.enabled === "boolean" ? body.enabled : undefined,
+      intervalDays: body?.intervalDays == null ? undefined : Number(body.intervalDays),
+      codes: Array.isArray(body?.codes) ? body.codes : undefined,
+    });
   }
 
   /** 구역 업데이트 실행 이력(최신순, 날짜별 조회용). */

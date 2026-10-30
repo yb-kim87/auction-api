@@ -59,6 +59,7 @@ import { InterestAuctionAlert } from "./redevelopment-research/entities/interest
 import { ZoneUpdateReminder } from "./redevelopment-research/entities/zone-update-reminder.entity";
 import { RedevelopmentZoneSyncRun } from "./redevelopment-research/entities/redevelopment-zone-sync-run.entity";
 import { RedevelopmentZoneChange } from "./redevelopment-research/entities/redevelopment-zone-change.entity";
+import { RedevelopmentZoneAutoSync } from "./redevelopment-research/entities/redevelopment-zone-auto-sync.entity";
 import { AddressGeocodeCache } from "./redevelopment-research/entities/address-geocode-cache.entity";
 import { NiceCrawlerStateRow } from "./nice-crawler/entities/nice-crawler-state.entity";
 import { NiceCrawlerLogRow } from "./nice-crawler/entities/nice-crawler-log.entity";
@@ -130,6 +131,7 @@ const entities = [
   ZoneUpdateReminder,
   RedevelopmentZoneSyncRun,
   RedevelopmentZoneChange,
+  RedevelopmentZoneAutoSync,
   AddressGeocodeCache,
   NiceCrawlerStateRow,
   NiceCrawlerLogRow,

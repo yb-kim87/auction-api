@@ -19,6 +19,10 @@ export class RedevelopmentZoneSyncRun {
   @Column({ type: "varchar", default: "running" })
   state!: string;
 
+  /** 실행 주체: manual(관리자가 지금 실행) | auto(자동 업데이트 설정에 따라 서버가 실행). */
+  @Column({ type: "varchar", default: "manual" })
+  triggeredBy!: string;
+
   /** 요청한 구 코드. */
   @Column({ type: "simple-json" })
   codes!: string[];
