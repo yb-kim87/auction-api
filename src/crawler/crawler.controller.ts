@@ -8,13 +8,16 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  ForbiddenException,
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import {
   getAuthContext,
   requireAdmin,
+  requireAuth,
 } from "../common/auth-context";
+import { UserRole } from "../common/constants";
 import { CrawlerService } from "./crawler.service";
 import type {
   CollectUrlsDto,
@@ -127,6 +130,21 @@ export class CrawlerController {
   ) {
     requireAdmin(getAuthContext(headers));
     return this.crawlerService.countSearchResultsV3(body.search);
+  }
+
+  /** 임차인·점유 현황이 비어 있는 물건 상세를 연 컨설팅수강생 이상 사용자가 그 물건만 자동 조회하도록 요청한다. */
+  @Post("refresh-tenant")
+  async refreshTenant(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { auctionId?: string },
+  ) {
+    const ctx = getAuthContext(headers);
+    requireAuth(ctx);
+    const allowed = [UserRole.CONSULTING_STUDENT, UserRole.CONSULTANT, UserRole.ADMIN] as string[];
+    if (!allowed.includes(ctx.role)) throw new ForbiddenException("임차인·점유 현황은 컨설팅수강생 이상 등급에서 볼 수 있습니다.");
+    const id = String(body?.auctionId ?? "").trim();
+    if (!id) throw new BadRequestException("auctionId가 필요합니다.");
+    return this.crawlerService.refreshTenantForAuction(id, ctx.username);
   }
 
   @Post("collect-urls")

@@ -1468,6 +1468,42 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return { urls: this.localStatus.urls };
   }
 
+  private readonly tenantRefreshCooldown = new Map<string, number>();
+  private tenantRefreshTimes: number[] = [];
+
+  /** 물건 상세를 연 사용자가 임차인·점유 현황이 비어 있는 물건을 열었을 때 그 물건만 다시 조회한다(사용자 요청 2026-10-30).
+   * 누구나 열 수 있는 상세 화면에서 호출되므로 남용을 막는다: 같은 물건은 6시간에 한 번, 전체는 시간당 30건,
+   * 다른 조회가 진행 중이면 건너뛴다. 현황이 이미 있거나 아직 안 올라왔으면 아무것도 바꾸지 않는다. */
+  async refreshTenantForAuction(
+    auctionId: string,
+    username: string,
+  ): Promise<{ started: boolean; reason?: "already_has" | "not_found" | "cooldown" | "rate_limited" | "busy" | "no_link" | "error" }> {
+    const [auction] = await this.auctionsService.findByIds([auctionId], true, true);
+    if (!auction) return { started: false, reason: "not_found" };
+    const detail = String(auction.tenantDetail ?? "").trim();
+    if (!(detail === "" || detail === "-" || detail === "없음" || detail === "값없음")) return { started: false, reason: "already_has" };
+    const link = String(auction.link ?? "").trim();
+    if (!link) return { started: false, reason: "no_link" };
+    const now = Date.now();
+    const last = this.tenantRefreshCooldown.get(auctionId);
+    if (last != null && now - last < 6 * 60 * 60 * 1000) return { started: false, reason: "cooldown" };
+    this.tenantRefreshTimes = this.tenantRefreshTimes.filter((t) => now - t < 60 * 60 * 1000);
+    if (this.tenantRefreshTimes.length >= 30) return { started: false, reason: "rate_limited" };
+    if (this.jobRunning) return { started: false, reason: "busy" };
+    this.tenantRefreshCooldown.set(auctionId, now);
+    this.tenantRefreshTimes.push(now);
+    try {
+      await this.startCrawl({ urls: [link], crawlerVersion: "v3" }, `${username}(임차현황 자동조회)`);
+      return { started: true };
+    } catch (error) {
+      // 크롤러가 꺼져 있거나 다른 조회가 막 시작된 경우 — 다음에 다시 시도할 수 있게 쿨다운을 되돌린다.
+      this.tenantRefreshCooldown.delete(auctionId);
+      this.tenantRefreshTimes.pop();
+      this.appendLog("warn", `[임차현황 자동조회] 시작하지 못했습니다: ${error instanceof Error ? error.message : String(error)}`);
+      return { started: false, reason: "error" };
+    }
+  }
+
   async startCrawl(dto: StartCrawlDto, submittedBy: string) {
     const version = dto.crawlerVersion ?? "v1";
     // v3(완전 HTTPX)는 브라우저(Selenium 워커)를 전혀 쓰지 않으므로
