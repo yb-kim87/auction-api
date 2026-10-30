@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import * as crypto from "crypto";
 import * as zlib from "zlib";
-import { Repository } from "typeorm";
+import { MoreThan, Repository } from "typeorm";
 import { RedevelopmentPoint, RedevelopmentZone } from "../redevelopment/entities/redevelopment-zone.entity";
 import { RedevelopmentZoneChange } from "./entities/redevelopment-zone-change.entity";
 import { RedevelopmentZoneSyncRun, ZoneChangeType } from "./entities/redevelopment-zone-sync-run.entity";
@@ -21,6 +21,11 @@ const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 export const MAX_DISTRICTS_PER_RUN = 3;
 const REQUEST_GAP_MS = 30_000;
 const MIN_RESYNC_HOURS = 6;
+/** 전체 순차 모드(사용자 결정 2026-10-30: 전체 구를 보수적으로 시험) — 구 하나 안에서 요청 사이 60초, 구와 구 사이 120초.
+ * 구당 약 3분, 25개 구 약 75분(분당 0.7건). 수동 실행만 가능하고 자동 스케줄은 없다. 첫 보안 확인에서 전체 중단, 구 오류가 연속 2번이면 중단. */
+const ALL_REQUEST_GAP_MS = 60_000;
+const ALL_DISTRICT_GAP_MS = 120_000;
+const ALL_MAX_CONSECUTIVE_ERRORS = 2;
 const BOX_MARGIN = 0.002;
 /** 응답이 DB에 있던 구역 수에 비해 너무 적으면(부분 응답 의심) "사라진 구역" 표시를 하지 않는다. */
 const MISSING_SANITY_RATIO = 0.5;
@@ -68,6 +73,8 @@ export type JaegebalSyncStatus = {
   results: DistrictSyncResult[];
   /** 보안 확인(403/405)에 걸려 중단됨 — 재시도하지 않는다. */
   blocked: string | null;
+  /** 전체 25개 구 순차 모드로 실행 중인지. */
+  all: boolean;
   /** 기존 구역의 단계·사업유형 변화(최대 MAX_CHANGE_LOG건). */
   changes: Array<{ key: string; name: string; field: "stage" | "projectType" | "new" | "missing" | "restored"; from?: string | null; to?: string | null }>;
 };
@@ -152,9 +159,20 @@ const norm = (s: string | null | undefined) => (s ?? "").trim();
 /** 재개발닷컴(jaegebal.com) 구역을 **지정한 구만** 가져와 DB에 반영한다(관리자 요청 시에만, 자동 스케줄 없음).
  * 새 구역은 추가, 기존 구역은 단계·사업유형·경계를 갱신, 이번 수집에 없는 구역은 삭제하지 않고 `missingSince`만 표시한다. */
 @Injectable()
-export class JaegebalZoneSyncService {
+export class JaegebalZoneSyncService implements OnModuleInit {
   private readonly logger = new Logger(JaegebalZoneSyncService.name);
-  private status: JaegebalSyncStatus = { running: false, startedAt: null, finishedAt: null, codes: [], results: [], blocked: null, changes: [] };
+  private status: JaegebalSyncStatus = { running: false, startedAt: null, finishedAt: null, codes: [], results: [], blocked: null, all: false, changes: [] };
+
+  /** 서버가 시작될 때 `running`으로 남은 실행은 이전 프로세스가 재시작으로 끊긴 것이므로 "중단됨"으로 정리한다(진행 중 결과는 구마다 저장돼 있다). */
+  async onModuleInit() {
+    try {
+      const stale = await this.runs.find({ where: { state: "running" } });
+      for (const r of stale) await this.runs.update(r.id, { state: "interrupted", finishedAt: new Date() });
+      if (stale.length) this.logger.warn(`재시작으로 중단된 구역 업데이트 ${stale.length}건을 정리했습니다.`);
+    } catch (e) {
+      this.logger.error(`중단된 구역 업데이트 정리 실패: ${e}`);
+    }
+  }
 
   /** 이번 실행의 이력 기록(실행 행 id·아직 저장 안 된 변경·종류별 건수). 이력 저장 실패가 수집 자체를 막지 않게 모두 try/catch로 감싼다. */
   private runId: string | null = null;
@@ -171,14 +189,15 @@ export class JaegebalZoneSyncService {
     return this.status;
   }
 
-  async start(codes: string[], force = false): Promise<JaegebalSyncStatus> {
+  /** `all=true`면 서울 25개 구를 천천히 순차 수집(약 75분). 아니면 지정한 구만(최대 3개). */
+  async start(codes: string[], force = false, all = false): Promise<JaegebalSyncStatus> {
     if (this.status.running) return this.status;
-    const list = Array.from(new Set((codes ?? []).map((c) => String(c).trim())));
+    const list = all ? Object.keys(SEOUL_DISTRICT_NAMES) : Array.from(new Set((codes ?? []).map((c) => String(c).trim())));
     if (!list.length) throw new BadRequestException("수집할 구 코드를 지정하세요. (예: 11560)");
     if (list.some((c) => !/^\d{5}$/.test(c))) throw new BadRequestException("구 코드는 5자리 숫자여야 합니다.");
-    if (list.length > MAX_DISTRICTS_PER_RUN) throw new BadRequestException(`한 번에 최대 ${MAX_DISTRICTS_PER_RUN}개 구까지만 수집합니다.`);
+    if (!all && list.length > MAX_DISTRICTS_PER_RUN) throw new BadRequestException(`한 번에 최대 ${MAX_DISTRICTS_PER_RUN}개 구까지만 수집합니다. (전체는 "전체 순차 업데이트"를 사용하세요)`);
     const startedAt = new Date();
-    this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, changes: [] };
+    this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, all, changes: [] };
     this.pending = [];
     this.counts = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0 };
     this.runId = null;
@@ -187,7 +206,7 @@ export class JaegebalZoneSyncService {
     } catch (e) {
       this.logger.error(`구역 업데이트 실행 기록 생성 실패(수집은 계속): ${e}`);
     }
-    void this.run(list, force).catch((e) => this.logger.error(`재개발닷컴 구역 수집 실패: ${e}`));
+    void this.run(list, force, all).catch((e) => this.logger.error(`재개발닷컴 구역 수집 실패: ${e}`));
     return this.status;
   }
 
@@ -243,18 +262,56 @@ export class JaegebalZoneSyncService {
     }
   }
 
-  private async run(codes: string[], force: boolean) {
+  /** 진행 상황(구별 결과·건수)을 실행 행에 저장한다 — 전체 순차처럼 오래 걸리는 실행이 중간에 끊겨도 어디까지 했는지 남는다. */
+  private async saveProgress() {
+    if (!this.runId) return;
+    try {
+      await this.runs.update(this.runId, {
+        results: this.status.results,
+        newCount: this.counts.new,
+        stageCount: this.counts.stage,
+        typeCount: this.counts.projectType,
+        missingCount: this.counts.missing,
+        restoredCount: this.counts.restored,
+      });
+    } catch (e) {
+      this.logger.error(`구역 업데이트 진행 저장 실패: ${e}`);
+    }
+  }
+
+  /** 최근 MIN_RESYNC_HOURS 안에 성공적으로 수집한 구 코드 — 메모리뿐 아니라 DB 실행 기록으로도 판단해 서버가 재시작돼도 다시 요청하지 않는다. */
+  private async recentlySyncedCodes(): Promise<Set<string>> {
+    const out = new Set<string>();
+    for (const code of this.lastSyncAt.keys()) if (this.syncedRecently(code)) out.add(code);
+    try {
+      const rows = await this.runs.find({ where: { startedAt: MoreThan(new Date(Date.now() - MIN_RESYNC_HOURS * 3600_000)) } });
+      for (const row of rows) {
+        for (const r of (row.results ?? []) as DistrictSyncResult[]) if (r?.code && r.fetched != null && !r.error) out.add(r.code);
+      }
+    } catch (e) {
+      this.logger.error(`최근 수집 기록 조회 실패(메모리 기준으로 판단): ${e}`);
+    }
+    return out;
+  }
+
+  private async run(codes: string[], force: boolean, all = false) {
+    // 전체 순차 모드는 더 천천히: 구 안에서 60초, 구와 구 사이 120초. 기본 모드는 모두 30초.
+    const innerGap = all ? ALL_REQUEST_GAP_MS : REQUEST_GAP_MS;
+    const districtGap = all ? ALL_DISTRICT_GAP_MS : REQUEST_GAP_MS;
     try {
       let requested = false;
+      let consecutiveErrors = 0;
+      const recent = force ? new Set<string>() : await this.recentlySyncedCodes();
       for (const code of codes) {
         const result: DistrictSyncResult = { code };
         this.status.results.push(result);
         try {
-          if (!force && this.syncedRecently(code)) {
+          if (recent.has(code)) {
             result.warning = `최근 ${MIN_RESYNC_HOURS}시간 안에 이 구를 이미 수집해서 건너뜁니다.`;
+            await this.saveProgress();
             continue;
           }
-          if (requested) await sleep(REQUEST_GAP_MS);
+          if (requested) await sleep(districtGap);
           requested = true;
           const region = await apiGet<{ name: string; rings: unknown }>(`/common/regions/${code}`);
           result.name = region.name;
@@ -266,11 +323,13 @@ export class JaegebalZoneSyncService {
             `min_lat=${Math.min(...lats) - BOX_MARGIN}&max_lat=${Math.max(...lats) + BOX_MARGIN}` +
             `&min_lng=${Math.min(...lngs) - BOX_MARGIN}&max_lng=${Math.max(...lngs) + BOX_MARGIN}` +
             `&simplify=0.0001&include_completed=true`;
-          await sleep(REQUEST_GAP_MS);
+          await sleep(innerGap);
           const items = (await apiGet<RawDevelop[]>("/develops", query)).filter((x) => Array.isArray(x.areas) && x.areas.length);
           await this.apply(region.name, items, result);
           await this.flushChanges();
           this.lastSyncAt.set(code, Date.now());
+          consecutiveErrors = 0;
+          await this.saveProgress();
         } catch (e) {
           if (e instanceof BlockedError) {
             this.status.blocked = e.message;
@@ -278,6 +337,13 @@ export class JaegebalZoneSyncService {
             return;
           }
           result.error = String(e instanceof Error ? e.message : e);
+          consecutiveErrors += 1;
+          await this.saveProgress();
+          // 전체 순차 모드에서는 구 오류가 연달아 나면 사이트 상태가 이상한 것이므로 더 두드리지 않고 멈춘다.
+          if (all && consecutiveErrors >= ALL_MAX_CONSECUTIVE_ERRORS) {
+            this.logger.warn(`전체 순차 업데이트: 구 오류가 ${consecutiveErrors}번 연속 발생해 중단합니다.`);
+            return;
+          }
         }
       }
     } finally {
