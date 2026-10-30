@@ -1,6 +1,7 @@
 import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Query } from "@nestjs/common";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { AuctionZoneCoordService } from "./auction-zone-coord.service";
+import { JaegebalZoneSyncService } from "./jaegebal-zone-sync.service";
 import { RedevelopmentResearchService } from "./redevelopment-research.service";
 import { ZoneBlogService } from "./zone-blog.service";
 
@@ -19,7 +20,22 @@ export class RedevelopmentResearchController {
     private readonly service: RedevelopmentResearchService,
     private readonly zoneBlog: ZoneBlogService,
     private readonly auctionCoord: AuctionZoneCoordService,
+    private readonly jaegebalSync: JaegebalZoneSyncService,
   ) {}
+
+  /** 재개발닷컴 구역을 **지정한 구만**(최대 3개, 요청 간 30초) 가져와 반영한다(백그라운드). 새 구역 추가·단계 갱신,
+   * 수집에 없는 구역은 삭제하지 않고 `missingSince`만 표시한다. 진행은 `jaegebal-sync/status`로 확인한다. */
+  @Post("jaegebal-sync")
+  async startJaegebalSync(@Headers() headers: Record<string, string>, @Body() body: { codes?: string[]; force?: boolean }) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.start(Array.isArray(body?.codes) ? body.codes : [], body?.force === true);
+  }
+
+  @Get("jaegebal-sync/status")
+  async jaegebalSyncStatus(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.getStatus();
+  }
 
   /** 좌표 없는 기존 서울 빌라 경매물건을 서버에서 한 번에 채운다(구역 근처만 저장, 백그라운드). */
   @Post("auction-coords/backfill")

@@ -11,7 +11,8 @@ const SEND_HOUR_KST = 10;
 const TICK_MS = 60 * 60_000;
 const DAY_MS = 24 * 60 * 60_000;
 
-/** 재개발닷컴 구역도는 사이트의 사람 확인 때문에 서버가 자동 수집할 수 없다(Railway IP는 CDN에서 403).
+/** 재개발닷컴 구역도는 자동으로 대량 수집하지 않는다(사이트 보안 확인 때문에 최소 수집 원칙, 2026-10-30).
+ * 구역 API(서명 헤더 요청)는 Railway에서 호출되지만, 관리자가 갱신할 구를 지정해 요청할 때만 가져온다(`POST redevelopment-research/jaegebal-sync`).
  * 그래서 마지막 반영(또는 마지막 알림)에서 2주가 지나면 텔레그램으로 "업데이트가 필요하다"고 알린다(사용자 요청, 2026-10-28).
  * 매일 오전 10시(한국시간)에만 확인하고, 재개발 전용 채널(REDEVELOPMENT_TELEGRAM_CHAT_ID)이 있으면 그쪽으로, 없으면 기본 채널로 보낸다. */
 @Injectable()
@@ -62,8 +63,8 @@ export class ZoneUpdateReminderService implements OnModuleInit, OnModuleDestroy 
       const text = [
         "🗺️ 재개발닷컴 구역도 업데이트가 필요합니다",
         `마지막 구역 반영: ${fmt(lastUpdate)} (${lastUpdate ? Math.floor((now.getTime() - lastUpdate.getTime()) / DAY_MS) : "-"}일 전)`,
-        "새 구역·단계 변경을 반영하려면 Claude에게 \"재개발닷컴 구역도 업데이트해줘\"라고 요청해 주세요.",
-        "(관리자 PC 브라우저에서 사이트의 사람 확인을 직접 풀어야 합니다.)",
+        "새 구역·단계 변경을 반영하려면 갱신할 구(최대 3개)를 지정해 Claude에게 \"재개발닷컴 구역도 업데이트해줘\"라고 요청해 주세요.",
+        "(한 번에 몇 개 구만, 간격을 두고 가져옵니다. 보안 확인이 뜨면 자동으로 멈춥니다.)",
       ].join("\n");
       if (!(await this.telegram.send(text, chat))) return; // 전송 실패 — 다음 날 같은 시각에 다시 시도
       await this.reminders.save({ id: ROW_ID, lastSentAt: now });

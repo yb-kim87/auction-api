@@ -86,6 +86,11 @@ export class RedevelopmentZone {
   @Column({ type: "real", nullable: true })
   areaSqMeters!: number | null;
 
+  /** 재개발닷컴 최신 수집 응답에서 더 이상 나타나지 않기 시작한 시각(사업 무산·삭제 추정).
+   * 구역은 지우지 않고 이 값으로 "사라진 구역" 표시만 한다. 다시 나타나면 null로 되돌린다(사용자 요청, 2026-10-30). */
+  @Column({ type: Date, nullable: true })
+  missingSince!: Date | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 
