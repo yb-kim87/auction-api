@@ -190,7 +190,17 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     try {
       const stale = await this.runs.find({ where: { state: "running" } });
-      for (const r of stale) await this.runs.update(r.id, { state: "interrupted", finishedAt: new Date() });
+      for (const r of stale) {
+        await this.runs.update(r.id, { state: "interrupted", finishedAt: new Date() });
+        const done = ((r.results ?? []) as DistrictSyncResult[]).filter((x) => x.fetched != null || x.warning).length;
+        await this.notify(
+          [
+            `⛔ 재개발닷컴 구역 ${r.triggeredBy === "auto" ? "자동" : "수동"} 업데이트가 서버 재시작으로 중단되었습니다`,
+            `진행: ${done}/${(r.codes ?? []).length}개 구 (${new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(r.startedAt))} 시작)`,
+            "다시 실행하면 이미 끝낸 구는 건너뛰고 이어서 합니다.",
+          ].join("\n"),
+        );
+      }
       if (stale.length) this.logger.warn(`재시작으로 중단된 구역 업데이트 ${stale.length}건을 정리했습니다.`);
     } catch (e) {
       this.logger.error(`중단된 구역 업데이트 정리 실패: ${e}`);
@@ -400,9 +410,12 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
       }
     } finally {
       await this.finalizeRun(); // 이력 저장을 끝낸 뒤 running=false로 바꿔, 화면이 곧바로 이력을 조회해도 최신이다.
+      const snapshot = { st: this.status, counts: { ...this.counts }, finishedAt: new Date() }; // 다음 실행이 시작돼도 섞이지 않게 지금 값을 고정
       this.status.running = false;
-      this.status.finishedAt = new Date().toISOString();
-      if (this.status.trigger === "auto") await this.finishAutoRun(this.status).catch((e) => this.logger.error(`자동 업데이트 마무리 실패: ${e}`));
+      this.status.finishedAt = snapshot.finishedAt.toISOString();
+      let nextRunAt: Date | null = null;
+      if (snapshot.st.trigger === "auto") nextRunAt = await this.finishAutoRun(snapshot.st).catch((e) => (this.logger.error(`자동 업데이트 마무리 실패: ${e}`), null));
+      await this.notify(this.buildReport(snapshot.st, snapshot.counts, snapshot.finishedAt, nextRunAt)); // 수동·자동 모두 텔레그램으로 결과를 알린다
     }
   }
 
@@ -473,13 +486,14 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
       this.logger.error(`구역 자동 업데이트 시작 실패: ${e}`);
       row.nextRunAt = new Date(now.getTime() + AUTO_RETRY_AFTER_FAILURE_MS);
       await this.autoRepo.save(row);
+      await this.notify(`❌ 재개발닷컴 구역 자동 업데이트를 시작하지 못했습니다\n사유: ${e instanceof Error ? e.message : String(e)}\n하루 뒤 다시 시도합니다.`);
     } finally {
       this.autoBusy = false;
     }
   }
 
-  /** 자동 실행이 끝나면 마지막 실행·다음 예정 시각을 갱신하고 텔레그램으로 결과를 알린다. 실패하면 하루 뒤 한 번 다시 시도. */
-  private async finishAutoRun(st: JaegebalSyncStatus) {
+  /** 자동 실행이 끝나면 마지막 실행·다음 예정 시각을 갱신한다(실패하면 하루 뒤 한 번 다시 시도). 다음 예정 시각을 돌려준다. */
+  private async finishAutoRun(st: JaegebalSyncStatus): Promise<Date | null> {
     const row = await this.loadAuto();
     const failed = !!st.blocked || st.results.some((r) => r.error);
     const now = new Date();
@@ -487,19 +501,51 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     row.lastRunAt = started;
     row.nextRunAt = row.enabled ? (failed ? new Date(now.getTime() + AUTO_RETRY_AFTER_FAILURE_MS) : nextRunTime(started, row.intervalDays, row.runHour, row.runMinute)) : null;
     await this.autoRepo.save(row);
-    const names = st.codes.map((c) => SEOUL_DISTRICT_NAMES[c] ?? c).join(", ");
-    const nextText = row.nextRunAt ? new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).format(row.nextRunAt) : "-";
-    const text = [
-      `🗺️ 재개발닷컴 구역 자동 업데이트 ${st.blocked ? "중단" : failed ? "일부 오류" : "완료"}`,
-      `대상 ${st.codes.length}개 구: ${names}`,
-      `신규 ${this.counts.new} · 단계 변경 ${this.counts.stage} · 사업유형 변경 ${this.counts.projectType} · 사라짐 ${this.counts.missing} · 복구 ${this.counts.restored}`,
-      st.blocked
-        ? "사이트 보안 확인에 걸려 멈췄습니다. 하루 뒤 한 번 다시 시도합니다."
-        : failed
-          ? "오류가 난 구가 있습니다. 하루 뒤 다시 시도합니다."
-          : `다음 자동 업데이트: ${nextText}`,
-    ].join("\n");
-    await this.telegram.send(text, process.env.REDEVELOPMENT_TELEGRAM_CHAT_ID?.trim() || undefined);
+    return row.nextRunAt;
+  }
+
+  /** 텔레그램(REDEVELOPMENT_TELEGRAM_CHAT_ID, 없으면 기본 채널)으로 보낸다. 전송 실패가 업데이트를 막지 않는다. */
+  private async notify(text: string) {
+    try {
+      await this.telegram.send(text, process.env.REDEVELOPMENT_TELEGRAM_CHAT_ID?.trim() || undefined);
+    } catch (e) {
+      this.logger.error(`구역 업데이트 텔레그램 알림 실패: ${e}`);
+    }
+  }
+
+  /** 업데이트 결과 알림 본문 — 수동·자동 공통. 성공하면 구·구역 건수와 변경 요약, 실패하면 어느 구가 왜 실패했는지. */
+  private buildReport(st: JaegebalSyncStatus, counts: Record<ZoneChangeType, number>, finishedAt: Date, nextRunAt: Date | null): string {
+    const kind = st.trigger === "auto" ? "자동" : "수동";
+    const fmt = (d: Date) => new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).format(d);
+    const nameOf = (r: DistrictSyncResult) => r.name ?? SEOUL_DISTRICT_NAMES[r.code] ?? r.code;
+    const ok = st.results.filter((r) => r.fetched != null && !r.error);
+    const failedRows = st.results.filter((r) => r.error);
+    const skipped = st.results.filter((r) => r.warning && r.fetched == null && !r.error);
+    const hasProblem = !!st.blocked || failedRows.length > 0;
+    const started = st.startedAt ? new Date(st.startedAt) : finishedAt;
+    const secs = Math.max(0, Math.round((finishedAt.getTime() - started.getTime()) / 1000));
+    const took = secs >= 60 ? `${Math.floor(secs / 60)}분 ${secs % 60}초` : `${secs}초`;
+    const icon = st.blocked ? "⛔" : hasProblem ? "⚠️" : ok.length ? "✅" : "ℹ️";
+    const title = st.blocked ? "중단(보안 확인)" : hasProblem ? "일부 오류" : ok.length ? "완료" : "건너뜀";
+    const total = ok.reduce((n, r) => n + (r.fetched ?? 0), 0);
+    const lines = [`${icon} 재개발닷컴 구역 ${kind} 업데이트 ${title}`];
+    lines.push(`대상 ${st.codes.length}개 구: ${st.codes.map((c) => SEOUL_DISTRICT_NAMES[c] ?? c).join(", ")} · 소요 ${took}`);
+    if (ok.length) {
+      lines.push(`${ok.length}개 구에서 구역 ${total.toLocaleString("ko-KR")}건 확인 · 신규 ${counts.new} · 단계 변경 ${counts.stage} · 사업유형 변경 ${counts.projectType} · 사라짐 ${counts.missing} · 복구 ${counts.restored}`);
+      const stageChanges = st.changes.filter((c) => c.field === "stage");
+      for (const c of stageChanges.slice(0, 5)) lines.push(`• ${c.name}: ${c.from || "-"} → ${c.to || "-"}`);
+      if (counts.stage > 5) lines.push(`  …외 단계 변경 ${counts.stage - 5}건 (구역 업데이트 이력 탭에서 확인)`);
+    }
+    if (skipped.length) lines.push(`건너뜀: ${skipped.map(nameOf).join(", ")} (최근 ${MIN_RESYNC_HOURS}시간 안에 이미 수집)`);
+    // 보안 확인 중단은 아래 안내 한 줄로 충분하므로 구별 오류 줄에서는 뺀다.
+    for (const r of failedRows.filter((x) => !(st.blocked && x.error?.includes("보안 확인"))).slice(0, 5)) lines.push(`❌ ${nameOf(r)}: ${r.error}`);
+    if (st.blocked) lines.push(`사이트 보안 확인에 걸려 전체를 멈췄습니다(${st.blocked}). 우회하지 않고 멈췄으니 몇 시간 뒤 다시 시도하세요.`);
+    const notDone = st.codes.length - st.results.length;
+    if (notDone > 0 && hasProblem) lines.push(`처리하지 못한 구 ${notDone}개`);
+    if (st.trigger === "auto") {
+      lines.push(hasProblem ? `하루 뒤 한 번 다시 시도합니다${nextRunAt ? ` (${fmt(nextRunAt)})` : ""}.` : nextRunAt ? `다음 자동 업데이트: ${fmt(nextRunAt)}` : "");
+    }
+    return lines.filter((l) => l !== "").join("\n");
   }
 
   /** 같은 구를 연달아 다시 요청하지 않도록 구 코드별 마지막 수집 시각을 메모리에 둔다(서버 재시작 시 초기화). */
