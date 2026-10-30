@@ -1,9 +1,11 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import * as crypto from "crypto";
 import * as zlib from "zlib";
 import { Repository } from "typeorm";
 import { RedevelopmentPoint, RedevelopmentZone } from "../redevelopment/entities/redevelopment-zone.entity";
+import { RedevelopmentZoneChange } from "./entities/redevelopment-zone-change.entity";
+import { RedevelopmentZoneSyncRun, ZoneChangeType } from "./entities/redevelopment-zone-sync-run.entity";
 
 const DATASET_ID = "jaegebal";
 const API_BASE = "https://jaegebal.com/api";
@@ -154,7 +156,16 @@ export class JaegebalZoneSyncService {
   private readonly logger = new Logger(JaegebalZoneSyncService.name);
   private status: JaegebalSyncStatus = { running: false, startedAt: null, finishedAt: null, codes: [], results: [], blocked: null, changes: [] };
 
-  constructor(@InjectRepository(RedevelopmentZone) private readonly zones: Repository<RedevelopmentZone>) {}
+  /** 이번 실행의 이력 기록(실행 행 id·아직 저장 안 된 변경·종류별 건수). 이력 저장 실패가 수집 자체를 막지 않게 모두 try/catch로 감싼다. */
+  private runId: string | null = null;
+  private pending: RedevelopmentZoneChange[] = [];
+  private counts: Record<ZoneChangeType, number> = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0 };
+
+  constructor(
+    @InjectRepository(RedevelopmentZone) private readonly zones: Repository<RedevelopmentZone>,
+    @InjectRepository(RedevelopmentZoneSyncRun) private readonly runs: Repository<RedevelopmentZoneSyncRun>,
+    @InjectRepository(RedevelopmentZoneChange) private readonly changes: Repository<RedevelopmentZoneChange>,
+  ) {}
 
   getStatus(): JaegebalSyncStatus {
     return this.status;
@@ -166,9 +177,70 @@ export class JaegebalZoneSyncService {
     if (!list.length) throw new BadRequestException("수집할 구 코드를 지정하세요. (예: 11560)");
     if (list.some((c) => !/^\d{5}$/.test(c))) throw new BadRequestException("구 코드는 5자리 숫자여야 합니다.");
     if (list.length > MAX_DISTRICTS_PER_RUN) throw new BadRequestException(`한 번에 최대 ${MAX_DISTRICTS_PER_RUN}개 구까지만 수집합니다.`);
-    this.status = { running: true, startedAt: new Date().toISOString(), finishedAt: null, codes: list, results: [], blocked: null, changes: [] };
+    const startedAt = new Date();
+    this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, changes: [] };
+    this.pending = [];
+    this.counts = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0 };
+    this.runId = null;
+    try {
+      this.runId = (await this.runs.save(this.runs.create({ startedAt, state: "running", codes: list, results: [] }))).id;
+    } catch (e) {
+      this.logger.error(`구역 업데이트 실행 기록 생성 실패(수집은 계속): ${e}`);
+    }
     void this.run(list, force).catch((e) => this.logger.error(`재개발닷컴 구역 수집 실패: ${e}`));
     return this.status;
+  }
+
+  /** 업데이트 실행 목록(최신순). 변경이 없던 실행도 포함한다. */
+  async listRuns(limit = 100) {
+    const n = Math.min(Math.max(Math.floor(limit) || 100, 1), 300);
+    return this.runs.find({ order: { startedAt: "DESC" }, take: n });
+  }
+
+  /** 한 번의 업데이트 실행과 그때 바뀐 구역 목록. */
+  async getRun(id: string) {
+    const run = await this.runs.findOne({ where: { id } });
+    if (!run) throw new NotFoundException("업데이트 기록을 찾을 수 없습니다.");
+    const changes = await this.changes.find({ where: { runId: id }, order: { region: "ASC", changeType: "ASC", zoneName: "ASC" }, take: 5000 });
+    return { run, changes };
+  }
+
+  /** 한 구역의 변경 이력(최신순) — 구역 키 예: jaegebal-4296. */
+  async getZoneHistory(zoneKey: string) {
+    return this.changes.find({ where: { zoneKey }, order: { changedAt: "DESC" }, take: 200 });
+  }
+
+  /** 아직 저장 안 된 변경을 이력 테이블에 쌓는다(누적, 삭제 없음). */
+  private async flushChanges() {
+    if (!this.runId || !this.pending.length) return;
+    const batch = this.pending;
+    this.pending = [];
+    try {
+      await this.changes.save(batch, { chunk: 200 });
+    } catch (e) {
+      this.logger.error(`구역 변경 이력 저장 실패(${batch.length}건): ${e}`);
+    }
+  }
+
+  private async finalizeRun() {
+    if (!this.runId) return;
+    try {
+      await this.flushChanges();
+      const hasError = this.status.results.some((r) => r.error);
+      await this.runs.update(this.runId, {
+        finishedAt: new Date(),
+        state: this.status.blocked ? "blocked" : hasError ? "failed" : "done",
+        results: this.status.results,
+        blocked: this.status.blocked,
+        newCount: this.counts.new,
+        stageCount: this.counts.stage,
+        typeCount: this.counts.projectType,
+        missingCount: this.counts.missing,
+        restoredCount: this.counts.restored,
+      });
+    } catch (e) {
+      this.logger.error(`구역 업데이트 실행 기록 마무리 실패: ${e}`);
+    }
   }
 
   private async run(codes: string[], force: boolean) {
@@ -197,6 +269,7 @@ export class JaegebalZoneSyncService {
           await sleep(REQUEST_GAP_MS);
           const items = (await apiGet<RawDevelop[]>("/develops", query)).filter((x) => Array.isArray(x.areas) && x.areas.length);
           await this.apply(region.name, items, result);
+          await this.flushChanges();
           this.lastSyncAt.set(code, Date.now());
         } catch (e) {
           if (e instanceof BlockedError) {
@@ -208,6 +281,7 @@ export class JaegebalZoneSyncService {
         }
       }
     } finally {
+      await this.finalizeRun(); // 이력 저장을 끝낸 뒤 running=false로 바꿔, 화면이 곧바로 이력을 조회해도 최신이다.
       this.status.running = false;
       this.status.finishedAt = new Date().toISOString();
     }
@@ -221,8 +295,23 @@ export class JaegebalZoneSyncService {
     return at != null && Date.now() - at < MIN_RESYNC_HOURS * 3600_000;
   }
 
-  private pushChange(c: JaegebalSyncStatus["changes"][number]) {
+  private pushChange(c: JaegebalSyncStatus["changes"][number], region: string) {
     if (this.status.changes.length < MAX_CHANGE_LOG) this.status.changes.push(c);
+    this.counts[c.field] += 1;
+    if (this.runId) {
+      this.pending.push(
+        this.changes.create({
+          runId: this.runId,
+          changedAt: new Date(),
+          zoneKey: c.key,
+          zoneName: c.name,
+          region,
+          changeType: c.field,
+          fromValue: c.from ?? null,
+          toValue: c.to ?? null,
+        }),
+      );
+    }
   }
 
   private async apply(regionName: string, items: RawDevelop[], result: DistrictSyncResult) {
@@ -252,7 +341,7 @@ export class JaegebalZoneSyncService {
             }),
           );
           result.created += 1;
-          this.pushChange({ key: rec.key, name: rec.name, field: "new", to: rec.stage });
+          this.pushChange({ key: rec.key, name: rec.name, field: "new", to: rec.stage }, rec.region);
           continue;
         }
         // 관리자가 직접 고친 경계는 덮어쓰지 않는다(기존 bulk-upsert와 같은 보호 규칙).
@@ -269,11 +358,11 @@ export class JaegebalZoneSyncService {
           result.unchanged += 1;
           continue;
         }
-        if (stageChanged) this.pushChange({ key: rec.key, name: rec.name, field: "stage", from: existing.stage, to: rec.stage });
-        if (typeChanged) this.pushChange({ key: rec.key, name: rec.name, field: "projectType", from: existing.projectType, to: rec.projectType });
+        if (stageChanged) this.pushChange({ key: rec.key, name: rec.name, field: "stage", from: norm(existing.stage), to: rec.stage }, rec.region);
+        if (typeChanged) this.pushChange({ key: rec.key, name: rec.name, field: "projectType", from: norm(existing.projectType), to: rec.projectType }, rec.region);
         if (wasMissing) {
           result.restored += 1;
-          this.pushChange({ key: rec.key, name: rec.name, field: "restored" });
+          this.pushChange({ key: rec.key, name: rec.name, field: "restored" }, rec.region);
         }
         existing.name = rec.name;
         existing.region = rec.region;
@@ -306,7 +395,7 @@ export class JaegebalZoneSyncService {
       z.missingSince = now;
       await this.zones.save(z);
       result.markedMissing += 1;
-      this.pushChange({ key: z.sourceKey, name: z.name, field: "missing", from: z.stage });
+      this.pushChange({ key: z.sourceKey, name: z.name, field: "missing", from: norm(z.stage) }, z.region);
     }
   }
 }

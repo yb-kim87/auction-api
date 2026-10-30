@@ -15,6 +15,8 @@ import { AuctionZoneCoordService } from "./auction-zone-coord.service";
 import { InterestAuctionAlert } from "./entities/interest-auction-alert.entity";
 import { InterestAuctionAlertService } from "./interest-auction-alert.service";
 import { ZoneUpdateReminder } from "./entities/zone-update-reminder.entity";
+import { RedevelopmentZoneSyncRun } from "./entities/redevelopment-zone-sync-run.entity";
+import { RedevelopmentZoneChange } from "./entities/redevelopment-zone-change.entity";
 import { ZoneUpdateReminderService } from "./zone-update-reminder.service";
 import { JaegebalZoneSyncService } from "./jaegebal-zone-sync.service";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
@@ -36,6 +38,8 @@ import { RedevelopmentResearchService } from "./redevelopment-research.service";
       AddressGeocodeCache,
       InterestAuctionAlert,
       ZoneUpdateReminder,
+      RedevelopmentZoneSyncRun,
+      RedevelopmentZoneChange,
     ]),
     KakaoNotifyModule,
   ],

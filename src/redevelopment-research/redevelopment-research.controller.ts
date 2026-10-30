@@ -37,6 +37,27 @@ export class RedevelopmentResearchController {
     return this.jaegebalSync.getStatus();
   }
 
+  /** 구역 업데이트 실행 이력(최신순, 날짜별 조회용). */
+  @Get("jaegebal-sync/runs")
+  async jaegebalSyncRuns(@Headers() headers: Record<string, string>, @Query("limit") limit?: string) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.listRuns(limit ? Number(limit) : 100);
+  }
+
+  /** 한 번의 업데이트에서 바뀐 구역 목록. */
+  @Get("jaegebal-sync/runs/:id")
+  async jaegebalSyncRun(@Headers() headers: Record<string, string>, @Param("id") id: string) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.getRun(id);
+  }
+
+  /** 한 구역의 누적 변경 이력(예: jaegebal-4296). */
+  @Get("jaegebal-sync/zones/:zoneKey/history")
+  async jaegebalZoneHistory(@Headers() headers: Record<string, string>, @Param("zoneKey") zoneKey: string) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.getZoneHistory(zoneKey);
+  }
+
   /** 좌표 없는 기존 서울 빌라 경매물건을 서버에서 한 번에 채운다(구역 근처만 저장, 백그라운드). */
   @Post("auction-coords/backfill")
   async startCoordBackfill(@Headers() headers: Record<string, string>) {

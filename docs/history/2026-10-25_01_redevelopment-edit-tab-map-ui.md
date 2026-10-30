@@ -448,3 +448,19 @@
 **배포 확인(2026-10-30)**: auction-api 커밋 9255e53 푸시 후 Railway Online, 로그에 `migrationsRun=true`·Nest 정상 기동·`jaegebal-sync` 라우트 등록, 인증 없이 호출 시 401.
 
 **남은 일**: ① 프론트 푸시·Vercel 배포 확인, ② 1개 구 시험 수집(첫 수집 시 기존 import 이후 생긴 구역이 신규로 추가됨 — 서울 전체 기준 약 264건 예상), ③ 프론트 지표 JSON(`jaegebal-zone-stats.json`·`jaegebal-zone-meta.json`) 갱신은 이번 범위 밖(필요 시 별도 작업).
+
+## 2026-10-30 — 구역 업데이트 이력 누적 + "구역 업데이트 이력" 탭
+
+**요청(사용자)**: 구역 업데이트 때 바뀐 사항을 DB에 누적하고, 재개발물건 탭 하위에 "구역 업데이트 이력" 탭을 만들어 업데이트 날짜별로 볼 수 있게. (그전까지는 변경 내역이 서버 메모리에만 있어 다음 실행·재시작 시 사라졌다 — 구역 테이블은 현재 상태만 덮어씀.)
+
+**테이블(마이그레이션 `1784313000000-CreateZoneSyncHistory`, 엔티티는 `typeorm.config.ts` 전역 목록 + 모듈 forFeature 등록)**
+- `redevelopment_zone_sync_runs`: 업데이트 1회 실행(시작·종료 시각, state `running|done|blocked|failed`, 요청 구 코드, 구별 결과 JSON, 보안 확인 중단 사유, 유형별 건수). **변경이 없던 실행도 한 줄 남는다**(날짜별 조회용).
+- `redevelopment_zone_changes`: 변경 한 건씩 누적(runId, 시각, 구역 키 `jaegebal-<id>`, 이름, 구, 종류 `new|stage|projectType|missing|restored`, 이전 값, 새 값). 삭제하지 않는다.
+
+**동작**: `JaegebalZoneSyncService.start`가 실행 행을 만들고, 구마다 `apply`가 끝나면 변경을 이력 테이블에 저장(`flushChanges`), 종료 시 `finalizeRun`이 결과·건수·상태를 기록한 뒤 `running=false`로 바꾼다. **이력 저장이 실패해도 구역 수집은 막지 않는다**(로그만). API(관리자): `GET redevelopment-research/jaegebal-sync/runs?limit=`, `.../runs/:id`(실행+변경 목록), `.../zones/:zoneKey/history`(구역별 누적 이력).
+
+**프론트(auction)**: 재개발물건 탭에 하위 탭 `RedevelopmentSection`(구역·지도 / 구역 업데이트 이력). `RedevelopmentUpdateHistory`는 한국시간 기준 날짜별로 실행 목록(시각·구·상태·유형별 건수)을 보여 주고, 실행을 고르면 변경 내역을 종류별(단계 변경/신규/사라짐/복구/사업유형)로 묶어 필터와 "구역 이력"(그 구역의 누적 변경 타임라인)과 함께 표시한다. 하위 탭 전환 시 구역·지도 화면은 다시 불러온다(언마운트 방식).
+
+**주의**: 이력은 이 배포 이후 실행분부터 쌓인다. 2026-10-30 14:38 영등포구 시험 실행(상도동 246-18 A-1 추진준비→사업시행자지정)은 이력 테이블이 생기기 전이라 기록되지 않았다.
+
+**검증**: `tsc --noEmit` 통과(백엔드·프론트). sql.js 인메모리 DB로 마포구 3회 연속 실행 시뮬레이션: 실행 3건 기록(변경 없는 3번째 포함), 변경 6건 누적, `getRun` 종류별 조회, 구역별 이력이 시간 역순으로 `준공→관리계획고시`, `관리계획고시→준공`. **실제 배포·화면 확인은 푸시 후.**
