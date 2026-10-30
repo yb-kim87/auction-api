@@ -681,6 +681,12 @@ export class RedevelopmentResearchService {
       await this.patchRun(zone.id, { naverFetched: fetched, naverSaved: saved });
     }
 
+    // 목록을 한 건도 못 받았는데 조회 자체가 실패했다면 "매물 0건"이 아니라 오류다 — 예전엔 조용히 "완료 · 네이버 매물 0건"으로
+    // 끝나서 실제로 0건인지 접속 실패인지 구분할 수 없었다(2026-10-30, 독산동 979(D구역)). 같은 동 목록이 로컬에서는 20건 이상 내려왔다.
+    if (!complete && fetched === 0) {
+      throw new Error("네이버 매물 목록을 가져오지 못했습니다(접속 실패·시간 초과·차단 가능) — 매물 0건이 아닙니다. 잠시 후 다시 조사하세요");
+    }
+
     // 이번에 끝까지 조회가 성공한 경우에만, 안 보인 매물의 missCount를 올린다(실패한 실행이 정상 매물을 "사라짐"으로 만들지 않게 — samsam).
     if (complete) {
       const stored = await this.listingRepo.find({ where: { zoneId: zone.id } });
