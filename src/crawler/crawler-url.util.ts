@@ -50,20 +50,6 @@ export function isBidDateTodayOrPast(bidDate: string): boolean {
   return bidDay.getTime() <= today.getTime();
 }
 
-/** 입찰기일이 오늘이면서 아직 탱크옥션에 낙찰 결과가 반영되지 않는
- * 시각(오후 5시 이전)인지. 이 경우 재수집해도 어차피 옛 정보 그대로라
- * 목록에서 제외한다(당일 5시 이후에는 결과가 반영되므로 제외하지 않음). */
-export function isTodayBidDateBeforeResultTime(
-  bidDate: string,
-  now: Date = new Date(),
-): boolean {
-  const bidDay = parseBidDateToDay(bidDate);
-  if (!bidDay) return false;
-  const { day: today, hour } = kstToday(now);
-  if (bidDay.getTime() !== today.getTime()) return false;
-  return hour < 17;
-}
-
 /** @deprecated isBidDateTodayOrPast 사용 */
 export function isBidDateTodayOrLater(bidDate: string): boolean {
   const bidDay = parseBidDateToDay(bidDate);
@@ -167,8 +153,7 @@ function lookupExistingRecord(
 }
 
 /** DB 중복 중 입찰기일이 오늘·과거이거나 네이버 미수집인 항목 유지.
- * 단, 입찰기일이 "오늘"이고 아직 탱크옥션에 낙찰 결과가 반영되지 않는
- * 시각(오후 5시 이전)이면, 재수집해도 옛 정보 그대로라 목록에서 제외한다. */
+ * 입찰기일이 "오늘"인 물건도 시각과 상관없이 항상 포함한다(낙찰 결과 확인용, 2026-10-30 단순화). */
 export function filterCollectedUrls(
   urls: CrawlerUrlEntry[],
   linkExistingMap: Map<string, LinkExistingRecord>,
@@ -178,7 +163,6 @@ export function filterCollectedUrls(
   excluded: number;
   deduped: number;
   naverRefresh: number;
-  beforeResultTime: number;
   /** 재크롤링 없이 건너뛴(=이미 DB에 있는) 항목들 원본 — 매도분석을
    * "요청한 전체 건수" 기준으로 통합하기 위해, 사건번호 텍스트가 아니라
    * URL(정확한 1:1 식별자)로 나중에 다시 찾아 쓸 수 있게 그대로 넘긴다
@@ -191,7 +175,6 @@ export function filterCollectedUrls(
   let excluded = 0;
   let deduped = 0;
   let naverRefresh = 0;
-  let beforeResultTime = 0;
 
   for (const entry of urls) {
     const key = collectEntryKey(entry.url);
@@ -217,12 +200,6 @@ export function filterCollectedUrls(
       continue;
     }
 
-    if (isTodayBidDateBeforeResultTime(existing.bidDate, now)) {
-      beforeResultTime += 1;
-      skippedEntries.push(entry);
-      continue;
-    }
-
     const bidDateEligible = isBidDateTodayOrPast(existing.bidDate);
     const naverMissing = isNaverDataMissing(existing);
 
@@ -237,7 +214,7 @@ export function filterCollectedUrls(
     }
   }
 
-  return { urls: filtered, excluded, deduped, naverRefresh, beforeResultTime, skippedEntries };
+  return { urls: filtered, excluded, deduped, naverRefresh, skippedEntries };
 }
 
 export function normalizeTankLink(link: string): string {

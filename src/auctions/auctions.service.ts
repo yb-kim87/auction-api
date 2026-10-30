@@ -686,7 +686,6 @@ export class AuctionsService implements OnModuleInit {
     // "오늘" 판정이 실제 한국 날짜와 맞는다.
     const kst = nowPartsInKst();
     const today = new Date(kst.year, kst.month - 1, kst.date);
-    const resultAnnounced = kst.hour >= 17;
 
     // court 필드 도입 전 레거시 레코드(court="")와 court 포함 정규화 이후
     // 새로 만들어진 레코드가 같은 link를 가진 채 둘 다 남아있는 경우가
@@ -708,7 +707,7 @@ export class AuctionsService implements OnModuleInit {
       const parsed = this.parseBidDate(row.bidDate);
       if (!parsed) return false;
       const bidDay = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-      if (bidDay.getTime() === today.getTime()) return resultAnnounced;
+      if (bidDay.getTime() === today.getTime()) return true; // 오늘 입찰 물건은 시각과 상관없이 항상 확인(낙찰 결과 갱신)
       return bidDay.getTime() < today.getTime();
     };
 

@@ -1334,7 +1334,7 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     if (result.message) this.appendLog("info", result.message);
 
     const rawUrls = result.urls ?? [];
-    const { urls, excluded, deduped, naverRefresh, beforeResultTime, skippedEntries } =
+    const { urls, excluded, deduped, naverRefresh, skippedEntries } =
       filterCollectedUrls(rawUrls, linkExistingMap);
 
     // 이미 DB에 있어서 작업목록에서 제외된(재크롤링 건너뛴) 물건도
@@ -1355,12 +1355,6 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       this.appendLog(
         "info",
         `네이버 미수집 ${naverRefresh}건 포함 (입찰기일 미도래)`,
-      );
-    }
-    if (beforeResultTime > 0) {
-      this.appendLog(
-        "info",
-        `당일 5시 이전 제외 ${beforeResultTime}건 (낙찰 결과 미반영 시간대)`,
       );
     }
     // 중복 제외 건수는 아래 최종 요약 로그("탱크 N건 → 작업목록 N건 ...")에
@@ -1415,7 +1409,6 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
       excluded,
       deduped: deduped + mergeDeduped,
       naverRefresh,
-      beforeResultTime,
     };
   }
 

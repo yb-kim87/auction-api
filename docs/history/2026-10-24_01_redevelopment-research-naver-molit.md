@@ -247,3 +247,5 @@
 
 - `crawler-url.util.ts`의 `isTodayBidDateBeforeResultTime`·`isBidDateTodayOrPast`가 `new Date().getHours()`를 그대로 써서, UTC로 도는 서버에서는 한국시간 17:49도 "오후 5시 이전"으로 판정해 오늘 입찰 물건을 재조회 목록에서 제외했다(로그: "당일 5시 이전 제외 99건", 17:05 예약 작업이 648건 → 629건으로 줄어듦). KST 변환 헬퍼로 교체.
 - 로그 시각(crawler_log.at)은 UTC 기준으로 저장되므로 한국시간은 +9시간(예: 08:49 → 17:49).
+
+- (같은 날 추가) 단순화: 오후 5시 게이트 자체를 제거했다. 매일 작업은 입찰일이 오늘인 물건을 시각과 상관없이 항상 재조회해 낙찰 결과를 갱신한다(`listTodayBidDateLinks`, `filterCollectedUrls`). 결과가 아직 안 올라온 시각에 돌면 "변경 없음 — 결과 확정 전까지 재확인"으로 처리되어 다음 실행에서 다시 확인한다.
