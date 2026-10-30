@@ -669,6 +669,41 @@ export class AuctionsService implements OnModuleInit {
    * 전에는 오늘 날짜 물건을 목록에서 제외한다(재조회해도 아직 변경 전
    * 상태라 의미가 없음). 이미 취하·매각 확정된 사건도 더 이상 입찰기일이
    * 갱신되지 않으므로 함께 제외한다. */
+  /** 임차인·점유 현황이 아직 안 올라온("값없음"·빈 값) 입찰 예정 물건의 링크 — 매일 작업이 함께 재조회한다.
+   * 법원 현황조사 내용이 나중에 올라오는 경우가 많아서다(사용자 요청 2026-10-30). 채워지면 조건에서 빠져 자연히 목록에서 제외된다.
+   * 오늘·과거 입찰 물건은 listTodayBidDateLinks가 담당하므로 입찰일이 "내일 이후"인 것만, 입찰일이 가까운 순으로 limit건까지. */
+  async listTenantPendingLinks(limit: number): Promise<{ auctionNo: string; link: string }[]> {
+    const rows = await this.auctionRepo
+      .createQueryBuilder("a")
+      .select("a.auctionNo", "auctionNo")
+      .addSelect("a.link", "link")
+      .addSelect("a.bidDate", "bidDate")
+      .addSelect("a.caseState", "caseState")
+      .where("a.status = :status", { status: AuctionStatus.APPROVED })
+      .andWhere("a.link != :emptyLink", { emptyLink: "" })
+      .andWhere("a.bidDate != :emptyBidDate", { emptyBidDate: "" })
+      .andWhere("(a.tenantDetail IS NULL OR TRIM(a.tenantDetail) IN ('', '-', '없음', '값없음'))")
+      .getRawMany<{ auctionNo: string; link: string; bidDate: string; caseState: string }>();
+
+    const kst = nowPartsInKst();
+    const today = new Date(kst.year, kst.month - 1, kst.date);
+    const seen = new Set<string>();
+    const picked: { auctionNo: string; link: string; bidTime: number }[] = [];
+    for (const row of rows) {
+      const link = row.link?.trim();
+      if (!row.auctionNo?.trim() || !link || seen.has(link)) continue;
+      if (isClosedCaseState(row.caseState)) continue;
+      const parsed = this.parseBidDate(row.bidDate);
+      if (!parsed) continue;
+      const bidDay = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+      if (bidDay.getTime() <= today.getTime()) continue;
+      seen.add(link);
+      picked.push({ auctionNo: row.auctionNo, link, bidTime: bidDay.getTime() });
+    }
+    picked.sort((a, b) => a.bidTime - b.bidTime);
+    return picked.slice(0, limit).map(({ auctionNo, link }) => ({ auctionNo, link }));
+  }
+
   async listTodayBidDateLinks(): Promise<{ auctionNo: string; link: string }[]> {
     const rows = await this.auctionRepo
       .createQueryBuilder("a")

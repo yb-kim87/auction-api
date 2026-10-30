@@ -51,6 +51,9 @@ import type {
 } from "./crawler.types";
 import { TODAY_BID_DATE_PRESET_ID, TODAY_BID_DATE_PRESET_LABEL } from "./crawler.types";
 
+/** 매일 작업 한 번에 함께 재조회할 "임차인·점유 현황 대기" 물건 최대 수(한 번에 너무 많으면 조회 대기 시간 초과가 난다). */
+const TENANT_PENDING_DAILY_LIMIT = Math.max(0, Number(process.env.CRAWLER_TENANT_PENDING_LIMIT ?? 150) || 150);
+
 const DEFAULT_WORKER_PORT = Number(process.env.CRAWLER_WORKER_PORT ?? 8765);
 const WORKER_START_TIMEOUT_MS = 30_000;
 const REMOTE_WORKER_OFFLINE_MESSAGE =
@@ -2204,7 +2207,15 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
 
         if (preset === TODAY_BID_DATE_PRESET_ID) {
           try {
-            const links = await this.auctionsService.listTodayBidDateLinks();
+            const todayLinks = await this.auctionsService.listTodayBidDateLinks();
+            // 임차인·점유 현황이 아직 안 올라온 입찰 예정 물건도 같이 재조회한다(채워지면 다음부터 목록에서 빠진다).
+            const tenantPending = await this.auctionsService.listTenantPendingLinks(TENANT_PENDING_DAILY_LIMIT);
+            const todaySet = new Set(todayLinks.map((item) => item.link));
+            const extraTenant = tenantPending.filter((item) => !todaySet.has(item.link));
+            if (extraTenant.length > 0) {
+              this.appendLog("info", `[매일작업] 임차인·점유 현황 대기 ${extraTenant.length}건 포함 (입찰일 가까운 순, 최대 ${TENANT_PENDING_DAILY_LIMIT}건)`);
+            }
+            const links = [...todayLinks, ...extraTenant];
             if (links.length === 0) {
               this.appendLog("info", "[매일작업] 대상 물건 없음");
               presetResults.push({ label: presetLabel, collected: 0, created: 0, updated: 0, note: "대상 물건 없음" });
