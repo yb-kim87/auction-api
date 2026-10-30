@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Put, Query } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, Headers, Param, Patch, Post, Query } from "@nestjs/common";
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { AuctionZoneCoordService } from "./auction-zone-coord.service";
 import { JaegebalZoneSyncService } from "./jaegebal-zone-sync.service";
@@ -53,7 +53,7 @@ export class RedevelopmentResearchController {
   }
 
   /** 자동 업데이트 설정 저장. 일부만 보내도 된다: { enabled?, intervalDays?(1~365, 기본 14), codes? }. */
-  @Put("jaegebal-sync/auto")
+  @Patch("jaegebal-sync/auto")
   async saveJaegebalAutoSettings(
     @Headers() headers: Record<string, string>,
     @Body() body: { enabled?: boolean; intervalDays?: number; codes?: string[] },
