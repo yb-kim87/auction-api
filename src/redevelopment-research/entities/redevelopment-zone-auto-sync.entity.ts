@@ -14,6 +14,13 @@ export class RedevelopmentZoneAutoSync {
   @Column({ type: "integer", default: 14 })
   intervalDays!: number;
 
+  /** 실행 시각(한국시간)의 시·분. 기본 03:00. 다음 실행 = (기준일 + 주기)일의 이 시각. */
+  @Column({ type: "integer", default: 3 })
+  runHour!: number;
+
+  @Column({ type: "integer", default: 0 })
+  runMinute!: number;
+
   /** 자동으로 업데이트할 구 코드 목록. */
   @Column({ type: "simple-json" })
   codes!: string[];
@@ -22,7 +29,7 @@ export class RedevelopmentZoneAutoSync {
   @Column({ type: Date, nullable: true })
   lastRunAt!: Date | null;
 
-  /** 다음 자동 업데이트 예정 시각(이 시각이 지나고 한국시간 새벽 1~5시 사이에 실행). */
+  /** 다음 자동 업데이트 예정 시각(이 시각이 지나면 1분 안에 실행). */
   @Column({ type: Date, nullable: true })
   nextRunAt!: Date | null;
 

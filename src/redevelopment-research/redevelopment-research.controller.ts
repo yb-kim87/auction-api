@@ -52,16 +52,18 @@ export class RedevelopmentResearchController {
     return this.jaegebalSync.getAutoSettings();
   }
 
-  /** 자동 업데이트 설정 저장. 일부만 보내도 된다: { enabled?, intervalDays?(1~365, 기본 14), codes? }. */
+  /** 자동 업데이트 설정 저장. 일부만 보내도 된다: { enabled?, intervalDays?(1~365, 기본 14), runHour?(0~23, 기본 3)·runMinute?(0~59, 한국시간), codes? }. */
   @Patch("jaegebal-sync/auto")
   async saveJaegebalAutoSettings(
     @Headers() headers: Record<string, string>,
-    @Body() body: { enabled?: boolean; intervalDays?: number; codes?: string[] },
+    @Body() body: { enabled?: boolean; intervalDays?: number; runHour?: number; runMinute?: number; codes?: string[] },
   ) {
     requireAdmin(getAuthContext(headers));
     return this.jaegebalSync.saveAutoSettings({
       enabled: typeof body?.enabled === "boolean" ? body.enabled : undefined,
       intervalDays: body?.intervalDays == null ? undefined : Number(body.intervalDays),
+      runHour: body?.runHour == null ? undefined : Number(body.runHour),
+      runMinute: body?.runMinute == null ? undefined : Number(body.runMinute),
       codes: Array.isArray(body?.codes) ? body.codes : undefined,
     });
   }

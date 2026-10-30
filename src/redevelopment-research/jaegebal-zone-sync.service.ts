@@ -37,13 +37,19 @@ const MAX_CHANGE_LOG = 200;
 /** 자동 업데이트(사용자 요청 2026-10-30): 켜면 지정한 구를 주기마다 서버가 실행한다. 기본 꺼짐·14일. */
 const AUTO_ID = "jaegebal";
 export const AUTO_DEFAULT_INTERVAL_DAYS = 14;
-const AUTO_TICK_MS = 10 * 60_000;
-/** 사이트가 한가한 한국시간 새벽에만 시작한다(1시 이상 6시 미만). */
-const AUTO_WINDOW_START_HOUR_KST = 1;
-const AUTO_WINDOW_END_HOUR_KST = 6;
+const AUTO_TICK_MS = 60_000;
+/** 기본 실행 시각(한국시간) 03:00 — 사용자가 화면에서 시·분을 바꿀 수 있다. */
+export const AUTO_DEFAULT_RUN_HOUR = 3;
+export const AUTO_DEFAULT_RUN_MINUTE = 0;
 /** 보안 확인·오류로 실패하면 하루 뒤에 한 번 다시 시도한다(바로 재시도하지 않음). */
 const AUTO_RETRY_AFTER_FAILURE_MS = 24 * 3600_000;
 const DAY_MS = 24 * 3600_000;
+
+/** 기준 시각의 한국시간 날짜 + intervalDays일, 그날 한국시간 hour:minute — 자동 업데이트의 다음 실행 시각. */
+export function nextRunTime(base: Date, intervalDays: number, hour: number, minute: number): Date {
+  const kst = new Date(base.getTime() + 9 * 3600_000);
+  return new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate() + intervalDays, hour, minute) - 9 * 3600_000);
+}
 
 /** 서울 25개 구 코드 → 구 이름(재개발닷컴 지역 코드). 설명 문구에 구 이름이 없는 구역(예: "홍제1")도 지역을 채우기 위해 쓴다. */
 const SEOUL_DISTRICT_NAMES: Record<string, string> = {
@@ -404,45 +410,66 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
 
   private async loadAuto(): Promise<RedevelopmentZoneAutoSync> {
     const row = await this.autoRepo.findOne({ where: { id: AUTO_ID } });
-    return row ?? this.autoRepo.create({ id: AUTO_ID, enabled: false, intervalDays: AUTO_DEFAULT_INTERVAL_DAYS, codes: [], lastRunAt: null, nextRunAt: null });
+    return (
+      row ??
+      this.autoRepo.create({
+        id: AUTO_ID,
+        enabled: false,
+        intervalDays: AUTO_DEFAULT_INTERVAL_DAYS,
+        runHour: AUTO_DEFAULT_RUN_HOUR,
+        runMinute: AUTO_DEFAULT_RUN_MINUTE,
+        codes: [],
+        lastRunAt: null,
+        nextRunAt: null,
+      })
+    );
   }
 
   async getAutoSettings() {
     const r = await this.loadAuto();
-    return { enabled: r.enabled, intervalDays: r.intervalDays, codes: r.codes ?? [], lastRunAt: r.lastRunAt, nextRunAt: r.nextRunAt };
+    return { enabled: r.enabled, intervalDays: r.intervalDays, runHour: r.runHour, runMinute: r.runMinute, codes: r.codes ?? [], lastRunAt: r.lastRunAt, nextRunAt: r.nextRunAt };
   }
 
-  /** 자동 업데이트 설정 저장(켜기/끄기·주기(일)·대상 구). 켜면 다음 실행 시각 = (마지막 자동 실행 또는 지금) + 주기. */
-  async saveAutoSettings(input: { enabled?: boolean; intervalDays?: number; codes?: string[] }) {
+  /** 자동 업데이트 설정 저장(켜기/끄기·주기(일)·실행 시각·대상 구). 켜면 다음 실행 시각 = (켠 날) + 주기일의 실행 시각. */
+  async saveAutoSettings(input: { enabled?: boolean; intervalDays?: number; runHour?: number; runMinute?: number; codes?: string[] }) {
     const cur = await this.loadAuto();
     const enabled = input.enabled ?? cur.enabled;
     const intervalDays = input.intervalDays ?? cur.intervalDays;
+    const runHour = input.runHour ?? cur.runHour;
+    const runMinute = input.runMinute ?? cur.runMinute;
     const codes = input.codes ? Array.from(new Set(input.codes.map((c) => String(c).trim()))) : (cur.codes ?? []);
     if (!Number.isInteger(intervalDays) || intervalDays < 1 || intervalDays > 365) throw new BadRequestException("업데이트 주기는 1~365일의 정수여야 합니다.");
+    if (!Number.isInteger(runHour) || runHour < 0 || runHour > 23 || !Number.isInteger(runMinute) || runMinute < 0 || runMinute > 59) {
+      throw new BadRequestException("실행 시각은 한국시간 00:00~23:59여야 합니다.");
+    }
     if (codes.some((c) => !SEOUL_DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
     if (enabled && !codes.length) throw new BadRequestException("자동 업데이트할 구를 먼저 선택하세요.");
     const now = new Date();
     let nextRunAt = cur.nextRunAt;
-    if (!enabled) nextRunAt = null;
-    else if (!cur.enabled || cur.intervalDays !== intervalDays || !cur.nextRunAt) {
-      nextRunAt = new Date((cur.lastRunAt ?? now).getTime() + intervalDays * DAY_MS);
+    if (!enabled) {
+      nextRunAt = null;
+    } else if (!cur.enabled) {
+      // 지금 켠다 → 켠 날로부터 주기일 뒤 그 시각(예: 14일 후 03:00)
+      nextRunAt = nextRunTime(now, intervalDays, runHour, runMinute);
+    } else if (cur.intervalDays !== intervalDays || cur.runHour !== runHour || cur.runMinute !== runMinute || !cur.nextRunAt) {
+      // 이미 켜져 있는데 주기·시각을 바꿈 → 마지막 자동 실행(없으면 지금) 기준으로 다시 계산, 이미 지난 시각이면 지금 기준
+      const fromLast = nextRunTime(cur.lastRunAt ?? now, intervalDays, runHour, runMinute);
+      nextRunAt = fromLast.getTime() > now.getTime() ? fromLast : nextRunTime(now, intervalDays, runHour, runMinute);
     }
-    const saved = await this.autoRepo.save(Object.assign(cur, { enabled, intervalDays, codes, nextRunAt }));
-    return { enabled: saved.enabled, intervalDays: saved.intervalDays, codes: saved.codes, lastRunAt: saved.lastRunAt, nextRunAt: saved.nextRunAt };
+    const saved = await this.autoRepo.save(Object.assign(cur, { enabled, intervalDays, runHour, runMinute, codes, nextRunAt }));
+    return { enabled: saved.enabled, intervalDays: saved.intervalDays, runHour: saved.runHour, runMinute: saved.runMinute, codes: saved.codes, lastRunAt: saved.lastRunAt, nextRunAt: saved.nextRunAt };
   }
 
-  /** 10분마다: 자동 업데이트가 켜져 있고 예정 시각이 지났으며 한국시간 새벽(1~6시)이면 실행을 시작한다. */
+  /** 1분마다: 자동 업데이트가 켜져 있고 예정 시각이 지났으며 다른 실행이 없으면 실행을 시작한다. */
   async tickAuto(now = new Date()): Promise<void> {
     if (this.status.running || this.autoBusy) return;
-    const hour = new Date(now.getTime() + 9 * 3600_000).getUTCHours();
-    if (hour < AUTO_WINDOW_START_HOUR_KST || hour >= AUTO_WINDOW_END_HOUR_KST) return;
     const row = await this.autoRepo.findOne({ where: { id: AUTO_ID } });
     if (!row || !row.enabled || !row.codes?.length || !row.nextRunAt || row.nextRunAt.getTime() > now.getTime()) return;
     this.autoBusy = true;
     try {
       await this.start(row.codes, false, false, "auto");
     } catch (e) {
-      // 시작 자체가 실패하면 10분마다 되풀이하지 않도록 하루 뒤로 미룬다.
+      // 시작 자체가 실패하면 1분마다 되풀이하지 않도록 하루 뒤로 미룬다.
       this.logger.error(`구역 자동 업데이트 시작 실패: ${e}`);
       row.nextRunAt = new Date(now.getTime() + AUTO_RETRY_AFTER_FAILURE_MS);
       await this.autoRepo.save(row);
@@ -458,19 +485,19 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     const now = new Date();
     const started = st.startedAt ? new Date(st.startedAt) : now;
     row.lastRunAt = started;
-    row.nextRunAt = row.enabled ? new Date(failed ? now.getTime() + AUTO_RETRY_AFTER_FAILURE_MS : started.getTime() + row.intervalDays * DAY_MS) : null;
+    row.nextRunAt = row.enabled ? (failed ? new Date(now.getTime() + AUTO_RETRY_AFTER_FAILURE_MS) : nextRunTime(started, row.intervalDays, row.runHour, row.runMinute)) : null;
     await this.autoRepo.save(row);
     const names = st.codes.map((c) => SEOUL_DISTRICT_NAMES[c] ?? c).join(", ");
-    const nextText = row.nextRunAt ? new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(row.nextRunAt) : "-";
+    const nextText = row.nextRunAt ? new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).format(row.nextRunAt) : "-";
     const text = [
       `🗺️ 재개발닷컴 구역 자동 업데이트 ${st.blocked ? "중단" : failed ? "일부 오류" : "완료"}`,
       `대상 ${st.codes.length}개 구: ${names}`,
       `신규 ${this.counts.new} · 단계 변경 ${this.counts.stage} · 사업유형 변경 ${this.counts.projectType} · 사라짐 ${this.counts.missing} · 복구 ${this.counts.restored}`,
       st.blocked
-        ? "사이트 보안 확인에 걸려 멈췄습니다. 하루 뒤 새벽에 한 번 다시 시도합니다."
+        ? "사이트 보안 확인에 걸려 멈췄습니다. 하루 뒤 한 번 다시 시도합니다."
         : failed
-          ? "오류가 난 구가 있습니다. 하루 뒤 새벽에 다시 시도합니다."
-          : `다음 자동 업데이트: ${nextText} 이후 새벽`,
+          ? "오류가 난 구가 있습니다. 하루 뒤 다시 시도합니다."
+          : `다음 자동 업데이트: ${nextText}`,
     ].join("\n");
     await this.telegram.send(text, process.env.REDEVELOPMENT_TELEGRAM_CHAT_ID?.trim() || undefined);
   }
