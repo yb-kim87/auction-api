@@ -48,7 +48,7 @@ API 전체 다운).
 
 # 재개발닷컴(jaegebal.com) 구역 업데이트 규칙
 
-재개발 구역(경계·단계·사업유형)은 관리자가 화면(재개발물건 → 구역·지도 → "구역도 업데이트")에서 **구를 지정해** 실행하면 서버가
+재개발 구역(경계·단계·사업유형)은 관리자가 화면(재개발물건 → "구역도 업데이트" 탭)에서 **구를 지정해** 실행하면 서버가
 재개발닷컴 API를 호출해 반영한다(`src/redevelopment-research/jaegebal-zone-sync.service.ts`). 변경은 `redevelopment_zone_changes`에
 누적되고 "구역 업데이트 이력" 탭에서 날짜별로 본다. **상세·프로토콜·함정은 [docs/history/2026-10-30_01_jaegebal-server-sync.md](docs/history/2026-10-30_01_jaegebal-server-sync.md)를 먼저 읽는다.**
 

@@ -234,6 +234,28 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     return this.status;
   }
 
+  /** "구역도 업데이트" 탭 상단 요약 — 재개발닷컴 구역 수·사라진 구역 수·마지막 반영·마지막 성공 업데이트(가벼운 집계만, 폴리곤을 싣지 않는다). */
+  async getZoneSummary() {
+    const agg = await this.zones
+      .createQueryBuilder("z")
+      .select("COUNT(*)", "total")
+      .addSelect("MAX(z.updatedAt)", "lastUpdatedAt")
+      .where("z.sourceDatasetId = :d", { d: DATASET_ID })
+      .getRawOne<{ total: string | number; lastUpdatedAt: Date | string | null }>();
+    const missing = await this.zones
+      .createQueryBuilder("z")
+      .where("z.sourceDatasetId = :d", { d: DATASET_ID })
+      .andWhere("z.missingSince IS NOT NULL")
+      .getCount();
+    const lastRun = await this.runs.findOne({ where: { state: "done" }, order: { startedAt: "DESC" } });
+    return {
+      zoneCount: Number(agg?.total ?? 0),
+      missingCount: missing,
+      lastUpdatedAt: agg?.lastUpdatedAt ? new Date(agg.lastUpdatedAt) : null,
+      lastRunAt: lastRun?.finishedAt ?? lastRun?.startedAt ?? null,
+    };
+  }
+
   /** 업데이트 실행 목록(최신순). 변경이 없던 실행도 포함한다. */
   async listRuns(limit = 100) {
     const n = Math.min(Math.max(Math.floor(limit) || 100, 1), 300);

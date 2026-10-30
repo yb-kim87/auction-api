@@ -15,7 +15,7 @@
 | 프론트 정적 지표 JSON(`jaegebal-zone-stats.json`·`jaegebal-zone-meta.json`) 갱신 | 범위 밖. 필요하면 별도 작업 |
 
 ### 사용 방법
-- **화면**: 관리자 → 재개발물건 → `구역·지도` 서브탭 → "구역도 업데이트" → 구(최대 3개) 선택 → "선택한 N개 구 업데이트". 구마다 약 1분, 끝나면 지도가 자동 새로고침. 결과(가져옴/신규/변경/사라짐 표시/복구)와 변경 내역이 패널에 나온다.
+- **화면**: 관리자 → 재개발물건 → **`구역도 업데이트` 서브탭**(구역·지도 바로 다음, 2026-10-30에 지도 탭에서 분리) → 구 선택(전체 선택 가능) → "선택한 N개 구 지금 업데이트" 또는 자동 업데이트 스위치. 구가 3개 이하면 구마다 약 1분, 끝나면 요약이 갱신되고 구역·지도 탭에 반영. 결과(가져옴/신규/변경/사라짐 표시/복구)와 변경 내역이 패널에 나온다.
 - **이력**: 재개발물건 → `구역 업데이트 이력` 서브탭 → 업데이트 날짜별 목록 → 실행을 고르면 종류별 변경 내역(단계 변경·신규·사라짐·복구·사업유형)과 "구역 이력"(그 구역의 누적 타임라인).
 - **Claude에게 요청**: "○○구 재개발닷컴 구역도 업데이트해줘". 단, **Claude는 관리자 인증이 없어 API를 직접 호출하지 못한다** → 화면 버튼을 안내한다. 마지막 반영 후 14일이 지나면 텔레그램 알림(`ZoneUpdateReminderService`).
 - **API(관리자 전용)**: `POST /redevelopment-research/jaegebal-sync {codes:["11560"], force?}` · `GET .../jaegebal-sync/status` · `GET .../jaegebal-sync/runs?limit=` · `GET .../jaegebal-sync/runs/:id` · `GET .../jaegebal-sync/zones/:zoneKey/history`.
@@ -95,7 +95,8 @@ behavior 형식: `1.<경과초>.<마우스이동>.<클릭>.<이동없는클릭>.
 
 | 파일 | 역할 |
 |---|---|
-| `src/app/admin/RedevelopmentSection.tsx` | 재개발물건 탭의 하위 탭(구역·지도 / 구역 업데이트 이력). `AdminPageClient.tsx`가 이걸 렌더 |
+| `src/app/admin/RedevelopmentSection.tsx` | 재개발물건 탭의 하위 탭(구역·지도 / **구역도 업데이트** / 구역 업데이트 이력). `AdminPageClient.tsx`가 이걸 렌더 |
+| `src/app/admin/RedevelopmentUpdateTab.tsx` | **구역도 업데이트 탭**: 요약(반영된 재개발닷컴 구역 수·마지막 변경·마지막 업데이트 실행·사라진 구역 수, `GET jaegebal-sync/summary`) + `RedevelopmentJaegebalSync` 패널 + 2주 알림 안내 |
 | `src/app/admin/RedevelopmentJaegebalSync.tsx` | "구역도 업데이트" 패널: 구 선택(최대 3), 실행, 5초 폴링, 결과·변경 내역, 끝나면 `load`로 지도 새로고침 |
 | `src/app/admin/RedevelopmentUpdateHistory.tsx` | 한국시간 날짜별 실행 목록 + 실행별 종류별 변경 내역 + 필터 + 구역별 이력 타임라인 |
 | `src/lib/zone-stage-style.ts` | 사라진 구역 회색 점선(`MISSING_ZONE_COLOR`), 새 구역·갱신 구역 색 계산, 하위 폴리곤 키 meta 조회 수정 |
@@ -103,7 +104,7 @@ behavior 형식: `1.<경과초>.<마우스이동>.<클릭>.<이동없는클릭>.
 | `RedevelopmentEditMapView.tsx`·`RedevelopmentEditSelectedZone.tsx`·`RedevelopmentEditTab.tsx` | "사라짐 ·" 라벨·범례, 상세 안내문, 패널 연결 |
 
 - 색·점선 판정: 저장된 `jaegebal-zone-meta.json`이 기본. **meta에 없는 새 구역과 meta 작성(`META_SNAPSHOT_UNTIL=2026-10-29`) 이후 서버가 갱신한 구역은 현재 단계(키워드표)·사업유형(`projectType`)에서 계산**한다. (meta의 단계 그룹과 키워드 계산이 2045건 일치·44건 불일치·64건 판정 불가라 기존 구역 표시를 바꾸지 않으려는 것.) 하위 폴리곤 키 `jaegebal-<id>-N`이 끝 숫자 `N`으로 meta를 잘못 찾던 문제도 수정.
-- 하위 탭을 전환하면 구역·지도 화면은 다시 불러온다(언마운트 방식).
+- 하위 탭을 전환하면 각 화면은 다시 불러온다(언마운트 방식). 구역도 업데이트 기능은 구역·지도 탭에서 완전히 빠졌다(버튼·안내 패널 제거).
 
 ## 6. 검증 기록
 
@@ -141,7 +142,7 @@ behavior 형식: `1.<경과초>.<마우스이동>.<클릭>.<이동없는클릭>.
 
 **요청**: 구 선택에 "전체 선택"을 만들고, 선택한 구를 **자동으로 업데이트하는 버튼**(주기를 사용자가 입력, 최초 2주)을 만든다. "선택한 구 업데이트"는 자동과 **별개로** 지금 바로 실행한다. 자동 버튼은 **알림톡 탭의 "자동 반복 발송" 스위치와 같은 디자인(켜지면 초록색)**.
 
-**화면** (`RedevelopmentJaegebalSync.tsx`, 재개발물건 → 구역·지도 → 구역도 업데이트)
+**화면** (`RedevelopmentJaegebalSync.tsx`, 재개발물건 → 구역도 업데이트 탭)
 - 구 선택 버튼 + **전체 선택/전체 해제**. 선택 개수 제한 없음(3개 초과면 서버가 느린 간격 사용, 확인창에 예상 소요 시간 표시).
 - **선택한 N개 구 지금 업데이트**: 즉시 실행(자동 설정과 무관).
 - **자동 업데이트 스위치**(알림톡 `KakaoNotifyPanel`의 `schedulerEnabled` 블록과 동일: 켜지면 `border-emerald-300 bg-emerald-50`·깜빡이는 초록 점·`bg-emerald-500` 스위치, 꺼지면 회색). 켤 때 대상 구가 없으면 지금 선택한 구를 대상으로 저장. 설명 줄에 대상 구·주기·다음 예정·마지막 자동 실행 표시.

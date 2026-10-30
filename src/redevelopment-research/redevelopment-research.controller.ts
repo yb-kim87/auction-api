@@ -38,6 +38,13 @@ export class RedevelopmentResearchController {
     return this.jaegebalSync.getStatus();
   }
 
+  /** "구역도 업데이트" 탭 상단 요약(재개발닷컴 구역 수·사라진 구역 수·마지막 반영/업데이트). */
+  @Get("jaegebal-sync/summary")
+  async jaegebalSyncSummary(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.getZoneSummary();
+  }
+
   /** 자동 업데이트 설정 조회(켜짐 여부·주기(일)·대상 구·마지막/다음 실행). */
   @Get("jaegebal-sync/auto")
   async jaegebalAutoSettings(@Headers() headers: Record<string, string>) {
