@@ -420,47 +420,11 @@
 
 - 재개발닷컴은 사람 확인(Human Verification)과 요청 서명 헤더(x-jdc-*)가 있어 **자동 대량 수집은 하지 않는다**(2026-10-30 정정: 당시 "Railway IP는 CDN에서 403"은 서명 없는 홈페이지 `/` 요청의 결과였고, 서명 헤더를 붙인 구역 API는 Railway에서 200이었다 — 아래 2026-10-30 절). 그래서 `ZoneUpdateReminderService`가 마지막 구역 반영(재개발닷컴 구역 updatedAt 최댓값)과 마지막 알림 중 최근 시각에서 14일이 지나면 텔레그램(REDEVELOPMENT_TELEGRAM_CHAT_ID, 없으면 기본 채널)으로 "업데이트 필요" 알림을 보낸다. 매일 한국시간 10시에만 확인하고, 발송 기록은 `zone_update_reminders`(마이그레이션 1784311000000). 기록이 없으면 지금을 기준으로 2주 뒤 첫 알림.
 
-## 2026-10-30 — 재개발닷컴 구역 갱신을 브라우저 방식에서 서버 직접 호출(지정한 구만)로 전환
+## 2026-10-30 — 재개발닷컴 구역 갱신: 서버 직접 수집 + 사라진 구역 표시 + 업데이트 이력
 
-**배경/결정(사용자)**: 기존 갱신은 Playwright로 25개 구를 순회하며 `JSON.parse`를 가로채는 방식이었다. 브라우저 없이 가져오되 **수집량은 최소화**한다 — 필요한 구만, 가끔, 간격을 크게, 자동 대량 수집 금지. 범위는 DB 구역(경계·단계·사업유형)만이고, 프론트 정적 JSON(`jaegebal-zone-stats.json`·`jaegebal-zone-meta.json`의 지표·분류)은 이번에 갱신하지 않는다. 구역이 사이트에서 사라져도 **삭제하지 않고 "사라진 구역" 표시만** 한다.
+상세는 전용 문서 **[2026-10-30_01 재개발닷컴 구역 업데이트 — 서버 직접 수집·사라진 구역·이력](./2026-10-30_01_jaegebal-server-sync.md)** 에 통합했다(프로토콜·변환 규칙·DB·프론트·검증·함정·남은 일).
 
-**검증한 사실(Railway production 컨테이너, 외부 IP 152.55.177.168에서 단건 호출)**
-- `GET https://jaegebal.com/api/develops`·`/api/common/regions/{코드}`는 서명 헤더만으로 **쿠키·로그인 토큰 없이 HTTP 200**. 홈페이지 `/`를 서명 없이 요청하면 Railway에서도 403(CloudFront). 개발 PC IP는 연속 요청 뒤 WAF 보안 확인(405)에 걸림 → 이 PC에서 대량 호출 금지, 보안 확인이 뜨면 우회하지 않고 중단.
-- 프로토콜: 헤더 `x-jdc-app-token`(고정), `x-jdc-device-id`, `x-jdc-timestamp`(Unix 초), `x-jdc-signature` = `hex(HMAC-SHA256(키, "{ts}|GET|{경로(쿼리·/api 제외)}|{behavior}")) + "." + behavior`. behavior는 사람 흉내 없이 `1.0.0.0.0.0.0.0.0.0.0.1`(자동화 표시)을 쓴다. 응답 `{"_enc"}`는 HKDF-SHA256(ikm=키, salt=device-id, info=`jaegebal-enc-v1`) → AES-256-GCM(앞 12바이트 nonce, 끝 16바이트 태그) → gzip → JSON. 키·app-token은 사이트 JS 청크에 하드코딩된 값이라 배포로 바뀔 수 있어 `JDC_SIGNING_KEY`·`JDC_APP_TOKEN`·`JDC_DEVICE_ID` 환경변수로 재배포 없이 교체 가능.
-- 호출 흐름은 `?region=코드`와 같다: `/api/common/regions/{코드}`(구 경계 `rings`) → 그 범위 박스(+0.002)로 `/api/develops?...&simplify=0.0001&include_completed=true`.
-- 저장해 둔 raw(`_jaegebal_saved/seoul_all_raw.json`)와 Railway 수집(영등포구 300건)은 id 300/300·폴리곤 점수 300/300 일치.
-
-**변경 내용(auction-api)**
-- `redevelopment-research/jaegebal-zone-sync.service.ts` 신설. 관리자 요청 시에만 동작(자동 스케줄 없음): 1회 최대 3개 구, 요청 간 30초, 같은 구는 6시간 안 재수집 금지(`force`로만 무시), 403/405는 재시도 없이 즉시 중단(`status.blocked`).
-- 컨트롤러 `POST redevelopment-research/jaegebal-sync { codes:["11560"], force? }`(관리자, 백그라운드)·`GET .../jaegebal-sync/status`(결과·단계 변경 목록).
-- 변환 규칙은 기존 import와 동일(`jaegebal-seoul-zones.json` 2006건과 이름·지역·사업유형·단계·경계 0건 차이로 검증): 이름=`title`, 지역=`region_code`→구 이름, 사업유형=`type_display_name`, 단계=`detail_stage`, 경계=각 하위 폴리곤 바깥 고리(6자리 반올림, 닫힘 점 제거). **하위 폴리곤이 여럿이면 폴리곤마다 별도 구역**(`jaegebal-<id>`, `jaegebal-<id>-2`… / 이름 뒤 `(2)`…).
-- 반영: `(sourceDatasetId="jaegebal", sourceKey)`로 기존 행 조회(기존 `source` 값에 의존하지 않음). 없으면 신규(`source=PUBLIC_API`, `boundaryType=EXACT`), 있으면 단계·사업유형·이름·경계 갱신. 공백 차이·좌표 2e-6도 이내 차이는 변경으로 보지 않는다. 관리자가 직접 고친 경계(MANUAL)는 건너뜀(기존 bulk-upsert와 같은 보호 규칙).
-- **사라진 구역 표시**: `redevelopment_zones.missingSince`(timestamptz, 마이그레이션 `1784312000000-AddZoneMissingSince`) 신설. 같은 구(`region`)의 재개발닷컴 구역 중 이번 응답에 없는 것에 시각을 찍고(삭제 안 함), 다시 나타나면 null로 복구. 응답에 기존 구역이 절반 미만이면(부분 응답 의심, 구역 10개 이상일 때) 표시하지 않고 경고만 남긴다.
-- 2주 텔레그램 알림 문구를 "구(최대 3개)를 지정해 요청" 방식으로 수정(`zone-update-reminder.service.ts`).
-
-**검증**: `tsc --noEmit` 통과. 변환 결과를 기존 DB 반영 파일과 대조(2006건 0건 차이, 새로 추가될 레코드 264건 = 기존 import 이후 생긴 구역). sql.js 인메모리 DB로 마포구 시나리오 시뮬레이션: 단계 변경 1건 갱신 / 응답에서 뺀 2건에 `missingSince` 표시(삭제 없음) / 다시 나타나면 복구 / 응답 5건뿐이면 표시 생략 — 모두 기대대로 동작. **실제 서버 호출·배포 검증은 아직 안 함(커밋·푸시 전).**
-
-**프론트(auction, 커밋 5d8266d)**
-- "구역도 업데이트" 버튼의 패널(`RedevelopmentJaegebalSync.tsx`)에서 서울 25개 구 중 최대 3개를 골라 `jaegebal-sync`를 실행하고, 5초마다 `status`를 확인해 진행·결과(가져옴/신규/변경/사라짐 표시/복구)와 변경 내역(단계 변경 등)을 보여 준다. 끝나면 지도 데이터를 자동으로 다시 불러온다. Claude에게 "○○구 재개발닷컴 구역도 업데이트해줘"라고 요청하는 방법도 그대로 가능.
-- `missingSince`가 있는 구역은 지도에서 **회색(#6b7280) 점선 + "사라짐 · 이름" 라벨**, 범례 "사라진 구역", 구역 상세에 안내 문구로 표시(삭제 안 함).
-- 색·점선 판정(`zone-stage-style.ts`): 저장된 meta가 기본. meta에 없는 새 구역과 meta 작성(2026-10-29) 이후 서버가 갱신한 구역은 현재 단계(키워드표)·사업유형(`projectType`)에서 계산한다(meta와 단계명 키워드 계산이 2045건 일치·44건 불일치·64건 판정 불가여서 기존 구역 표시는 바꾸지 않기 위함). 하위 폴리곤 키(`jaegebal-<id>-N`)가 끝 숫자 `N`으로 meta를 잘못 찾던 문제도 수정.
-
-**배포 확인(2026-10-30)**: auction-api 커밋 9255e53 푸시 후 Railway Online, 로그에 `migrationsRun=true`·Nest 정상 기동·`jaegebal-sync` 라우트 등록, 인증 없이 호출 시 401.
-
-**남은 일**: ① 프론트 푸시·Vercel 배포 확인, ② 1개 구 시험 수집(첫 수집 시 기존 import 이후 생긴 구역이 신규로 추가됨 — 서울 전체 기준 약 264건 예상), ③ 프론트 지표 JSON(`jaegebal-zone-stats.json`·`jaegebal-zone-meta.json`) 갱신은 이번 범위 밖(필요 시 별도 작업).
-
-## 2026-10-30 — 구역 업데이트 이력 누적 + "구역 업데이트 이력" 탭
-
-**요청(사용자)**: 구역 업데이트 때 바뀐 사항을 DB에 누적하고, 재개발물건 탭 하위에 "구역 업데이트 이력" 탭을 만들어 업데이트 날짜별로 볼 수 있게. (그전까지는 변경 내역이 서버 메모리에만 있어 다음 실행·재시작 시 사라졌다 — 구역 테이블은 현재 상태만 덮어씀.)
-
-**테이블(마이그레이션 `1784313000000-CreateZoneSyncHistory`, 엔티티는 `typeorm.config.ts` 전역 목록 + 모듈 forFeature 등록)**
-- `redevelopment_zone_sync_runs`: 업데이트 1회 실행(시작·종료 시각, state `running|done|blocked|failed`, 요청 구 코드, 구별 결과 JSON, 보안 확인 중단 사유, 유형별 건수). **변경이 없던 실행도 한 줄 남는다**(날짜별 조회용).
-- `redevelopment_zone_changes`: 변경 한 건씩 누적(runId, 시각, 구역 키 `jaegebal-<id>`, 이름, 구, 종류 `new|stage|projectType|missing|restored`, 이전 값, 새 값). 삭제하지 않는다.
-
-**동작**: `JaegebalZoneSyncService.start`가 실행 행을 만들고, 구마다 `apply`가 끝나면 변경을 이력 테이블에 저장(`flushChanges`), 종료 시 `finalizeRun`이 결과·건수·상태를 기록한 뒤 `running=false`로 바꾼다. **이력 저장이 실패해도 구역 수집은 막지 않는다**(로그만). API(관리자): `GET redevelopment-research/jaegebal-sync/runs?limit=`, `.../runs/:id`(실행+변경 목록), `.../zones/:zoneKey/history`(구역별 누적 이력).
-
-**프론트(auction)**: 재개발물건 탭에 하위 탭 `RedevelopmentSection`(구역·지도 / 구역 업데이트 이력). `RedevelopmentUpdateHistory`는 한국시간 기준 날짜별로 실행 목록(시각·구·상태·유형별 건수)을 보여 주고, 실행을 고르면 변경 내역을 종류별(단계 변경/신규/사라짐/복구/사업유형)로 묶어 필터와 "구역 이력"(그 구역의 누적 변경 타임라인)과 함께 표시한다. 하위 탭 전환 시 구역·지도 화면은 다시 불러온다(언마운트 방식).
-
-**주의**: 이력은 이 배포 이후 실행분부터 쌓인다. 2026-10-30 14:38 영등포구 시험 실행(상도동 246-18 A-1 추진준비→사업시행자지정)은 이력 테이블이 생기기 전이라 기록되지 않았다.
-
-**검증**: `tsc --noEmit` 통과(백엔드·프론트). sql.js 인메모리 DB로 마포구 3회 연속 실행 시뮬레이션: 실행 3건 기록(변경 없는 3번째 포함), 변경 6건 누적, `getRun` 종류별 조회, 구역별 이력이 시간 역순으로 `준공→관리계획고시`, `관리계획고시→준공`. **실제 배포·화면 확인은 푸시 후.**
+요약:
+- 위 §2·2-1과 2026-10-28 절의 "서버 자동 수집 불가(Railway IP 403)"는 **홈페이지 `/` 요청의 결과**였고, 서명 헤더를 붙인 구역 API는 Railway에서 쿠키·토큰 없이 200이다. 그래서 브라우저 순회 대신 **관리자가 지정한 구(최대 3개)만** 서버가 가져온다(자동 대량 수집 금지).
+- "구역도 업데이트" 버튼 패널에서 구를 골라 실행. 새 구역 추가, 기존 구역 단계·사업유형·경계 갱신, 사이트에서 사라진 구역은 삭제하지 않고 `missingSince`로 표시(지도 회색 점선).
+- 변경은 `redevelopment_zone_sync_runs`·`redevelopment_zone_changes`에 누적되고, 재개발물건 탭의 "구역 업데이트 이력" 서브탭에서 날짜별로 본다.

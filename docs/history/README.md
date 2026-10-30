@@ -5,6 +5,7 @@
 
 ## 목록
 
+- [2026-10-30_01 재개발닷컴 구역 업데이트 — 서버 직접 수집(지정한 구만)·사라진 구역 표시·업데이트 이력 탭](./2026-10-30_01_jaegebal-server-sync.md)
 - [2026-10-25_01 재개발물건(수정용) 탭 — 재개발닷컴 구역도·지도 라벨·팝업·필터 인수인계](./2026-10-25_01_redevelopment-edit-tab-map-ui.md)
 - [2026-10-24_01 재개발 구역 매물 조사 — 네이버 매매 매물(samsam 방식) + 국토부 빌라 실거래(최근 1년)](./2026-10-24_01_redevelopment-research-naver-molit.md)
 - [2026-08-20_02 강의실 프론트엔드를 별도 Vercel 프로젝트로 분리 (Next.js Multi-Zones)](./2026-08-20_02_courses-app-vercel-split.md)
