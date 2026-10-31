@@ -185,6 +185,104 @@ async function fetchDetailHtml(developId: string): Promise<string> {
   return res.text();
 }
 
+/** 상세 페이지에서 읽은 진행 현황(짧은 키, `ZoneStats` 형식): pg=단계별 완료 현황, ps=현재 단계 경과일·같은 유형 중앙값, gn=최근 고시·공고. */
+type ZoneProgress = {
+  pg: Array<{ n: string; done: boolean; d: string | null }>;
+  ps: { cur: number | null; med: number | null } | null;
+  gn: Array<{ d: string | null; t: string; s: string | null; k: string | null }>;
+  /** 세부내용: 규제·토지거래허가·전매 구분·추진위 사무실·시공사·세대수 등. 값이 있는 항목만 담는다. */
+  dt: Record<string, unknown>;
+};
+const MAX_NOTICES = 8;
+
+/** 사이트 값이 문자열·숫자·문자열 배열·이름이 든 객체 배열일 때 보여 줄 문자열 목록으로 바꾼다. */
+function textList(v: unknown): string[] {
+  const one = (x: unknown): string => (typeof x === "string" || typeof x === "number" ? String(x) : x && typeof x === "object" ? String((x as { name?: unknown; title?: unknown }).name ?? (x as { title?: unknown }).title ?? "") : "");
+  return (Array.isArray(v) ? v : v == null ? [] : [v]).map(one).map((s) => s.trim().slice(0, 60)).filter(Boolean).slice(0, 10);
+}
+
+/** `developContext`·`developVerdicts`에서 값이 있는 세부내용만 짧은 키로 모은다. */
+function readDetails(text: string): Record<string, unknown> {
+  const ctx = readJsonObject(text, "developContext") ?? {};
+  const ver = (readJsonObject(text, "developVerdicts") ?? {}) as {
+    overheated?: boolean;
+    regulated?: boolean;
+    ltp?: { all?: { status?: string; start?: string; end?: string } };
+    transfer?: { code?: string };
+  };
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+  const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 100) : undefined);
+  const cons = textList(ctx.constructors);
+  const raw: Record<string, unknown> = {
+    oh: ver.overheated === true ? true : undefined, // 투기과열지구
+    rt: ver.regulated === true ? true : undefined, // 조정대상지역
+    lt: ver.ltp?.all?.start || ver.ltp?.all?.end ? { st: str(ver.ltp.all.status), s: str(ver.ltp.all.start), e: str(ver.ltp.all.end) } : undefined, // 토지거래허가
+    tr: str(ver.transfer?.code), // 전매·지위양도 구분 코드
+    on: str(ctx.office_name),
+    oa: str(ctx.office_address),
+    op: str(ctx.office_phone),
+    cs: cons.length ? cons : undefined, // 시공사
+    an: str(ctx.new_apt_name), // 신축 아파트명
+    hh: num(ctx.total_households), // 총세대
+    hs: num(ctx.sale_households), // 분양세대
+    hm: num(ctx.member_sale_households), // 조합원분양
+    hg: num(ctx.general_sale_households), // 일반분양
+    hr: num(ctx.rental_households), // 임대
+    ar: num(ctx.area_m2), // 구역면적
+    ow: num(ctx.land_owner_count) ?? num(ctx.estimated_land_owner_count), // 토지등소유자
+    fa: num(ctx.floor_area_ratio), // 용적률
+    bc: num(ctx.building_coverage_ratio), // 건폐율
+    mx: num(ctx.max_floors), // 최고층
+    cc: num(ctx.construction_cost_per_pyeong), // 평당 공사비
+  };
+  return Object.fromEntries(Object.entries(raw).filter(([, v]) => v !== undefined));
+}
+
+/** `text`에서 `"key":{...}` 한 덩어리를 중괄호 균형으로 잘라 JSON으로 읽는다. 없거나 깨졌으면 null. */
+function readJsonObject(text: string, key: string): Record<string, unknown> | null {
+  const at = text.indexOf(`"${key}":{`);
+  if (at < 0) return null;
+  const start = at + key.length + 3;
+  let depth = 0;
+  let inStr = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (inStr) {
+      if (c === "\\") i++;
+      else if (c === '"') inStr = false;
+    } else if (c === '"') inStr = true;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) {
+      try {
+        return JSON.parse(text.slice(start, i + 1)) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
+/** 상세 페이지의 `develop` 객체에서 진행 현황을 읽는다. 구역 id가 다르거나 읽지 못하면 빈 값(권리산정기준일 저장은 계속). */
+function readProgress(text: string, developId: string): Partial<ZoneProgress> {
+  const dev = readJsonObject(text, "develop") as
+    | {
+        id?: number;
+        progresses?: Array<{ description?: string; is_done?: boolean; done_at?: string | null }>;
+        progress_summary?: { current_days?: number | null; median_days?: number | null };
+        gov_notices?: Array<{ notice_date?: string | null; display_title?: string; title?: string; slug?: string; notice_type?: string }>;
+      }
+    | null;
+  if (!dev || String(dev.id) !== developId) return {};
+  const pg = (dev.progresses ?? []).filter((p) => p.description).map((p) => ({ n: String(p.description), done: p.is_done === true, d: p.done_at ?? null }));
+  const ps = dev.progress_summary ? { cur: dev.progress_summary.current_days ?? null, med: dev.progress_summary.median_days ?? null } : null;
+  const gn = (dev.gov_notices ?? [])
+    .slice(0, MAX_NOTICES)
+    .map((g) => ({ d: g.notice_date ?? null, t: String(g.display_title || g.title || "").slice(0, 120), s: g.slug ?? null, k: g.notice_type ?? null }))
+    .filter((g) => g.t);
+  return { pg, ps, gn, dt: readDetails(text) };
+}
+
 function flatPoints(a: unknown, out: number[][] = []): number[][] {
   if (Array.isArray(a) && typeof a[0] === "number") out.push(a as number[]);
   else if (Array.isArray(a)) a.forEach((x) => flatPoints(x, out));
@@ -686,13 +784,17 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         rz = [];
       }
     }
-    return this.saveRightDate(zoneId, { developId: id, rb: b[2] ?? null, rz });
+    return this.saveRightDate(zoneId, { developId: id, rb: b[2] ?? null, rz }, readProgress(text, id));
   }
 
   private readonly lastRightDateAt = new Map<string, number>();
 
-  /** 권리산정기준일 저장: 구역 지표(`stats`)에 `rb`·`rz`·`rf`로 저장한다. */
-  async saveRightDate(zoneId: string, body: { developId?: string; rb?: string | null; rz?: Array<{ d?: string; n?: string | null }> }) {
+  /** 권리산정기준일 저장: 구역 지표(`stats`)에 `rb`·`rz`·`rf`로 저장한다. extra(진행 현황 `pg`·`ps`·`gn`)가 있으면 함께 저장한다. */
+  async saveRightDate(
+    zoneId: string,
+    body: { developId?: string; rb?: string | null; rz?: Array<{ d?: string; n?: string | null }> },
+    extra: Partial<ZoneProgress> = {},
+  ) {
     const zone = await this.zones.findOne({ where: { id: zoneId } });
     const id = /^jaegebal-(\d+)/.exec(zone?.sourceKey ?? "")?.[1];
     if (!zone || !id) throw new BadRequestException("재개발닷컴에서 가져온 구역만 권리산정기준일을 저장할 수 있습니다.");
@@ -705,9 +807,9 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
       .slice(0, 20)
       .map((z) => ({ d: z.d as string, n: typeof z.n === "string" ? z.n.slice(0, 60) : null }));
     const rf = new Date().toISOString();
-    zone.stats = { ...(zone.stats ?? {}), rb, rz, rf };
+    zone.stats = { ...(zone.stats ?? {}), rb, rz, rf, ...extra };
     await this.zones.save(zone);
-    return { rb, rz, rf };
+    return { rb, rz, rf, ...extra };
   }
 
   private syncedRecently(code: string): boolean {
