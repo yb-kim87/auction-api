@@ -158,6 +158,24 @@ export class RedevelopmentResearchController {
     return this.service.refreshBlog(zoneId);
   }
 
+  /** 권리산정기준일 확인 — 서버가 재개발닷컴 상세 페이지를 직접 받아 값을 읽고 저장한다. */
+  @Post("zones/:zoneId/right-date/fetch")
+  async fetchRightDate(@Headers() headers: Record<string, string>, @Param("zoneId") zoneId: string) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.fetchRightDate(zoneId);
+  }
+
+  /** 권리산정기준일 저장(수동 값 전달용). */
+  @Post("zones/:zoneId/right-date")
+  async saveRightDate(
+    @Headers() headers: Record<string, string>,
+    @Param("zoneId") zoneId: string,
+    @Body() body: { developId?: string; rb?: string | null; rz?: Array<{ d?: string; n?: string | null }> },
+  ) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.saveRightDate(zoneId, body ?? {});
+  }
+
   /** 구역 조사 시작(경매물건 기준 시작과 같은 백그라운드 조사). */
   @Post("zones/:zoneId/start")
   async startZone(

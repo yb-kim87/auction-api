@@ -91,6 +91,11 @@ export class RedevelopmentZone {
   @Column({ type: Date, nullable: true })
   missingSince!: Date | null;
 
+  /** 재개발닷컴 구역 지표(세대수·노후도·전세가율 등) — 프론트 `ZoneStats`와 같은 짧은 키 형식.
+   * 구역 업데이트 때 응답에 값이 있는 항목만 덮어쓰고, 응답에 없는 항목은 기존 값을 그대로 둔다(사용자 요청, 2026-10-30). */
+  @Column({ type: "simple-json", nullable: true })
+  stats!: Record<string, unknown> | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

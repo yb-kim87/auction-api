@@ -185,3 +185,19 @@ behavior 형식: `1.<경과초>.<마우스이동>.<클릭>.<이동없는클릭>.
 
 **검증(시뮬레이션, 알림 본문 확인)**: 수동 2개 구 성공(단계 변경 3건 표시) / 마포구 HTTP 500 일부 오류 / 최근 수집 건너뜀 / 보안 확인 중단 / 자동 성공(다음 실행 11. 13. 오전 3:00) / 재시작으로 중단된 실행 — 6가지 모두 의도한 문구로 생성됨. **실제 텔레그램 수신은 운영에서 업데이트를 한 번 실행해 확인해야 한다.**
 
+
+## 12. 구역 지표(stats) 갱신 (2026-10-30 추가)
+- `/api/develops` 목록 응답에 구역 지표(세대수·소유자·노후도·용도지역·전세가율·대지평당가·호가·평균가·시공사·총/일반분양 세대·최근 진행 완료일·토지 비율·역세권)가 이미 들어 있어 **추가 호출 없이** 저장한다. `description`은 설명이 아니라 지번 주소다.
+- `redevelopment_zones.stats`(simple-json, 마이그레이션 `1784316000000-AddZoneStats`): 프론트 `ZoneStats`와 같은 짧은 키(`s,o,od,zr,jr,lp,ac,am,ai,mp,dp,c,th,gs,d,lr,st,ds`). 변환은 `toZoneStats`.
+- 갱신 규칙: 응답에 값이 있는 항목만 덮어쓰고 null인 항목은 기존 값 유지. MANUAL 경계 보호와 무관하게 갱신. 지표만 바뀌어도 해당 구역은 "갱신"으로 센다(배포 직후 첫 수집은 대부분 구역이 갱신으로 집계됨). 이력(zone_changes)에는 **주요 지표만** `changeType="stats"`로 구역당 1건 기록한다(세대수·소유자·시공사·총 세대·일반분양·최근 진행 완료일, `TRACKED_STATS`/`diffTrackedStats`; 예: "세대수 1,162세대 → 1,170세대"). 호가·전세가율·평균가 등 매번 움직이는 값은 기록하지 않고, DB에 기존 값이 없던 항목(첫 채움)도 기록하지 않는다. 실행 기록 `statsCount`(마이그레이션 `1784317000000-AddZoneStatsCount`), 이력 탭 "주요 지표 변경" 칩, 텔레그램 요약에 "주요 지표 변경 N" 추가.
+- 프론트 `zoneStatsOf`: 정적 JSON(`jaegebal-zone-stats.json`) 위에 `zone.stats`를 덮어써서 표시(DB에 없는 항목은 정적 값).
+
+## 13. 권리산정기준일 확인 (2026-10-30 추가)
+- 권리산정기준일은 목록(`/api/develops`)에 없고 **구역 상세 페이지 HTML**(`https://jaegebal.com/develops/{id}`)의 `developContext`(`right_basedate`, `right_date_zones`, `area_m2`, `estimated_land_owner_count`, 시공사·세대수·용적률 등)에 있다. `/api/develops/{id}/view`는 **POST 조회수 카운트**(`{"message":"success"}`)라 데이터가 없다(GET으로 부르면 405 — WAF 차단이 아니라 메서드 오류).
+- **서버(Railway)에서는 못 받는다**: 상세 페이지 GET → `202 + x-amzn-waf-action: challenge`(보안 확인 페이지). 우회하지 않는다. 그래서 서버 호출 방식은 만들지 않았다.
+- **채택 방식(사용자 결정 "2번")**: 사람이 인증을 푼 브라우저에서 읽어 코치픽으로 전달.
+  1. 구역 팝업 "권리산정일 확인하기" → 그 구역의 재개발닷컴 상세 페이지를 새 창(`window.open`, opener 유지)으로 연다(보안 확인이 나오면 직접 통과).
+  2. 상세 페이지에서 북마크바의 북마크릿 "코치픽 권리산정일 보내기"를 누르면 페이지의 `right_basedate`/`right_date_zones`를 읽어 `window.opener.postMessage`로 코치픽 창에 전달(대상 origin은 코치픽 주소로 고정). 북마크릿 코드는 팝업의 "사용 방법"에서 생성(`rightDateBookmarklet`, React가 `javascript:` href를 막아 ref로 속성 주입).
+  3. 코치픽 창이 `https://jaegebal.com` origin의 메시지만 받아 `POST /redevelopment-research/zones/:zoneId/right-date`(`saveRightDate`)로 저장. 서버는 구역의 재개발닷컴 id와 `developId` 일치·날짜 형식(YYYY-MM-DD)을 검증하고 `zone.stats`에 `rb`(기준일)·`rz`(일부 구역 기준일)·`rf`(확인 시각)로 저장. 구역 업데이트(sync)는 stats를 병합하므로 지우지 않는다.
+- 구역 1개씩 사람이 눌러야 하는 수동 방식(호출은 사람이 여는 페이지 1회). 새 컬럼·마이그레이션 없음.
+- 검증: 북마크릿 코드는 샘플 HTML로 단위 시험(값 추출·postMessage 전달 OK). 실제 브라우저 연동(opener 유지 여부 — 사이트가 COOP 헤더로 opener를 끊으면 전달 안 됨)은 첫 사용 때 확인 필요.

@@ -1,6 +1,6 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
 
-export type ZoneChangeType = "new" | "stage" | "projectType" | "missing" | "restored";
+export type ZoneChangeType = "new" | "stage" | "projectType" | "missing" | "restored" | "stats";
 
 /** 재개발닷컴 구역 업데이트 1회 실행 기록 — 구역이 하나도 안 바뀐 실행도 남긴다(사용자 요청, 2026-10-30: 구역 업데이트 이력을 날짜별로 조회). */
 @Entity("redevelopment_zone_sync_runs")
@@ -40,4 +40,6 @@ export class RedevelopmentZoneSyncRun {
   @Column({ type: "integer", default: 0 }) typeCount!: number;
   @Column({ type: "integer", default: 0 }) missingCount!: number;
   @Column({ type: "integer", default: 0 }) restoredCount!: number;
+  /** 주요 지표(세대수·시공사 등) 변경 구역 수. */
+  @Column({ type: "integer", default: 0 }) statsCount!: number;
 }

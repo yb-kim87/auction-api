@@ -23,6 +23,8 @@ const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 export const MAX_DISTRICTS_PER_RUN = 3;
 const REQUEST_GAP_MS = 30_000;
 const MIN_RESYNC_HOURS = 6;
+/** 같은 구역 권리산정기준일 확인 사이 최소 간격. */
+const RIGHT_DATE_MIN_GAP_MS = 30_000;
 /** 느린 순차 모드(구 4개 이상, 사용자 결정 2026-10-30) — 구 하나 안에서 요청 사이 60초, 구와 구 사이 120초.
  * 구당 약 3분, 25개 구 약 75분(분당 0.7건). 첫 보안 확인에서 전체 중단, 구 오류가 연속 2번이면 중단. */
 const ALL_REQUEST_GAP_MS = 60_000;
@@ -68,6 +70,28 @@ type RawDevelop = {
   type_display_name?: string;
   detail_stage?: string;
   areas?: RawArea;
+  num_sedaes?: number | null;
+  num_owners?: number | null;
+  building_oldness_pct?: number | null;
+  building_oldness_pct_5y?: number | null;
+  building_oldness_pct_10y?: number | null;
+  land_zoning_ratios?: Array<[string, number]> | null;
+  avg_jeonsae_rate?: number | null;
+  avg_land_price_per_pyeong?: number | null;
+  ask_count?: number | null;
+  ask_min_price?: number | null;
+  ask_initial_investment?: number | null;
+  mixed_price?: number | null;
+  dandok_price?: number | null;
+  constructors?: string | string[] | null;
+  total_households?: number | null;
+  general_sale_households?: number | null;
+  last_progress_done_at?: string | null;
+  land_ratio_mixed?: number | null;
+  land_ratio_dandok?: number | null;
+  land_ratio_keunrin?: number | null;
+  station_area_pct_350?: number | null;
+  station_area_pct_500?: number | null;
 };
 
 export type DistrictSyncResult = {
@@ -97,7 +121,7 @@ export type JaegebalSyncStatus = {
   /** 실행 주체: 관리자가 지금 실행(manual) / 자동 업데이트 설정(auto). */
   trigger: "manual" | "auto";
   /** 기존 구역의 단계·사업유형 변화(최대 MAX_CHANGE_LOG건). */
-  changes: Array<{ key: string; name: string; field: "stage" | "projectType" | "new" | "missing" | "restored"; from?: string | null; to?: string | null }>;
+  changes: Array<{ key: string; name: string; field: "stage" | "projectType" | "new" | "missing" | "restored" | "stats"; from?: string | null; to?: string | null }>;
 };
 
 class BlockedError extends Error {}
@@ -135,6 +159,32 @@ async function apiGet<T>(path: string, query?: string): Promise<T> {
   return (body && typeof body === "object" && body._enc ? decryptEnc(body._enc) : body) as T;
 }
 
+/** 구역 상세 페이지(HTML)를 브라우저 문서 요청과 같은 헤더로 받는다(쿠키만 제외, 2026-10-31 Railway에서 200 확인). */
+async function fetchDetailHtml(developId: string): Promise<string> {
+  const res = await fetch(`https://jaegebal.com/develops/${developId}`, {
+    headers: {
+      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "accept-language": "ko-KR,ko;q=0.9,id-ID;q=0.8,id;q=0.7,en-US;q=0.6,en;q=0.5",
+      "cache-control": "max-age=0",
+      priority: "u=0, i",
+      "sec-ch-ua": '"Google Chrome";v="155", "Chromium";v="155", "Not(A:Brand";v="24"',
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": '"Windows"',
+      "sec-fetch-dest": "document",
+      "sec-fetch-mode": "navigate",
+      "sec-fetch-site": "same-origin",
+      "sec-fetch-user": "?1",
+      "upgrade-insecure-requests": "1",
+      "user-agent": USER_AGENT,
+    },
+  });
+  if (res.status === 403 || res.status === 405) {
+    throw new BlockedError(`/develops/${developId} -> ${res.status} waf=${res.headers.get("x-amzn-waf-action") ?? ""}`);
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status} /develops/${developId}`);
+  return res.text();
+}
+
 function flatPoints(a: unknown, out: number[][] = []): number[][] {
   if (Array.isArray(a) && typeof a[0] === "number") out.push(a as number[]);
   else if (Array.isArray(a)) a.forEach((x) => flatPoints(x, out));
@@ -147,6 +197,61 @@ function ringToPolygon(ring: number[][] | undefined): RedevelopmentPoint[] | nul
   const pts = ring.map((p) => ({ lat: Math.round(p[1] * 1e6) / 1e6, lng: Math.round(p[0] * 1e6) / 1e6 }));
   if (pts.length > 1 && pts[0].lat === pts[pts.length - 1].lat && pts[0].lng === pts[pts.length - 1].lng) pts.pop();
   return pts.length >= 3 ? pts : null;
+}
+
+/** 응답의 구역 지표 → 저장 형식(프론트 `ZoneStats`의 짧은 키). 값이 없는(null) 항목은 넣지 않는다. */
+export function toZoneStats(item: RawDevelop): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const put = (k: string, v: unknown) => {
+    if (v == null || (Array.isArray(v) && v.length === 0) || v === "") return;
+    out[k] = v;
+  };
+  put("s", item.num_sedaes);
+  put("o", item.num_owners);
+  if (item.building_oldness_pct != null) out.od = [item.building_oldness_pct, item.building_oldness_pct_5y ?? null, item.building_oldness_pct_10y ?? null];
+  put("zr", item.land_zoning_ratios);
+  put("jr", item.avg_jeonsae_rate);
+  put("lp", item.avg_land_price_per_pyeong);
+  put("ac", item.ask_count);
+  put("am", item.ask_min_price);
+  put("ai", item.ask_initial_investment);
+  put("mp", item.mixed_price);
+  put("dp", item.dandok_price);
+  put("c", item.constructors);
+  put("th", item.total_households);
+  put("gs", item.general_sale_households);
+  put("d", item.last_progress_done_at);
+  if (item.land_ratio_mixed != null || item.land_ratio_dandok != null || item.land_ratio_keunrin != null) {
+    out.lr = [item.land_ratio_mixed ?? null, item.land_ratio_dandok ?? null, item.land_ratio_keunrin ?? null];
+  }
+  if (item.station_area_pct_350 != null || item.station_area_pct_500 != null) out.st = [item.station_area_pct_350 ?? null, item.station_area_pct_500 ?? null];
+  put("ds", (item.detail_stage ?? "").trim());
+  return out;
+}
+
+/** 이력에 남기는 주요 지표(잘 바뀌지 않는 값만). 호가·전세가율·평균가처럼 매번 움직이는 값은 이력에 남기지 않는다. */
+const TRACKED_STATS: Array<[key: string, label: string, unit: string]> = [
+  ["s", "세대수", "세대"],
+  ["o", "소유자", "명"],
+  ["c", "시공사", ""],
+  ["th", "총 세대", "세대"],
+  ["gs", "일반분양", "세대"],
+  ["d", "최근 진행 완료일", ""],
+];
+
+/** 기존 지표에 값이 있고 새 값과 다른 주요 항목만 "세대수 1,162세대 · 시공사 -" 형태로 요약한다. 기존 값이 없던 항목(첫 채움)은 변경으로 보지 않는다. */
+export function diffTrackedStats(prev: Record<string, unknown> | null, fresh: Record<string, unknown>): { from: string; to: string } | null {
+  if (!prev) return null;
+  const show = (v: unknown, unit: string) => (v == null || v === "" ? "-" : `${typeof v === "number" ? v.toLocaleString("ko-KR") : Array.isArray(v) ? v.join(", ") : String(v)}${unit}`);
+  const from: string[] = [];
+  const to: string[] = [];
+  for (const [key, label, unit] of TRACKED_STATS) {
+    if (!(key in prev) || !(key in fresh)) continue;
+    if (JSON.stringify(prev[key]) === JSON.stringify(fresh[key])) continue;
+    from.push(`${label} ${show(prev[key], unit)}`);
+    to.push(`${label} ${show(fresh[key], unit)}`);
+  }
+  return from.length ? { from: from.join(" · "), to: to.join(" · ") } : null;
 }
 
 /** 재개발닷컴 구역 하나 → 구역 레코드들. 하위 폴리곤이 여럿이면 기존 import처럼 폴리곤마다 별도 구역
@@ -215,7 +320,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   /** 이번 실행의 이력 기록(실행 행 id·아직 저장 안 된 변경·종류별 건수). 이력 저장 실패가 수집 자체를 막지 않게 모두 try/catch로 감싼다. */
   private runId: string | null = null;
   private pending: RedevelopmentZoneChange[] = [];
-  private counts: Record<ZoneChangeType, number> = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0 };
+  private counts: Record<ZoneChangeType, number> = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0, stats: 0 };
 
   constructor(
     @InjectRepository(RedevelopmentZone) private readonly zones: Repository<RedevelopmentZone>,
@@ -239,7 +344,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     const startedAt = new Date();
     this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, all: slow, trigger: triggeredBy, changes: [] };
     this.pending = [];
-    this.counts = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0 };
+    this.counts = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0, stats: 0 };
     this.runId = null;
     try {
       this.runId = (await this.runs.save(this.runs.create({ startedAt, state: "running", triggeredBy, codes: list, results: [] }))).id;
@@ -318,6 +423,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         typeCount: this.counts.projectType,
         missingCount: this.counts.missing,
         restoredCount: this.counts.restored,
+        statsCount: this.counts.stats,
       });
     } catch (e) {
       this.logger.error(`구역 업데이트 실행 기록 마무리 실패: ${e}`);
@@ -335,6 +441,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         typeCount: this.counts.projectType,
         missingCount: this.counts.missing,
         restoredCount: this.counts.restored,
+        statsCount: this.counts.stats,
       });
     } catch (e) {
       this.logger.error(`구역 업데이트 진행 저장 실패: ${e}`);
@@ -531,7 +638,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     const lines = [`${icon} 재개발닷컴 구역 ${kind} 업데이트 ${title}`];
     lines.push(`대상 ${st.codes.length}개 구: ${st.codes.map((c) => SEOUL_DISTRICT_NAMES[c] ?? c).join(", ")} · 소요 ${took}`);
     if (ok.length) {
-      lines.push(`${ok.length}개 구에서 구역 ${total.toLocaleString("ko-KR")}건 확인 · 신규 ${counts.new} · 단계 변경 ${counts.stage} · 사업유형 변경 ${counts.projectType} · 사라짐 ${counts.missing} · 복구 ${counts.restored}`);
+      lines.push(`${ok.length}개 구에서 구역 ${total.toLocaleString("ko-KR")}건 확인 · 신규 ${counts.new} · 단계 변경 ${counts.stage} · 사업유형 변경 ${counts.projectType} · 사라짐 ${counts.missing} · 복구 ${counts.restored}${counts.stats ? ` · 주요 지표 변경 ${counts.stats}` : ""}`);
       const stageChanges = st.changes.filter((c) => c.field === "stage");
       for (const c of stageChanges.slice(0, 5)) lines.push(`• ${c.name}: ${c.from || "-"} → ${c.to || "-"}`);
       if (counts.stage > 5) lines.push(`  …외 단계 변경 ${counts.stage - 5}건 (구역 업데이트 이력 탭에서 확인)`);
@@ -550,6 +657,58 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
 
   /** 같은 구를 연달아 다시 요청하지 않도록 구 코드별 마지막 수집 시각을 메모리에 둔다(서버 재시작 시 초기화). */
   private readonly lastSyncAt = new Map<string, number>();
+
+  /** 권리산정기준일을 서버가 재개발닷컴 상세 페이지(HTML)에서 직접 읽어 저장한다(2026-10-31, 브라우저 방식 대체).
+   * 페이지 안의 `right_basedate`·`right_date_zones` 값을 읽는다. 403/405는 우회하지 않고 멈춘다. 같은 구역은 연달아 요청하지 않는다. */
+  async fetchRightDate(zoneId: string) {
+    const zone = await this.zones.findOne({ where: { id: zoneId } });
+    const id = /^jaegebal-(\d+)/.exec(zone?.sourceKey ?? "")?.[1];
+    if (!zone || !id) throw new BadRequestException("재개발닷컴에서 가져온 구역만 권리산정기준일을 확인할 수 있습니다.");
+    const last = this.lastRightDateAt.get(id);
+    if (last != null && Date.now() - last < RIGHT_DATE_MIN_GAP_MS) throw new BadRequestException("방금 확인한 구역입니다. 잠시 뒤 다시 눌러 주세요.");
+    this.lastRightDateAt.set(id, Date.now());
+    let html: string;
+    try {
+      html = await fetchDetailHtml(id);
+    } catch (e) {
+      if (e instanceof BlockedError) throw new BadRequestException("재개발닷컴 보안 확인에 걸렸습니다. 우회하지 않고 멈췄으니 몇 시간 뒤 다시 시도하세요.");
+      throw new BadRequestException(`재개발닷컴 상세 페이지를 받지 못했습니다: ${(e as Error).message}`);
+    }
+    const text = html.replace(/\\"/g, '"');
+    const b = /"right_basedate":(null|"(\d{4}-\d{2}-\d{2})")/.exec(text);
+    if (!b) throw new BadRequestException("상세 페이지에서 권리산정기준일 정보를 찾지 못했습니다.");
+    let rz: Array<{ d: string; n?: string | null }> = [];
+    const z = /"right_date_zones":(\[[^\]]*\])/.exec(text);
+    if (z) {
+      try {
+        rz = (JSON.parse(z[1]) as Array<{ right_date?: string; name?: string | null }>).map((x) => ({ d: x.right_date as string, n: x.name }));
+      } catch {
+        rz = [];
+      }
+    }
+    return this.saveRightDate(zoneId, { developId: id, rb: b[2] ?? null, rz });
+  }
+
+  private readonly lastRightDateAt = new Map<string, number>();
+
+  /** 권리산정기준일 저장: 구역 지표(`stats`)에 `rb`·`rz`·`rf`로 저장한다. */
+  async saveRightDate(zoneId: string, body: { developId?: string; rb?: string | null; rz?: Array<{ d?: string; n?: string | null }> }) {
+    const zone = await this.zones.findOne({ where: { id: zoneId } });
+    const id = /^jaegebal-(\d+)/.exec(zone?.sourceKey ?? "")?.[1];
+    if (!zone || !id) throw new BadRequestException("재개발닷컴에서 가져온 구역만 권리산정기준일을 저장할 수 있습니다.");
+    if (String(body?.developId ?? "") !== id) throw new BadRequestException("열어 본 재개발닷컴 페이지가 이 구역과 다릅니다. 이 구역의 상세 페이지에서 다시 눌러 주세요.");
+    const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+    if (body.rb != null && !isDate(body.rb)) throw new BadRequestException("권리산정기준일 형식이 올바르지 않습니다.");
+    const rb = body.rb ?? null;
+    const rz = (Array.isArray(body.rz) ? body.rz : [])
+      .filter((z) => isDate(z?.d) && z.d !== rb)
+      .slice(0, 20)
+      .map((z) => ({ d: z.d as string, n: typeof z.n === "string" ? z.n.slice(0, 60) : null }));
+    const rf = new Date().toISOString();
+    zone.stats = { ...(zone.stats ?? {}), rb, rz, rf };
+    await this.zones.save(zone);
+    return { rb, rz, rf };
+  }
 
   private syncedRecently(code: string): boolean {
     const at = this.lastSyncAt.get(code);
@@ -582,6 +741,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     result.created = result.updated = result.unchanged = result.skippedManual = result.restored = 0;
 
     for (const item of items) {
+      const freshStats = toZoneStats(item);
       for (const rec of toZoneRecords(item)) {
         seenKeys.add(rec.key);
         const existing = await this.zones.findOne({ where: { sourceDatasetId: DATASET_ID, sourceKey: rec.key } });
@@ -599,6 +759,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
               boundaryType: "EXACT",
               lastAutoSyncedAt: now,
               missingSince: null,
+              stats: freshStats,
             }),
           );
           result.created += 1;
@@ -610,17 +771,22 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
           result.skippedManual += 1;
           continue;
         }
+        // 지표는 응답에 값이 있는 항목만 덮어쓰고 없는 항목은 기존 값을 둔다. 경계 보호(MANUAL)와 무관하게 갱신한다.
+        const mergedStats = { ...(existing.stats ?? {}), ...freshStats };
+        const statsChanged = JSON.stringify(mergedStats) !== JSON.stringify(existing.stats ?? {});
         const wasMissing = existing.missingSince != null;
         const stageChanged = norm(existing.stage) !== rec.stage;
         const typeChanged = norm(existing.projectType) !== rec.projectType;
         const changed =
-          wasMissing || stageChanged || typeChanged || norm(existing.name) !== rec.name || norm(existing.region) !== rec.region || !samePolygon(existing.polygon, rec.polygon);
+          wasMissing || statsChanged || stageChanged || typeChanged || norm(existing.name) !== rec.name || norm(existing.region) !== rec.region || !samePolygon(existing.polygon, rec.polygon);
         if (!changed) {
           result.unchanged += 1;
           continue;
         }
         if (stageChanged) this.pushChange({ key: rec.key, name: rec.name, field: "stage", from: norm(existing.stage), to: rec.stage }, rec.region);
         if (typeChanged) this.pushChange({ key: rec.key, name: rec.name, field: "projectType", from: norm(existing.projectType), to: rec.projectType }, rec.region);
+        const statsDiff = diffTrackedStats(existing.stats, freshStats);
+        if (statsDiff) this.pushChange({ key: rec.key, name: rec.name, field: "stats", from: statsDiff.from, to: statsDiff.to }, rec.region);
         if (wasMissing) {
           result.restored += 1;
           this.pushChange({ key: rec.key, name: rec.name, field: "restored" }, rec.region);
@@ -632,6 +798,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         existing.polygon = rec.polygon;
         existing.lastAutoSyncedAt = now;
         existing.missingSince = null;
+        existing.stats = mergedStats;
         await this.zones.save(existing);
         result.updated += 1;
       }
