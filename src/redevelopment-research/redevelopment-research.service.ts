@@ -20,9 +20,11 @@ function envInt(name: string, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
 }
 
-/** 조사에 저장하는 최대 경계 오차(m). 화면의 오차범위(<= 이 값)는 저장된 원본을 다시 거르기만 한다 —
- * 네이버를 다시 부르지 않는다(samsam 규칙 3: 한 번 넉넉히 가져와 저장 후 로컬 필터링). */
+/** 오차범위로 받을 수 있는 최대 경계 오차(m) — 저장·조회 범위의 상한. 실제 저장 범위는 조사 때 받은 화면 오차범위(기본 30m)다. */
 export const MAX_TOLERANCE_M = 100;
+/** 조사에서 저장하고 매물별 네이버 호출(지번·상세 조회)을 하는 경계 오차(m)의 기본값 — 화면 오차범위를 받으면 그 값을 쓴다
+ * (사용자 결정 2026-10-31: 100m까지 저장하지 말고 30m로 저장). 오차범위를 넓힌 뒤에는 다시 조사해야 그만큼 채워진다. */
+const DEFAULT_CALL_TOLERANCE_M = 30;
 /** 한 번 실행에 상세를 가져올 최대 매물 수(samsam BACKFILL_BATCH_LIMIT과 같은 이유 — 장시간 규칙적 트래픽 방지).
  * 남으면 "이어서 수집"으로 다시 실행한다. */
 const DETAIL_BATCH_LIMIT = envInt("REDEV_RESEARCH_DETAIL_LIMIT", 40);
@@ -331,7 +333,7 @@ export class RedevelopmentResearchService {
     const near = await this.zonesNear(auction.latitude, auction.longitude, auction.district || null, Math.min(toleranceM, MAX_TOLERANCE_M));
     if (!near.length) throw new BadRequestException("이 물건이 속한 재개발 구역을 찾지 못했습니다(오차범위를 늘려 보세요).");
     const { zone } = near[0];
-    const run = await this.startZone(zone.id, tradeLimit, fast);
+    const run = await this.startZone(zone.id, tradeLimit, fast, toleranceM);
     return { zoneId: zone.id, zoneName: zone.name, run };
   }
 
@@ -343,7 +345,7 @@ export class RedevelopmentResearchService {
     return this.zoneBlog.getZoneBlogInfo(zoneId);
   }
 
-  async startZone(zoneId: string, tradeLimit?: number, fast = false): Promise<RedevelopmentResearchRun> {
+  async startZone(zoneId: string, tradeLimit?: number, fast = false, toleranceM?: number): Promise<RedevelopmentResearchRun> {
     const zone = await this.zoneRepo.findOne({ where: { id: zoneId } });
     if (!zone) throw new NotFoundException("구역을 찾을 수 없습니다.");
     if (this.runningZoneId) {
@@ -364,7 +366,7 @@ export class RedevelopmentResearchService {
       startedAt: new Date(),
       finishedAt: null,
     });
-    void this.runZone(zone, clampTradeLimit(tradeLimit), fast)
+    void this.runZone(zone, clampTradeLimit(tradeLimit), fast, Math.max(0, Math.min(MAX_TOLERANCE_M, toleranceM ?? DEFAULT_CALL_TOLERANCE_M)))
       .catch(async (e) => {
         const message = e instanceof Error ? e.message : String(e);
         this.logger.error(`구역 조사 실패(${zone.name}): ${message}`);
@@ -378,7 +380,7 @@ export class RedevelopmentResearchService {
 
   // ───────────────────────── 실행 ─────────────────────────
 
-  private async runZone(zone: RedevelopmentZone, tradeLimit: number, fast = false): Promise<void> {
+  private async runZone(zone: RedevelopmentZone, tradeLimit: number, fast = false, callToleranceM = DEFAULT_CALL_TOLERANCE_M): Promise<void> {
     this.logger.log(`구역 조사 시작: ${zone.name} (${zone.id})${fast ? " [빠른 조사: 목록 + 매물 키]" : ""}`);
     const blogWarnings: string[] = [];
     // 재개발 블로그(후니동산)의 동의율·공문 타임라인 — 가볍고 다른 수집과 무관해서 가장 먼저 한다. 실패해도 나머지 조사는 계속한다.
@@ -396,7 +398,7 @@ export class RedevelopmentResearchService {
     const errors: string[] = [];
     const warnings: string[] = [...blogWarnings];
     try {
-      const { failedMonths, attemptedMonths, saved } = await this.collectTrades(zone, dongs, tradeLimit);
+      const { failedMonths, attemptedMonths, saved } = await this.collectTrades(zone, dongs, tradeLimit, callToleranceM);
       if (attemptedMonths > 0 && failedMonths >= attemptedMonths && saved === 0) {
         errors.push(`국토부 실거래 ${attemptedMonths}개월 조회가 전부 실패(호출 한도/일시 오류) — 잠시 후 다시 실행하세요`);
       } else if (failedMonths > 0) {
@@ -406,7 +408,7 @@ export class RedevelopmentResearchService {
       errors.push(`실거래 수집 실패: ${e instanceof Error ? e.message : String(e)}`);
     }
     try {
-      await this.collectNaver(zone, dongs, fast);
+      await this.collectNaver(zone, dongs, fast, callToleranceM);
     } catch (e) {
       errors.push(`네이버 매물 수집 실패: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -441,6 +443,7 @@ export class RedevelopmentResearchService {
     zone: RedevelopmentZone,
     dongs: ZoneDong[],
     limit: number,
+    callToleranceM = DEFAULT_CALL_TOLERANCE_M,
   ): Promise<{ failedMonths: number; attemptedMonths: number; saved: number }> {
     await this.patchRun(zone.id, { phase: "국토부 실거래 수집" });
     const now = new Date();
@@ -534,7 +537,7 @@ export class RedevelopmentResearchService {
             geoByKey.set(key, g ? { lat: g.lat, lng: g.lng, d: distanceToZoneM(g.lat, g.lng, zone.polygon) } : null);
           }
           const g = geoByKey.get(key);
-          if (!g || g.d > MAX_TOLERANCE_M) continue;
+          if (!g || g.d > callToleranceM) continue;
           const amount = Number(String(c.item.dealAmount ?? "").replace(/[^\d]/g, ""));
           const area = Number(c.item.excluUseAr);
           if (!Number.isFinite(amount) || !Number.isFinite(area)) continue;
@@ -598,7 +601,7 @@ export class RedevelopmentResearchService {
 
   // ── 네이버 매매 매물(samsam 방식) ──
 
-  private async collectNaver(zone: RedevelopmentZone, dongs: ZoneDong[], fast = false): Promise<void> {
+  private async collectNaver(zone: RedevelopmentZone, dongs: ZoneDong[], fast = false, callToleranceM = DEFAULT_CALL_TOLERANCE_M): Promise<void> {
     await this.patchRun(zone.id, { phase: "네이버 동 코드 확인" });
     // 동 코드: samsam처럼 네이버 /api/cortars(좌표→동)로 확정한다. 실패하면 카카오 법정동코드를 쓴다(같은 10자리 체계).
     const cortars: Array<{ cortarNo: string; dong: ZoneDong }> = [];
@@ -640,7 +643,7 @@ export class RedevelopmentResearchService {
         .filter((m) => m.articleNo);
       const inRange = mapped
         .map((m) => ({ m, d: m.lat != null && m.lng != null ? distanceToZoneM(m.lat, m.lng, zone.polygon) : null }))
-        .filter((x): x is { m: (typeof mapped)[number]; d: number } => x.d != null && x.d <= MAX_TOLERANCE_M);
+        .filter((x): x is { m: (typeof mapped)[number]; d: number } => x.d != null && x.d <= callToleranceM);
       const existing = inRange.length
         ? await this.listingRepo.find({ where: { zoneId: zone.id, articleNo: In(inRange.map((x) => x.m.articleNo)) } })
         : [];
@@ -694,6 +697,8 @@ export class RedevelopmentResearchService {
     if (complete) {
       const stored = await this.listingRepo.find({ where: { zoneId: zone.id } });
       for (const row of stored) {
+        // 이번 저장 범위(오차범위) 밖에 예전에 저장된 매물은 이번에 다시 보지 않았을 뿐이라 "사라짐"으로 세지 않는다.
+        if ((row.distanceToZoneM ?? 9999) > callToleranceM) continue;
         if (!seenArticleNos.has(row.articleNo)) {
           row.missCount += 1;
           await this.listingRepo.save(row);
@@ -701,8 +706,8 @@ export class RedevelopmentResearchService {
       }
     }
 
-    if (fast) await this.collectNaverKeys(zone);
-    else await this.collectNaverDetails(zone);
+    if (fast) await this.collectNaverKeys(zone, callToleranceM);
+    else await this.collectNaverDetails(zone, undefined, callToleranceM);
   }
 
   /** 건축물대장 표제부 대지면적을 건물(법정동+지번)당 한 번만 조회해 같은 건물의 매물 행에 채운다(호가 대지지분 추정용).
@@ -829,10 +834,10 @@ export class RedevelopmentResearchService {
   }
 
   /** onlyArticleNos를 주면 그 매물만(배치 상한·진행 상태 기록 없이) 상세·단지 정보까지 채운다 — 빠른 조사 뒤 매물 하나만 자세히 볼 때. */
-  private async collectNaverDetails(zone: RedevelopmentZone, onlyArticleNos?: string[]): Promise<void> {
+  private async collectNaverDetails(zone: RedevelopmentZone, onlyArticleNos?: string[], callToleranceM = DEFAULT_CALL_TOLERANCE_M): Promise<void> {
     const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
     const only = onlyArticleNos ? new Set(onlyArticleNos) : null;
-    const eligible = all.filter((r) => (only ? only.has(r.articleNo) : r.missCount < GONE_MISS_COUNT && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M));
+    const eligible = all.filter((r) => (only ? only.has(r.articleNo) : r.missCount < GONE_MISS_COUNT && (r.distanceToZoneM ?? 9999) <= callToleranceM));
     // 새 상세가 필요하거나(detailFetchedAt 없음) 단지정보 보충이 필요한(finFetchedAt 없음) 매물 — 가까운 구역 안쪽부터.
     const pending = eligible
       .filter((r) => !r.detailFetchedAt || !r.finFetchedAt)
@@ -980,10 +985,10 @@ export class RedevelopmentResearchService {
   /** 빠른 조사(목록 + 매물 키): 매물 상세·단지 정보는 부르지 않고, 지번이 없는 매물만 fin 매물 키(네이버 1회/건)로 정확한 지번·법정동을 받는다.
    * 연식·대지지분은 이어서 건축물대장(enrichPlatArea)으로 채운다. 한 번 받은 지번은 저장되므로 재조사 때는 새 매물만 호출한다.
    * (사용자 요청 2026-10-26: 매물당 3회 → 1회. 매물 키는 상세에 PNU가 비는 매물 5건에서도 지번을 줬다.) */
-  private async collectNaverKeys(zone: RedevelopmentZone): Promise<void> {
+  private async collectNaverKeys(zone: RedevelopmentZone, callToleranceM = DEFAULT_CALL_TOLERANCE_M): Promise<void> {
     const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
     const pending = all
-      .filter((r) => r.missCount < GONE_MISS_COUNT && (r.distanceToZoneM ?? 9999) <= MAX_TOLERANCE_M && !r.jibun)
+      .filter((r) => r.missCount < GONE_MISS_COUNT && (r.distanceToZoneM ?? 9999) <= callToleranceM && !r.jibun)
       .sort((a, b) => (a.distanceToZoneM ?? 0) - (b.distanceToZoneM ?? 0));
     const batch = pending.slice(0, KEY_BATCH_LIMIT);
     let done = 0;

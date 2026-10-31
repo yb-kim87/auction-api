@@ -181,10 +181,10 @@ export class RedevelopmentResearchController {
   async startZone(
     @Headers() headers: Record<string, string>,
     @Param("zoneId") zoneId: string,
-    @Body() body: { tradeLimit?: number; fast?: boolean },
+    @Body() body: { tradeLimit?: number; fast?: boolean; toleranceM?: number },
   ) {
     requireAdmin(getAuthContext(headers));
-    const run = await this.service.startZone(zoneId, body?.tradeLimit, body?.fast === true);
+    const run = await this.service.startZone(zoneId, body?.tradeLimit, body?.fast === true, parseTolerance(body?.toleranceM));
     return { zoneId, run };
   }
 
