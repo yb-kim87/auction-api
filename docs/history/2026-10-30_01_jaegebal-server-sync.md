@@ -201,3 +201,9 @@ behavior 형식: `1.<경과초>.<마우스이동>.<클릭>.<이동없는클릭>.
   3. 코치픽 창이 `https://jaegebal.com` origin의 메시지만 받아 `POST /redevelopment-research/zones/:zoneId/right-date`(`saveRightDate`)로 저장. 서버는 구역의 재개발닷컴 id와 `developId` 일치·날짜 형식(YYYY-MM-DD)을 검증하고 `zone.stats`에 `rb`(기준일)·`rz`(일부 구역 기준일)·`rf`(확인 시각)로 저장. 구역 업데이트(sync)는 stats를 병합하므로 지우지 않는다.
 - 구역 1개씩 사람이 눌러야 하는 수동 방식(호출은 사람이 여는 페이지 1회). 새 컬럼·마이그레이션 없음.
 - 검증: 북마크릿 코드는 샘플 HTML로 단위 시험(값 추출·postMessage 전달 OK). 실제 브라우저 연동(opener 유지 여부 — 사이트가 COOP 헤더로 opener를 끊으면 전달 안 됨)은 첫 사용 때 확인 필요.
+
+## 12. 권리산정일·세부내용을 서버가 상세 페이지에서 직접 읽기 (2026-10-31)
+- "권리산정일 확인하기" 버튼은 브라우저 북마크릿 대신 `POST redevelopment-research/zones/:zoneId/right-date/fetch`로 서버가 `https://jaegebal.com/develops/{id}`(HTML)를 받아 읽는다. 쿠키 없이 브라우저 문서 요청 헤더(accept, accept-language, cache-control, priority, sec-ch-ua*, sec-fetch-*, upgrade-insecure-requests, user-agent)를 그대로 보내 Railway에서 200 확인(2026-10-31). 403/405는 우회하지 않고 중단, 같은 구역은 30초 안에 재요청 금지.
+- 읽는 값(구역 `stats` JSON에 저장, 짧은 키): 권리산정일 `rb`·`rz`·`rf`, 진행 현황 `pg`(단계별 완료·완료일)·`ps`(현재 단계 경과일 cur·같은 유형 중앙값 med)·`gn`(최근 고시·공고 8건), 세부내용 `dt`(규제 oh·rt, 토지거래허가 lt, 전매 구분 코드 tr, 추진위·조합 사무실 on·oa·op, 시공사 cs, 신축 아파트명 an, 세대수 hh·hm·hg·hr·hs, 면적 ar, 토지등소유자 ow, 용적률·건폐율 fa·bc, 최고층 mx, 평당 공사비 cc). 값이 있는 항목만 저장.
+- 독산동 979(4143)는 사무실·시공사·세대수가 사이트에 비어 있어 `dt`에 규제·토지거래허가·전매 코드·면적·소유자만 들어감. 추진위·조합 단계 구역에서 사무실 항목이 실제로 채워지는지는 아직 확인하지 못함.
+- 프론트: 구역 팝업 "권리산정일 · 세부내용" 칸에 표시, 확인 결과는 구역 목록 상태에도 반영(팝업 재오픈 시 유지). 권리산정일 이후 연식 물건은 조사 표에서 보라색·"권리산정 이후" 배지(연도 비교, 같은 해는 표시 안 함).
