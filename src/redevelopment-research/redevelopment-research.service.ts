@@ -25,6 +25,8 @@ export const MAX_TOLERANCE_M = 100;
 /** 조사에서 저장하고 매물별 네이버 호출(지번·상세 조회)을 하는 경계 오차(m)의 기본값 — 화면 오차범위를 받으면 그 값을 쓴다
  * (사용자 결정 2026-10-31: 100m까지 저장하지 말고 30m로 저장). 오차범위를 넓힌 뒤에는 다시 조사해야 그만큼 채워진다. */
 const DEFAULT_CALL_TOLERANCE_M = 30;
+/** 매물별 네이버 호출(지번·상세 조회)은 구역 안(경계까지 거리 0)인 매물만 한다(사용자 결정 2026-10-31). 경계 밖 근처 매물은 목록 정보만 저장한다. */
+const DETAIL_CALL_MAX_DISTANCE_M = 0;
 /** 한 번 실행에 상세를 가져올 최대 매물 수(samsam BACKFILL_BATCH_LIMIT과 같은 이유 — 장시간 규칙적 트래픽 방지).
  * 남으면 "이어서 수집"으로 다시 실행한다. */
 const DETAIL_BATCH_LIMIT = envInt("REDEV_RESEARCH_DETAIL_LIMIT", 40);
@@ -706,8 +708,8 @@ export class RedevelopmentResearchService {
       }
     }
 
-    if (fast) await this.collectNaverKeys(zone, callToleranceM);
-    else await this.collectNaverDetails(zone, undefined, callToleranceM);
+    if (fast) await this.collectNaverKeys(zone);
+    else await this.collectNaverDetails(zone);
   }
 
   /** 건축물대장 표제부 대지면적을 건물(법정동+지번)당 한 번만 조회해 같은 건물의 매물 행에 채운다(호가 대지지분 추정용).
@@ -834,10 +836,10 @@ export class RedevelopmentResearchService {
   }
 
   /** onlyArticleNos를 주면 그 매물만(배치 상한·진행 상태 기록 없이) 상세·단지 정보까지 채운다 — 빠른 조사 뒤 매물 하나만 자세히 볼 때. */
-  private async collectNaverDetails(zone: RedevelopmentZone, onlyArticleNos?: string[], callToleranceM = DEFAULT_CALL_TOLERANCE_M): Promise<void> {
+  private async collectNaverDetails(zone: RedevelopmentZone, onlyArticleNos?: string[]): Promise<void> {
     const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
     const only = onlyArticleNos ? new Set(onlyArticleNos) : null;
-    const eligible = all.filter((r) => (only ? only.has(r.articleNo) : r.missCount < GONE_MISS_COUNT && (r.distanceToZoneM ?? 9999) <= callToleranceM));
+    const eligible = all.filter((r) => (only ? only.has(r.articleNo) : r.missCount < GONE_MISS_COUNT && (r.distanceToZoneM ?? 9999) <= DETAIL_CALL_MAX_DISTANCE_M));
     // 새 상세가 필요하거나(detailFetchedAt 없음) 단지정보 보충이 필요한(finFetchedAt 없음) 매물 — 가까운 구역 안쪽부터.
     const pending = eligible
       .filter((r) => !r.detailFetchedAt || !r.finFetchedAt)
@@ -985,10 +987,10 @@ export class RedevelopmentResearchService {
   /** 빠른 조사(목록 + 매물 키): 매물 상세·단지 정보는 부르지 않고, 지번이 없는 매물만 fin 매물 키(네이버 1회/건)로 정확한 지번·법정동을 받는다.
    * 연식·대지지분은 이어서 건축물대장(enrichPlatArea)으로 채운다. 한 번 받은 지번은 저장되므로 재조사 때는 새 매물만 호출한다.
    * (사용자 요청 2026-10-26: 매물당 3회 → 1회. 매물 키는 상세에 PNU가 비는 매물 5건에서도 지번을 줬다.) */
-  private async collectNaverKeys(zone: RedevelopmentZone, callToleranceM = DEFAULT_CALL_TOLERANCE_M): Promise<void> {
+  private async collectNaverKeys(zone: RedevelopmentZone): Promise<void> {
     const all = await this.listingRepo.find({ where: { zoneId: zone.id } });
     const pending = all
-      .filter((r) => r.missCount < GONE_MISS_COUNT && (r.distanceToZoneM ?? 9999) <= callToleranceM && !r.jibun)
+      .filter((r) => r.missCount < GONE_MISS_COUNT && (r.distanceToZoneM ?? 9999) <= DETAIL_CALL_MAX_DISTANCE_M && !r.jibun)
       .sort((a, b) => (a.distanceToZoneM ?? 0) - (b.distanceToZoneM ?? 0));
     const batch = pending.slice(0, KEY_BATCH_LIMIT);
     let done = 0;
