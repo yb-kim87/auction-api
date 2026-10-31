@@ -570,9 +570,12 @@ export class RedevelopmentResearchService {
       }
     }
 
+    // upsert의 충돌 키(아래 목록)가 같은 행이 한 묶음에 둘 있으면 PostgreSQL이 "ON CONFLICT DO UPDATE command cannot affect row a second time"으로
+    // 전체를 실패시킨다(2026-10-31, 독산2 — 같은 지번·층·면적·날짜·금액의 거래가 다른 건물명으로 두 번 내려옴). 키별로 하나만 남긴다.
+    const uniqueRows = [...new Map(rows.map((r) => [[r.zoneId, r.lawdCd, r.umdNm, r.jibun, r.floor, r.exclusiveArea, r.contractDate, r.dealAmountManwon].join("|"), r])).values()];
     let saved = 0;
-    for (let i = 0; i < rows.length; i += 100) {
-      const batch = rows.slice(i, i + 100);
+    for (let i = 0; i < uniqueRows.length; i += 100) {
+      const batch = uniqueRows.slice(i, i + 100);
       await this.tradeRepo.upsert(batch as RedevelopmentTrade[], [
         "zoneId",
         "lawdCd",
