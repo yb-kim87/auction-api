@@ -1366,6 +1366,8 @@ export class RedevelopmentResearchService {
         ho,
         appraisedValue: auction.appraisedValue,
         minPrice: auction.minPrice,
+        bidDate: auction.bidDate ?? "",
+        salePrice: auction.salePrice ?? null,
         jibun: j?.jibun ?? null,
         officialPrice: this.estimate(key ? prices.get(key) : undefined, area, floor, ho),
       },
