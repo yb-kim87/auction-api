@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Brackets, Repository } from "typeorm";
 import { Auction } from "../auctions/auction.entity";
 import { RedevelopmentZone } from "../redevelopment/entities/redevelopment-zone.entity";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
@@ -53,6 +53,8 @@ export class AuctionZoneCoordService {
   private readonly logger = new Logger(AuctionZoneCoordService.name);
   private zones: ZoneBox[] = [];
   private zonesLoadedAt = 0;
+  /** 서울 밖에 구역이 있는 시(예: 부천시) — 이 시의 경매물건은 좌표를 채운다. */
+  private outsideCities = new Set<string>();
   private backfill: CoordBackfillStatus = { running: false, total: 0, done: 0, saved: 0, startedAt: null, finishedAt: null, error: null };
 
   constructor(
@@ -64,6 +66,9 @@ export class AuctionZoneCoordService {
   private async loadZones(): Promise<ZoneBox[]> {
     if (this.zones.length > 0 && Date.now() - this.zonesLoadedAt < ZONE_CACHE_MS) return this.zones;
     const rows = await this.zoneRepo.find({ where: { sourceDatasetId: "jaegebal" }, select: ["id", "polygon"] });
+    // 지역명(예: "부천시 소사구")에서 서울 밖 시 이름을 뽑는다.
+    const cityRows = await this.zoneRepo.find({ where: { sourceDatasetId: "jaegebal" }, select: ["id", "region"] });
+    this.outsideCities = new Set(cityRows.map((z) => /([가-힣]+시)/.exec(z.region ?? "")?.[1]).filter((c): c is string => !!c && !c.startsWith("서울")));
     this.zones = rows
       .filter((z) => Array.isArray(z.polygon) && z.polygon.length >= 3)
       .map((z) => {
@@ -97,12 +102,19 @@ export class AuctionZoneCoordService {
    * 이미 진행 중이면 현재 상태만 돌려준다. */
   async startBackfill(): Promise<CoordBackfillStatus> {
     if (this.backfill.running) return this.backfill;
-    const rows = await this.auctionRepo
+    await this.loadZones();
+    const cities = Array.from(this.outsideCities);
+    // 서울 빌라 + 서울 밖 구역이 있는 시(예: 부천시)의 모든 용도 — 좌표가 아직 없는 것만.
+    const qb = this.auctionRepo
       .createQueryBuilder("a")
       .where("a.latitude IS NULL")
-      .andWhere("a.propType = :t", { t: "빌라" })
-      .andWhere("a.city LIKE :c", { c: "서울%" })
-      .getMany();
+      .andWhere(
+        new Brackets((w) => {
+          w.where("(a.propType = :t AND a.city LIKE :c)", { t: "빌라", c: "서울%" });
+          cities.forEach((city, i) => w.orWhere(`a.address LIKE :city${i}`, { [`city${i}`]: `%${city}%` }));
+        }),
+      );
+    const rows = await qb.getMany();
     this.backfill = { running: true, total: rows.length, done: 0, saved: 0, startedAt: new Date().toISOString(), finishedAt: null, error: null };
     void this.runBackfill(rows);
     return this.backfill;
@@ -135,8 +147,16 @@ export class AuctionZoneCoordService {
 
   /** 좌표가 없는 서울 빌라 물건이면 주소를 좌표로 바꿔, 구역 근처일 때만 저장한다. 실패해도 크롤링에는 영향이 없다. */
   async fillIfNeeded(auction: Auction): Promise<boolean> {
-    if (auction.latitude != null || auction.propType !== "빌라" || !auction.address) return false;
-    if (!(auction.city ?? "").startsWith("서울")) return false;
+    if (auction.latitude != null || !auction.address) return false;
+    const isSeoul = (auction.city ?? "").startsWith("서울");
+    if (isSeoul) {
+      if (auction.propType !== "빌라") return false; // 서울은 빌라만(아파트·오피스텔은 구역 조사 대상이 아니다)
+    } else {
+      // 서울 밖은 구역이 있는 시(예: 부천시)의 물건만, 용도 상관없이 채운다(재건축 구역은 아파트도 많다).
+      await this.loadZones();
+      const inCity = Array.from(this.outsideCities).some((city) => (auction.district ?? "").includes(city) || auction.address.includes(city));
+      if (!inCity) return false;
+    }
     try {
       const geo = await this.geocoder.geocode(auction.address);
       if (!geo) return false;

@@ -4,6 +4,7 @@ import type { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { Auction } from "./auctions/auction.entity";
 import { AuctionChangeLog } from "./auctions/auction-change.entity";
 import { AuctionFavorite } from "./favorites/auction-favorite.entity";
+import { AuctionDislike } from "./favorites/auction-dislike.entity";
 import { FavoriteCategory } from "./favorites/favorite-category.entity";
 import { User } from "./users/user.entity";
 import { AuctionAnalysis } from "./ai/auction-analysis.entity";
@@ -77,6 +78,7 @@ const entities = [
   Auction,
   AuctionChangeLog,
   AuctionFavorite,
+  AuctionDislike,
   FavoriteCategory,
   User,
   AuctionAnalysis,
