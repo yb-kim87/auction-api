@@ -387,8 +387,11 @@ export class RedevelopmentResearchService {
     const blogWarnings: string[] = [];
     // 재개발 블로그(후니동산)의 동의율·공문 타임라인 — 가볍고 다른 수집과 무관해서 가장 먼저 한다. 실패해도 나머지 조사는 계속한다.
     try {
-      await this.patchRun(zone.id, { phase: "재개발 블로그 조사" });
-      await this.zoneBlog.refreshZone(zone);
+      // 가상구역(관리자가 직접 그린 구역, 재개발닷컴 sourceKey 없음)은 블로그에 정보가 없으므로 건너뛴다.
+      if (zone.sourceKey) {
+        await this.patchRun(zone.id, { phase: "재개발 블로그 조사" });
+        await this.zoneBlog.refreshZone(zone);
+      }
     } catch (e) {
       blogWarnings.push(`블로그 조사 실패: ${e instanceof Error ? e.message : String(e)}`);
       this.logger.warn(`블로그 조사 실패(${zone.name}): ${e instanceof Error ? e.message : String(e)}`);
