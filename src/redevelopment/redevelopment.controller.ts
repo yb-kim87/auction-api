@@ -64,6 +64,7 @@ export class RedevelopmentController {
       name?: string;
       region?: string;
       stage?: string;
+      projectType?: string;
       memo?: string;
       polygon?: unknown;
       color?: string;
@@ -84,6 +85,7 @@ export class RedevelopmentController {
       name?: string;
       region?: string;
       stage?: string;
+      projectType?: string;
       memo?: string;
       polygon?: unknown;
       color?: string | null;

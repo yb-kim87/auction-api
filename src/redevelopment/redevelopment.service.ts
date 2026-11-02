@@ -131,6 +131,7 @@ export class RedevelopmentService {
     name?: string;
     region?: string;
     stage?: string;
+    projectType?: string;
     memo?: string;
     polygon?: unknown;
     color?: string;
@@ -143,6 +144,7 @@ export class RedevelopmentService {
       name,
       region: body.region?.trim() ?? "",
       stage: body.stage?.trim() ?? "",
+      projectType: body.projectType?.trim() || null,
       memo: body.memo?.trim() || null,
       polygon: normalizePolygon(body.polygon),
       color: body.color?.trim() || null,
@@ -158,6 +160,7 @@ export class RedevelopmentService {
       name?: string;
       region?: string;
       stage?: string;
+      projectType?: string;
       memo?: string;
       polygon?: unknown;
       color?: string | null;
@@ -170,6 +173,7 @@ export class RedevelopmentService {
     if (body.name !== undefined) zone.name = body.name.trim();
     if (body.region !== undefined) zone.region = body.region.trim();
     if (body.stage !== undefined) zone.stage = body.stage.trim();
+    if (body.projectType !== undefined) zone.projectType = body.projectType.trim() || null;
     if (body.memo !== undefined) zone.memo = body.memo.trim() || null;
     if (body.polygon !== undefined) zone.polygon = normalizePolygon(body.polygon);
     if (body.color !== undefined) zone.color = body.color?.trim() || null;
