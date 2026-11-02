@@ -2092,7 +2092,9 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
    * (실측: 진행률 36%인 상태에서 다음 관심조건이 곧바로 시작되어 "not
    * found"로 실패, 2026-07-20). syncWorkerStatus()로 워커 phase가
    * idle/stopped/error가 될 때까지 폴링해서 기다린다. */
-  private async waitForCrawlIdle(timeoutMs = 30 * 60_000): Promise<boolean> {
+  // 대기 상한 90분: 당일물건 조회(오늘 입찰·과거 입찰·임차현황 대기 물건)가 800건을 넘으면 30분을 넘겨, 대기를 포기한 뒤 바로 다음
+  // 관심조건을 시작해 "이미 조회가 진행 중입니다"로 실패했다(2026-11-02 매일 작업 알림). 한 건 약 2.4초라 90분이면 충분하다.
+  private async waitForCrawlIdle(timeoutMs = 90 * 60_000): Promise<boolean> {
     const start = Date.now();
     while (this.jobRunning || this.localStatus.phase === "crawling") {
       if (Date.now() - start > timeoutMs) {

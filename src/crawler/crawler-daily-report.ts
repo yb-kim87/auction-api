@@ -69,7 +69,7 @@ export function buildDailyJobReport(a: {
   }
   if (a.results.length > 8) lines.push(`…외 관심조건 ${a.results.length - 8}개`);
   if (a.fatalError) lines.push(`❌ 예약 작업 오류: ${a.fatalError}`);
-  if (timedOut) lines.push("⏱️ 조회 완료 대기 시간(30분)을 넘겨 다음 관심조건으로 넘어간 항목이 있습니다. 해당 조회는 계속 진행 중일 수 있습니다.");
+  if (timedOut) lines.push("⏱️ 조회 완료 대기 시간(90분)을 넘겨 다음 관심조건으로 넘어간 항목이 있습니다. 해당 조회는 계속 진행 중일 수 있습니다.");
   return lines.join("\n").slice(0, 3800);
 }
 
