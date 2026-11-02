@@ -44,6 +44,9 @@ interface WriteMeta {
   preserveLinkIfExists?: boolean;
 }
 
+/** 입찰일이 지난 "변경" 물건을 매일 작업이 하루에 확인하는 최대 건수(돌아가며). */
+const CHANGED_PAST_DAILY_LIMIT = Math.max(1, Number(process.env.CRAWLER_CHANGED_PAST_DAILY_LIMIT ?? 30) || 30);
+
 @Injectable()
 export class AuctionsService implements OnModuleInit {
   constructor(
@@ -747,6 +750,9 @@ export class AuctionsService implements OnModuleInit {
     };
 
     const result: { auctionNo: string; link: string }[] = [];
+    // 입찰일이 지났는데 아직 "변경"(다음 기일 미정)인 물건은 수백 건이 매일 "변경 없음"만 반복해 조회 시간을 잡아먹는다(2026-11-02 실측 347건).
+    // 하루 CHANGED_PAST_DAILY_LIMIT건씩 돌아가며 확인한다 — 같은 날엔 같은 묶음, 날이 바뀌면 다음 묶음(사용자 요청 2026-11-02).
+    const changedPast: { auctionNo: string; link: string }[] = [];
     for (const [link, group] of byLink) {
       // 그룹 안에 종결(caseState 종결) 레코드가 하나라도 있으면, 이 링크의
       // 물건은 이미 결론이 났다는 뜻이므로 다른 레코드가 caseState 미기재
@@ -757,10 +763,21 @@ export class AuctionsService implements OnModuleInit {
       const representative =
         group.find((row) => row.caseState?.trim()) ?? group[0];
       if (!isEligibleRow(representative)) continue;
-      result.push({
-        auctionNo: representative.auctionNo.trim(),
-        link,
-      });
+      const entry = { auctionNo: representative.auctionNo.trim(), link };
+      const parsedBid = this.parseBidDate(representative.bidDate);
+      const bidDayTime = parsedBid ? new Date(parsedBid.getFullYear(), parsedBid.getMonth(), parsedBid.getDate()).getTime() : 0;
+      if ((representative.caseState ?? "").trim() === "변경" && bidDayTime < today.getTime()) {
+        changedPast.push(entry);
+        continue;
+      }
+      result.push(entry);
+    }
+    if (changedPast.length > 0) {
+      changedPast.sort((a, b) => a.link.localeCompare(b.link));
+      const slices = Math.ceil(changedPast.length / CHANGED_PAST_DAILY_LIMIT);
+      const dayIndex = Math.floor(Date.UTC(kst.year, kst.month - 1, kst.date) / 86_400_000);
+      const start = (dayIndex % slices) * CHANGED_PAST_DAILY_LIMIT;
+      result.push(...changedPast.slice(start, start + CHANGED_PAST_DAILY_LIMIT));
     }
     return result;
   }

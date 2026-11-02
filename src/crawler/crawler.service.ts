@@ -1468,6 +1468,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     return { urls: this.localStatus.urls };
   }
 
+  private kstDateDots(): string {
+    const k = nowPartsInKst();
+    return `${k.year}.${String(k.month).padStart(2, "0")}.${String(k.date).padStart(2, "0")}`;
+  }
+
   private readonly tenantRefreshCooldown = new Map<string, number>();
   private tenantRefreshTimes: number[] = [];
 
@@ -1481,7 +1486,10 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     const [auction] = await this.auctionsService.findByIds([auctionId], true, true);
     if (!auction) return { started: false, reason: "not_found" };
     const detail = String(auction.tenantDetail ?? "").trim();
-    if (!(detail === "" || detail === "-" || detail === "없음" || detail === "값없음")) return { started: false, reason: "already_has" };
+    const tenantPending = detail === "" || detail === "-" || detail === "없음" || detail === "값없음";
+    // 입찰일이 지났는데 아직 "변경"인 물건은 상세를 열 때 한 번 다시 조회해 상태가 바뀌었는지 확인한다(사용자 요청 2026-11-02).
+    const changedStale = String(auction.caseState ?? "").trim() === "변경" && String(auction.bidDate ?? "").replace(/-/g, ".") < this.kstDateDots();
+    if (!tenantPending && !changedStale) return { started: false, reason: "already_has" };
     const link = String(auction.link ?? "").trim();
     if (!link) return { started: false, reason: "no_link" };
     const now = Date.now();
