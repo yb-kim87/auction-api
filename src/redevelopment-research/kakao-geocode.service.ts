@@ -91,11 +91,11 @@ export class KakaoGeocodeService {
   }
 
   /** 좌표 → 법정동(10자리 코드 + 동 이름). 구역 경계 샘플 점이 걸치는 동을 알아내는 데 쓴다. */
-  async legalDongAt(lat: number, lng: number): Promise<{ code: string; name: string; gu: string } | null> {
+  async legalDongAt(lat: number, lng: number): Promise<{ code: string; name: string; gu: string; sido: string } | null> {
     const data = await this.callKakao("/geo/coord2regioncode.json", { x: String(lng), y: String(lat) });
     const b = Array.isArray(data?.documents) ? data.documents.find((d: any) => d.region_type === "B") : null;
     if (!b?.code) return null;
-    return { code: String(b.code), name: String(b.region_3depth_name ?? ""), gu: String(b.region_2depth_name ?? "") };
+    return { code: String(b.code), name: String(b.region_3depth_name ?? ""), gu: String(b.region_2depth_name ?? ""), sido: String(b.region_1depth_name ?? "") };
   }
 
   /** 좌표 → 지번(본번-부번) + 법정동코드. 네이버 매물 좌표로 공시가격을 매칭할 때 쓴다. */

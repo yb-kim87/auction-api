@@ -442,7 +442,8 @@ export class RedevelopmentResearchService {
     for (const s of samples) {
       const r = await this.kakao.legalDongAt(s.lat, s.lng);
       if (!r || byCode.has(r.code)) continue;
-      byCode.set(r.code, { code: r.code, name: r.name, gu: r.gu, sido: "서울", sample: { lat: s.lat, lng: s.lng } });
+      // 시·도는 카카오가 알려 준 값을 쓴다(예전엔 "서울"로 고정해, 서울 밖 구역(예: 경기 부천 송내동)은 실거래 주소 지오코딩이 전부 실패해 실거래가 0건으로 저장됐다).
+      byCode.set(r.code, { code: r.code, name: r.name, gu: r.gu, sido: r.sido || "서울", sample: { lat: s.lat, lng: s.lng } });
     }
     return Array.from(byCode.values());
   }
