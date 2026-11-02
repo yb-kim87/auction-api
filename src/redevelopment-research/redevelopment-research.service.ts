@@ -312,7 +312,14 @@ export class RedevelopmentResearchService {
 
   /** 가까운 순으로 구역 후보를 찾는다(경계 오차범위 포함). 같은 구(region)의 구역만 본다. */
   private async zonesNear(lat: number, lng: number, district: string | null, toleranceM: number): Promise<Array<{ zone: RedevelopmentZone; distanceM: number }>> {
-    const zones = district ? await this.zoneRepo.find({ where: { region: district } }) : await this.zoneRepo.find();
+    // 구(district)로 후보를 좁히되, 관리자가 직접 그린 신규구역은 지역명을 비워 두는 일이 많아 region이 빈 구역도 함께 본다
+    // (예전엔 region이 같은 구역만 봐서 신규구역 안 경매물건이 "속한 구역을 찾지 못했습니다"로 나왔다). 지역명이 "서울특별시 강동구"처럼 길게 적힌 경우도 포함한다.
+    const zones = district
+      ? await this.zoneRepo
+          .createQueryBuilder("z")
+          .where("z.region = :d OR z.region = '' OR z.region LIKE :like", { d: district, like: `%${district}%` })
+          .getMany()
+      : await this.zoneRepo.find();
     const found: Array<{ zone: RedevelopmentZone; distanceM: number }> = [];
     for (const zone of zones) {
       if (!zone.polygon || zone.polygon.length < 3) continue;
