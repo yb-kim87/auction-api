@@ -6,8 +6,6 @@ import asyncio
 import json
 import os
 
-os.environ.setdefault("TANKAUCTION_ID", "zgamez")
-os.environ.setdefault("TANKAUCTION_PW", "young1!")
 os.environ.setdefault(
     "CRAWLER_CALLBACK_URL",
     "https://auction-production-2c72.up.railway.app/crawler/import-item",

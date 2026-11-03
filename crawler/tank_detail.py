@@ -1763,9 +1763,21 @@ _BID_HIST_STATE_LABELS: dict[int, str] = {
     1111: "유찰",
     1110: "진행",
     1210: "매각",
-    1212: "차순위매수신고",
-    1230: "대금지급기한",
+    # 1212는 "2위 입찰금액" 행이다. 탱크옥션 화면은 앞 매각 행에 "2위 금액"만 덧붙이고, 행에 2nd_reg(차순위매수신고 접수)가
+    # 있을 때만 "차순위신고"로 표시한다 — parse_bid_info_from_detail에서 따로 처리한다.
+    1212: "2위입찰",
+    # 1230은 "대금지급기한"이 아니라 매각결정기일이다(진짜 지급기한은 1215). 탱크 화면도 "매각결정기일"로 표시한다.
+    1230: "매각결정기일",
+    1213: "매각결정기일",
+    1214: "매각결정기일",
     1211: "매각허가결정",
+    1215: "지급기한",
+    1216: "납부",
+    1217: "재매각기일",
+    1218: "배당기일",
+    1219: "배당종결",
+    1221: "차순위매각결정기일",
+    1231: "차순위매각결정기일",
     1310: "변경",
     1415: "취하",
 }
@@ -1833,6 +1845,7 @@ def parse_bid_info_from_detail(detail: dict | None) -> str:
         return ""
 
     lines: list[str] = []
+    last_sale_idx: int | None = None
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -1854,15 +1867,26 @@ def parse_bid_info_from_detail(detail: dict | None) -> str:
             sucb_nm = _pick_str(item, "sucb_nm", "sucbNm")
             if sucb_nm:
                 extras.append(f"낙찰자 {sucb_nm}")
-        elif sta_int == 1212 and amount:
-            extras.append(f"2위금액 {amount}")
-            amount = ""
+        elif sta_int == 1212:
+            if item.get("2nd_reg"):
+                state_label = "차순위신고"
+                if amount:
+                    extras.append(f"2위금액 {amount}")
+                    amount = ""
+            else:
+                # 차순위 신고가 없으면 별도 줄을 만들지 않고 앞 매각 줄에 2위금액만 붙인다.
+                if amount and last_sale_idx is not None:
+                    prev = lines[last_sale_idx]
+                    lines[last_sale_idx] = f"{prev[:-1]}, 2위금액 {amount})" if prev.endswith(")") else f"{prev} (2위금액 {amount})"
+                continue
 
         parts = [p for p in (f"{seq}차" if seq else "", date, state_label, amount) if p]
         if extras:
             parts.append(f"({', '.join(extras)})")
         if parts:
             lines.append(" ".join(parts))
+            if sta_int == 1210:
+                last_sale_idx = len(lines) - 1
 
     return "\n".join(lines)
 

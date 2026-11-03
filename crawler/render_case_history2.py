@@ -1,6 +1,4 @@
 import time, os, tempfile
-os.environ.setdefault("TANKAUCTION_ID", "zgamez")
-os.environ.setdefault("TANKAUCTION_PW", "young1!")
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 import tank_login

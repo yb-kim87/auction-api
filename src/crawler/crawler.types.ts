@@ -158,8 +158,8 @@ export const DEFAULT_CRAWLER_CONFIG: CrawlerConfig = {
     excludeWeekdays: [],
   },
   credentials: {
-    userId: "zgamez",
-    password: "young1!",
+    userId: process.env.TANKAUCTION_ID ?? process.env.TANK_AUCTION_USER ?? "",
+    password: process.env.TANKAUCTION_PW ?? process.env.TANK_AUCTION_PASSWORD ?? "",
   },
   naverCredentials: {
     userId: "",

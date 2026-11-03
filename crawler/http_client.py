@@ -54,8 +54,24 @@ def make_client() -> httpx.AsyncClient:
     )
 
 
+def _load_dotenv_defaults() -> None:
+    """단독 실행 스크립트용: 환경변수가 없으면 auction-api/.env(gitignore)의 값을 읽어 채운다."""
+    if os.environ.get("TANKAUCTION_ID") and os.environ.get("TANKAUCTION_PW"):
+        return
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+    try:
+        with open(env_path, encoding="utf-8") as f:
+            for line in f:
+                key, sep, value = line.strip().partition("=")
+                if sep and key in ("TANKAUCTION_ID", "TANKAUCTION_PW") and not os.environ.get(key):
+                    os.environ[key] = value.strip().strip('"').strip("'")
+    except OSError:
+        pass
+
+
 async def login(client: httpx.AsyncClient) -> None:
     """TANKAUCTION_ID / TANKAUCTION_PW 환경변수로 로그인, 쿠키는 client가 자동 보관."""
+    _load_dotenv_defaults()
     client_id = os.environ.get("TANKAUCTION_ID")
     passwd = os.environ.get("TANKAUCTION_PW")
     if not client_id or not passwd:

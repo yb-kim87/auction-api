@@ -1,7 +1,5 @@
 import asyncio, os, sys
 sys.path.insert(0, ".")
-os.environ.setdefault("TANKAUCTION_ID", "zgamez")
-os.environ.setdefault("TANKAUCTION_PW", "young1!")
 from http_client import make_client, login
 
 async def main():

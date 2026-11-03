@@ -1036,11 +1036,11 @@ export class CrawlerService implements OnModuleInit, OnModuleDestroy {
     const userId =
       dto.userId?.trim() ||
       this.config.credentials.userId ||
-      "zgamez";
+      "";
     const password =
       dto.password ||
       this.config.credentials.password ||
-      "young1!";
+      "";
     return { userId, password };
   }
 

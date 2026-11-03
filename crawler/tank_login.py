@@ -44,8 +44,8 @@ SUBMIT_SELECTORS = [
 
 
 def _credentials(user_id: str | None = None, user_pw: str | None = None):
-    uid = (user_id or os.environ.get("TANK_AUCTION_USER") or "zgamez").strip()
-    pw = (user_pw or os.environ.get("TANK_AUCTION_PASSWORD") or "young1!").strip()
+    uid = (user_id or os.environ.get("TANK_AUCTION_USER") or os.environ.get("TANKAUCTION_ID") or "").strip()
+    pw = (user_pw or os.environ.get("TANK_AUCTION_PASSWORD") or os.environ.get("TANKAUCTION_PW") or "").strip()
     if not uid or not pw:
         raise RuntimeError("탱크옥션 ID와 비밀번호를 입력해 주세요.")
     return uid, pw
