@@ -61,6 +61,35 @@ const SEOUL_DISTRICT_NAMES: Record<string, string> = {
   "11560": "영등포구", "11590": "동작구", "11620": "관악구", "11650": "서초구", "11680": "강남구", "11710": "송파구", "11740": "강동구",
 };
 
+/** 경기도 시·군·구 코드 → 지역 이름(재개발닷컴 지역 코드 = 법정동 시군구 코드, 사용자 요청 2026-11-07).
+ * 구가 있는 시는 "수원시 장안구"처럼 시+구로 저장한다(서울 구 이름과 겹치지 않고 목록에서 시별로 묶인다).
+ * 부천시는 재개발닷컴 데이터가 41192/41194/41196(원미·소사·오정)을 쓴다(2026-10-25 raw에서 확인). */
+const GYEONGGI_DISTRICT_NAMES: Record<string, string> = {
+  "41111": "수원시 장안구", "41113": "수원시 권선구", "41115": "수원시 팔달구", "41117": "수원시 영통구",
+  "41131": "성남시 수정구", "41133": "성남시 중원구", "41135": "성남시 분당구",
+  "41150": "의정부시",
+  "41171": "안양시 만안구", "41173": "안양시 동안구",
+  "41192": "부천시 원미구", "41194": "부천시 소사구", "41196": "부천시 오정구",
+  "41210": "광명시", "41220": "평택시", "41250": "동두천시",
+  "41271": "안산시 상록구", "41273": "안산시 단원구",
+  "41281": "고양시 덕양구", "41285": "고양시 일산동구", "41287": "고양시 일산서구",
+  "41290": "과천시", "41310": "구리시", "41360": "남양주시", "41370": "오산시", "41390": "시흥시",
+  "41410": "군포시", "41430": "의왕시", "41450": "하남시",
+  "41461": "용인시 처인구", "41463": "용인시 기흥구", "41465": "용인시 수지구",
+  "41480": "파주시", "41500": "이천시", "41550": "안성시", "41570": "김포시", "41590": "화성시",
+  "41610": "광주시", "41630": "양주시", "41650": "포천시", "41670": "여주시",
+  "41800": "연천군", "41820": "가평군", "41830": "양평군",
+};
+
+/** 수집 대상으로 지정할 수 있는 지역 전체(서울 25개 구 + 경기). */
+const DISTRICT_NAMES: Record<string, string> = { ...SEOUL_DISTRICT_NAMES, ...GYEONGGI_DISTRICT_NAMES };
+
+/** 구역의 region_code → 지역 이름. 표에 없는 코드는 같은 시의 대표 코드(끝자리 0, 예: 화성시 구 신설 코드 → 41590)로 찾고, 그래도 없으면 빈 값. */
+export function districtNameOf(code: string | null | undefined): string {
+  const c = String(code ?? "");
+  return DISTRICT_NAMES[c] ?? (/^41\d{3}$/.test(c) ? GYEONGGI_DISTRICT_NAMES[`${c.slice(0, 4)}0`] : undefined) ?? "";
+}
+
 type RawArea = number[][][][]; // [polygon][ring][[lng, lat]]
 type RawDevelop = {
   id: number;
@@ -356,7 +385,7 @@ export function diffTrackedStats(prev: Record<string, unknown> | null, fresh: Re
  * (첫 번째 `jaegebal-<id>`, 이후 `jaegebal-<id>-2`… 이름 뒤에 `(2)`…). */
 export function toZoneRecords(item: RawDevelop) {
   const title = (item.title ?? "").trim();
-  const region = SEOUL_DISTRICT_NAMES[item.region_code ?? ""] ?? "";
+  const region = districtNameOf(item.region_code);
   const out: Array<{ key: string; name: string; region: string; projectType: string; stage: string; polygon: RedevelopmentPoint[] }> = [];
   (item.areas ?? []).forEach((subPolygon, idx) => {
     const polygon = ringToPolygon(subPolygon?.[0]);
@@ -437,7 +466,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     if (this.status.running) return this.status;
     const list = all ? Object.keys(SEOUL_DISTRICT_NAMES) : Array.from(new Set((codes ?? []).map((c) => String(c).trim())));
     if (!list.length) throw new BadRequestException("수집할 구 코드를 지정하세요. (예: 11560)");
-    if (list.some((c) => !SEOUL_DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
+    if (list.some((c) => !DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
     const slow = all || list.length > MAX_DISTRICTS_PER_RUN;
     const startedAt = new Date();
     this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, all: slow, trigger: triggeredBy, changes: [] };
@@ -592,7 +621,8 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
             `&simplify=0.0001&include_completed=true`;
           await sleep(innerGap);
           const items = (await apiGet<RawDevelop[]>("/develops", query)).filter((x) => Array.isArray(x.areas) && x.areas.length);
-          await this.apply(region.name, items, result);
+          // 사라진 구역 판정은 구역 레코드의 region과 같은 이름(코드표)으로 한다 — 사이트의 경기 지역 이름 표기("장안구"/"수원시 장안구")에 좌우되지 않게.
+          await this.apply(DISTRICT_NAMES[code] ?? region.name, items, result);
           await this.flushChanges();
           this.lastSyncAt.set(code, Date.now());
           consecutiveErrors = 0;
@@ -660,7 +690,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     if (!Number.isInteger(runHour) || runHour < 0 || runHour > 23 || !Number.isInteger(runMinute) || runMinute < 0 || runMinute > 59) {
       throw new BadRequestException("실행 시각은 한국시간 00:00~23:59여야 합니다.");
     }
-    if (codes.some((c) => !SEOUL_DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
+    if (codes.some((c) => !DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
     if (enabled && !codes.length) throw new BadRequestException("자동 업데이트할 구를 먼저 선택하세요.");
     const now = new Date();
     let nextRunAt = cur.nextRunAt;
@@ -722,7 +752,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   private buildReport(st: JaegebalSyncStatus, counts: Record<ZoneChangeType, number>, finishedAt: Date, nextRunAt: Date | null): string {
     const kind = st.trigger === "auto" ? "자동" : "수동";
     const fmt = (d: Date) => new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).format(d);
-    const nameOf = (r: DistrictSyncResult) => r.name ?? SEOUL_DISTRICT_NAMES[r.code] ?? r.code;
+    const nameOf = (r: DistrictSyncResult) => DISTRICT_NAMES[r.code] ?? r.name ?? r.code;
     const ok = st.results.filter((r) => r.fetched != null && !r.error);
     const failedRows = st.results.filter((r) => r.error);
     const skipped = st.results.filter((r) => r.warning && r.fetched == null && !r.error);
@@ -734,7 +764,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     const title = st.blocked ? "중단(보안 확인)" : hasProblem ? "일부 오류" : ok.length ? "완료" : "건너뜀";
     const total = ok.reduce((n, r) => n + (r.fetched ?? 0), 0);
     const lines = [`${icon} 재개발닷컴 구역 ${kind} 업데이트 ${title}`];
-    lines.push(`대상 ${st.codes.length}개 구: ${st.codes.map((c) => SEOUL_DISTRICT_NAMES[c] ?? c).join(", ")} · 소요 ${took}`);
+    lines.push(`대상 ${st.codes.length}개 구: ${st.codes.map((c) => DISTRICT_NAMES[c] ?? c).join(", ")} · 소요 ${took}`);
     if (ok.length) {
       lines.push(`${ok.length}개 구에서 구역 ${total.toLocaleString("ko-KR")}건 확인 · 신규 ${counts.new} · 단계 변경 ${counts.stage} · 사업유형 변경 ${counts.projectType} · 사라짐 ${counts.missing} · 복구 ${counts.restored}${counts.stats ? ` · 주요 지표 변경 ${counts.stats}` : ""}`);
       const stageChanges = st.changes.filter((c) => c.field === "stage");
