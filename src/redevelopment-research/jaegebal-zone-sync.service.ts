@@ -14,10 +14,11 @@ const API_BASE = "https://jaegebal.com/api";
 // 사이트 JS에 공개된 값. 사이트 배포로 바뀌면 환경변수로 재배포 없이 교체한다.
 const SIGNING_KEY = process.env.JDC_SIGNING_KEY || "57bfe0da55e35b096fd0a4ac27ca2c35b40f13e2827442e4771c999b2cec1c74";
 const APP_TOKEN = process.env.JDC_APP_TOKEN || "0418b9cadfb234a22035c05e982492cf02b62fa91bc89e217f8f93c7e6f0e10f";
-const DEVICE_ID = process.env.JDC_DEVICE_ID || "web;e92feeb0-f0bd-4ca7-961c-85537a203a35";
-/** 사람 행동을 흉내 내지 않는다: 활동 0, 마지막 칸 1 = 자동화 클라이언트 표시. */
-const BEHAVIOR = "1.0.0.0.0.0.0.0.0.0.0.1";
-const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36";
+const DEVICE_ID = process.env.JDC_DEVICE_ID || "web;b4c8abd4-6616-4a16-b707-dc14a9f7aa99";
+/** 브라우저가 실제로 보낸 서명 뒤쪽 값(2026-11-07 캡처, 서명 해시는 요청마다 새로 계산). */
+const BEHAVIOR = "1.2a.p7.1.0.0.0.0.0.0.0.0";
+const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36";
+const SEC_CH_UA = '"Not:A-Brand";v="8", "Chromium";v="156", "Google Chrome";v="156"';
 
 /** 최소 수집 원칙(사용자 결정, 2026-10-30): 간격을 크게 두고 천천히. 구가 MAX_DISTRICTS_PER_RUN개를 넘으면 자동으로 느린 간격을 쓴다. */
 export const MAX_DISTRICTS_PER_RUN = 3;
@@ -169,10 +170,23 @@ function decryptEnc(enc: string): unknown {
 async function apiGet<T>(path: string, query?: string): Promise<T> {
   const ts = String(Math.floor(Date.now() / 1000));
   const sig = crypto.createHmac("sha256", SIGNING_KEY).update(`${ts}|GET|${path}|${BEHAVIOR}`).digest("hex") + "." + BEHAVIOR;
+  // 브라우저(Sentry)가 요청마다 새로 만드는 추적 값: trace_id 32자리, span 16자리.
+  const traceId = crypto.randomBytes(16).toString("hex");
+  const spanId = crypto.randomBytes(8).toString("hex");
   const res = await fetch(`${API_BASE}${path}${query ? `?${query}` : ""}`, {
     headers: {
-      accept: "application/json",
+      accept: "application/json, text/plain, */*",
+      "accept-language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+      baggage: `sentry-environment=production,sentry-release=bbe82c859c5f-wt1107014535,sentry-public_key=3a562f2936d0db1c9312a52a3f7da4fa,sentry-trace_id=${traceId},sentry-org_id=164238,sentry-sampled=false,sentry-sample_rand=${Math.random()},sentry-sample_rate=0`,
+      priority: "u=1, i",
       referer: "https://jaegebal.com/",
+      "sec-ch-ua": SEC_CH_UA,
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": '"Windows"',
+      "sec-fetch-dest": "empty",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "same-origin",
+      "sentry-trace": `${traceId}-${spanId}-0`,
       "user-agent": USER_AGENT,
       "x-jdc-app-token": APP_TOKEN,
       "x-jdc-device-id": DEVICE_ID,
@@ -196,7 +210,7 @@ async function fetchDetailHtml(developId: string): Promise<string> {
       "accept-language": "ko-KR,ko;q=0.9,id-ID;q=0.8,id;q=0.7,en-US;q=0.6,en;q=0.5",
       "cache-control": "max-age=0",
       priority: "u=0, i",
-      "sec-ch-ua": '"Google Chrome";v="155", "Chromium";v="155", "Not(A:Brand";v="24"',
+      "sec-ch-ua": SEC_CH_UA,
       "sec-ch-ua-mobile": "?0",
       "sec-ch-ua-platform": '"Windows"',
       "sec-fetch-dest": "document",
