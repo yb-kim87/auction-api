@@ -479,7 +479,6 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   async start(codes: string[], force = false, all = false, triggeredBy: "manual" | "auto" = "manual"): Promise<JaegebalSyncStatus> {
     if (this.status.running) return this.status;
     const list = all ? Object.keys(DISTRICT_NAMES) : Array.from(new Set((codes ?? []).map((c) => String(c).trim())));
-    if (!list.length) throw new BadRequestException("수집할 구 코드를 지정하세요. (예: 11560)");
     if (list.some((c) => !DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
     const startedAt = new Date();
     this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, all: false, trigger: triggeredBy, changes: [] };
@@ -606,8 +605,9 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   private async run(codes: string[], force: boolean) {
     try {
       const recent = force ? new Set<string>() : await this.recentlySyncedCodes();
-      if (codes.length && codes.every((c) => recent.has(c))) {
-        this.status.results = codes.map((code) => ({ code, name: DISTRICT_NAMES[code] ?? code, warning: `최근 ${MIN_RESYNC_HOURS}시간 안에 이 구를 이미 수집해서 건너뜁니다.` }));
+      // 구를 지정하지 않으면(기본) 전체 갱신이라, 최근 MIN_RESYNC_HOURS 안에 수집한 지역이 하나라도 있으면 건너뛴다.
+      if (codes.length ? codes.every((c) => recent.has(c)) : recent.size > 0) {
+        this.status.results = (codes.length ? codes : ["전체"]).map((code) => ({ code, name: DISTRICT_NAMES[code] ?? code, warning: `최근 ${MIN_RESYNC_HOURS}시간 안에 이미 수집해서 건너뜁니다.` }));
         await this.saveProgress();
         return;
       }
@@ -703,7 +703,6 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
       throw new BadRequestException("실행 시각은 한국시간 00:00~23:59여야 합니다.");
     }
     if (codes.some((c) => !DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
-    if (enabled && !codes.length) throw new BadRequestException("자동 업데이트할 구를 먼저 선택하세요.");
     const now = new Date();
     let nextRunAt = cur.nextRunAt;
     if (!enabled) {
@@ -724,10 +723,10 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   async tickAuto(now = new Date()): Promise<void> {
     if (this.status.running || this.autoBusy) return;
     const row = await this.autoRepo.findOne({ where: { id: AUTO_ID } });
-    if (!row || !row.enabled || !row.codes?.length || !row.nextRunAt || row.nextRunAt.getTime() > now.getTime()) return;
+    if (!row || !row.enabled || !row.nextRunAt || row.nextRunAt.getTime() > now.getTime()) return;
     this.autoBusy = true;
     try {
-      await this.start(row.codes, false, false, "auto");
+      await this.start([], false, false, "auto");
     } catch (e) {
       // 시작 자체가 실패하면 1분마다 되풀이하지 않도록 하루 뒤로 미룬다.
       this.logger.error(`구역 자동 업데이트 시작 실패: ${e}`);
