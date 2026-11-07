@@ -26,10 +26,11 @@ export class RedevelopmentResearchController {
   /** 재개발닷컴 구역을 **지정한 구만**(최대 3개, 요청 간 30초) 가져와 반영한다(백그라운드). 새 구역 추가·단계 갱신,
    * 수집에 없는 구역은 삭제하지 않고 `missingSince`만 표시한다. 진행은 `jaegebal-sync/status`로 확인한다. */
   @Post("jaegebal-sync")
-  async startJaegebalSync(@Headers() headers: Record<string, string>, @Body() body: { codes?: string[]; force?: boolean; all?: boolean }) {
+  async startJaegebalSync(@Headers() headers: Record<string, string>, @Body() body: { codes?: string[]; force?: boolean; all?: boolean; tileFrom?: number; tileTo?: number }) {
     requireAdmin(getAuthContext(headers));
     // 구가 3개를 넘거나 all=true(서울 25개 구 전체)면 느린 간격(요청 60초·구 사이 120초, 약 75분)으로 순차 수집하고 첫 보안 확인에서 중단한다.
-    return this.jaegebalSync.start(Array.isArray(body?.codes) ? body.codes : [], body?.force === true, body?.all === true);
+    const tileRange = body?.tileFrom != null || body?.tileTo != null ? { from: Number(body.tileFrom), to: Number(body.tileTo) } : undefined;
+    return this.jaegebalSync.start(Array.isArray(body?.codes) ? body.codes : [], body?.force === true, body?.all === true, "manual", tileRange);
   }
 
   @Get("jaegebal-sync/status")

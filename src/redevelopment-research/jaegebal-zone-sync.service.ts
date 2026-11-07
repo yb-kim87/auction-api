@@ -14,7 +14,7 @@ const API_BASE = "https://jaegebal.com/api";
 // 사이트 JS에 공개된 값. 사이트 배포로 바뀌면 환경변수로 재배포 없이 교체한다.
 const SIGNING_KEY = process.env.JDC_SIGNING_KEY || "57bfe0da55e35b096fd0a4ac27ca2c35b40f13e2827442e4771c999b2cec1c74";
 const APP_TOKEN = process.env.JDC_APP_TOKEN || "0418b9cadfb234a22035c05e982492cf02b62fa91bc89e217f8f93c7e6f0e10f";
-const DEVICE_ID = process.env.JDC_DEVICE_ID || "web;b4c8abd4-6616-4a16-b707-dc14a9f7aa99";
+const DEVICE_ID = process.env.JDC_DEVICE_ID || "web;decd944b-7010-4a96-8d4c-983685d7570a";
 /** 브라우저가 실제로 보낸 서명 뒤쪽 값(2026-11-07 캡처, 서명 해시는 요청마다 새로 계산). */
 const BEHAVIOR = "1.2a.p7.1.0.0.0.0.0.0.0.0";
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36";
@@ -162,7 +162,7 @@ export type DistrictSyncResult = {
   markedMissing?: number;
   restored?: number;
   /** tiles = 경계까지 정밀하게 받아 덮어씀(타일 요청), quick = 큰 범위 1회로 경계 외 정보만 갱신(경계는 새 구역만 타일로). */
-  mode?: "tiles" | "quick";
+  mode?: "tiles" | "quick" | "partial";
   warning?: string;
   error?: string;
 };
@@ -181,6 +181,8 @@ export type JaegebalSyncStatus = {
   trigger: "manual" | "auto";
   /** 지금 하는 일(예: "경계 포함 전체 받는 중 — 타일 3/12"). 화면의 진행 표시용이며 실행이 끝나면 비운다. */
   phase?: string | null;
+  /** 나눠서 실행(타일 범위) 중이면 그 범위와 전체 타일 수(1부터). */
+  tileRange?: { from: number; to: number; total?: number } | null;
   /** 기존 구역의 단계·사업유형 변화(최대 MAX_CHANGE_LOG건). */
   changes: Array<{ key: string; name: string; field: "stage" | "projectType" | "new" | "missing" | "restored" | "stats"; from?: string | null; to?: string | null }>;
 };
@@ -508,12 +510,15 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** 지정한 구(또는 `all=true`면 서울 25개 구 전체)를 업데이트한다. 구가 3개를 넘으면 자동으로 느린 간격(요청 60초·구 사이 120초)을 쓴다. */
-  async start(codes: string[], force = false, all = false, triggeredBy: "manual" | "auto" = "manual"): Promise<JaegebalSyncStatus> {
+  async start(codes: string[], force = false, all = false, triggeredBy: "manual" | "auto" = "manual", tileRange?: { from: number; to: number }): Promise<JaegebalSyncStatus> {
     if (this.status.running) return this.status;
-    const list = all ? Object.keys(DISTRICT_NAMES) : Array.from(new Set((codes ?? []).map((c) => String(c).trim())));
-    if (list.some((c) => !DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
+    if (tileRange && (!Number.isInteger(tileRange.from) || !Number.isInteger(tileRange.to) || tileRange.from < 1 || tileRange.to < tileRange.from)) {
+      throw new BadRequestException("타일 범위가 올바르지 않습니다(from ≥ 1, to ≥ from).");
+    }
+    const list = tileRange ? [`타일 ${tileRange.from}-${tileRange.to}`] : all ? Object.keys(DISTRICT_NAMES) : Array.from(new Set((codes ?? []).map((c) => String(c).trim())));
+    if (!tileRange && list.some((c) => !DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
     const startedAt = new Date();
-    this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, all: false, trigger: triggeredBy, changes: [] };
+    this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, all: false, trigger: triggeredBy, changes: [], tileRange: tileRange ? { ...tileRange } : null };
     this.pending = [];
     this.counts = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0, stats: 0 };
     this.runId = null;
@@ -522,7 +527,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     } catch (e) {
       this.logger.error(`구역 업데이트 실행 기록 생성 실패(수집은 계속): ${e}`);
     }
-    void this.run(list, force).catch((e) => this.logger.error(`재개발닷컴 구역 수집 실패: ${e}`));
+    void this.run(list, force, tileRange).catch((e) => this.logger.error(`재개발닷컴 구역 수집 실패: ${e}`));
     return this.status;
   }
 
@@ -664,11 +669,12 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`구역 업데이트: ${text}`);
   }
 
-  private async run(codes: string[], force: boolean) {
+  private async run(codes: string[], force: boolean, tileRange?: { from: number; to: number }) {
     try {
-      const recent = force ? new Set<string>() : await this.recentlySyncedCodes();
+      const partial = !!tileRange; // 나눠서 실행: 지정한 타일만 받아 반영하고, 사라짐 표시·전체 갱신 기록은 건드리지 않는다.
+      const recent = force || partial ? new Set<string>() : await this.recentlySyncedCodes();
       // 구를 지정하지 않으면(기본) 전체 갱신이라, 최근 MIN_RESYNC_HOURS 안에 "전체 갱신"을 성공한 적이 있을 때만 건너뛴다(구 단위 수집 기록은 무관).
-      if (!force && (codes.length ? codes.every((c) => recent.has(c)) : await this.fullSyncedRecently())) {
+      if (!force && !partial && (codes.length ? codes.every((c) => recent.has(c)) : await this.fullSyncedRecently())) {
         this.status.results = (codes.length ? codes : ["전체"]).map((code) => ({ code, name: DISTRICT_NAMES[code] ?? code, warning: `최근 ${MIN_RESYNC_HOURS}시간 안에 이미 수집해서 건너뜁니다.` }));
         await this.saveProgress();
         return;
@@ -685,7 +691,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         }
       };
       // 정밀 경계 갱신 기록이 없거나 force면 타일 전체를 받아 경계까지 덮어쓴다. 그 뒤로는 큰 범위 1회로 경계 외 정보만 갱신한다.
-      const accurate = force || !(await this.tilesSyncDone());
+      const accurate = force || partial || !(await this.tilesSyncDone());
       // 경계를 세밀하게 받은 구역 id — 큰 범위 응답의 거친 경계로 기존 경계를 덮어쓰지 않도록 구분한다.
       const fineIds = new Set<number>();
       try {
@@ -702,9 +708,14 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
           }
         }
         const tileList = [...needTiles].sort();
-        for (let k = 0; k < tileList.length; k++) {
+        if (partial) this.status.tileRange = { from: tileRange!.from, to: tileRange!.to, total: tileList.length };
+        const kFrom = partial ? tileRange!.from - 1 : 0;
+        const kTo = partial ? Math.min(tileRange!.to, tileList.length) : tileList.length;
+        if (partial && kFrom >= tileList.length) throw new BadRequestException(`받을 타일은 전체 ${tileList.length}개입니다(요청: ${tileRange!.from}번부터).`);
+        if (partial) byId.clear(); // 큰 범위 응답은 어떤 타일을 받을지 정하는 데만 쓰고, 반영은 지정한 타일 것만 한다.
+        for (let k = kFrom; k < kTo; k++) {
           await sleep(TILE_GAP_MS);
-          this.setPhase(`${accurate ? "경계 포함 전체" : "새 구역 경계"} 받는 중 — 타일 ${k + 1}/${tileList.length}`);
+          this.setPhase(`${partial ? "나눠서" : accurate ? "경계 포함 전체" : "새 구역 경계"} 받는 중 — 타일 ${k + 1}/${tileList.length}`);
           const list = await apiGet<RawDevelop[]>("/develops", tileQuery(tileList[k]));
           take(list);
           for (const d of list) fineIds.add(d.id);
@@ -738,10 +749,10 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
       for (const [regionIdx, regionName] of regions.entries()) {
         this.setPhase(`지역별 반영 중 — ${regionIdx + 1}/${regions.length} ${regionName}`);
         const code = codeOf(regionName);
-        const result: DistrictSyncResult = { code, name: regionName, mode: accurate ? "tiles" : "quick" };
+        const result: DistrictSyncResult = { code, name: regionName, mode: partial ? "partial" : accurate ? "tiles" : "quick" };
         this.status.results.push(result);
         try {
-          await this.apply(regionName, groups.get(regionName) ?? [], result, accurate, fineIds);
+          await this.apply(regionName, groups.get(regionName) ?? [], result, accurate, fineIds, partial);
           await this.flushChanges();
           this.lastSyncAt.set(code, Date.now());
         } catch (e) {
@@ -749,7 +760,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         }
         await this.saveProgress();
       }
-      if (!codes.length && regions.length && this.status.results.every((r) => !r.error)) {
+      if (!partial && !codes.length && regions.length && this.status.results.every((r) => !r.error)) {
         this.lastFullSyncAt = Date.now();
         if (accurate) this.lastTilesSyncAt = Date.now();
       }
@@ -987,7 +998,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** `updatePolygon`이 false면 기존 구역의 경계는 비교·덮어쓰기를 하지 않는다(큰 범위 응답의 거친 경계 보호). 새 구역은 항상 받은 경계로 만든다. */
-  private async apply(regionName: string, items: RawDevelop[], result: DistrictSyncResult, updatePolygon = true, fineIds?: Set<number>) {
+  private async apply(regionName: string, items: RawDevelop[], result: DistrictSyncResult, updatePolygon = true, fineIds?: Set<number>, skipMissing = false) {
     const now = new Date();
     const seenKeys = new Set<string>();
     result.fetched = items.length;
@@ -1059,7 +1070,8 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    await this.markMissing(regionName, seenKeys, now, result);
+    if (skipMissing) result.markedMissing = 0;
+    else await this.markMissing(regionName, seenKeys, now, result);
   }
 
   /** DB에는 있는데 이번 수집 응답에 없는 이 구의 구역에 `missingSince`를 찍는다(삭제 안 함). */
