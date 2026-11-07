@@ -10,7 +10,7 @@ const SIGNING_KEY = process.env.JDC_SIGNING_KEY || "57bfe0da55e35b096fd0a4ac27ca
 const APP_TOKEN = process.env.JDC_APP_TOKEN || "0418b9cadfb234a22035c05e982492cf02b62fa91bc89e217f8f93c7e6f0e10f";
 /** 기존 구역 업데이트와 같은 정직한 행동값(사람 흉내 금지). */
 const BEHAVIOR = "1.0.0.0.0.0.0.0.0.0.0.1";
-const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36";
+const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36";
 const TILE_GAP_MS = 30_000;
 const MAX_TILES_PER_RUN = 5;
 const DEVICE_ID_RE = /^web;[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -117,8 +117,17 @@ export class JaegebalTileRawService {
     const qs = `min_lat=${a.toFixed(4)}&max_lat=${b.toFixed(4)}&min_lng=${lo.toFixed(4)}&max_lng=${hi.toFixed(4)}&simplify=0.000005&include_completed=true`;
     const res = await fetch(`${API_BASE}/develops?${qs}`, {
       headers: {
-        accept: "application/json",
+        // 브라우저 요청과 같은 고정 헤더(세션마다 바뀌는 쿠키·sentry·행동값은 보내지 않는다).
+        accept: "application/json, text/plain, */*",
+        "accept-language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+        priority: "u=1, i",
         referer: "https://jaegebal.com/",
+        "sec-ch-ua": '"Not:A-Brand";v="8", "Chromium";v="156", "Google Chrome";v="156"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
         "user-agent": USER_AGENT,
         "x-jdc-app-token": APP_TOKEN,
         "x-jdc-device-id": deviceId,
