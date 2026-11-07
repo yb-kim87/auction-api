@@ -193,36 +193,10 @@ behavior 형식: `1.<경과초>.<마우스이동>.<클릭>.<이동없는클릭>.
 - 갱신 규칙: 응답에 값이 있는 항목만 덮어쓰고 null인 항목은 기존 값 유지. MANUAL 경계 보호와 무관하게 갱신. 지표만 바뀌어도 해당 구역은 "갱신"으로 센다(배포 직후 첫 수집은 대부분 구역이 갱신으로 집계됨). 이력(zone_changes)에는 **주요 지표만** `changeType="stats"`로 구역당 1건 기록한다(세대수·소유자·시공사·총 세대·일반분양·최근 진행 완료일, `TRACKED_STATS`/`diffTrackedStats`; 예: "세대수 1,162세대 → 1,170세대"). 호가·전세가율·평균가 등 매번 움직이는 값은 기록하지 않고, DB에 기존 값이 없던 항목(첫 채움)도 기록하지 않는다. 실행 기록 `statsCount`(마이그레이션 `1784317000000-AddZoneStatsCount`), 이력 탭 "주요 지표 변경" 칩, 텔레그램 요약에 "주요 지표 변경 N" 추가.
 - 프론트 `zoneStatsOf`: 정적 JSON(`jaegebal-zone-stats.json`) 위에 `zone.stats`를 덮어써서 표시(DB에 없는 항목은 정적 값).
 
-## 13. 권리산정기준일 확인 (2026-10-30 추가)
-- 권리산정기준일은 목록(`/api/develops`)에 없고 **구역 상세 페이지 HTML**(`https://jaegebal.com/develops/{id}`)의 `developContext`(`right_basedate`, `right_date_zones`, `area_m2`, `estimated_land_owner_count`, 시공사·세대수·용적률 등)에 있다. `/api/develops/{id}/view`는 **POST 조회수 카운트**(`{"message":"success"}`)라 데이터가 없다(GET으로 부르면 405 — WAF 차단이 아니라 메서드 오류).
-- **서버(Railway)에서는 못 받는다**: 상세 페이지 GET → `202 + x-amzn-waf-action: challenge`(보안 확인 페이지). 우회하지 않는다. 그래서 서버 호출 방식은 만들지 않았다.
-- **채택 방식(사용자 결정 "2번")**: 사람이 인증을 푼 브라우저에서 읽어 코치픽으로 전달.
-  1. 구역 팝업 "권리산정일 확인하기" → 그 구역의 재개발닷컴 상세 페이지를 새 창(`window.open`, opener 유지)으로 연다(보안 확인이 나오면 직접 통과).
-  2. 상세 페이지에서 북마크바의 북마크릿 "코치픽 권리산정일 보내기"를 누르면 페이지의 `right_basedate`/`right_date_zones`를 읽어 `window.opener.postMessage`로 코치픽 창에 전달(대상 origin은 코치픽 주소로 고정). 북마크릿 코드는 팝업의 "사용 방법"에서 생성(`rightDateBookmarklet`, React가 `javascript:` href를 막아 ref로 속성 주입).
-  3. 코치픽 창이 `https://jaegebal.com` origin의 메시지만 받아 `POST /redevelopment-research/zones/:zoneId/right-date`(`saveRightDate`)로 저장. 서버는 구역의 재개발닷컴 id와 `developId` 일치·날짜 형식(YYYY-MM-DD)을 검증하고 `zone.stats`에 `rb`(기준일)·`rz`(일부 구역 기준일)·`rf`(확인 시각)로 저장. 구역 업데이트(sync)는 stats를 병합하므로 지우지 않는다.
-- 구역 1개씩 사람이 눌러야 하는 수동 방식(호출은 사람이 여는 페이지 1회). 새 컬럼·마이그레이션 없음.
-- 검증: 북마크릿 코드는 샘플 HTML로 단위 시험(값 추출·postMessage 전달 OK). 실제 브라우저 연동(opener 유지 여부 — 사이트가 COOP 헤더로 opener를 끊으면 전달 안 됨)은 첫 사용 때 확인 필요.
-
-## 12. 권리산정일·세부내용을 서버가 상세 페이지에서 직접 읽기 (2026-10-31)
-- "권리산정일 확인하기" 버튼은 브라우저 북마크릿 대신 `POST redevelopment-research/zones/:zoneId/right-date/fetch`로 서버가 `https://jaegebal.com/develops/{id}`(HTML)를 받아 읽는다. 쿠키 없이 브라우저 문서 요청 헤더(accept, accept-language, cache-control, priority, sec-ch-ua*, sec-fetch-*, upgrade-insecure-requests, user-agent)를 그대로 보내 Railway에서 200 확인(2026-10-31). 403/405는 우회하지 않고 중단, 같은 구역은 30초 안에 재요청 금지.
-- 읽는 값(구역 `stats` JSON에 저장, 짧은 키): 권리산정일 `rb`·`rz`·`rf`, 진행 현황 `pg`(단계별 완료·완료일)·`ps`(현재 단계 경과일 cur·같은 유형 중앙값 med)·`gn`(최근 고시·공고 8건), 세부내용 `dt`(규제 oh·rt, 토지거래허가 lt, 전매 구분 코드 tr, 추진위·조합 사무실 on·oa·op, 시공사 cs, 신축 아파트명 an, 세대수 hh·hm·hg·hr·hs, 면적 ar, 토지등소유자 ow, 용적률·건폐율 fa·bc, 최고층 mx, 평당 공사비 cc). 값이 있는 항목만 저장.
-- 독산동 979(4143)는 사무실·시공사·세대수가 사이트에 비어 있어 `dt`에 규제·토지거래허가·전매 코드·면적·소유자만 들어감. 추진위·조합 단계 구역에서 사무실 항목이 실제로 채워지는지는 아직 확인하지 못함.
-- 프론트: 구역 팝업 "권리산정일 · 세부내용" 칸에 표시, 확인 결과는 구역 목록 상태에도 반영(팝업 재오픈 시 유지). 권리산정일 이후 연식 물건은 조사 표에서 보라색·"권리산정 이후" 배지(연도 비교, 같은 해는 표시 안 함).
-
-## 14. 경기권 재개발 구역 추가 (2026-11-07)
-
-**요청**: "재개발 구역 중 서울만 했었는데 경기권 재개발 구역도 재개발닷컴에서 추가해줘."
-
-**확인**: 저장 raw(`young/_jaegebal_saved/seoul_all_raw.json`)에 서울 경계 박스에 걸린 경기 구역이 이미 있었고 `region_code`가 법정동 시군구 코드(41131 성남 수정구, 41210 광명, 41450 하남, 41192/41194/41196 부천 원미·소사·오정 등)였다. 즉 재개발닷컴은 경기도 같은 코드 체계로 `/api/common/regions/{코드}`·`/api/develops`를 쓴다. 기존에는 코드표가 서울뿐이라 이런 경기 구역의 `region`이 빈 값으로 저장되고, 경기 코드는 "알 수 없는 구 코드"로 거부됐다.
-
-**변경**
-- 서버(`jaegebal-zone-sync.service.ts`): `GYEONGGI_DISTRICT_NAMES`(경기 44개 시·군·구) + `DISTRICT_NAMES`(서울+경기) 추가. 구 코드 검증·텔레그램 문구·구역 `region`을 이 표로 처리. 구가 있는 시는 `"수원시 장안구"`처럼 시+구로 저장. 표에 없는 41xxx 코드는 같은 시 대표 코드(끝자리 0)로 이름을 찾는다(`districtNameOf` — 화성시가 구를 신설해 사이트가 새 코드를 쓰는 경우 대비). 사라진 구역 판정 기준 이름을 사이트 응답 이름(`region.name`) 대신 코드표 이름으로 바꿨다(경기 표기 차이에 영향받지 않게). `all=true`는 여전히 서울 25개 구만.
-- 프론트 `RedevelopmentJaegebalSync.tsx`: 구 선택을 "서울"/"경기" 묶음으로 나누고 묶음별 전체 선택/해제 추가(전체 선택은 서울+경기 69개).
-- 프론트 `RedevelopmentEditTab.tsx`: 구역 목록 묶음 이름을 `districtFromRegion`으로 계산 — 서울 "강동구", 경기 "수원시 장안구"·"광명시"(카카오 역지오코딩 `region_2depth_name`과 같은 모양).
-- 프론트 `RedevelopmentEditMapView.tsx`: 구/동 필터를 골랐는데 서울 경계 파일(`/geo/seoul-*.json`)에 없으면(경기) 그 지역 구역 좌표 범위로 지도를 옮긴다(`focusPoints`).
-
-**주의/미확인**
-- 운영 수집은 아직 안 함 — 화면에서 경기 지역을 골라 수동 업데이트해야 들어온다. 경기 전체(44개)는 느린 순차 모드로 약 130분.
-- 화성시(41590)는 2026년 구 신설로 사이트가 다른 코드를 쓸 수 있다. 41590 수집이 오류 나면 사이트 코드를 확인해 표를 고칠 것.
-- 서울 구를 다시 수집하면 경계 박스에 걸린 기존 경기 구역의 `region`이 빈 값 → 경기 지역 이름으로 바뀐다(정상, "갱신"으로 집계).
-- 타입 검사(auction-api·auction `tsc --noEmit`) 통과, `districtFromRegion` 단위 확인. 실제 수집 검증은 배포 후 1개 지역으로.
+## 13. 구 경계(조회 범위) 캐시 — 2026-11-07
+- 구역도 업데이트는 구마다 ①구 경계 받기 ②30초 대기 ③`/develops`를 bbox로 1회 요청했다. 경계는 재개발닷컴(`/common/regions/{코드}`)에서 받았다.
+- 구 경계(최소·최대 위경도 + `BOX_MARGIN`)를 국토부 VWorld 시군구 경계(`LT_C_ADSIGG_INFO`, `sig_cd` = 구 코드)에서 받아 `redevelopment_district_bbox` 테이블(마이그레이션 `1784318000000`)에 저장한다.
+- 비교: 금천구(11545)·부천시 원미구(41192)를 재개발닷컴 경계와 비교해 위경도 최소·최대 차이가 0.00001도(약 1m) 이내로 일치했다.
+- 재개발닷컴에는 `/develops` 1회만 요청한다(경계 요청·구 안 대기 삭제). 구와 구 사이 대기(`districtGap`)는 그대로.
+- VWorld 키는 `VWORLD_API_KEY` + 등록 도메인(`VWORLD_REGISTERED_DOMAIN`, 기본값은 vat 컨트롤러와 동일)이 필요하다.
+- 경계가 바뀌어 다시 받아야 하면 해당 구 행을 지우면 다음 수집에서 다시 받는다.

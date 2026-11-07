@@ -6,6 +6,7 @@ import { MoreThan, Repository } from "typeorm";
 import { RedevelopmentPoint, RedevelopmentZone } from "../redevelopment/entities/redevelopment-zone.entity";
 import { TelegramAlertService } from "../kakao-notify/telegram-alert.service";
 import { RedevelopmentZoneAutoSync } from "./entities/redevelopment-zone-auto-sync.entity";
+import { RedevelopmentDistrictBbox } from "./entities/redevelopment-district-bbox.entity";
 import { RedevelopmentZoneChange } from "./entities/redevelopment-zone-change.entity";
 import { RedevelopmentZoneSyncRun, ZoneChangeType } from "./entities/redevelopment-zone-sync-run.entity";
 
@@ -28,7 +29,6 @@ const MIN_RESYNC_HOURS = 6;
 const RIGHT_DATE_MIN_GAP_MS = 30_000;
 /** 느린 순차 모드(구 4개 이상, 사용자 결정 2026-10-30) — 구 하나 안에서 요청 사이 60초, 구와 구 사이 120초.
  * 구당 약 3분, 25개 구 약 75분(분당 0.7건). 첫 보안 확인에서 전체 중단, 구 오류가 연속 2번이면 중단. */
-const ALL_REQUEST_GAP_MS = 60_000;
 const ALL_DISTRICT_GAP_MS = 120_000;
 const ALL_MAX_CONSECUTIVE_ERRORS = 2;
 const BOX_MARGIN = 0.002;
@@ -332,6 +332,32 @@ function flatPoints(a: unknown, out: number[][] = []): number[][] {
   return out;
 }
 
+/** 국토부 VWorld 시군구 경계(LT_C_ADSIGG_INFO)에서 구 하나의 조회 범위를 계산한다(경계 다각형 최소·최대 + BOX_MARGIN). */
+async function fetchDistrictBbox(code: string): Promise<{ minLat: number; maxLat: number; minLng: number; maxLng: number }> {
+  const key = process.env.VWORLD_API_KEY;
+  if (!key) throw new Error("VWORLD_API_KEY가 없어 구 경계를 받을 수 없습니다.");
+  const url = new URL("https://api.vworld.kr/req/data");
+  url.searchParams.set("service", "data");
+  url.searchParams.set("request", "GetFeature");
+  url.searchParams.set("version", "2.0");
+  url.searchParams.set("data", "LT_C_ADSIGG_INFO");
+  url.searchParams.set("key", key);
+  url.searchParams.set("domain", process.env.VWORLD_REGISTERED_DOMAIN ?? "https://auction-seven-tan.vercel.app");
+  url.searchParams.set("attrFilter", `sig_cd:=:${code}`);
+  url.searchParams.set("geometry", "true");
+  url.searchParams.set("size", "10");
+  url.searchParams.set("format", "json");
+  url.searchParams.set("crs", "EPSG:4326");
+  const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+  if (!res.ok) throw new Error(`VWorld 구 경계 HTTP ${res.status} (${code})`);
+  const body = (await res.json()) as { response?: { status?: string; result?: { featureCollection?: { features?: Array<{ geometry?: { coordinates?: unknown } }> } } } };
+  const pts = (body.response?.result?.featureCollection?.features ?? []).flatMap((f) => flatPoints(f.geometry?.coordinates));
+  if (body.response?.status !== "OK" || !pts.length) throw new Error(`VWorld에서 구 경계를 찾지 못했습니다(${code}, ${body.response?.status ?? "응답 없음"}).`);
+  const lngs = pts.map((p) => p[0]);
+  const lats = pts.map((p) => p[1]);
+  return { minLat: Math.min(...lats) - BOX_MARGIN, maxLat: Math.max(...lats) + BOX_MARGIN, minLng: Math.min(...lngs) - BOX_MARGIN, maxLng: Math.max(...lngs) + BOX_MARGIN };
+}
+
 /** 바깥 고리 → 6자리 반올림, 닫힘 점 제거(기존 import와 동일 규칙). 3점 미만이면 null. */
 function ringToPolygon(ring: number[][] | undefined): RedevelopmentPoint[] | null {
   if (!Array.isArray(ring)) return null;
@@ -468,6 +494,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     @InjectRepository(RedevelopmentZoneSyncRun) private readonly runs: Repository<RedevelopmentZoneSyncRun>,
     @InjectRepository(RedevelopmentZoneChange) private readonly changes: Repository<RedevelopmentZoneChange>,
     @InjectRepository(RedevelopmentZoneAutoSync) private readonly autoRepo: Repository<RedevelopmentZoneAutoSync>,
+    @InjectRepository(RedevelopmentDistrictBbox) private readonly bboxRepo: Repository<RedevelopmentDistrictBbox>,
     private readonly telegram: TelegramAlertService,
   ) {}
 
@@ -605,8 +632,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async run(codes: string[], force: boolean, all = false) {
-    // 전체 순차 모드는 더 천천히: 구 안에서 60초, 구와 구 사이 120초. 기본 모드는 모두 30초.
-    const innerGap = all ? ALL_REQUEST_GAP_MS : REQUEST_GAP_MS;
+    // 전체 순차 모드는 더 천천히: 구와 구 사이 120초. 기본 모드는 30초. (구 경계는 VWorld에서 받아 저장하므로 구 안 대기는 없다)
     const districtGap = all ? ALL_DISTRICT_GAP_MS : REQUEST_GAP_MS;
     try {
       let requested = false;
@@ -623,20 +649,15 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
           }
           if (requested) await sleep(districtGap);
           requested = true;
-          const region = await apiGet<{ name: string; rings: unknown }>(`/common/regions/${code}`);
-          result.name = region.name;
-          const pts = flatPoints(region.rings);
-          const lngs = pts.map((p) => p[0]);
-          const lats = pts.map((p) => p[1]);
-          if (!pts.length) throw new Error("구 경계 정보가 비어 있습니다.");
-          const query =
-            `min_lat=${Math.min(...lats) - BOX_MARGIN}&max_lat=${Math.max(...lats) + BOX_MARGIN}` +
-            `&min_lng=${Math.min(...lngs) - BOX_MARGIN}&max_lng=${Math.max(...lngs) + BOX_MARGIN}` +
-            `&simplify=0.0001&include_completed=true`;
-          await sleep(innerGap);
+          // 구 경계(조회 범위)는 거의 바뀌지 않아 한 번만 받아 DB에 저장한다. 재개발닷컴이 아니라 국토부 VWorld 시군구 경계에서 받는다
+          // (2026-11-07 금천구·부천시 원미구로 재개발닷컴 경계와 비교해 위경도 최소·최대가 0.00001도 이내로 일치). 재개발닷컴에는 구역 목록 1회만 요청한다.
+          let box = await this.bboxRepo.findOne({ where: { code } });
+          if (!box) box = await this.bboxRepo.save(this.bboxRepo.create({ code, ...(await fetchDistrictBbox(code)) }));
+          result.name = DISTRICT_NAMES[code] ?? code;
+          const query = `min_lat=${box.minLat}&max_lat=${box.maxLat}&min_lng=${box.minLng}&max_lng=${box.maxLng}&simplify=0.0001&include_completed=true`;
           const items = (await apiGet<RawDevelop[]>("/develops", query)).filter((x) => Array.isArray(x.areas) && x.areas.length);
           // 사라진 구역 판정은 구역 레코드의 region과 같은 이름(코드표)으로 한다 — 사이트의 경기 지역 이름 표기("장안구"/"수원시 장안구")에 좌우되지 않게.
-          await this.apply(DISTRICT_NAMES[code] ?? region.name, items, result);
+          await this.apply(DISTRICT_NAMES[code] ?? code, items, result);
           await this.flushChanges();
           this.lastSyncAt.set(code, Date.now());
           consecutiveErrors = 0;

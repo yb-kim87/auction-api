@@ -18,6 +18,7 @@ import { ZoneUpdateReminder } from "./entities/zone-update-reminder.entity";
 import { RedevelopmentZoneSyncRun } from "./entities/redevelopment-zone-sync-run.entity";
 import { RedevelopmentZoneChange } from "./entities/redevelopment-zone-change.entity";
 import { RedevelopmentZoneAutoSync } from "./entities/redevelopment-zone-auto-sync.entity";
+import { RedevelopmentDistrictBbox } from "./entities/redevelopment-district-bbox.entity";
 import { ZoneUpdateReminderService } from "./zone-update-reminder.service";
 import { JaegebalZoneSyncService } from "./jaegebal-zone-sync.service";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
@@ -42,6 +43,7 @@ import { RedevelopmentResearchService } from "./redevelopment-research.service";
       RedevelopmentZoneSyncRun,
       RedevelopmentZoneChange,
       RedevelopmentZoneAutoSync,
+      RedevelopmentDistrictBbox,
     ]),
     KakaoNotifyModule,
   ],
