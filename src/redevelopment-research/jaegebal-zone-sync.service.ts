@@ -602,11 +602,23 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     return out;
   }
 
+  /** 최근 MIN_RESYNC_HOURS 안에 구를 지정하지 않은 전체 갱신이 성공했는지 — 메모리와 DB 실행 기록으로 판단한다. */
+  private async fullSyncedRecently(): Promise<boolean> {
+    if (this.lastFullSyncAt && Date.now() - this.lastFullSyncAt < MIN_RESYNC_HOURS * 3600_000) return true;
+    try {
+      const rows = await this.runs.find({ where: { startedAt: MoreThan(new Date(Date.now() - MIN_RESYNC_HOURS * 3600_000)) } });
+      return rows.some((row) => (row.codes ?? []).length === 0 && ((row.results ?? []) as DistrictSyncResult[]).some((r) => r?.fetched != null && !r.error));
+    } catch (e) {
+      this.logger.error(`최근 전체 갱신 기록 조회 실패(메모리 기준으로 판단): ${e}`);
+      return false;
+    }
+  }
+
   private async run(codes: string[], force: boolean) {
     try {
       const recent = force ? new Set<string>() : await this.recentlySyncedCodes();
-      // 구를 지정하지 않으면(기본) 전체 갱신이라, 최근 MIN_RESYNC_HOURS 안에 수집한 지역이 하나라도 있으면 건너뛴다.
-      if (codes.length ? codes.every((c) => recent.has(c)) : recent.size > 0) {
+      // 구를 지정하지 않으면(기본) 전체 갱신이라, 최근 MIN_RESYNC_HOURS 안에 "전체 갱신"을 성공한 적이 있을 때만 건너뛴다(구 단위 수집 기록은 무관).
+      if (codes.length ? codes.every((c) => recent.has(c)) : await this.fullSyncedRecently()) {
         this.status.results = (codes.length ? codes : ["전체"]).map((code) => ({ code, name: DISTRICT_NAMES[code] ?? code, warning: `최근 ${MIN_RESYNC_HOURS}시간 안에 이미 수집해서 건너뜁니다.` }));
         await this.saveProgress();
         return;
@@ -652,6 +664,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         }
         await this.saveProgress();
       }
+      if (!codes.length && regions.length && this.status.results.every((r) => !r.error)) this.lastFullSyncAt = Date.now();
       if (unknown) {
         this.logger.warn(`구역 업데이트: 지역 코드를 알 수 없어 반영하지 않은 구역 ${unknown}건`);
       }
@@ -775,7 +788,12 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     const title = st.blocked ? "중단(보안 확인)" : hasProblem ? "일부 오류" : ok.length ? "완료" : "건너뜀";
     const total = ok.reduce((n, r) => n + (r.fetched ?? 0), 0);
     const lines = [`${icon} 재개발닷컴 구역 ${kind} 업데이트 ${title}`];
-    lines.push(`대상 ${st.codes.length}개 구: ${st.codes.map((c) => DISTRICT_NAMES[c] ?? c).join(", ")} · 소요 ${took}`);
+    const targetNames = st.codes.map((c) => DISTRICT_NAMES[c] ?? c);
+    lines.push(
+      st.codes.length
+        ? `대상 ${st.codes.length}개 지역: ${targetNames.slice(0, 8).join(", ")}${targetNames.length > 8 ? ` 외 ${targetNames.length - 8}개` : ""} · 소요 ${took}`
+        : `대상: 서울·경기·인천 전체 · 소요 ${took}`,
+    );
     if (ok.length) {
       lines.push(`${ok.length}개 구에서 구역 ${total.toLocaleString("ko-KR")}건 확인 · 신규 ${counts.new} · 단계 변경 ${counts.stage} · 사업유형 변경 ${counts.projectType} · 사라짐 ${counts.missing} · 복구 ${counts.restored}${counts.stats ? ` · 주요 지표 변경 ${counts.stats}` : ""}`);
       const stageChanges = st.changes.filter((c) => c.field === "stage");
@@ -796,6 +814,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
 
   /** 같은 구를 연달아 다시 요청하지 않도록 구 코드별 마지막 수집 시각을 메모리에 둔다(서버 재시작 시 초기화). */
   private readonly lastSyncAt = new Map<string, number>();
+  private lastFullSyncAt = 0;
 
   /** 권리산정기준일을 서버가 재개발닷컴 상세 페이지(HTML)에서 직접 읽어 저장한다(2026-10-31, 브라우저 방식 대체).
    * 페이지 안의 `right_basedate`·`right_date_zones` 값을 읽는다. 403/405는 우회하지 않고 멈춘다. 같은 구역은 연달아 요청하지 않는다. */
