@@ -68,7 +68,7 @@ export class AuctionZoneCoordService {
     const rows = await this.zoneRepo.find({ where: { sourceDatasetId: "jaegebal" }, select: ["id", "polygon"] });
     // 지역명(예: "부천시 소사구")에서 서울 밖 시 이름을 뽑는다.
     const cityRows = await this.zoneRepo.find({ where: { sourceDatasetId: "jaegebal" }, select: ["id", "region"] });
-    this.outsideCities = new Set(cityRows.map((z) => /([가-힣]+시)/.exec(z.region ?? "")?.[1]).filter((c): c is string => !!c && !c.startsWith("서울")));
+    this.outsideCities = new Set(cityRows.map((z) => /([가-힣]+[시군])/.exec(z.region ?? "")?.[1]).filter((c): c is string => !!c && !c.startsWith("서울")));
     this.zones = rows
       .filter((z) => Array.isArray(z.polygon) && z.polygon.length >= 3)
       .map((z) => {
