@@ -20,6 +20,8 @@ import { RedevelopmentZoneChange } from "./entities/redevelopment-zone-change.en
 import { RedevelopmentZoneAutoSync } from "./entities/redevelopment-zone-auto-sync.entity";
 import { ZoneUpdateReminderService } from "./zone-update-reminder.service";
 import { JaegebalZoneSyncService } from "./jaegebal-zone-sync.service";
+import { JaegebalTileRaw } from "./entities/jaegebal-tile-raw.entity";
+import { JaegebalTileRawService } from "./jaegebal-tile-raw.service";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
 import { KakaoNotifyModule } from "../kakao-notify/kakao-notify.module";
 import { NaverLandService } from "./naver-land.service";
@@ -42,11 +44,12 @@ import { RedevelopmentResearchService } from "./redevelopment-research.service";
       RedevelopmentZoneSyncRun,
       RedevelopmentZoneChange,
       RedevelopmentZoneAutoSync,
+      JaegebalTileRaw,
     ]),
     KakaoNotifyModule,
   ],
   controllers: [RedevelopmentResearchController],
-  providers: [AuctionZoneCoordService, InterestAuctionAlertService, ZoneUpdateReminderService, JaegebalZoneSyncService, RedevelopmentResearchService, NaverLandService, KakaoGeocodeService, MolitTradeClientService, BuildingRegisterService, ZoneBlogService],
+  providers: [AuctionZoneCoordService, InterestAuctionAlertService, ZoneUpdateReminderService, JaegebalZoneSyncService, JaegebalTileRawService, RedevelopmentResearchService, NaverLandService, KakaoGeocodeService, MolitTradeClientService, BuildingRegisterService, ZoneBlogService],
   exports: [AuctionZoneCoordService, InterestAuctionAlertService],
 })
 export class RedevelopmentResearchModule {}

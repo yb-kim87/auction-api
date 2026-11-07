@@ -59,6 +59,7 @@ import { RedevelopmentZoneBlogNote } from "./redevelopment-research/entities/red
 import { InterestAuctionAlert } from "./redevelopment-research/entities/interest-auction-alert.entity";
 import { ZoneUpdateReminder } from "./redevelopment-research/entities/zone-update-reminder.entity";
 import { RedevelopmentZoneSyncRun } from "./redevelopment-research/entities/redevelopment-zone-sync-run.entity";
+import { JaegebalTileRaw } from "./redevelopment-research/entities/jaegebal-tile-raw.entity";
 import { RedevelopmentZoneChange } from "./redevelopment-research/entities/redevelopment-zone-change.entity";
 import { RedevelopmentZoneAutoSync } from "./redevelopment-research/entities/redevelopment-zone-auto-sync.entity";
 import { AddressGeocodeCache } from "./redevelopment-research/entities/address-geocode-cache.entity";
@@ -132,6 +133,7 @@ const entities = [
   InterestAuctionAlert,
   ZoneUpdateReminder,
   RedevelopmentZoneSyncRun,
+  JaegebalTileRaw,
   RedevelopmentZoneChange,
   RedevelopmentZoneAutoSync,
   AddressGeocodeCache,

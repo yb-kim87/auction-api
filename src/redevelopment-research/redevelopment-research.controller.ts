@@ -2,6 +2,7 @@ import { BadRequestException, Body, Controller, Get, Headers, Param, Patch, Post
 import { getAuthContext, requireAdmin } from "../common/auth-context";
 import { AuctionZoneCoordService } from "./auction-zone-coord.service";
 import { JaegebalZoneSyncService } from "./jaegebal-zone-sync.service";
+import { JaegebalTileRawService } from "./jaegebal-tile-raw.service";
 import { RedevelopmentResearchService } from "./redevelopment-research.service";
 import { ZoneBlogService } from "./zone-blog.service";
 
@@ -21,7 +22,33 @@ export class RedevelopmentResearchController {
     private readonly zoneBlog: ZoneBlogService,
     private readonly auctionCoord: AuctionZoneCoordService,
     private readonly jaegebalSync: JaegebalZoneSyncService,
+    private readonly tileRaw: JaegebalTileRawService,
   ) {}
+
+  /** 타일 원본 수집(1~21번, 관리자가 넣은 device-id로 서버가 호출해 DB에 저장). 기존 구역 업데이트와 별개. */
+  @Post("jaegebal-tiles/run")
+  async startTileRaw(@Headers() headers: Record<string, string>, @Body() body: { deviceId?: string; from?: number; to?: number }) {
+    requireAdmin(getAuthContext(headers));
+    return this.tileRaw.start(String(body?.deviceId ?? ""), Number(body?.from), Number(body?.to));
+  }
+
+  @Get("jaegebal-tiles/status")
+  async tileRawStatus(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.tileRaw.getStatus();
+  }
+
+  @Get("jaegebal-tiles")
+  async tileRawList(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.tileRaw.list();
+  }
+
+  @Get("jaegebal-tiles/:no")
+  async tileRawGet(@Headers() headers: Record<string, string>, @Param("no") no: string) {
+    requireAdmin(getAuthContext(headers));
+    return this.tileRaw.get(Number(no));
+  }
 
   /** 재개발닷컴 구역을 **지정한 구만**(최대 3개, 요청 간 30초) 가져와 반영한다(백그라운드). 새 구역 추가·단계 갱신,
    * 수집에 없는 구역은 삭제하지 않고 `missingSince`만 표시한다. 진행은 `jaegebal-sync/status`로 확인한다. */
