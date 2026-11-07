@@ -1003,6 +1003,49 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** 이미 받아 DB에 저장해 둔 타일 원본(jaegebal_tile_raw)의 구역 목록으로 경계·단계·지표를 반영한다(사이트 호출 없음, 사용자 요청 2026-11-07).
+   * 같은 구역이 여러 타일에 있으면 경계 점이 많은 쪽을 쓰고, 사라짐 표시는 하지 않는다(원본이 일부 지역뿐일 수 있어서). */
+  async applyTileRawItems(rawLists: unknown[][]): Promise<DistrictSyncResult[]> {
+    const startedAt = new Date();
+    this.pending = [];
+    this.counts = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0, stats: 0 };
+    this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: ["타일 원본"], results: [], blocked: null, all: false, trigger: "manual", changes: [] };
+    this.runId = (await this.runs.save(this.runs.create({ startedAt, state: "running", triggeredBy: "manual", codes: ["타일 원본"], results: [] }))).id;
+    try {
+      const byId = new Map<number, RawDevelop>();
+      const points = (d: RawDevelop) => flatPoints(d.areas).length;
+      for (const list of rawLists) {
+        for (const d of list as RawDevelop[]) {
+          if (!d || !Array.isArray(d.areas) || !d.areas.length) continue;
+          const prev = byId.get(d.id);
+          if (!prev || points(d) > points(prev)) byId.set(d.id, d);
+        }
+      }
+      const groups = new Map<string, RawDevelop[]>();
+      for (const item of byId.values()) {
+        const name = districtNameOf(item.region_code);
+        if (name) groups.set(name, [...(groups.get(name) ?? []), item]);
+      }
+      const fineIds = new Set(byId.keys());
+      for (const [regionName, items] of groups) {
+        const result: DistrictSyncResult = { code: regionName, name: regionName, mode: "partial" };
+        this.status.results.push(result);
+        try {
+          await this.apply(regionName, items, result, true, fineIds, true);
+          await this.flushChanges();
+        } catch (e) {
+          result.error = String(e instanceof Error ? e.message : e);
+        }
+        await this.saveProgress();
+      }
+      return this.status.results;
+    } finally {
+      await this.finalizeRun();
+      this.status.running = false;
+      this.status.finishedAt = new Date().toISOString();
+    }
+  }
+
   /** `updatePolygon`이 false면 기존 구역의 경계는 비교·덮어쓰기를 하지 않는다(큰 범위 응답의 거친 경계 보호). 새 구역은 항상 받은 경계로 만든다. */
   private async apply(regionName: string, items: RawDevelop[], result: DistrictSyncResult, updatePolygon = true, fineIds?: Set<number>, skipMissing = false) {
     const now = new Date();

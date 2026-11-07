@@ -224,3 +224,8 @@ behavior 형식: `1.<경과초>.<마우스이동>.<클릭>.<이동없는클릭>.
 - `jaegebal-tile-raw.service.ts` fetchTile이 브라우저와 같은 고정 헤더(accept, accept-language, priority, sec-ch-ua*, sec-fetch-*, UA Chrome/156)를 함께 보낸다.
 - 세션마다 바뀌는 값(x-jdc-signature 행동값·timestamp 재사용, 쿠키, baggage/sentry-trace)은 보내지 않는다. 서명은 요청마다 새로 계산하고 행동값은 기존 정직한 값 유지(사람 흉내 금지 규칙).
 - 배경: 타일 9번이 Railway에서 429였으나 이 PC에서 브라우저 헤더로는 200. 원인(IP/헤더) 미확정. 재배포 후 Railway 나가는 IP 152.55.176.181.
+
+## 타일 원본으로 구역도 갱신 + 인천 경매 좌표 매칭 (2026-11-07)
+- `applyTileRawItems`(jaegebal-zone-sync.service.ts): DB의 타일 원본(jaegebal_tile_raw) 21개로 경계·단계·지표 반영(사이트 호출 없음, 사라짐 표시 안 함). 운영 DB에 직접 1회 실행: 2,844개 구역 중 2,703개 갱신, 오류 0, 평균 경계 점 9.5 → 27.8개. 갱신 전 경계는 로컬 백업.
+- `auction-zone-coord.service.ts`: 지역명이 "인천 ○○구"인 구역을 서울 밖 도시 "인천"으로 인식(주소의 "인천광역시"에 포함). 기존엔 시/군으로 끝나지 않아 제외.
+- 같은 줄 정규식에 보이지 않는 제어문자(0x08, ``가 깨진 것)가 있어 서울 밖 시 목록이 비어 있던 버그를 함께 제거. 배포 후 좌표 일괄 채우기(startBackfill)를 한 번 돌려야 기존 물건에 반영된다.
