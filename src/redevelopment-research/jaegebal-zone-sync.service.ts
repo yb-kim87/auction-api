@@ -6,7 +6,6 @@ import { MoreThan, Repository } from "typeorm";
 import { RedevelopmentPoint, RedevelopmentZone } from "../redevelopment/entities/redevelopment-zone.entity";
 import { TelegramAlertService } from "../kakao-notify/telegram-alert.service";
 import { RedevelopmentZoneAutoSync } from "./entities/redevelopment-zone-auto-sync.entity";
-import { RedevelopmentDistrictBbox } from "./entities/redevelopment-district-bbox.entity";
 import { RedevelopmentZoneChange } from "./entities/redevelopment-zone-change.entity";
 import { RedevelopmentZoneSyncRun, ZoneChangeType } from "./entities/redevelopment-zone-sync-run.entity";
 
@@ -21,17 +20,12 @@ const BEHAVIOR = "1.2a.p7.1.0.0.0.0.0.0.0.0";
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36";
 const SEC_CH_UA = '"Not:A-Brand";v="8", "Chromium";v="156", "Google Chrome";v="156"';
 
-/** 최소 수집 원칙(사용자 결정, 2026-10-30): 간격을 크게 두고 천천히. 구가 MAX_DISTRICTS_PER_RUN개를 넘으면 자동으로 느린 간격을 쓴다. */
-export const MAX_DISTRICTS_PER_RUN = 3;
-const REQUEST_GAP_MS = 30_000;
+/** 최소 수집 원칙: 서울·경기·인천 전체를 지도 범위 하나로 재개발닷컴에 1회만 요청해 받고, 응답의 region_code로 구별로 나눠 반영한다(사용자 결정, 2026-11-07).
+ * 범위는 서울·경기·인천(강화·옹진 섬 포함)을 덮는다. */
+const REGION_QUERY = "min_lat=36.85&max_lat=38.4&min_lng=124.5&max_lng=127.95&simplify=0.0001&include_completed=true";
 const MIN_RESYNC_HOURS = 6;
 /** 같은 구역 권리산정기준일 확인 사이 최소 간격. */
 const RIGHT_DATE_MIN_GAP_MS = 30_000;
-/** 느린 순차 모드(구 4개 이상, 사용자 결정 2026-10-30) — 구 하나 안에서 요청 사이 60초, 구와 구 사이 120초.
- * 구당 약 3분, 25개 구 약 75분(분당 0.7건). 첫 보안 확인에서 전체 중단, 구 오류가 연속 2번이면 중단. */
-const ALL_DISTRICT_GAP_MS = 120_000;
-const ALL_MAX_CONSECUTIVE_ERRORS = 2;
-const BOX_MARGIN = 0.002;
 /** 응답이 DB에 있던 구역 수에 비해 너무 적으면(부분 응답 의심) "사라진 구역" 표시를 하지 않는다. */
 const MISSING_SANITY_RATIO = 0.5;
 const MISSING_SANITY_MIN_ZONES = 10;
@@ -82,8 +76,14 @@ const GYEONGGI_DISTRICT_NAMES: Record<string, string> = {
   "41800": "연천군", "41820": "가평군", "41830": "양평군",
 };
 
-/** 수집 대상으로 지정할 수 있는 지역 전체(서울 25개 구 + 경기). */
-const DISTRICT_NAMES: Record<string, string> = { ...SEOUL_DISTRICT_NAMES, ...GYEONGGI_DISTRICT_NAMES };
+/** 인천 군·구 코드 → 지역 이름. 서울 구 이름("중구"·"동구"·"서구")과 겹치지 않게 "인천 "을 붙인다(사용자 요청 2026-11-07, 받은 구역은 전부 반영). */
+const INCHEON_DISTRICT_NAMES: Record<string, string> = {
+  "28110": "인천 중구", "28140": "인천 동구", "28177": "인천 미추홀구", "28185": "인천 연수구", "28200": "인천 남동구",
+  "28237": "인천 부평구", "28245": "인천 계양구", "28260": "인천 서구", "28710": "인천 강화군", "28720": "인천 옹진군",
+};
+
+/** 수집 대상으로 지정할 수 있는 지역 전체(서울 25개 구 + 경기 + 인천). */
+const DISTRICT_NAMES: Record<string, string> = { ...SEOUL_DISTRICT_NAMES, ...GYEONGGI_DISTRICT_NAMES, ...INCHEON_DISTRICT_NAMES };
 
 /** 구역의 region_code → 지역 이름. 표에 없는 코드는 같은 시의 대표 코드(끝자리 0, 예: 화성시 구 신설 코드 → 41590)로 찾고, 그래도 없으면 빈 값. */
 export function districtNameOf(code: string | null | undefined): string {
@@ -332,32 +332,6 @@ function flatPoints(a: unknown, out: number[][] = []): number[][] {
   return out;
 }
 
-/** 국토부 VWorld 시군구 경계(LT_C_ADSIGG_INFO)에서 구 하나의 조회 범위를 계산한다(경계 다각형 최소·최대 + BOX_MARGIN). */
-async function fetchDistrictBbox(code: string): Promise<{ minLat: number; maxLat: number; minLng: number; maxLng: number }> {
-  const key = process.env.VWORLD_API_KEY;
-  if (!key) throw new Error("VWORLD_API_KEY가 없어 구 경계를 받을 수 없습니다.");
-  const url = new URL("https://api.vworld.kr/req/data");
-  url.searchParams.set("service", "data");
-  url.searchParams.set("request", "GetFeature");
-  url.searchParams.set("version", "2.0");
-  url.searchParams.set("data", "LT_C_ADSIGG_INFO");
-  url.searchParams.set("key", key);
-  url.searchParams.set("domain", process.env.VWORLD_REGISTERED_DOMAIN ?? "https://auction-seven-tan.vercel.app");
-  url.searchParams.set("attrFilter", `sig_cd:=:${code}`);
-  url.searchParams.set("geometry", "true");
-  url.searchParams.set("size", "10");
-  url.searchParams.set("format", "json");
-  url.searchParams.set("crs", "EPSG:4326");
-  const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
-  if (!res.ok) throw new Error(`VWorld 구 경계 HTTP ${res.status} (${code})`);
-  const body = (await res.json()) as { response?: { status?: string; result?: { featureCollection?: { features?: Array<{ geometry?: { coordinates?: unknown } }> } } } };
-  const pts = (body.response?.result?.featureCollection?.features ?? []).flatMap((f) => flatPoints(f.geometry?.coordinates));
-  if (body.response?.status !== "OK" || !pts.length) throw new Error(`VWorld에서 구 경계를 찾지 못했습니다(${code}, ${body.response?.status ?? "응답 없음"}).`);
-  const lngs = pts.map((p) => p[0]);
-  const lats = pts.map((p) => p[1]);
-  return { minLat: Math.min(...lats) - BOX_MARGIN, maxLat: Math.max(...lats) + BOX_MARGIN, minLng: Math.min(...lngs) - BOX_MARGIN, maxLng: Math.max(...lngs) + BOX_MARGIN };
-}
-
 /** 바깥 고리 → 6자리 반올림, 닫힘 점 제거(기존 import와 동일 규칙). 3점 미만이면 null. */
 function ringToPolygon(ring: number[][] | undefined): RedevelopmentPoint[] | null {
   if (!Array.isArray(ring)) return null;
@@ -494,7 +468,6 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     @InjectRepository(RedevelopmentZoneSyncRun) private readonly runs: Repository<RedevelopmentZoneSyncRun>,
     @InjectRepository(RedevelopmentZoneChange) private readonly changes: Repository<RedevelopmentZoneChange>,
     @InjectRepository(RedevelopmentZoneAutoSync) private readonly autoRepo: Repository<RedevelopmentZoneAutoSync>,
-    @InjectRepository(RedevelopmentDistrictBbox) private readonly bboxRepo: Repository<RedevelopmentDistrictBbox>,
     private readonly telegram: TelegramAlertService,
   ) {}
 
@@ -505,12 +478,11 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   /** 지정한 구(또는 `all=true`면 서울 25개 구 전체)를 업데이트한다. 구가 3개를 넘으면 자동으로 느린 간격(요청 60초·구 사이 120초)을 쓴다. */
   async start(codes: string[], force = false, all = false, triggeredBy: "manual" | "auto" = "manual"): Promise<JaegebalSyncStatus> {
     if (this.status.running) return this.status;
-    const list = all ? Object.keys(SEOUL_DISTRICT_NAMES) : Array.from(new Set((codes ?? []).map((c) => String(c).trim())));
+    const list = all ? Object.keys(DISTRICT_NAMES) : Array.from(new Set((codes ?? []).map((c) => String(c).trim())));
     if (!list.length) throw new BadRequestException("수집할 구 코드를 지정하세요. (예: 11560)");
     if (list.some((c) => !DISTRICT_NAMES[c])) throw new BadRequestException("알 수 없는 구 코드가 있습니다.");
-    const slow = all || list.length > MAX_DISTRICTS_PER_RUN;
     const startedAt = new Date();
-    this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, all: slow, trigger: triggeredBy, changes: [] };
+    this.status = { running: true, startedAt: startedAt.toISOString(), finishedAt: null, codes: list, results: [], blocked: null, all: false, trigger: triggeredBy, changes: [] };
     this.pending = [];
     this.counts = { new: 0, stage: 0, projectType: 0, missing: 0, restored: 0, stats: 0 };
     this.runId = null;
@@ -519,7 +491,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     } catch (e) {
       this.logger.error(`구역 업데이트 실행 기록 생성 실패(수집은 계속): ${e}`);
     }
-    void this.run(list, force, slow).catch((e) => this.logger.error(`재개발닷컴 구역 수집 실패: ${e}`));
+    void this.run(list, force).catch((e) => this.logger.error(`재개발닷컴 구역 수집 실패: ${e}`));
     return this.status;
   }
 
@@ -631,52 +603,57 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     return out;
   }
 
-  private async run(codes: string[], force: boolean, all = false) {
-    // 전체 순차 모드는 더 천천히: 구와 구 사이 120초. 기본 모드는 30초. (구 경계는 VWorld에서 받아 저장하므로 구 안 대기는 없다)
-    const districtGap = all ? ALL_DISTRICT_GAP_MS : REQUEST_GAP_MS;
+  private async run(codes: string[], force: boolean) {
     try {
-      let requested = false;
-      let consecutiveErrors = 0;
       const recent = force ? new Set<string>() : await this.recentlySyncedCodes();
-      for (const code of codes) {
-        const result: DistrictSyncResult = { code };
+      if (codes.length && codes.every((c) => recent.has(c))) {
+        this.status.results = codes.map((code) => ({ code, name: DISTRICT_NAMES[code] ?? code, warning: `최근 ${MIN_RESYNC_HOURS}시간 안에 이 구를 이미 수집해서 건너뜁니다.` }));
+        await this.saveProgress();
+        return;
+      }
+      // 서울·경기·인천을 덮는 범위로 1회만 요청해 받은 구역을 전부 반영한다. 구는 응답의 region_code로 나눈다.
+      let items: RawDevelop[];
+      try {
+        items = (await apiGet<RawDevelop[]>("/develops", REGION_QUERY)).filter((x) => Array.isArray(x.areas) && x.areas.length);
+      } catch (e) {
+        if (e instanceof BlockedError) {
+          this.status.blocked = e.message;
+          this.status.results = [{ code: "전체", name: "전체", error: "보안 확인에 걸려 중단했습니다(재시도하지 않음)." }];
+        } else {
+          this.status.results = [{ code: "전체", name: "전체", error: String(e instanceof Error ? e.message : e) }];
+        }
+        await this.saveProgress();
+        return;
+      }
+      // 지역 이름(코드표)으로 묶는다 — 화성시처럼 코드가 여럿인 시는 한 묶음. 코드표에 없는 지역(충청 등)은 반영하지 않는다.
+      const groups = new Map<string, RawDevelop[]>();
+      let unknown = 0;
+      for (const item of items) {
+        const name = districtNameOf(item.region_code);
+        if (!name) {
+          unknown += 1;
+          continue;
+        }
+        groups.set(name, [...(groups.get(name) ?? []), item]);
+      }
+      const codeOf = (name: string) => Object.entries(DISTRICT_NAMES).find(([, n]) => n === name)?.[0] ?? name;
+      const regions = [...groups.keys()].sort((a, b) => codeOf(a).localeCompare(codeOf(b)));
+      this.status.codes = regions.map(codeOf);
+      for (const regionName of regions) {
+        const code = codeOf(regionName);
+        const result: DistrictSyncResult = { code, name: regionName };
         this.status.results.push(result);
         try {
-          if (recent.has(code)) {
-            result.warning = `최근 ${MIN_RESYNC_HOURS}시간 안에 이 구를 이미 수집해서 건너뜁니다.`;
-            await this.saveProgress();
-            continue;
-          }
-          if (requested) await sleep(districtGap);
-          requested = true;
-          // 구 경계(조회 범위)는 거의 바뀌지 않아 한 번만 받아 DB에 저장한다. 재개발닷컴이 아니라 국토부 VWorld 시군구 경계에서 받는다
-          // (2026-11-07 금천구·부천시 원미구로 재개발닷컴 경계와 비교해 위경도 최소·최대가 0.00001도 이내로 일치). 재개발닷컴에는 구역 목록 1회만 요청한다.
-          let box = await this.bboxRepo.findOne({ where: { code } });
-          if (!box) box = await this.bboxRepo.save(this.bboxRepo.create({ code, ...(await fetchDistrictBbox(code)) }));
-          result.name = DISTRICT_NAMES[code] ?? code;
-          const query = `min_lat=${box.minLat}&max_lat=${box.maxLat}&min_lng=${box.minLng}&max_lng=${box.maxLng}&simplify=0.0001&include_completed=true`;
-          const items = (await apiGet<RawDevelop[]>("/develops", query)).filter((x) => Array.isArray(x.areas) && x.areas.length);
-          // 사라진 구역 판정은 구역 레코드의 region과 같은 이름(코드표)으로 한다 — 사이트의 경기 지역 이름 표기("장안구"/"수원시 장안구")에 좌우되지 않게.
-          await this.apply(DISTRICT_NAMES[code] ?? code, items, result);
+          await this.apply(regionName, groups.get(regionName) ?? [], result);
           await this.flushChanges();
           this.lastSyncAt.set(code, Date.now());
-          consecutiveErrors = 0;
-          await this.saveProgress();
         } catch (e) {
-          if (e instanceof BlockedError) {
-            this.status.blocked = e.message;
-            result.error = "보안 확인에 걸려 중단했습니다(재시도하지 않음).";
-            return;
-          }
           result.error = String(e instanceof Error ? e.message : e);
-          consecutiveErrors += 1;
-          await this.saveProgress();
-          // 전체 순차 모드에서는 구 오류가 연달아 나면 사이트 상태가 이상한 것이므로 더 두드리지 않고 멈춘다.
-          if (all && consecutiveErrors >= ALL_MAX_CONSECUTIVE_ERRORS) {
-            this.logger.warn(`전체 순차 업데이트: 구 오류가 ${consecutiveErrors}번 연속 발생해 중단합니다.`);
-            return;
-          }
         }
+        await this.saveProgress();
+      }
+      if (unknown) {
+        this.logger.warn(`구역 업데이트: 지역 코드를 알 수 없어 반영하지 않은 구역 ${unknown}건`);
       }
     } finally {
       await this.finalizeRun(); // 이력 저장을 끝낸 뒤 running=false로 바꿔, 화면이 곧바로 이력을 조회해도 최신이다.
