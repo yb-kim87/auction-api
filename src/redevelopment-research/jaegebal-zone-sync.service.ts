@@ -531,6 +531,19 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     return this.status;
   }
 
+  /** 나눠서 실행의 이어하기 위치 — 마지막으로 성공한 나눠서 실행의 끝 번호 다음부터. 끝까지 했으면 처음(1)부터. */
+  async getTileProgress(): Promise<{ next: number; lastTo: number | null; total: number | null }> {
+    const rows = await this.runs.find({ where: { state: "done" }, order: { startedAt: "DESC" }, take: 30 });
+    for (const r of rows) {
+      const m = /^타일 (\d+)-(\d+)\/(\d+)$/.exec((r.codes ?? [])[0] ?? "");
+      if (!m) continue;
+      const to = Number(m[2]);
+      const total = Number(m[3]);
+      return { next: to >= total ? 1 : to + 1, lastTo: to, total };
+    }
+    return { next: 1, lastTo: null, total: null };
+  }
+
   /** "구역도 업데이트" 탭 상단 요약 — 재개발닷컴 구역 수·사라진 구역 수·마지막 반영·마지막 성공 업데이트(가벼운 집계만, 폴리곤을 싣지 않는다). */
   async getZoneSummary() {
     const agg = await this.zones
@@ -712,6 +725,12 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         const kFrom = partial ? tileRange!.from - 1 : 0;
         const kTo = partial ? Math.min(tileRange!.to, tileList.length) : tileList.length;
         if (partial && kFrom >= tileList.length) throw new BadRequestException(`받을 타일은 전체 ${tileList.length}개입니다(요청: ${tileRange!.from}번부터).`);
+        if (partial) {
+          const effTo = Math.min(tileRange!.to, tileList.length);
+          this.status.tileRange = { from: tileRange!.from, to: effTo, total: tileList.length };
+          this.status.codes = [`타일 ${tileRange!.from}-${effTo}/${tileList.length}`];
+          if (this.runId) await this.runs.update(this.runId, { codes: this.status.codes }).catch(() => undefined); // 이어하기 진행 위치 계산용
+        }
         if (partial) byId.clear(); // 큰 범위 응답은 어떤 타일을 받을지 정하는 데만 쓰고, 반영은 지정한 타일 것만 한다.
         for (let k = kFrom; k < kTo; k++) {
           await sleep(TILE_GAP_MS);

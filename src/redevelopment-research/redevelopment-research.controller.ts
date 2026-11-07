@@ -39,6 +39,13 @@ export class RedevelopmentResearchController {
     return this.jaegebalSync.getStatus();
   }
 
+  /** 나눠서 실행의 이어하기 위치(다음 시작 타일 번호). */
+  @Get("jaegebal-sync/tile-progress")
+  async jaegebalTileProgress(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.getTileProgress();
+  }
+
   /** "구역도 업데이트" 탭 상단 요약(재개발닷컴 구역 수·사라진 구역 수·마지막 반영/업데이트). */
   @Get("jaegebal-sync/summary")
   async jaegebalSyncSummary(@Headers() headers: Record<string, string>) {
