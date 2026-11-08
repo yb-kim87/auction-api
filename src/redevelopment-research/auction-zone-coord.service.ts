@@ -101,7 +101,7 @@ export class AuctionZoneCoordService {
   /** 좌표가 없는 기존 서울 빌라 물건 전부를 서버에서 한 번 훑어 구역 근처인 것만 좌표를 채운다(백그라운드).
    * 크롤링 시점 처리(fillIfNeeded)가 생기기 전에 저장된 물건과, 연결되지 않았던 경로의 물건을 메우는 용도다.
    * 이미 진행 중이면 현재 상태만 돌려준다. */
-  async startBackfill(): Promise<CoordBackfillStatus> {
+  async startBackfill(outsideOnly = false): Promise<CoordBackfillStatus> {
     if (this.backfill.running) return this.backfill;
     await this.loadZones();
     const cities = Array.from(this.outsideCities);
@@ -111,7 +111,8 @@ export class AuctionZoneCoordService {
       .where("a.latitude IS NULL")
       .andWhere(
         new Brackets((w) => {
-          w.where("(a.propType = :t AND a.city LIKE :c)", { t: "빌라", c: "서울%" });
+          // outsideOnly면 서울 빌라는 제외하고 서울 밖(경기·인천) 구역이 있는 시의 물건만 처리한다(사용자 요청 2026-11-08).
+          if (!outsideOnly) w.where("(a.propType = :t AND a.city LIKE :c)", { t: "빌라", c: "서울%" });
           cities.forEach((city, i) => w.orWhere(`a.address LIKE :city${i}`, { [`city${i}`]: `%${city}%` }));
         }),
       );

@@ -174,9 +174,9 @@ export class RedevelopmentResearchController {
 
   /** 좌표 없는 기존 서울 빌라 경매물건을 서버에서 한 번에 채운다(구역 근처만 저장, 백그라운드). */
   @Post("auction-coords/backfill")
-  async startCoordBackfill(@Headers() headers: Record<string, string>) {
+  async startCoordBackfill(@Headers() headers: Record<string, string>, @Body() body?: { outsideOnly?: boolean }) {
     requireAdmin(getAuthContext(headers));
-    return this.auctionCoord.startBackfill();
+    return this.auctionCoord.startBackfill(body?.outsideOnly === true);
   }
 
   @Get("auction-coords/status")
