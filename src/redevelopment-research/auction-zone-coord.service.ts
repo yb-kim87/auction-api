@@ -139,21 +139,11 @@ export class AuctionZoneCoordService implements OnModuleInit {
   /** 좌표가 없는 기존 서울 빌라 물건 전부를 서버에서 한 번 훑어 구역 근처인 것만 좌표를 채운다(백그라운드).
    * 크롤링 시점 처리(fillIfNeeded)가 생기기 전에 저장된 물건과, 연결되지 않았던 경로의 물건을 메우는 용도다.
    * 이미 진행 중이면 현재 상태만 돌려준다. */
-  async startBackfill(outsideOnly = false): Promise<CoordBackfillStatus> {
+  async startBackfill(): Promise<CoordBackfillStatus> {
     if (this.backfill.running) return this.backfill;
     await this.loadZones();
-    const cities = Array.from(this.outsideCities);
-    // 서울 빌라 + 서울 밖 구역이 있는 시(예: 부천시)의 모든 용도 — 좌표가 아직 없는 것만.
-    const qb = this.auctionRepo
-      .createQueryBuilder("a")
-      .where("a.latitude IS NULL")
-      .andWhere(
-        new Brackets((w) => {
-          // outsideOnly면 서울 빌라는 제외하고 서울 밖(경기·인천) 구역이 있는 시의 물건만 처리한다(사용자 요청 2026-11-08).
-          if (!outsideOnly) w.where("(a.propType = :t AND a.city LIKE :c)", { t: "빌라", c: "서울%" });
-          cities.forEach((city, i) => w.orWhere(`a.address LIKE :city${i}`, { [`city${i}`]: `%${city}%` }));
-        }),
-      );
+    // 지역·용도 제한 없이 좌표가 아직 없는 주소 있는 물건 전부(구역 근처 여부는 저장하면서 nearZone으로 표시).
+    const qb = this.auctionRepo.createQueryBuilder("a").where("a.latitude IS NULL").andWhere("a.address IS NOT NULL").andWhere("a.address <> ''");
     const rows = await qb.getMany();
     this.backfill = { running: true, total: rows.length, done: 0, saved: 0, startedAt: new Date().toISOString(), finishedAt: null, error: null };
     void this.runBackfill(rows);
@@ -185,18 +175,9 @@ export class AuctionZoneCoordService implements OnModuleInit {
     }
   }
 
-  /** 좌표가 없는 서울 빌라 물건이면 주소를 좌표로 바꿔, 구역 근처일 때만 저장한다. 실패해도 크롤링에는 영향이 없다. */
+  /** 좌표가 없는 물건이면 지역·용도와 상관없이 주소를 좌표로 바꿔 저장하고, 구역 근처인지는 nearZone으로 표시한다(사용자 결정 2026-11-08). 실패해도 크롤링에는 영향이 없다. */
   async fillIfNeeded(auction: Auction): Promise<boolean> {
     if (auction.latitude != null || !auction.address) return false;
-    const isSeoul = (auction.city ?? "").startsWith("서울");
-    if (isSeoul) {
-      if (auction.propType !== "빌라") return false; // 서울은 빌라만(아파트·오피스텔은 구역 조사 대상이 아니다)
-    } else {
-      // 서울 밖은 구역이 있는 시(예: 부천시)의 물건만, 용도 상관없이 채운다(재건축 구역은 아파트도 많다).
-      await this.loadZones();
-      const inCity = Array.from(this.outsideCities).some((city) => (auction.district ?? "").includes(city) || auction.address.includes(city));
-      if (!inCity) return false;
-    }
     try {
       const geo = await this.geocoder.geocode(auction.address);
       if (!geo) return false;
