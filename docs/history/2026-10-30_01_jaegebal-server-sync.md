@@ -351,3 +351,8 @@ Railway 서버 IP(`railway ssh --service auction`)에서 Node 일회성 스크�
 - **재배포**: `POST jaegebal-sync/redeploy` — Railway GraphQL `serviceInstanceRedeploy`를 프로젝트 토큰(`Project-Access-Token`)으로 호출. **서버 환경변수 `RAILWAY_API_TOKEN`(프로젝트 토큰)이 있어야 동작**하고, 없으면 버튼이 비활성화된다. 수집 실행 중에는 막는다. 화면은 재배포 전 IP를 기억해 두었다가 배포 id가 바뀐 뒤 "IP가 변경되었습니다: 이전 → 새 IP" 또는 "IP는 그대로입니다"를 표시한다.
 - **미검증**: Railway GraphQL 호출은 문서 기준으로 작성했고 실제 실행은 아직 안 했다(토큰 설정 후 첫 실행에서 확인).
 - 로컬 화면은 `API_ORIGIN`이 운영 Railway API라서, 이 API가 배포되기 전에는 새 경로에서 `Cannot GET`이 난다.
+
+## 경기·인천 경매물건 좌표 채우기 버튼 (2026-11-08)
+- 경기·인천 경매물건은 좌표가 거의 비어 있어(경기 171/2,877, 인천 72/2,385, 서울 1,544/3,263; 부천 8/273) 지도에 점이 안 나왔다. 좌표는 주소를 카카오 로컬 API로 변환해 **재개발 구역 경계 100m 이내일 때만** 저장한다(`auction-zone-coord.service.ts`, 주소 결과는 `address-geocode-cache`에 캐시).
+- `startBackfill(outsideOnly)`: true면 서울 빌라를 빼고 서울 밖 구역이 있는 시(부천·고양 등)와 인천의 물건만 처리. `POST auction-coords/backfill` `{ outsideOnly: true }`, 진행은 `GET auction-coords/status`. 화면: 구역도 업데이트 탭 맨 아래 "경기·인천 좌표 채우기"(`RedevelopmentAuctionCoords.tsx`).
+- 이후 새로 가져오는 물건은 크롤러 3곳(`crawler`, `courtauction-crawler`, `nice-crawler`)이 저장할 때마다 `fillIfNeeded`로 자동 채운다(기존 구현).
