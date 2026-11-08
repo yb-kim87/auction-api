@@ -5,14 +5,13 @@ import * as zlib from "zlib";
 import { Repository } from "typeorm";
 import { JaegebalTileRaw } from "./entities/jaegebal-tile-raw.entity";
 
+import { tileBoxQuery } from "./tile-box";
 const API_BASE = "https://jaegebal.com/api";
 const SIGNING_KEY = process.env.JDC_SIGNING_KEY || "57bfe0da55e35b096fd0a4ac27ca2c35b40f13e2827442e4771c999b2cec1c74";
 const APP_TOKEN = process.env.JDC_APP_TOKEN || "0418b9cadfb234a22035c05e982492cf02b62fa91bc89e217f8f93c7e6f0e10f";
 /** 기존 구역 업데이트와 같은 정직한 행동값(사람 흉내 금지). */
 const BEHAVIOR = "1.0.0.0.0.0.0.0.0.0.0.1";
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36";
-/** 구 방식처럼 범위 값이 매번 조금씩 다른 소수점 4자리가 되도록, 타일 각 변을 0.0005~0.0025도 바깥으로 랜덤하게 넓힌다(사용자 요청 2026-11-08). 바깥으로만 넓혀 타일 안 구역은 빠지지 않고, 겹치는 구역은 id로 합친다. */
-const jitterOut = (v: number, dir: 1 | -1) => (v + dir * (0.0005 + Math.random() * 0.002)).toFixed(4);
 const TILE_GAP_MS = 30_000;
 const MAX_TILES_PER_RUN = 5;
 const DEVICE_ID_RE = /^web;[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -116,7 +115,7 @@ export class JaegebalTileRawService {
     const [a, b, lo, hi] = RAW_TILES[n];
     const ts = String(Math.floor(Date.now() / 1000));
     const sig = crypto.createHmac("sha256", SIGNING_KEY).update(`${ts}|GET|/develops|${BEHAVIOR}`).digest("hex") + "." + BEHAVIOR;
-    const qs = `min_lat=${jitterOut(a, -1)}&max_lat=${jitterOut(b, 1)}&min_lng=${jitterOut(lo, -1)}&max_lng=${jitterOut(hi, 1)}&simplify=0.0001&include_completed=true`;
+    const qs = `${tileBoxQuery(a, b, lo, hi)}&simplify=0.0001&include_completed=true`;
     const res = await fetch(`${API_BASE}/develops?${qs}`, {
       headers: {
         // 구 방식(jaegebal-zone-sync.service.ts apiGet)과 같은 최소 헤더(2026-11-08 사용자 요청). 브라우저 흉내 헤더(accept-language, priority, sec-*)는 보내지 않는다.

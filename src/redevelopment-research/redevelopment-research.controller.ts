@@ -60,6 +60,26 @@ export class RedevelopmentResearchController {
     return this.jaegebalSync.start(Array.isArray(body?.codes) ? body.codes : [], body?.force === true, body?.all === true, "manual", tileRange);
   }
 
+  /** 경계 대기 중인 새 구역 목록(큰 범위 1회 요청으로 등록된 구역). */
+  @Get("jaegebal-sync/pending-boundaries")
+  async jaegebalPendingBoundaries(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.listPendingBoundaries();
+  }
+
+  /** 관리자가 고른 새 구역의 정밀 경계를 받는다(구 크기 직사각형 요청, simplify는 관리자가 선택). */
+  @Post("jaegebal-sync/pending-boundaries/fetch")
+  async jaegebalFetchBoundaries(@Headers() headers: Record<string, string>, @Body() body: { sourceKeys?: string[]; simplify?: string }) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.startBoundaryFetch(Array.isArray(body?.sourceKeys) ? body.sourceKeys : [], String(body?.simplify ?? ""));
+  }
+
+  @Get("jaegebal-sync/pending-boundaries/status")
+  async jaegebalBoundaryStatus(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.getBoundaryStatus();
+  }
+
   @Get("jaegebal-sync/status")
   async jaegebalSyncStatus(@Headers() headers: Record<string, string>) {
     requireAdmin(getAuthContext(headers));

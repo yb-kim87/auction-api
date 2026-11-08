@@ -63,6 +63,10 @@ export class RedevelopmentZone {
   @Column({ type: "text", default: "MANUAL" })
   boundaryType!: "EXACT" | "CONVEX_HULL_APPROX" | "POINT_ONLY" | "IMAGE_AUTO" | "MANUAL";
 
+  /** 새 구역인데 정밀 경계를 아직 받지 않았을 때 찍는 시각(큰 범위 1회 요청의 거친 경계 상태). 관리자가 경계 받기를 실행하면 비운다. */
+  @Column({ type: Date, nullable: true })
+  boundaryPendingAt!: Date | null;
+
   /** 자동 수집 파이프라인이 마지막으로 이 구역을 갱신한 시각 — 관리자가
    * MANUAL로 마지막 수정한 뒤에는 자동 갱신이 덮어쓰지 않게 판단하는 데 쓴다. */
   @Column({ type: Date, nullable: true })

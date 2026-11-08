@@ -2,12 +2,13 @@ import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleDes
 import { InjectRepository } from "@nestjs/typeorm";
 import * as crypto from "crypto";
 import * as zlib from "zlib";
-import { IsNull, MoreThan, Repository } from "typeorm";
+import { IsNull, MoreThan, Not, Repository } from "typeorm";
 import { RedevelopmentPoint, RedevelopmentZone } from "../redevelopment/entities/redevelopment-zone.entity";
 import { TelegramAlertService } from "../kakao-notify/telegram-alert.service";
 import { RedevelopmentZoneAutoSync } from "./entities/redevelopment-zone-auto-sync.entity";
 import { RedevelopmentZoneChange } from "./entities/redevelopment-zone-change.entity";
 import { RedevelopmentZoneSyncRun, ZoneChangeType } from "./entities/redevelopment-zone-sync-run.entity";
+import { tileBoxQuery } from "./tile-box";
 
 const DATASET_ID = "jaegebal";
 const API_BASE = "https://jaegebal.com/api";
@@ -34,8 +35,6 @@ const TILE_ORIGIN_LNG = 126.2;
 const TILE_SIMPLIFY = "0.000005";
 /** 평소(quick) 갱신에 쓰는 큰 범위 1회 요청 — 사이트가 경계를 거칠게 주므로 경계는 쓰지 않고 단계·지표·신규·사라짐 판단에만 쓴다. */
 const BIG_QUERY = "min_lat=36.85&max_lat=38.35&min_lng=126.2&max_lng=127.95&simplify=0.0001&include_completed=true";
-/** 구 방식처럼 범위 값이 매번 조금씩 다른 소수점 4자리가 되도록, 타일 각 변을 0.0005~0.0025도 바깥으로 랜덤하게 넓힌다(사용자 요청 2026-11-08). 바깥으로만 넓혀 타일 안 구역은 빠지지 않고, 겹치는 구역은 id로 합친다. */
-const jitterOut = (v: number, dir: 1 | -1) => (v + dir * (0.0005 + Math.random() * 0.002)).toFixed(4);
 /** 위경도가 속한 타일 키 "행_열". */
 const tileKey = (lat: number, lng: number) => `${Math.floor((lat - TILE_ORIGIN_LAT) / TILE_SIZE)}_${Math.floor((lng - TILE_ORIGIN_LNG) / TILE_SIZE)}`;
 /** 타일 키 → 요청 쿼리(요청 범위가 한 변 0.2도). */
@@ -43,7 +42,7 @@ function tileQuery(key: string): string {
   const [i, j] = key.split("_").map(Number);
   const minLat = TILE_ORIGIN_LAT + i * TILE_SIZE;
   const minLng = TILE_ORIGIN_LNG + j * TILE_SIZE;
-  return `min_lat=${jitterOut(minLat, -1)}&max_lat=${jitterOut(minLat + TILE_SIZE, 1)}&min_lng=${jitterOut(minLng, -1)}&max_lng=${jitterOut(minLng + TILE_SIZE, 1)}&simplify=${TILE_SIMPLIFY}&include_completed=true`;
+  return `${tileBoxQuery(minLat, minLat + TILE_SIZE, minLng, minLng + TILE_SIZE)}&simplify=${TILE_SIMPLIFY}&include_completed=true`;
 }
 /** 구역 하나(원본 응답)가 속한 타일 키 — 경계 점들의 평균 위치 기준. */
 function tileKeyOfItem(item: RawDevelop): string {
@@ -54,6 +53,17 @@ function tileKeyOfItem(item: RawDevelop): string {
 /** 이 시각 이전의 전체 갱신 기록은 "최근 전체 갱신"·"정밀 경계 갱신"으로 보지 않는다(0.5도 타일 시기, 2026-11-07T05:52:02Z). */
 const FULL_SYNC_VALID_AFTER = new Date("2026-11-07T05:52:02Z");
 const MIN_RESYNC_HOURS = 6;
+/** 새 구역 경계 받기(관리자 요청): 한 번에 최대 구역 수와 고를 수 있는 simplify 값(어느 값이 안전한지는 시험 후 결정, 2026-11-08). */
+const BOUNDARY_MAX_ZONES = 5;
+const BOUNDARY_SIMPLIFY_CHOICES = ["0.0001", "0.000005"];
+export type BoundaryFetchStatus = {
+  running: boolean;
+  startedAt: string | null;
+  finishedAt: string | null;
+  simplify: string | null;
+  results: Array<{ name: string; points?: number; updated?: number; error?: string }>;
+  blocked: string | null;
+};
 /** 같은 구역 권리산정기준일 확인 사이 최소 간격. */
 const RIGHT_DATE_MIN_GAP_MS = 30_000;
 /** 응답이 DB에 있던 구역 수에 비해 너무 적으면(부분 응답 의심) "사라진 구역" 표시를 하지 않는다. */
@@ -656,18 +666,6 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** 정밀한 경계 갱신(타일 요청)을 기준 시각 이후에 성공한 적이 있는지 — 없으면 이번 실행이 경계까지 정밀하게 다시 받는다(큰 범위 1회 요청으로 거칠어진 경계 복구). */
-  private async tilesSyncDone(): Promise<boolean> {
-    if (this.lastTilesSyncAt) return true;
-    try {
-      const rows = await this.runs.find({ where: { startedAt: MoreThan(FULL_SYNC_VALID_AFTER) } });
-      return rows.some((row) => ((row.results ?? []) as DistrictSyncResult[]).some((r) => r?.mode === "tiles" && r.fetched != null && !r.error));
-    } catch (e) {
-      this.logger.error(`정밀 경계 갱신 기록 조회 실패(정밀 갱신으로 진행): ${e}`);
-      return false;
-    }
-  }
-
   /** 진행 표시와 서버 로그를 함께 남긴다 — 타일을 다 받을 때까지 지역별 결과가 없어 화면이 "0/0"로만 보이기 때문. */
   private setPhase(text: string) {
     this.status.phase = text;
@@ -696,17 +694,19 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         }
       };
       // 정밀 경계 갱신 기록이 없거나 force면 타일 전체를 받아 경계까지 덮어쓴다. 그 뒤로는 큰 범위 1회로 경계 외 정보만 갱신한다.
-      const accurate = force || partial || !(await this.tilesSyncDone());
+      // 평소(quick)에는 절대 타일을 자동으로 받지 않는다(2026-11-08 사용자 결정). 기존 구역 경계는 건드리지 않고, 새 구역은 거친 경계로 등록 + "경계 대기" 표시만 한다.
+      // 정밀 경계는 force/나눠서 실행이거나, 관리자가 "새 구역 경계 받기"를 직접 요청할 때만 받는다.
+      const accurate = force || partial;
       // 경계를 세밀하게 받은 구역 id — 큰 범위 응답의 거친 경계로 기존 경계를 덮어쓰지 않도록 구분한다.
       const fineIds = new Set<number>();
       try {
         this.setPhase("큰 범위로 전체 구역 받는 중");
         take(await apiGet<RawDevelop[]>("/develops", BIG_QUERY));
         const known = new Set((await this.zones.find({ select: { sourceKey: true }, where: { sourceDatasetId: DATASET_ID } })).map((z) => z.sourceKey));
-        // 받을 타일: 새 구역이 속한 곳 + (정밀 갱신이면) 기존 구역이 있는 곳.
+        // 받을 타일(정밀 갱신일 때만): 새 구역이 속한 곳 + 기존 구역이 있는 곳.
         const needTiles = new Set<string>();
-        for (const d of byId.values()) if (toZoneRecords(d).some((r) => !known.has(r.key))) needTiles.add(tileKeyOfItem(d));
         if (accurate) {
+          for (const d of byId.values()) if (toZoneRecords(d).some((r) => !known.has(r.key))) needTiles.add(tileKeyOfItem(d));
           for (const z of await this.zones.find({ select: { polygon: true }, where: { sourceDatasetId: DATASET_ID, missingSince: IsNull() } })) {
             const poly = z.polygon ?? [];
             if (poly.length) needTiles.add(tileKey(poly.reduce((a, q) => a + q.lat, 0) / poly.length, poly.reduce((a, q) => a + q.lng, 0) / poly.length));
@@ -726,7 +726,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         if (partial) byId.clear(); // 큰 범위 응답은 어떤 타일을 받을지 정하는 데만 쓰고, 반영은 지정한 타일 것만 한다.
         for (let k = kFrom; k < kTo; k++) {
           await sleep(randomTileGapMs());
-          this.setPhase(`${partial ? "나눠서" : accurate ? "경계 포함 전체" : "새 구역 경계"} 받는 중 — 타일 ${k + 1}/${tileList.length}`);
+          this.setPhase(`${partial ? "나눠서" : "경계 포함 전체"} 받는 중 — 타일 ${k + 1}/${tileList.length}`);
           const list = await apiGet<RawDevelop[]>("/develops", tileQuery(tileList[k]));
           take(list);
           for (const d of list) fineIds.add(d.id);
@@ -773,7 +773,6 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
       }
       if (!partial && !codes.length && regions.length && this.status.results.every((r) => !r.error)) {
         this.lastFullSyncAt = Date.now();
-        if (accurate) this.lastTilesSyncAt = Date.now();
       }
       if (unknown) {
         this.logger.warn(`구역 업데이트: 지역 코드를 알 수 없어 반영하지 않은 구역 ${unknown}건`);
@@ -926,7 +925,6 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
   /** 같은 구를 연달아 다시 요청하지 않도록 구 코드별 마지막 수집 시각을 메모리에 둔다(서버 재시작 시 초기화). */
   private readonly lastSyncAt = new Map<string, number>();
   private lastFullSyncAt = 0;
-  private lastTilesSyncAt = 0;
 
   /** 권리산정기준일을 서버가 재개발닷컴 상세 페이지(HTML)에서 직접 읽어 저장한다(2026-10-31, 브라우저 방식 대체).
    * 페이지 안의 `right_basedate`·`right_date_zones` 값을 읽는다. 403/405는 우회하지 않고 멈춘다. 같은 구역은 연달아 요청하지 않는다. */
@@ -1080,6 +1078,8 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
               lastAutoSyncedAt: now,
               missingSince: null,
               stats: freshStats,
+              // 큰 범위 응답의 거친 경계로 만든 새 구역은 "경계 대기"로 표시한다(정밀 경계는 관리자가 요청할 때 받는다).
+              boundaryPendingAt: canUpdatePolygon && (!fineIds || fineIds.has(item.id)) ? null : now,
             }),
           );
           result.created += 1;
@@ -1115,7 +1115,10 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         existing.region = rec.region;
         existing.stage = rec.stage;
         existing.projectType = rec.projectType || existing.projectType;
-        if (canUpdatePolygon) existing.polygon = rec.polygon;
+        if (canUpdatePolygon) {
+          existing.polygon = rec.polygon;
+          existing.boundaryPendingAt = null;
+        }
         existing.lastAutoSyncedAt = now;
         existing.missingSince = null;
         existing.stats = mergedStats;
@@ -1145,6 +1148,95 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
       await this.zones.save(z);
       result.markedMissing += 1;
       this.pushChange({ key: z.sourceKey, name: z.name, field: "missing", from: norm(z.stage) }, z.region);
+    }
+  }
+
+  // ── 새 구역 경계 받기(관리자가 직접 요청, 2026-11-08) ──────────────────────────
+  // 큰 범위 1회 요청으로 등록된 새 구역은 거친 경계 + boundaryPendingAt 표시 상태다. 정밀 경계는 관리자가 구역을 골라 요청할 때만, 구 크기 직사각형으로 받는다.
+
+  private boundaryStatus: BoundaryFetchStatus = { running: false, startedAt: null, finishedAt: null, simplify: null, results: [], blocked: null };
+
+  getBoundaryStatus(): BoundaryFetchStatus {
+    return this.boundaryStatus;
+  }
+
+  /** 경계 대기 중인 새 구역 목록. */
+  async listPendingBoundaries() {
+    const rows = await this.zones.find({ where: { sourceDatasetId: DATASET_ID, boundaryPendingAt: Not(IsNull()) }, order: { boundaryPendingAt: "DESC" } });
+    return rows.map((z) => ({ id: z.id, sourceKey: z.sourceKey, name: z.name, region: z.region, stage: z.stage, pendingAt: z.boundaryPendingAt, points: (z.polygon ?? []).length }));
+  }
+
+  /** 지정한 새 구역(sourceKey)의 경계를 구 크기 직사각형 요청으로 받아 덮어쓴다. simplify는 관리자가 고른다. 한 번에 최대 BOUNDARY_MAX_ZONES개. 403/405/429면 재시도 없이 중단. */
+  async startBoundaryFetch(sourceKeys: string[], simplify: string): Promise<BoundaryFetchStatus> {
+    if (this.boundaryStatus.running || this.status.running) throw new BadRequestException("다른 구역 수집이 실행 중입니다.");
+    if (!BOUNDARY_SIMPLIFY_CHOICES.includes(simplify)) throw new BadRequestException(`simplify는 ${BOUNDARY_SIMPLIFY_CHOICES.join(" 또는 ")} 중에서 고르세요.`);
+    const keys = Array.from(new Set((sourceKeys ?? []).map((k) => String(k).trim()).filter(Boolean)));
+    if (!keys.length) throw new BadRequestException("경계를 받을 구역을 선택하세요.");
+    const zones = await this.zones.find({ where: { sourceDatasetId: DATASET_ID, boundaryPendingAt: Not(IsNull()) } });
+    const chosen = zones.filter((z) => z.sourceKey && keys.includes(z.sourceKey));
+    if (!chosen.length) throw new BadRequestException("선택한 구역 중 경계 대기 상태인 구역이 없습니다.");
+    // 같은 사이트 구역(id)에서 나온 여러 조각은 한 번의 요청으로 받는다.
+    const byItem = new Map<number, RedevelopmentZone[]>();
+    for (const z of chosen) {
+      const id = Number(/^jaegebal-(\d+)/.exec(z.sourceKey ?? "")?.[1]);
+      if (!Number.isInteger(id)) continue;
+      byItem.set(id, [...(byItem.get(id) ?? []), z]);
+    }
+    if (byItem.size > BOUNDARY_MAX_ZONES) throw new BadRequestException(`한 번에 최대 ${BOUNDARY_MAX_ZONES}개 구역까지 요청할 수 있습니다(선택: ${byItem.size}개).`);
+    this.boundaryStatus = { running: true, startedAt: new Date().toISOString(), finishedAt: null, simplify, results: [], blocked: null };
+    void this.runBoundaryFetch(byItem, simplify).catch((e) => this.logger.error(`새 구역 경계 받기 실패: ${e}`));
+    return this.boundaryStatus;
+  }
+
+  private async runBoundaryFetch(byItem: Map<number, RedevelopmentZone[]>, simplify: string) {
+    const st = this.boundaryStatus;
+    try {
+      let n = 0;
+      for (const [itemId, zoneRows] of byItem) {
+        if (n++ > 0) await sleep(randomTileGapMs());
+        const label = zoneRows[0].name;
+        try {
+          // 거친 경계의 외곽 범위를 포함하되, 폭은 구 크기(세로 0.04~0.07 × 가로 0.07~0.11도) 이상으로 요청마다 다르게 잡는다.
+          const pts = zoneRows.flatMap((z) => z.polygon ?? []);
+          const lats = pts.map((q) => q.lat);
+          const lngs = pts.map((q) => q.lng);
+          const h = Math.max(0.04 + Math.random() * 0.03, Math.max(...lats) - Math.min(...lats) + 0.01);
+          const w = Math.max(0.07 + Math.random() * 0.04, Math.max(...lngs) - Math.min(...lngs) + 0.01);
+          const cLat = (Math.max(...lats) + Math.min(...lats)) / 2;
+          const cLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
+          const q = `min_lat=${(cLat - h / 2).toFixed(4)}&max_lat=${(cLat + h / 2).toFixed(4)}&min_lng=${(cLng - w / 2).toFixed(4)}&max_lng=${(cLng + w / 2).toFixed(4)}&simplify=${simplify}&include_completed=true`;
+          const list = await apiGet<RawDevelop[]>("/develops", q);
+          const item = list.find((d) => d.id === itemId);
+          if (!item) {
+            st.results.push({ name: label, error: "응답에 이 구역이 없습니다(범위 밖이거나 사이트에서 사라짐). 경계 대기 표시는 그대로 둡니다." });
+            continue;
+          }
+          const recs = toZoneRecords(item);
+          let updated = 0;
+          for (const z of zoneRows) {
+            const rec = recs.find((r) => r.key === z.sourceKey);
+            if (!rec) continue;
+            if (z.boundaryType === "MANUAL" && z.lastAutoSyncedAt != null && z.updatedAt > z.lastAutoSyncedAt) continue; // 관리자가 직접 고친 경계는 보호
+            z.polygon = rec.polygon;
+            z.boundaryType = "EXACT";
+            z.boundaryPendingAt = null;
+            z.lastAutoSyncedAt = new Date();
+            await this.zones.save(z);
+            updated += 1;
+          }
+          st.results.push({ name: label, points: recs.reduce((a, r) => a + r.polygon.length, 0), updated });
+        } catch (e) {
+          if (e instanceof BlockedError) {
+            st.blocked = e.message;
+            st.results.push({ name: label, error: "보안 확인에 걸려 중단했습니다(재시도하지 않음)." });
+            return;
+          }
+          st.results.push({ name: label, error: String(e instanceof Error ? e.message : e) });
+        }
+      }
+    } finally {
+      st.running = false;
+      st.finishedAt = new Date().toISOString();
     }
   }
 }
