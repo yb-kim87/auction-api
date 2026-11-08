@@ -343,3 +343,11 @@ Railway 서버 IP(`railway ssh --service auction`)에서 Node 일회성 스크�
   - 요청 모양: 거친 경계의 외곽을 포함하는 **구 크기 직사각형**(세로 0.04~0.07 × 가로 0.07~0.11도 이상, 소수점 4자리) — 위 A 테스트에서 통과한 크기. 사이트는 범위에 걸친 구역의 경계를 통째로 주므로 온전하다.
 - **정밀 모드 자체는 남겨 둠**: 화면의 "경계 포함 전체"(force)와 나눠서 실행(타일 범위)은 관리자가 명시적으로 눌렀을 때만 쓰이고, 이때는 타일에서 받은 세밀한 경계로 기존 폴리곤을 덮어쓴다(관리자의 의도적 요청).
 - **미완**: 화면(프론트)에는 아직 "경계 대기 목록 + 받기" UI가 없다 — 위 API만 추가함. 운영 반영은 배포 + 마이그레이션 실행 후.
+
+## 디바이스 아이디 화면 설정 · 서버 IP 표시 · Railway 재배포 버튼 (2026-11-08)
+- **화면 위치**: 재개발물건 → 구역도 업데이트 탭 맨 위 패널(`RedevelopmentDeviceId.tsx`). 새 구역 경계 대기 목록 안이 아니라 공용 설정이다(사용자 지시).
+- **디바이스 아이디**: 전체 실행·자동 업데이트·새 구역 경계 받기가 모두 같은 값을 쓴다. 관리자가 화면에서 바꿔 저장하면 `redevelopment_zone_auto_sync.deviceId`(마이그레이션 `1784322000000`)에 저장되고 서버 시작 시 읽어 쓴다. 비우면 환경변수 `JDC_DEVICE_ID`/코드 기본값. 수집 실행 중에는 못 바꾼다. API: `GET/PATCH jaegebal-sync/device-id`.
+- **서버 IP**: `GET jaegebal-sync/egress` — ipify로 나가는 공인 IP, `RAILWAY_DEPLOYMENT_ID`, 기동 시각, 재배포 가능 여부.
+- **재배포**: `POST jaegebal-sync/redeploy` — Railway GraphQL `serviceInstanceRedeploy`를 프로젝트 토큰(`Project-Access-Token`)으로 호출. **서버 환경변수 `RAILWAY_API_TOKEN`(프로젝트 토큰)이 있어야 동작**하고, 없으면 버튼이 비활성화된다. 수집 실행 중에는 막는다. 화면은 재배포 전 IP를 기억해 두었다가 배포 id가 바뀐 뒤 "IP가 변경되었습니다: 이전 → 새 IP" 또는 "IP는 그대로입니다"를 표시한다.
+- **미검증**: Railway GraphQL 호출은 문서 기준으로 작성했고 실제 실행은 아직 안 했다(토큰 설정 후 첫 실행에서 확인).
+- 로컬 화면은 `API_ORIGIN`이 운영 Railway API라서, 이 API가 배포되기 전에는 새 경로에서 `Cannot GET`이 난다.
