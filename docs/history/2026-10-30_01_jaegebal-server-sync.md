@@ -356,3 +356,11 @@ Railway 서버 IP(`railway ssh --service auction`)에서 Node 일회성 스크�
 - 경기·인천 경매물건은 좌표가 거의 비어 있어(경기 171/2,877, 인천 72/2,385, 서울 1,544/3,263; 부천 8/273) 지도에 점이 안 나왔다. 좌표는 주소를 카카오 로컬 API로 변환해 **재개발 구역 경계 100m 이내일 때만** 저장한다(`auction-zone-coord.service.ts`, 주소 결과는 `address-geocode-cache`에 캐시).
 - `startBackfill(outsideOnly)`: true면 서울 빌라를 빼고 서울 밖 구역이 있는 시(부천·고양 등)와 인천의 물건만 처리. `POST auction-coords/backfill` `{ outsideOnly: true }`, 진행은 `GET auction-coords/status`. 화면: 구역도 업데이트 탭 맨 아래 "경기·인천 좌표 채우기"(`RedevelopmentAuctionCoords.tsx`).
 - 이후 새로 가져오는 물건은 크롤러 3곳(`crawler`, `courtauction-crawler`, `nice-crawler`)이 저장할 때마다 `fillIfNeeded`로 자동 채운다(기존 구현).
+
+## 경매물건 좌표는 전부 저장 + "구역 근처" 표시(nearZone)로 지도 데이터 제한 (2026-11-08, 사용자 결정)
+- 기존: 좌표 채우기가 구역 경계 100m 이내일 때만 `latitude/longitude`를 저장하고, 나머지는 변환 결과를 버렸다. 그래서 나중에 새 구역이 생겨도 그 근처 기존 물건은 좌표가 없어 매칭되지 않았다.
+- 변경: 구역 근처가 아니어도 **좌표를 전부 저장**하고, `auctions.nearZone`(마이그레이션 `1784323000000`, 부분 인덱스)에 "구역 안/경계 100m 이내" 여부를 따로 남긴다. 구역 판정은 지도에 보이는 **모든 구역**(재개발닷컴 외 포함) 기준.
+- 지도 데이터 API(`RedevelopmentService.getMapData`)는 `nearZone=true`인 물건만 내려보낸다 — 좌표 약 7,000건이어도 지도 응답·구역 포함 계산량이 늘지 않는다.
+- `AuctionZoneCoordService.refreshNearZoneFlags()`: 저장된 좌표만으로(사이트·카카오 호출 없음) 모든 물건의 표시를 다시 계산하고 바뀐 것만 갱신. 호출 시점: ① 서버 시작 시 표시가 한 건도 없을 때(첫 배포) ② 구역 업데이트(`finalizeRun`) 끝 ③ 새 구역 경계 받기 끝. 크롤링 저장 시(`fillIfNeeded`)는 그 물건의 표시를 바로 계산해 저장.
+- 한계: 관리자가 구역을 직접 만들거나 고치는 화면(`RedevelopmentService`)에서는 아직 표시를 다시 계산하지 않는다(다음 구역 업데이트·서버 재시작 때 반영).
+- 배포 후 할 일: 화면의 "경기·인천 좌표 채우기"를 한 번 더 실행한다(주소 변환 결과는 캐시에 있어 카카오 호출은 거의 없다). 서울 빌라 중 좌표 없는 물건은 이 버튼 대상이 아니다(`outsideOnly`).

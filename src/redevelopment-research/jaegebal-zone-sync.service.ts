@@ -9,6 +9,7 @@ import { RedevelopmentZoneAutoSync } from "./entities/redevelopment-zone-auto-sy
 import { RedevelopmentZoneChange } from "./entities/redevelopment-zone-change.entity";
 import { RedevelopmentZoneSyncRun, ZoneChangeType } from "./entities/redevelopment-zone-sync-run.entity";
 import { tileBoxQuery } from "./tile-box";
+import { AuctionZoneCoordService } from "./auction-zone-coord.service";
 
 const DATASET_ID = "jaegebal";
 const API_BASE = "https://jaegebal.com/api";
@@ -514,6 +515,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     @InjectRepository(RedevelopmentZoneChange) private readonly changes: Repository<RedevelopmentZoneChange>,
     @InjectRepository(RedevelopmentZoneAutoSync) private readonly autoRepo: Repository<RedevelopmentZoneAutoSync>,
     private readonly telegram: TelegramAlertService,
+    private readonly auctionCoord: AuctionZoneCoordService,
   ) {}
 
   getStatus(): JaegebalSyncStatus {
@@ -608,7 +610,13 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** 구역이 바뀐 뒤 경매물건의 "구역 근처" 표시를 다시 계산한다(저장된 좌표만 사용, 사이트 호출 없음). 실패해도 업데이트에는 영향이 없다. */
+  private refreshAuctionZoneFlags() {
+    void this.auctionCoord.refreshNearZoneFlags().catch((e) => this.logger.error(`경매물건 구역 근처 표시 갱신 실패: ${e}`));
+  }
+
   private async finalizeRun() {
+    this.refreshAuctionZoneFlags();
     if (!this.runId) return;
     try {
       await this.flushChanges();
@@ -1311,6 +1319,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
     } finally {
       st.running = false;
       st.finishedAt = new Date().toISOString();
+      this.refreshAuctionZoneFlags();
     }
   }
 }

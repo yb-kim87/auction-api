@@ -1,6 +1,6 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Brackets, Repository } from "typeorm";
+import { Brackets, In, IsNull, Not, Repository } from "typeorm";
 import { Auction } from "../auctions/auction.entity";
 import { RedevelopmentZone } from "../redevelopment/entities/redevelopment-zone.entity";
 import { KakaoGeocodeService } from "./kakao-geocode.service";
@@ -33,9 +33,9 @@ function distToSegmentM(p: Pt, a: Pt, b: Pt): number {
   return Math.hypot(px - t * bx, py - t * by);
 }
 
-/** 크롤링으로 새로 저장된 서울 빌라 경매물건의 좌표를 서버가 바로 채운다(사용자 요청, 2026-10-25).
- * 예전엔 관리자가 "재개발물건" 탭을 열 때 브라우저가 대신 채웠다. 화면과 같은 기준으로, 재개발 구역 안이거나
- * 경계에서 100m 이내인 물건만 좌표를 저장한다 — 전부 저장하면 지도 데이터가 불필요하게 커진다. */
+/** 크롤링으로 새로 저장된 경매물건의 좌표를 서버가 바로 채운다(사용자 요청, 2026-10-25).
+ * 예전엔 관리자가 "재개발물건" 탭을 열 때 브라우저가 대신 채웠다. 2026-11-08부터는 구역 근처가 아니어도 좌표를 전부 저장하고,
+ * 재개발 구역 안이거나 경계 100m 이내인지는 `nearZone` 표시로 따로 남긴다(지도는 nearZone=true인 물건만 가져온다). */
 export type CoordBackfillStatus = {
   running: boolean;
   total: number;
@@ -49,13 +49,15 @@ export type CoordBackfillStatus = {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 @Injectable()
-export class AuctionZoneCoordService {
+export class AuctionZoneCoordService implements OnModuleInit {
   private readonly logger = new Logger(AuctionZoneCoordService.name);
   private zones: ZoneBox[] = [];
   private zonesLoadedAt = 0;
   /** 서울 밖에 구역이 있는 시(예: 부천시) — 이 시의 경매물건은 좌표를 채운다. */
   private outsideCities = new Set<string>();
   private backfill: CoordBackfillStatus = { running: false, total: 0, done: 0, saved: 0, startedAt: null, finishedAt: null, error: null };
+
+  private refreshing = false;
 
   constructor(
     @InjectRepository(Auction) private readonly auctionRepo: Repository<Auction>,
@@ -65,7 +67,8 @@ export class AuctionZoneCoordService {
 
   private async loadZones(): Promise<ZoneBox[]> {
     if (this.zones.length > 0 && Date.now() - this.zonesLoadedAt < ZONE_CACHE_MS) return this.zones;
-    const rows = await this.zoneRepo.find({ where: { sourceDatasetId: "jaegebal" }, select: ["id", "polygon"] });
+    // 구역 근처 판정은 지도에 보이는 모든 구역(재개발닷컴 외 구역 포함)을 기준으로 한다.
+    const rows = await this.zoneRepo.find({ select: ["id", "polygon"] });
     // 지역명(예: "부천시 소사구")에서 서울 밖 시 이름을 뽑는다.
     const cityRows = await this.zoneRepo.find({ where: { sourceDatasetId: "jaegebal" }, select: ["id", "region"] });
     // 인천은 지역명이 "인천 미추홀구"처럼 시/군으로 끝나지 않아 "인천"으로 따로 잡는다(사용자 요청 2026-11-07). 주소의 "인천광역시"에도 포함된다.
@@ -92,6 +95,41 @@ export class AuctionZoneCoordService {
       }
     }
     return false;
+  }
+
+  /** 서버가 시작될 때 아직 한 건도 계산되지 않았으면(처음 배포) 백그라운드로 한 번 계산한다. */
+  async onModuleInit() {
+    try {
+      const flagged = await this.auctionRepo.count({ where: { nearZone: true } });
+      if (flagged === 0) void this.refreshNearZoneFlags().catch((e) => this.logger.error(`구역 근처 표시 초기 계산 실패: ${e}`));
+    } catch (e) {
+      this.logger.error(`구역 근처 표시 확인 실패: ${e}`);
+    }
+  }
+
+  /** 좌표가 있는 모든 경매물건의 "구역 안/경계 100m 이내" 표시를 지금 구역 기준으로 다시 계산한다(사이트 호출 없음, 저장된 좌표만 사용).
+   * 구역이 새로 생기거나 경계가 바뀐 뒤, 크롤링 저장 시, 서버 시작 시에 호출된다. 바뀐 물건만 갱신한다. */
+  async refreshNearZoneFlags(): Promise<{ checked: number; nowOn: number; nowOff: number }> {
+    if (this.refreshing) return { checked: 0, nowOn: 0, nowOff: 0 };
+    this.refreshing = true;
+    try {
+      this.zonesLoadedAt = 0; // 구역을 새로 읽는다
+      const zones = await this.loadZones();
+      const rows = await this.auctionRepo.find({ where: { latitude: Not(IsNull()), longitude: Not(IsNull()) }, select: ["id", "latitude", "longitude", "nearZone"] });
+      const turnOn: string[] = [];
+      const turnOff: string[] = [];
+      for (const a of rows) {
+        const near = this.isNearAnyZone({ lat: a.latitude as number, lng: a.longitude as number }, zones);
+        if (near && !a.nearZone) turnOn.push(a.id);
+        else if (!near && a.nearZone) turnOff.push(a.id);
+      }
+      for (let i = 0; i < turnOn.length; i += 500) await this.auctionRepo.update({ id: In(turnOn.slice(i, i + 500)) }, { nearZone: true });
+      for (let i = 0; i < turnOff.length; i += 500) await this.auctionRepo.update({ id: In(turnOff.slice(i, i + 500)) }, { nearZone: false });
+      this.logger.log(`경매물건 구역 근처 표시 갱신: 확인 ${rows.length}건 · 새로 켬 ${turnOn.length} · 끔 ${turnOff.length}`);
+      return { checked: rows.length, nowOn: turnOn.length, nowOff: turnOff.length };
+    } finally {
+      this.refreshing = false;
+    }
   }
 
   getBackfillStatus(): CoordBackfillStatus {
@@ -162,8 +200,9 @@ export class AuctionZoneCoordService {
     try {
       const geo = await this.geocoder.geocode(auction.address);
       if (!geo) return false;
-      if (!this.isNearAnyZone({ lat: geo.lat, lng: geo.lng }, await this.loadZones())) return false;
-      await this.auctionRepo.update(auction.id, { latitude: geo.lat, longitude: geo.lng });
+      // 구역 근처가 아니어도 좌표는 저장한다(나중에 구역이 생기면 다시 변환 없이 바로 매칭). 근처 여부만 표시해 둔다.
+      const near = this.isNearAnyZone({ lat: geo.lat, lng: geo.lng }, await this.loadZones());
+      await this.auctionRepo.update(auction.id, { latitude: geo.lat, longitude: geo.lng, nearZone: near });
       return true;
     } catch (err) {
       this.logger.warn(`경매물건 좌표 채우기 실패(${auction.auctionNo}): ${err instanceof Error ? err.message : String(err)}`);

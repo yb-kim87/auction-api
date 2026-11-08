@@ -271,6 +271,10 @@ export class Auction {
   @Column({ type: "numeric", precision: 9, scale: 6, nullable: true, transformer: numericTransformer })
   longitude!: number | null;
 
+  /** 좌표가 재개발 구역 안이거나 경계 100m 이내인지(미리 계산해 둔 값). 지도는 이 값이 true인 물건만 가져온다. 구역이 바뀌면 AuctionZoneCoordService.refreshNearZoneFlags가 다시 계산한다. */
+  @Column({ type: Boolean, default: false })
+  nearZone!: boolean;
+
   /** 매칭 배치(ResaleMatchService)가 계산한 결과를 목록 조회용으로
    * 비정규화 저장(vatPnu 등과 동일 패턴, 요청마다 재계산하지 않음). */
   @Column({ type: "uuid", nullable: true })

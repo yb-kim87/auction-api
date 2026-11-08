@@ -207,7 +207,8 @@ export class RedevelopmentService {
     const [zones, auctions] = await Promise.all([
       this.listZones(),
       this.auctionRepo.find({
-        where: { latitude: Not(IsNull()), longitude: Not(IsNull()) },
+        // 구역 안이거나 경계 100m 이내로 표시된(nearZone) 물건만 가져온다 — 좌표는 전부 저장돼 있어 전부 내려보내면 지도 데이터가 커진다.
+        where: { latitude: Not(IsNull()), longitude: Not(IsNull()), nearZone: true },
         select: ["id", "auctionNo", "address", "city", "district", "propType", "salePrice", "appraisedValue", "minPrice", "status", "caseState", "latitude", "longitude"],
       }),
     ]);
