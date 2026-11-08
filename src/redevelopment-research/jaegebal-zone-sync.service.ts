@@ -23,14 +23,19 @@ const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 /** 경계를 세밀하게 받기 위한 0.2도 타일(사용자 결정 2026-11-07).
  * 사이트는 요청 범위가 크면 simplify 값을 무시하고 경계를 거칠게 돌려준다(실측: 금천구 구역 simplify=0.000005에서 한 변 0.2도 이하 1,424점, 0.3도 631점, 0.8도 374점).
  * 그래서 0.2도 타일로 요청한다. 타일에 걸친 구역은 사이트가 경계를 통째로 주므로(실측) 어느 타일에서 받든 온전하며, 같은 구역이 여러 타일에서 오면 점이 많은 쪽을 쓴다.
- * 요청하는 타일은 구역이 실제 있는 곳(DB의 구역 위치 + 새 구역 위치)뿐이라 서울·경기·인천 전체를 덮어도 21개 안팎이다. 타일 사이는 30초 간격. */
-const TILE_GAP_MS = 30_000;
+ * 요청하는 타일은 구역이 실제 있는 곳(DB의 구역 위치 + 새 구역 위치)뿐이라 서울·경기·인천 전체를 덮어도 21개 안팎이다. 타일 사이는 10~30초 랜덤 간격. */
+/** 타일 사이 간격은 일정하면 기계적 패턴이 되므로 10~30초 사이 랜덤(사용자 결정 2026-11-08). */
+const TILE_GAP_MS = 10_000;
+const TILE_GAP_MAX_MS = 30_000;
+const randomTileGapMs = () => TILE_GAP_MS + Math.floor(Math.random() * (TILE_GAP_MAX_MS - TILE_GAP_MS + 1));
 const TILE_SIZE = 0.2;
 const TILE_ORIGIN_LAT = 36.85;
 const TILE_ORIGIN_LNG = 126.2;
 const TILE_SIMPLIFY = "0.000005";
 /** 평소(quick) 갱신에 쓰는 큰 범위 1회 요청 — 사이트가 경계를 거칠게 주므로 경계는 쓰지 않고 단계·지표·신규·사라짐 판단에만 쓴다. */
 const BIG_QUERY = "min_lat=36.85&max_lat=38.35&min_lng=126.2&max_lng=127.95&simplify=0.0001&include_completed=true";
+/** 구 방식처럼 범위 값이 매번 조금씩 다른 소수점 4자리가 되도록, 타일 각 변을 0.0005~0.0025도 바깥으로 랜덤하게 넓힌다(사용자 요청 2026-11-08). 바깥으로만 넓혀 타일 안 구역은 빠지지 않고, 겹치는 구역은 id로 합친다. */
+const jitterOut = (v: number, dir: 1 | -1) => (v + dir * (0.0005 + Math.random() * 0.002)).toFixed(4);
 /** 위경도가 속한 타일 키 "행_열". */
 const tileKey = (lat: number, lng: number) => `${Math.floor((lat - TILE_ORIGIN_LAT) / TILE_SIZE)}_${Math.floor((lng - TILE_ORIGIN_LNG) / TILE_SIZE)}`;
 /** 타일 키 → 요청 쿼리(요청 범위가 한 변 0.2도). */
@@ -38,7 +43,7 @@ function tileQuery(key: string): string {
   const [i, j] = key.split("_").map(Number);
   const minLat = TILE_ORIGIN_LAT + i * TILE_SIZE;
   const minLng = TILE_ORIGIN_LNG + j * TILE_SIZE;
-  return `min_lat=${minLat.toFixed(4)}&max_lat=${(minLat + TILE_SIZE).toFixed(4)}&min_lng=${minLng.toFixed(4)}&max_lng=${(minLng + TILE_SIZE).toFixed(4)}&simplify=${TILE_SIMPLIFY}&include_completed=true`;
+  return `min_lat=${jitterOut(minLat, -1)}&max_lat=${jitterOut(minLat + TILE_SIZE, 1)}&min_lng=${jitterOut(minLng, -1)}&max_lng=${jitterOut(minLng + TILE_SIZE, 1)}&simplify=${TILE_SIMPLIFY}&include_completed=true`;
 }
 /** 구역 하나(원본 응답)가 속한 타일 키 — 경계 점들의 평균 위치 기준. */
 function tileKeyOfItem(item: RawDevelop): string {
@@ -720,7 +725,7 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
         }
         if (partial) byId.clear(); // 큰 범위 응답은 어떤 타일을 받을지 정하는 데만 쓰고, 반영은 지정한 타일 것만 한다.
         for (let k = kFrom; k < kTo; k++) {
-          await sleep(TILE_GAP_MS);
+          await sleep(randomTileGapMs());
           this.setPhase(`${partial ? "나눠서" : accurate ? "경계 포함 전체" : "새 구역 경계"} 받는 중 — 타일 ${k + 1}/${tileList.length}`);
           const list = await apiGet<RawDevelop[]>("/develops", tileQuery(tileList[k]));
           take(list);
