@@ -60,6 +60,34 @@ export class RedevelopmentResearchController {
     return this.jaegebalSync.start(Array.isArray(body?.codes) ? body.codes : [], body?.force === true, body?.all === true, "manual", tileRange);
   }
 
+  /** 재개발닷컴 호출에 쓰는 디바이스 아이디(현재 값·기본값). */
+  @Get("jaegebal-sync/device-id")
+  async jaegebalDeviceId(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.getDeviceSettings();
+  }
+
+  /** 디바이스 아이디를 바꿔 저장(빈 값 = 기본값으로 되돌림). 전체·자동 업데이트와 새 구역 경계 받기가 같은 값을 쓴다. */
+  @Patch("jaegebal-sync/device-id")
+  async jaegebalSaveDeviceId(@Headers() headers: Record<string, string>, @Body() body: { deviceId?: string }) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.saveDeviceId(String(body?.deviceId ?? ""));
+  }
+
+  /** 서버가 나가는 공인 IP·현재 배포 id·재배포 가능 여부. */
+  @Get("jaegebal-sync/egress")
+  async jaegebalEgress(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.getEgressInfo();
+  }
+
+  /** Railway 재배포(관리자). 서버가 다시 시작되며 IP가 바뀔 수 있다. */
+  @Post("jaegebal-sync/redeploy")
+  async jaegebalRedeploy(@Headers() headers: Record<string, string>) {
+    requireAdmin(getAuthContext(headers));
+    return this.jaegebalSync.redeploySelf();
+  }
+
   /** 경계 대기 중인 새 구역 목록(큰 범위 1회 요청으로 등록된 구역). */
   @Get("jaegebal-sync/pending-boundaries")
   async jaegebalPendingBoundaries(@Headers() headers: Record<string, string>) {

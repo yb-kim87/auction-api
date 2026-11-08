@@ -15,7 +15,10 @@ const API_BASE = "https://jaegebal.com/api";
 // 사이트 JS에 공개된 값. 사이트 배포로 바뀌면 환경변수로 재배포 없이 교체한다.
 const SIGNING_KEY = process.env.JDC_SIGNING_KEY || "57bfe0da55e35b096fd0a4ac27ca2c35b40f13e2827442e4771c999b2cec1c74";
 const APP_TOKEN = process.env.JDC_APP_TOKEN || "0418b9cadfb234a22035c05e982492cf02b62fa91bc89e217f8f93c7e6f0e10f";
-const DEVICE_ID = process.env.JDC_DEVICE_ID || "web;e92feeb0-f0bd-4ca7-961c-85537a203a35";
+const DEFAULT_DEVICE_ID = process.env.JDC_DEVICE_ID || "web;e92feeb0-f0bd-4ca7-961c-85537a203a35";
+/** 현재 호출에 쓰는 디바이스 아이디. 관리자가 화면에서 바꾸면 DB에 저장하고 여기에 반영한다(서버 시작 시 DB 값을 읽는다). 전체 업데이트·자동 업데이트·새 구역 경계 받기가 모두 이 값을 쓴다. */
+let DEVICE_ID = DEFAULT_DEVICE_ID;
+const DEVICE_ID_RE = /^web;[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** 사람 행동을 흉내 내지 않는다: 활동 0, 마지막 칸 1 = 자동화 클라이언트 표시.
  * (2026-11-07 낮에 브라우저 캡처 값·기기 ID로 바꿨다가 자동 수집 차단(429 captcha_required)이 걸려 이전 방식으로 되돌림.) */
 const BEHAVIOR = "1.0.0.0.0.0.0.0.0.0.0.1";
@@ -470,6 +473,12 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
 
   /** 서버가 시작될 때 `running`으로 남은 실행은 이전 프로세스가 재시작으로 끊긴 것이므로 "중단됨"으로 정리한다(진행 중 결과는 구마다 저장돼 있다). */
   async onModuleInit() {
+    try {
+      const saved = (await this.autoRepo.findOne({ where: { id: AUTO_ID } }))?.deviceId?.trim();
+      if (saved && DEVICE_ID_RE.test(saved)) DEVICE_ID = saved;
+    } catch (e) {
+      this.logger.error(`저장된 디바이스 아이디 읽기 실패(기본값 사용): ${e}`);
+    }
     try {
       const stale = await this.runs.find({ where: { state: "running" } });
       for (const r of stale) {
@@ -1149,6 +1158,71 @@ export class JaegebalZoneSyncService implements OnModuleInit, OnModuleDestroy {
       result.markedMissing += 1;
       this.pushChange({ key: z.sourceKey, name: z.name, field: "missing", from: norm(z.stage) }, z.region);
     }
+  }
+
+  // ── 디바이스 아이디 설정 ─────────────────────────────────────────────────────
+
+  getDeviceSettings() {
+    return { deviceId: DEVICE_ID, defaultDeviceId: DEFAULT_DEVICE_ID, custom: DEVICE_ID !== DEFAULT_DEVICE_ID };
+  }
+
+  /** 디바이스 아이디를 바꿔 저장한다(빈 값이면 기본값으로 되돌림). 실행 중인 수집이 있으면 바꾸지 않는다. */
+  async saveDeviceId(raw: string) {
+    if (this.status.running || this.boundaryStatus.running) throw new BadRequestException("수집이 실행 중일 때는 디바이스 아이디를 바꿀 수 없습니다.");
+    const value = (raw ?? "").trim();
+    if (value && !DEVICE_ID_RE.test(value)) throw new BadRequestException("디바이스 아이디 형식이 올바르지 않습니다(예: web;xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).");
+    const row = await this.loadAuto();
+    row.deviceId = value || null;
+    await this.autoRepo.save(row);
+    DEVICE_ID = value || DEFAULT_DEVICE_ID;
+    return this.getDeviceSettings();
+  }
+
+  // ── 서버 나가는 IP · Railway 재배포 ──────────────────────────────────────────
+
+  /** 서버가 사이트를 호출할 때 나가는 공인 IP와 현재 배포 식별자. 재배포하면 배포 id가 바뀌고 IP도 바뀔 수 있다. */
+  async getEgressInfo() {
+    let ip: string | null = null;
+    let ipError: string | null = null;
+    try {
+      const res = await fetch("https://api.ipify.org", { signal: AbortSignal.timeout(5000) });
+      if (res.ok) ip = (await res.text()).trim();
+      else ipError = `HTTP ${res.status}`;
+    } catch (e) {
+      ipError = e instanceof Error ? e.message : String(e);
+    }
+    return {
+      ip,
+      ipError,
+      deploymentId: process.env.RAILWAY_DEPLOYMENT_ID ?? null,
+      startedAt: new Date(Date.now() - process.uptime() * 1000).toISOString(),
+      /** RAILWAY_API_TOKEN(프로젝트 토큰) 환경변수가 있어야 화면에서 재배포할 수 있다. */
+      redeployConfigured: !!process.env.RAILWAY_API_TOKEN?.trim() && !!process.env.RAILWAY_SERVICE_ID && !!process.env.RAILWAY_ENVIRONMENT_ID,
+    };
+  }
+
+  /** Railway API로 이 서비스를 재배포한다(서버가 다시 시작되므로 응답 직후 연결이 끊긴다). 수집이 실행 중이면 막는다. */
+  async redeploySelf() {
+    if (this.status.running || this.boundaryStatus.running) throw new BadRequestException("수집이 실행 중일 때는 재배포할 수 없습니다(진행 중인 수집이 끊깁니다).");
+    const token = process.env.RAILWAY_API_TOKEN?.trim();
+    const serviceId = process.env.RAILWAY_SERVICE_ID;
+    const environmentId = process.env.RAILWAY_ENVIRONMENT_ID;
+    if (!token || !serviceId || !environmentId) {
+      throw new BadRequestException("재배포 토큰이 설정되지 않았습니다. Railway 프로젝트 토큰을 만들어 이 서비스의 환경변수 RAILWAY_API_TOKEN에 넣어 주세요.");
+    }
+    const res = await fetch("https://backboard.railway.com/graphql/v2", {
+      method: "POST",
+      headers: { "content-type": "application/json", "Project-Access-Token": token },
+      body: JSON.stringify({
+        query: "mutation($serviceId: String!, $environmentId: String!) { serviceInstanceRedeploy(serviceId: $serviceId, environmentId: $environmentId) }",
+        variables: { serviceId, environmentId },
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const body = (await res.json().catch(() => null)) as { errors?: Array<{ message?: string }> } | null;
+    if (!res.ok || body?.errors?.length) throw new BadRequestException(`Railway 재배포 요청 실패: ${body?.errors?.[0]?.message ?? `HTTP ${res.status}`}`);
+    this.logger.warn("관리자 요청으로 Railway 재배포를 시작했습니다.");
+    return { requested: true, previousDeploymentId: process.env.RAILWAY_DEPLOYMENT_ID ?? null };
   }
 
   // ── 새 구역 경계 받기(관리자가 직접 요청, 2026-11-08) ──────────────────────────

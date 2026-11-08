@@ -33,6 +33,10 @@ export class RedevelopmentZoneAutoSync {
   @Column({ type: Date, nullable: true })
   nextRunAt!: Date | null;
 
+  /** 재개발닷컴 호출에 쓸 디바이스 아이디(관리자가 화면에서 지정). 비어 있으면 환경변수/코드 기본값. */
+  @Column({ type: "text", nullable: true })
+  deviceId!: string | null;
+
   @UpdateDateColumn()
   updatedAt!: Date;
 }
