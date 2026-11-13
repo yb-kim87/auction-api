@@ -44,7 +44,10 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const cookieHeader = String(req.headers.cookie ?? "");
     const accessToken = parseCookieValue(cookieHeader, AUTH_TOKEN_COOKIE);
-    await this.authService.logout(accessToken);
+    // access 쿠키는 30분이면 사라지므로(강의를 오래 보다 로그아웃하는 경우 등),
+    // 없거나 만료됐으면 refresh 쿠키로도 세션을 식별해 점유를 해제한다.
+    const refreshToken = parseCookieValue(cookieHeader, REFRESH_TOKEN_COOKIE);
+    await this.authService.logout(accessToken, refreshToken);
     clearAuthCookies(res);
     return { ok: true };
   }

@@ -96,9 +96,10 @@ export class AuthService {
   }
 
   /** 로그아웃 시 세션 점유를 해제해 즉시 다른 기기에서 로그인할 수 있게 한다. */
-  async logout(accessToken: string | null): Promise<void> {
-    if (!accessToken) return;
-    const payload = verifyAccessToken(accessToken);
+  async logout(accessToken: string | null, refreshToken: string | null = null): Promise<void> {
+    const payload =
+      (accessToken ? verifyAccessToken(accessToken) : null) ??
+      (refreshToken ? verifyRefreshToken(refreshToken) : null);
     if (!payload) return;
     const user = await this.usersService.findByUsername(payload.sub);
     if (!user || !SINGLE_SESSION_ROLES.has(user.role)) return;
